@@ -26,7 +26,8 @@ export default function CoursesPage() {
 	const [loading, setLoading] = useState(true);
 	const abortRef = useRef<AbortController | null>(null);
 
-	const isAdmin = user && (ADMIN_ROLES as readonly string[]).includes(user.role);
+	const isAdmin =
+		user && (ADMIN_ROLES as readonly string[]).includes(user.role);
 	const isStudent = user?.role === 'Student';
 
 	useEffect(() => {
@@ -43,11 +44,23 @@ export default function CoursesPage() {
 			: courseService.getAll(search ? { search } : {});
 
 		load
-			.then((res) => setCourses(res.data ?? []))
-			.catch(() => { /* errors handled by interceptor */ })
+			.then((res) => {
+				const data = res.data;
+				const validCourses = Array.isArray(data)
+					? data.filter((course): course is ICourse =>
+							Boolean(course && (course as ICourse)._id),
+						)
+					: [];
+				setCourses(validCourses);
+			})
+			.catch(() => {
+				/* errors handled by interceptor */
+			})
 			.finally(() => setLoading(false));
 
-		return () => { abortRef.current?.abort(); };
+		return () => {
+			abortRef.current?.abort();
+		};
 	}, [search, isStudent, authLoading]);
 
 	return (
@@ -99,7 +112,9 @@ export default function CoursesPage() {
 				<Typography
 					sx={{ color: 'text.secondary', textAlign: 'center', mt: 8 }}
 				>
-					{isStudent ? "You haven't enrolled in any courses yet." : 'No courses found.'}
+					{isStudent
+						? "You haven't enrolled in any courses yet."
+						: 'No courses found.'}
 				</Typography>
 			) : (
 				<Grid container spacing={3}>
