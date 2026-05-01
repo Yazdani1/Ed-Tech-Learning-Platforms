@@ -6,8 +6,8 @@ import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 
 export const enroll = asyncHandler(async (req: Request, res: Response) => {
-  const { courseId } = req.params;
-  const studentId = req.user._id;
+  const courseId = String(req.params.courseId);
+  const studentId = String(req.user._id);
 
   const course = await Course.findById(courseId);
   if (!course) throw new AppError('Course not found', 404);
@@ -18,7 +18,7 @@ export const enroll = asyncHandler(async (req: Request, res: Response) => {
   if (existing) throw new AppError('Already enrolled in this course', 400);
 
   await Enrollment.create({
-    student: new Types.ObjectId(String(studentId)),
+    student: new Types.ObjectId(studentId),
     course: new Types.ObjectId(courseId),
   });
 
@@ -26,7 +26,7 @@ export const enroll = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getMyEnrollments = asyncHandler(async (req: Request, res: Response) => {
-  const enrollments = await Enrollment.find({ student: req.user._id })
+  const enrollments = await Enrollment.find({ student: String(req.user._id) })
     .populate({
       path: 'course',
       populate: [
@@ -42,8 +42,8 @@ export const getMyEnrollments = asyncHandler(async (req: Request, res: Response)
 
 export const checkEnrollment = asyncHandler(async (req: Request, res: Response) => {
   const enrollment = await Enrollment.findOne({
-    student: req.user._id,
-    course: req.params.courseId,
+    student: String(req.user._id),
+    course: String(req.params.courseId),
   });
 
   res.status(200).json({ success: true, data: { isEnrolled: !!enrollment } });
