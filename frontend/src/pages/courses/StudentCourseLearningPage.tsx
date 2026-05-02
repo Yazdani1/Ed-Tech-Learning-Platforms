@@ -161,7 +161,7 @@ export default function StudentCourseLearningPage() {
 	}
 
 	return (
-		<Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden', bgcolor: 'background.default' }}>
+		<Box sx={{ display: 'flex', height: user?.role === 'Teacher' ? '100%' : '100vh', overflow: 'hidden', bgcolor: 'background.default' }}>
 			{/* ── Main student sidebar (hidden for teachers) ─────────── */}
 			{user?.role !== 'Teacher' && <StudentSidebar />}
 

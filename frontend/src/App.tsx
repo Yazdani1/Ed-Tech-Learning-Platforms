@@ -71,9 +71,9 @@ export default function App() {
 
 			{/* Teacher routes */}
 			<Route element={<ProtectedRoute allowedRoles={['Teacher']} />}>
-				<Route path='/teacher/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
 				<Route element={<TeacherLayout />}>
 					<Route path='/teacher/courses' element={<TeacherCoursesPage />} />
+					<Route path='/teacher/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
 				</Route>
 			</Route>
 

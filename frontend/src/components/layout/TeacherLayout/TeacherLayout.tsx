@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
 	AppBar,
@@ -26,10 +26,15 @@ const DRAWER_OPEN = 220;
 const DRAWER_CLOSED = 64;
 
 export default function TeacherLayout() {
-	const [open, setOpen] = useState(true);
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
+	const isLearningPage = location.pathname.includes('/learn');
+	const [open, setOpen] = useState(!isLearningPage);
+
+	useEffect(() => {
+		if (isLearningPage) setOpen(false);
+	}, [isLearningPage]);
 
 	const handleLogout = async () => {
 		await logout();
@@ -37,7 +42,7 @@ export default function TeacherLayout() {
 	};
 
 	return (
-		<Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>
+		<Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden', bgcolor: 'grey.50' }}>
 			<Drawer
 				variant='permanent'
 				sx={{
@@ -129,7 +134,7 @@ export default function TeacherLayout() {
 				</Box>
 			</Drawer>
 
-			<Box component='main' sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+			<Box component='main' sx={{ flex: 1, overflow: isLearningPage ? 'hidden' : 'auto', p: isLearningPage ? 0 : 3 }}>
 				<Outlet />
 			</Box>
 		</Box>

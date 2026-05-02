@@ -40,11 +40,11 @@ const navItems = [
 ];
 
 export default function StudentSidebar() {
-	const [open, setOpen] = useState(true);
 	const { user, logout } = useAuth();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const location = useLocation();
+	const [open, setOpen] = useState(!location.pathname.includes('/learn'));
 
 	const handleLogout = async () => {
 		await logout();
