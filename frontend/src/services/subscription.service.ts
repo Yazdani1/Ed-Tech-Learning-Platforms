@@ -9,4 +9,5 @@ export const subscriptionService = {
 	cancel: (id: string) => api.patch(`/subscriptions/${id}/cancel`),
 	subscribe: (plan: SubscriptionPlan) =>
 		api.post<ISubscription>('/subscriptions/subscribe', { plan }),
+	cancelMy: () => api.delete('/subscriptions/cancel-my'),
 };

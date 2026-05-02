@@ -65,6 +65,19 @@ export const cancelSubscription = asyncHandler(async (req: Request, res: Respons
   res.status(200).json({ success: true, message: 'Subscription cancelled' });
 });
 
+export const cancelMySubscription = asyncHandler(async (req: Request, res: Response) => {
+  const userId = new Types.ObjectId(String(req.user._id));
+
+  const sub = await Subscription.findOne({ user: userId, status: 'Active' });
+  if (!sub) throw new AppError('No active subscription found', 404);
+
+  sub.status = 'Cancelled';
+  await sub.save();
+
+  await User.findByIdAndUpdate(userId, { $unset: { activeSubscription: 1 } });
+  res.status(200).json({ success: true, message: 'Subscription cancelled' });
+});
+
 export const subscribeToPlan = asyncHandler(async (req: Request, res: Response) => {
   const { plan } = req.body as { plan: SubscriptionPlan };
   if (!plan) throw new AppError('plan is required', 400);

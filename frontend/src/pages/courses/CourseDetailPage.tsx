@@ -72,6 +72,9 @@ export default function CourseDetailPage() {
     .filter((p) => (course?.allowedSubscriptionPlans ?? []).includes(p.plan))
     .reduce<number>((min, p) => Math.min(min, p.price), Infinity);
 
+  const planCountMap = Object.fromEntries(subPlans.map((p) => [p.plan, p.courseCount])) as
+    Partial<Record<string, number>>;
+
   useEffect(() => {
     if (!id) return;
     courseService
@@ -585,6 +588,7 @@ export default function CourseDetailPage() {
                                       </Typography>
                                       <Typography variant="caption" color="text.secondary">
                                         {userActivePlan} plan · Expires {new Date(userSubExpiry!).toLocaleDateString()}
+                                        {(planCountMap[userActivePlan!] ?? 0) > 0 && ` · ${planCountMap[userActivePlan!]} courses included`}
                                       </Typography>
                                     </Box>
                                   </Box>
@@ -609,7 +613,7 @@ export default function CourseDetailPage() {
                                       <Typography variant="caption" color="text.secondary">Your current plan</Typography>
                                       <Chip label={userActivePlan} size="small" sx={{ bgcolor: '#0284c7', color: 'white', fontWeight: 600, fontSize: '0.7rem' }} />
                                     </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                                       <Typography variant="caption" color="text.secondary">Required plan</Typography>
                                       <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                         {course.allowedSubscriptionPlans.map((p) => (
@@ -617,6 +621,11 @@ export default function CourseDetailPage() {
                                         ))}
                                       </Box>
                                     </Box>
+                                    {course.allowedSubscriptionPlans.map((p) => (planCountMap[p] ?? 0) > 0 && (
+                                      <Typography key={p} variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'right', mb: 0.25 }}>
+                                        {planCountMap[p]} courses free with {p}
+                                      </Typography>
+                                    ))}
                                   </Box>
                                   <Button
                                     fullWidth variant="outlined" size="medium"
@@ -637,15 +646,22 @@ export default function CourseDetailPage() {
                                       <strong>Get this course for free</strong> when you subscribe. Terms apply.
                                     </Typography>
                                   </Box>
-                                  {[
-                                    { icon: <LocalOfferIcon sx={{ fontSize: 15 }} />, text: `Included in: ${course.allowedSubscriptionPlans.join(', ')} plan${course.allowedSubscriptionPlans.length > 1 ? 's' : ''}` },
-                                    { icon: <AllInclusiveIcon sx={{ fontSize: 15 }} />, text: 'Cancel anytime' },
-                                  ].map(({ icon, text }) => (
-                                    <Box key={text} sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 0.75 }}>
-                                      <Box sx={{ color: 'text.secondary', display: 'flex' }}>{icon}</Box>
-                                      <Typography variant="caption" color="text.secondary">{text}</Typography>
-                                    </Box>
-                                  ))}
+                                  {course.allowedSubscriptionPlans.map((p) => {
+                                    const count = planCountMap[p] ?? 0;
+                                    return (
+                                      <Box key={p} sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 0.75 }}>
+                                        <LocalOfferIcon sx={{ fontSize: 15, color: 'text.secondary', flexShrink: 0 }} />
+                                        <Typography variant="caption" color="text.secondary">
+                                          <strong>{p}</strong> plan
+                                          {count > 0 && ` · access to ${count} course${count !== 1 ? 's' : ''} for free`}
+                                        </Typography>
+                                      </Box>
+                                    );
+                                  })}
+                                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 0.75 }}>
+                                    <AllInclusiveIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+                                    <Typography variant="caption" color="text.secondary">Cancel anytime</Typography>
+                                  </Box>
                                   <Button
                                     fullWidth variant="contained" size="large"
                                     component={RouterLink}

@@ -56,6 +56,8 @@ export interface ISection {
   lectures: ILecture[];
 }
 
+export type EnrollmentType = 'free' | 'paid' | 'subscription';
+
 export interface ICourse {
   _id: string;
   title: string;
@@ -75,6 +77,7 @@ export interface ICourse {
   requirements: string[];
   sections: ISection[];
   createdAt: string;
+  enrollmentType?: EnrollmentType;
 }
 
 export interface ISubscription {
@@ -96,6 +99,7 @@ export interface ISubscriptionPlanConfig {
   badge?: string;
   color?: string;
   isActive: boolean;
+  courseCount: number;
 }
 
 export interface ApiResponse<T = unknown> {

@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import {
-	enroll,
-	getMyEnrollments,
-	checkEnrollment,
+  enroll,
+  unenroll,
+  getMyEnrollments,
+  checkEnrollment,
 } from '../controllers/enrollment.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
 
@@ -11,5 +12,6 @@ const router = Router();
 router.get('/', protect, authorize('Student'), getMyEnrollments);
 router.get('/:courseId/check', protect, authorize('Student'), checkEnrollment);
 router.post('/:courseId', protect, authorize('Student'), enroll);
+router.delete('/:courseId', protect, authorize('Student'), unenroll);
 
 export default router;

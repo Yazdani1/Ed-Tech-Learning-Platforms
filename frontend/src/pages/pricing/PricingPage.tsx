@@ -165,11 +165,19 @@ export default function PricingPage() {
 													৳{plan.price.toLocaleString()}
 												</Typography>
 											</Box>
-											<Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
+											<Typography variant='body2' color='text.secondary'>
 												for {plan.duration === 1 ? '1 month' : `${plan.duration} months`}
 											</Typography>
+											{plan.courseCount > 0 && (
+												<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.75, mb: 0.5 }}>
+													<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: accentColor, flexShrink: 0 }} />
+													<Typography variant='caption' sx={{ color: accentColor, fontWeight: 700 }}>
+														{plan.courseCount} course{plan.courseCount !== 1 ? 's' : ''} included free
+													</Typography>
+												</Box>
+											)}
 
-											<Divider sx={{ mb: 2 }} />
+											<Divider sx={{ my: 2 }} />
 
 											<Box>
 												{plan.features.map((feat, i) => (

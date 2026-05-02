@@ -20,6 +20,7 @@ export const courseService = {
   getEnrolled: () => api.get<ICourse[]>('/enrollments'),
   checkEnrollment: (id: string) => api.get<{ isEnrolled: boolean }>(`/enrollments/${id}/check`),
   enroll: (id: string) => api.post(`/enrollments/${id}`),
+  unenroll: (id: string) => api.delete(`/enrollments/${id}`),
 
   // Sections
   addSection: (courseId: string, title: string) =>

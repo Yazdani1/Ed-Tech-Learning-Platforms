@@ -3,14 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import {
 	Box,
 	Button,
-	Grid,
-	Typography,
-	TextField,
-	InputAdornment,
+	Chip,
 	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
+	Grid,
+	IconButton,
+	InputAdornment,
+	TextField,
+	Tooltip,
+	Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
+import CardMembershipIcon from '@mui/icons-material/CardMembership';
+import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import CourseCard from '../../components/ui/CourseCard';
 import type { ICourse } from '../../types/index';
@@ -24,21 +34,19 @@ export default function CoursesPage() {
 	const [courses, setCourses] = useState<ICourse[]>([]);
 	const [search, setSearch] = useState('');
 	const [loading, setLoading] = useState(true);
+	const [removeTarget, setRemoveTarget] = useState<ICourse | null>(null);
+	const [removing, setRemoving] = useState(false);
 	const abortRef = useRef<AbortController | null>(null);
 
-	const isAdmin =
-		user && (ADMIN_ROLES as readonly string[]).includes(user.role);
+	const isAdmin = user && (ADMIN_ROLES as readonly string[]).includes(user.role);
 	const isStudent = user?.role === 'Student';
 
 	useEffect(() => {
-		// Wait until auth finishes so we know exactly who the user is
 		if (authLoading) return;
-
-		// Cancel any in-flight request from a previous render
 		abortRef.current?.abort();
 		abortRef.current = new AbortController();
-
 		setLoading(true);
+
 		const load = isStudent
 			? courseService.getEnrolled()
 			: courseService.getAll(search ? { search } : {});
@@ -46,33 +54,43 @@ export default function CoursesPage() {
 		load
 			.then((res) => {
 				const data = res.data;
-				const validCourses = Array.isArray(data)
-					? data.filter((course): course is ICourse =>
-							Boolean(course && (course as ICourse)._id),
-						)
+				const valid = Array.isArray(data)
+					? data.filter((c): c is ICourse => Boolean(c && (c as ICourse)._id))
 					: [];
-				setCourses(validCourses);
+				setCourses(valid);
 			})
-			.catch(() => {
-				/* errors handled by interceptor */
-			})
+			.catch(() => {})
 			.finally(() => setLoading(false));
 
-		return () => {
-			abortRef.current?.abort();
-		};
+		return () => { abortRef.current?.abort(); };
 	}, [search, isStudent, authLoading]);
+
+	const handleConfirmRemove = async () => {
+		if (!removeTarget) return;
+		setRemoving(true);
+		try {
+			await courseService.unenroll(removeTarget._id);
+			setCourses((prev) => prev.filter((c) => c._id !== removeTarget._id));
+			toast.success(`Removed from "${removeTarget.title}"`);
+		} catch {
+			toast.error('Failed to remove course');
+		} finally {
+			setRemoving(false);
+			setRemoveTarget(null);
+		}
+	};
+
+	// Student: filter client-side by search, split by enrollmentType
+	const filtered = isStudent && search
+		? courses.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()))
+		: courses;
+
+	const directCourses = filtered.filter((c) => c.enrollmentType !== 'subscription');
+	const subCourses = filtered.filter((c) => c.enrollmentType === 'subscription');
 
 	return (
 		<Box>
-			<Box
-				sx={{
-					display: 'flex',
-					justifyContent: 'space-between',
-					alignItems: 'center',
-					mb: 3,
-				}}
-			>
+			<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
 				<Typography variant='h4' sx={{ fontWeight: 700 }}>
 					{isStudent ? 'My Courses' : 'Courses'}
 				</Typography>
@@ -108,26 +126,171 @@ export default function CoursesPage() {
 				<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
 					<CircularProgress />
 				</Box>
-			) : courses.length === 0 ? (
-				<Typography
-					sx={{ color: 'text.secondary', textAlign: 'center', mt: 8 }}
-				>
-					{isStudent
-						? "You haven't enrolled in any courses yet."
-						: 'No courses found.'}
-				</Typography>
+			) : isStudent ? (
+				/* ── Student: two labelled sections ─────────────── */
+				<>
+					{/* Section 1: Free & Paid courses */}
+					<Box sx={{ mb: 5 }}>
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+							<Typography variant='h6' sx={{ fontWeight: 700 }}>
+								Free &amp; Paid Courses
+							</Typography>
+							<Chip label={directCourses.length} size='small' color='primary' />
+						</Box>
+
+						{directCourses.length === 0 ? (
+							<Typography variant='body2' color='text.secondary'>
+								No free or paid courses enrolled yet.
+							</Typography>
+						) : (
+							<Grid container spacing={3}>
+								{directCourses.map((course) => (
+									<Grid key={course._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+										<CourseCardWithRemove
+											course={course}
+											onRemove={() => setRemoveTarget(course)}
+										/>
+									</Grid>
+								))}
+							</Grid>
+						)}
+					</Box>
+
+					{/* Section 2: Subscription courses */}
+					<Box>
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+							<CardMembershipIcon sx={{ color: '#7c3aed', fontSize: 22 }} />
+							<Typography variant='h6' sx={{ fontWeight: 700 }}>
+								Enrolled with Subscription
+							</Typography>
+							<Chip label={subCourses.length} size='small' sx={{ bgcolor: '#7c3aed', color: 'white' }} />
+						</Box>
+
+						{subCourses.length === 0 ? (
+							<Typography variant='body2' color='text.secondary'>
+								No subscription courses enrolled yet.
+							</Typography>
+						) : (
+							<Grid container spacing={3}>
+								{subCourses.map((course) => (
+									<Grid key={course._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+										<CourseCardWithRemove
+											course={course}
+											onRemove={() => setRemoveTarget(course)}
+											subscriptionBadge
+										/>
+									</Grid>
+								))}
+							</Grid>
+						)}
+					</Box>
+
+					{filtered.length === 0 && search && (
+						<Typography color='text.secondary' sx={{ mt: 4, textAlign: 'center' }}>
+							No courses match &quot;{search}&quot;.
+						</Typography>
+					)}
+					{courses.length === 0 && !search && (
+						<Typography color='text.secondary' sx={{ mt: 4, textAlign: 'center' }}>
+							You haven&apos;t enrolled in any courses yet.
+						</Typography>
+					)}
+				</>
 			) : (
-				<Grid container spacing={3}>
-					{courses.map((course) => (
-						<Grid key={course._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-							<CourseCard
-								course={course}
-								basePath={isAdmin ? '/admin/courses' : '/courses'}
-							/>
-						</Grid>
-					))}
-				</Grid>
+				/* ── Admin: plain grid ───────────────────────────── */
+				courses.length === 0 ? (
+					<Typography color='text.secondary' sx={{ textAlign: 'center', mt: 8 }}>
+						No courses found.
+					</Typography>
+				) : (
+					<Grid container spacing={3}>
+						{courses.map((course) => (
+							<Grid key={course._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+								<CourseCard course={course} basePath='/admin/courses' />
+							</Grid>
+						))}
+					</Grid>
+				)
 			)}
+
+			{/* Remove confirmation dialog */}
+			<Dialog open={Boolean(removeTarget)} onClose={() => setRemoveTarget(null)} maxWidth='xs' fullWidth>
+				<DialogTitle>Remove Course</DialogTitle>
+				<DialogContent>
+					<Typography>
+						Are you sure you want to remove{' '}
+						<strong>&quot;{removeTarget?.title}&quot;</strong> from your courses?
+					</Typography>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setRemoveTarget(null)} disabled={removing}>
+						Keep It
+					</Button>
+					<Button
+						variant='contained'
+						color='error'
+						disabled={removing}
+						onClick={() => void handleConfirmRemove()}
+					>
+						{removing ? <CircularProgress size={18} color='inherit' /> : 'Remove'}
+					</Button>
+				</DialogActions>
+			</Dialog>
+		</Box>
+	);
+}
+
+// ── Thin wrapper: CourseCard + remove button ─────────────────
+function CourseCardWithRemove({
+	course,
+	onRemove,
+	subscriptionBadge = false,
+}: {
+	course: ICourse;
+	onRemove: () => void;
+	subscriptionBadge?: boolean;
+}) {
+	return (
+		<Box sx={{ position: 'relative' }}>
+			<CourseCard course={course} basePath='/courses' />
+			{subscriptionBadge && (
+				<Box
+					sx={{
+						position: 'absolute',
+						top: 8,
+						left: 8,
+						bgcolor: '#7c3aed',
+						color: 'white',
+						borderRadius: 1,
+						px: 0.75,
+						py: 0.25,
+						display: 'flex',
+						alignItems: 'center',
+						gap: 0.4,
+						pointerEvents: 'none',
+					}}
+				>
+					<CardMembershipIcon sx={{ fontSize: 12 }} />
+					<Typography sx={{ fontSize: '0.65rem', fontWeight: 700, lineHeight: 1 }}>
+						Subscription
+					</Typography>
+				</Box>
+			)}
+			<Tooltip title='Remove from my courses'>
+				<IconButton
+					size='small'
+					onClick={onRemove}
+					sx={{
+						position: 'absolute',
+						top: 6,
+						right: 6,
+						bgcolor: 'rgba(255,255,255,0.9)',
+						'&:hover': { bgcolor: 'error.light', color: 'white' },
+					}}
+				>
+					<DeleteOutlineIcon fontSize='small' />
+				</IconButton>
+			</Tooltip>
 		</Box>
 	);
 }
