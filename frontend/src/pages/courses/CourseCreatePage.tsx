@@ -33,7 +33,13 @@ import { announcementService } from '../../services/announcement.service';
 import { studyMaterialService } from '../../services/studyMaterial.service';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import CurriculumBuilder from '../../components/course/CurriculumBuilder/CurriculumBuilder';
-import type { ICategory, ITeacher, IAnnouncement, IStudyMaterial, SubscriptionPlan } from '../../types/index';
+import type {
+	ICategory,
+	ITeacher,
+	IAnnouncement,
+	IStudyMaterial,
+	SubscriptionPlan,
+} from '../../types/index';
 
 const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 	'Basic',
@@ -159,16 +165,24 @@ export default function CourseCreatePage() {
 	const [saving, setSaving] = useState(false);
 	const [autoSaving, setAutoSaving] = useState(false);
 	const [lastSaved, setLastSaved] = useState('');
-	const [courseStatus, setCourseStatus] = useState<'Draft' | 'Published'>('Draft');
+	const [courseStatus, setCourseStatus] = useState<'Draft' | 'Published'>(
+		'Draft',
+	);
 	const [loadingCourse, setLoadingCourse] = useState(false);
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
 	const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
 	const [annForm, setAnnForm] = useState({ title: '', description: '' });
 	const [annPosting, setAnnPosting] = useState(false);
+	const [showAnnForm, setShowAnnForm] = useState(false);
 	const [studyMaterials, setStudyMaterials] = useState<IStudyMaterial[]>([]);
-	const [smForm, setSmForm] = useState({ title: '', description: '', fileUrl: '' });
+	const [smForm, setSmForm] = useState({
+		title: '',
+		description: '',
+		fileUrl: '',
+	});
 	const [smPosting, setSmPosting] = useState(false);
+	const [showSmForm, setShowSmForm] = useState(false);
 	const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const initialRender = useRef(true);
 	const autoCreating = useRef(false);
@@ -213,26 +227,34 @@ export default function CourseCreatePage() {
 					fd.append('whatYouWillLearn', JSON.stringify([]));
 					fd.append('whatYouWillGet', JSON.stringify([]));
 					fd.append('requirements', JSON.stringify([]));
-					courseService.create(fd).then(async (res) => {
-						const newId = res.data?._id as string | undefined;
-						if (!newId) return;
-						setCourseId(newId);
-						if (firstCat) setForm((f) => ({ ...f, category: firstCat }));
-						navigate(`/admin/courses/${newId}/edit`, { replace: true });
-						// Auto-add Introduction section + Course Introduction lecture
-						try {
-							const secRes = await courseService.addSection(newId, 'Introduction');
-							const sectionId = (secRes.data as { _id: string })?._id;
-							if (sectionId) {
-								await courseService.addLecture(newId, sectionId, {
-									title: 'Course Introduction',
-									isPreview: true,
-								});
+					courseService
+						.create(fd)
+						.then(async (res) => {
+							const newId = res.data?._id as string | undefined;
+							if (!newId) return;
+							setCourseId(newId);
+							if (firstCat) setForm((f) => ({ ...f, category: firstCat }));
+							navigate(`/admin/courses/${newId}/edit`, { replace: true });
+							// Auto-add Introduction section + Course Introduction lecture
+							try {
+								const secRes = await courseService.addSection(
+									newId,
+									'Introduction',
+								);
+								const sectionId = (secRes.data as { _id: string })?._id;
+								if (sectionId) {
+									await courseService.addLecture(newId, sectionId, {
+										title: 'Course Introduction',
+										isPreview: true,
+									});
+								}
+							} catch {
+								/* non-fatal */
 							}
-						} catch { /* non-fatal */ }
-					}).catch(() => {});
+						})
+						.catch(() => {});
 				}
-			}
+			},
 		);
 	}, [id]);
 
@@ -310,7 +332,14 @@ export default function CourseCreatePage() {
 		}
 	};
 
-	const tabs = ['Basic Info', 'Media', 'Learning Content', 'Curriculum', 'Announcements', 'Study Materials'];
+	const tabs = [
+		'Basic Info',
+		'Media',
+		'Learning Content',
+		'Curriculum',
+		'Announcements',
+		'Study Materials',
+	];
 
 	useEffect(() => {
 		if (tab === 4 && courseId) {
@@ -335,12 +364,16 @@ export default function CourseCreatePage() {
 			toast.error('Title and description are required');
 			return;
 		}
-		if (!courseId) { toast.error('Save the course first'); return; }
+		if (!courseId) {
+			toast.error('Save the course first');
+			return;
+		}
 		setAnnPosting(true);
 		try {
 			const res = await announcementService.create(courseId, annForm);
 			if (res.data) setAnnouncements((p) => [res.data!, ...p]);
 			setAnnForm({ title: '', description: '' });
+			setShowAnnForm(false);
 			toast.success('Announcement posted');
 		} catch {
 			// handled by interceptor
@@ -365,7 +398,10 @@ export default function CourseCreatePage() {
 			toast.error('Title and description are required');
 			return;
 		}
-		if (!courseId) { toast.error('Save the course first'); return; }
+		if (!courseId) {
+			toast.error('Save the course first');
+			return;
+		}
 		setSmPosting(true);
 		try {
 			const res = await studyMaterialService.create(courseId, {
@@ -375,6 +411,7 @@ export default function CourseCreatePage() {
 			});
 			if (res.data) setStudyMaterials((p) => [res.data!, ...p]);
 			setSmForm({ title: '', description: '', fileUrl: '' });
+			setShowSmForm(false);
 			toast.success('Study material added');
 		} catch {
 			// handled by interceptor
@@ -464,19 +501,40 @@ export default function CourseCreatePage() {
 						{isEdit ? 'Edit Course' : 'Create Course'}
 					</Typography>
 					{courseId && (
-						<Typography variant='caption' sx={{ color: courseStatus === 'Published' ? 'success.main' : 'text.secondary', fontWeight: 600 }}>
+						<Typography
+							variant='caption'
+							sx={{
+								color:
+									courseStatus === 'Published'
+										? 'success.main'
+										: 'text.secondary',
+								fontWeight: 600,
+							}}
+						>
 							{courseStatus === 'Published' ? 'Published' : 'Draft'}
 						</Typography>
 					)}
 				</Box>
 				<Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
 					{courseId && (
-						<Tooltip title={courseStatus === 'Published' ? 'View public course page' : 'Preview course details'}>
+						<Tooltip
+							title={
+								courseStatus === 'Published'
+									? 'View public course page'
+									: 'Preview course details'
+							}
+						>
 							<Button
 								variant='outlined'
 								color={courseStatus === 'Published' ? 'success' : 'inherit'}
 								size='small'
-								startIcon={courseStatus === 'Published' ? <OpenInNewIcon /> : <PreviewIcon />}
+								startIcon={
+									courseStatus === 'Published' ? (
+										<OpenInNewIcon />
+									) : (
+										<PreviewIcon />
+									)
+								}
 								onClick={() => window.open(`/courses/${courseId}`, '_blank')}
 							>
 								{courseStatus === 'Published' ? 'View Live' : 'Preview'}
@@ -555,7 +613,10 @@ export default function CourseCreatePage() {
 					</Paper>
 				</Box>
 
-				<Paper elevation={2} sx={{ flex: 1, width: '100%', borderRadius: '4px', p: 3 }}>
+				<Paper
+					elevation={2}
+					sx={{ flex: 1, width: '100%', borderRadius: '4px', p: 3 }}
+				>
 					{/* Tab 0 – Basic Info */}
 					{tab === 0 && (
 						<Box
@@ -826,85 +887,166 @@ export default function CourseCreatePage() {
 					)}
 
 					{/* Tab 3 – Curriculum */}
-					{tab === 3 && (
-						courseId ? (
+					{tab === 3 &&
+						(courseId ? (
 							<CurriculumBuilder courseId={courseId} />
 						) : (
 							<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
 								<CircularProgress />
 							</Box>
-						)
-					)}
+						))}
 
 					{/* Tab 4 – Announcements */}
 					{tab === 4 && (
 						<Box sx={{ maxWidth: 720 }}>
-							<Typography variant='h6' sx={{ fontWeight: 700, mb: 3 }}>
-								Announcements
-							</Typography>
+							<Box
+								sx={{
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: 'center',
+									mb: 3,
+								}}
+							>
+								<Typography variant='h6' sx={{ fontWeight: 700 }}>
+									Announcements
+								</Typography>
+								<Button
+									variant='contained'
+									startIcon={<AddIcon />}
+									onClick={() => setShowAnnForm((p) => !p)}
+								>
+									Post Announcement
+								</Button>
+							</Box>
 
 							{/* Post form */}
-							<Paper variant='outlined' sx={{ p: 2.5, mb: 4, borderRadius: 2 }}>
-								<Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 1.5 }}>
-									New Announcement
-								</Typography>
-								<TextField
-									label='Title'
-									value={annForm.title}
-									onChange={(e) => setAnnForm((p) => ({ ...p, title: e.target.value }))}
-									fullWidth
-									size='small'
-									sx={{ mb: 1.5 }}
-								/>
-								<TextField
-									label='Description'
-									value={annForm.description}
-									onChange={(e) => setAnnForm((p) => ({ ...p, description: e.target.value }))}
-									fullWidth
-									multiline
-									rows={3}
-									size='small'
-									sx={{ mb: 1.5 }}
-								/>
-								<Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-									<Button
-										variant='contained'
-										startIcon={<AddIcon />}
-										onClick={() => void handlePostAnnouncement()}
-										disabled={annPosting || !courseId}
+							{showAnnForm && (
+								<Paper
+									variant='outlined'
+									sx={{ p: 2.5, mb: 4, borderRadius: 0.5 }}
+								>
+									<Typography
+										variant='subtitle2'
+										sx={{ fontWeight: 600, mb: 1.5 }}
 									>
-										{annPosting ? <CircularProgress size={16} /> : 'Post'}
-									</Button>
-								</Box>
-							</Paper>
+										New Announcement
+									</Typography>
+									<TextField
+										label='Title'
+										value={annForm.title}
+										onChange={(e) =>
+											setAnnForm((p) => ({ ...p, title: e.target.value }))
+										}
+										fullWidth
+										size='small'
+										sx={{ mb: 1.5 }}
+									/>
+									<RichTextEditor
+										value={annForm.description}
+										onChange={(html) =>
+											setAnnForm((p) => ({ ...p, description: html }))
+										}
+										placeholder='Enter announcement description...'
+										minHeight={100}
+									/>
+									<Box
+										sx={{
+											display: 'flex',
+											gap: 1,
+											justifyContent: 'flex-end',
+											mt: 2,
+										}}
+									>
+										<Button
+											size='small'
+											onClick={() => {
+												setShowAnnForm(false);
+												setAnnForm({ title: '', description: '' });
+											}}
+										>
+											Cancel
+										</Button>
+										<Button
+											size='small'
+											variant='contained'
+											startIcon={<AddIcon />}
+											onClick={() => void handlePostAnnouncement()}
+											disabled={annPosting || !courseId}
+										>
+											{annPosting ? <CircularProgress size={16} /> : 'Post'}
+										</Button>
+									</Box>
+								</Paper>
+							)}
 
 							<Divider sx={{ mb: 3 }} />
 
 							{/* Existing announcements */}
 							{announcements.length === 0 ? (
-								<Typography color='text.secondary'>No announcements yet.</Typography>
+								<Typography color='text.secondary'>
+									No announcements yet.
+								</Typography>
 							) : (
 								<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 									{announcements.map((ann) => (
-										<Paper key={ann._id} variant='outlined' sx={{ p: 2.5, borderRadius: 2 }}>
-											<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+										<Paper
+											key={ann._id}
+											variant='outlined'
+											sx={{ p: 2.5, borderRadius: 0.5 }}
+										>
+											<Box
+												sx={{
+													display: 'flex',
+													justifyContent: 'space-between',
+													alignItems: 'flex-start',
+												}}
+											>
 												<Box sx={{ flex: 1 }}>
-													<Typography variant='subtitle1' sx={{ fontWeight: 700, mb: 0.5 }}>
+													<Typography
+														variant='subtitle1'
+														sx={{ fontWeight: 700, mb: 0.5 }}
+													>
 														{ann.title}
 													</Typography>
-													<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+													<Box
+														sx={{
+															display: 'flex',
+															alignItems: 'center',
+															gap: 1,
+															mb: 1,
+														}}
+													>
 														<Avatar
 															src={ann.postedBy.avatar}
-															sx={{ width: 22, height: 22, fontSize: 12, bgcolor: 'primary.main' }}
+															sx={{
+																width: 22,
+																height: 22,
+																fontSize: 12,
+																bgcolor: 'primary.main',
+															}}
 														>
 															{ann.postedBy.name[0]}
 														</Avatar>
-														<Typography variant='caption' color='text.secondary'>
-															{ann.postedBy.name} &bull; {ann.postedBy.role} &bull;{' '}
-															{new Date(ann.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+														<Typography
+															variant='caption'
+															color='text.secondary'
+														>
+															{ann.postedBy.name} &bull; {ann.postedBy.role}{' '}
+															&bull;{' '}
+															{new Date(ann.createdAt).toLocaleDateString(
+																undefined,
+																{
+																	year: 'numeric',
+																	month: 'short',
+																	day: 'numeric',
+																},
+															)}
 														</Typography>
 													</Box>
-													<Typography variant='body2' sx={{ whiteSpace: 'pre-wrap' }}>
+													<Typography
+														variant='body2'
+														sx={{ whiteSpace: 'pre-wrap' }}
+													>
 														{ann.description}
 													</Typography>
 												</Box>
@@ -927,79 +1069,166 @@ export default function CourseCreatePage() {
 					{/* Tab 5 – Study Materials */}
 					{tab === 5 && (
 						<Box sx={{ maxWidth: 720 }}>
-							<Typography variant='h6' sx={{ fontWeight: 700, mb: 3 }}>
-								Study Materials
-							</Typography>
-
-							<Paper variant='outlined' sx={{ p: 2.5, mb: 4, borderRadius: 2 }}>
-								<Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 1.5 }}>
-									New Study Material
+							<Box
+								sx={{
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: 'center',
+									mb: 3,
+								}}
+							>
+								<Typography variant='h6' sx={{ fontWeight: 700 }}>
+									Study Materials
 								</Typography>
-								<TextField
-									label='Title'
-									value={smForm.title}
-									onChange={(e) => setSmForm((p) => ({ ...p, title: e.target.value }))}
-									fullWidth
-									size='small'
-									sx={{ mb: 1.5 }}
-								/>
-								<TextField
-									label='Description'
-									value={smForm.description}
-									onChange={(e) => setSmForm((p) => ({ ...p, description: e.target.value }))}
-									fullWidth
-									multiline
-									rows={3}
-									size='small'
-									sx={{ mb: 1.5 }}
-								/>
-								<TextField
-									label='Resource Link (optional)'
-									value={smForm.fileUrl}
-									onChange={(e) => setSmForm((p) => ({ ...p, fileUrl: e.target.value }))}
-									fullWidth
-									size='small'
-									placeholder='https://...'
-									sx={{ mb: 1.5 }}
-								/>
-								<Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-									<Button
-										variant='contained'
-										startIcon={<AddIcon />}
-										onClick={() => void handlePostStudyMaterial()}
-										disabled={smPosting || !courseId}
+								<Button
+									variant='contained'
+									startIcon={<AddIcon />}
+									onClick={() => setShowSmForm((p) => !p)}
+								>
+									Add Material
+								</Button>
+							</Box>
+
+							{showSmForm && (
+								<Paper
+									variant='outlined'
+									sx={{ p: 2.5, mb: 4, borderRadius: 0.5 }}
+								>
+									<Typography
+										variant='subtitle2'
+										sx={{ fontWeight: 600, mb: 1.5 }}
 									>
-										{smPosting ? <CircularProgress size={16} /> : 'Add'}
-									</Button>
-								</Box>
-							</Paper>
+										New Study Material
+									</Typography>
+									<TextField
+										label='Title'
+										value={smForm.title}
+										onChange={(e) =>
+											setSmForm((p) => ({ ...p, title: e.target.value }))
+										}
+										fullWidth
+										size='small'
+										sx={{ mb: 1.5 }}
+									/>
+									<RichTextEditor
+										value={smForm.description}
+										onChange={(html) =>
+											setSmForm((p) => ({ ...p, description: html }))
+										}
+										placeholder='Enter study material description...'
+										minHeight={100}
+									/>
+									<TextField
+										label='Resource Link (optional)'
+										value={smForm.fileUrl}
+										onChange={(e) =>
+											setSmForm((p) => ({ ...p, fileUrl: e.target.value }))
+										}
+										fullWidth
+										size='small'
+										placeholder='https://...'
+										sx={{ mb: 1.5 }}
+									/>
+									<Box
+										sx={{
+											display: 'flex',
+											gap: 1,
+											justifyContent: 'flex-end',
+											mt: 2,
+										}}
+									>
+										<Button
+											size='small'
+											onClick={() => {
+												setShowSmForm(false);
+												setSmForm({ title: '', description: '', fileUrl: '' });
+											}}
+										>
+											Cancel
+										</Button>
+										<Button
+											size='small'
+											variant='contained'
+											startIcon={<AddIcon />}
+											onClick={() => void handlePostStudyMaterial()}
+											disabled={smPosting || !courseId}
+										>
+											{smPosting ? <CircularProgress size={16} /> : 'Add'}
+										</Button>
+									</Box>
+								</Paper>
+							)}
 
 							<Divider sx={{ mb: 3 }} />
 
 							{studyMaterials.length === 0 ? (
-								<Typography color='text.secondary'>No study materials yet.</Typography>
+								<Typography color='text.secondary'>
+									No study materials yet.
+								</Typography>
 							) : (
 								<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 									{studyMaterials.map((mat) => (
-										<Paper key={mat._id} variant='outlined' sx={{ p: 2.5, borderRadius: 2 }}>
-											<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+										<Paper
+											key={mat._id}
+											variant='outlined'
+											sx={{ p: 2.5, borderRadius: 0.5 }}
+										>
+											<Box
+												sx={{
+													display: 'flex',
+													justifyContent: 'space-between',
+													alignItems: 'flex-start',
+												}}
+											>
 												<Box sx={{ flex: 1 }}>
-													<Typography variant='subtitle1' sx={{ fontWeight: 700, mb: 0.5 }}>
+													<Typography
+														variant='subtitle1'
+														sx={{ fontWeight: 700, mb: 0.5 }}
+													>
 														{mat.title}
 													</Typography>
-													<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+													<Box
+														sx={{
+															display: 'flex',
+															alignItems: 'center',
+															gap: 1,
+															mb: 1,
+														}}
+													>
 														<Avatar
 															src={mat.postedBy.avatar}
-															sx={{ width: 22, height: 22, fontSize: 12, bgcolor: 'primary.main' }}
+															sx={{
+																width: 22,
+																height: 22,
+																fontSize: 12,
+																bgcolor: 'primary.main',
+															}}
 														>
 															{mat.postedBy.name[0]}
 														</Avatar>
-														<Typography variant='caption' color='text.secondary'>
-															{mat.postedBy.name} &bull; {mat.postedBy.role} &bull;{' '}
-															{new Date(mat.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+														<Typography
+															variant='caption'
+															color='text.secondary'
+														>
+															{mat.postedBy.name} &bull; {mat.postedBy.role}{' '}
+															&bull;{' '}
+															{new Date(mat.createdAt).toLocaleDateString(
+																undefined,
+																{
+																	year: 'numeric',
+																	month: 'short',
+																	day: 'numeric',
+																},
+															)}
 														</Typography>
 													</Box>
-													<Typography variant='body2' sx={{ whiteSpace: 'pre-wrap', mb: mat.fileUrl ? 1 : 0 }}>
+													<Typography
+														variant='body2'
+														sx={{
+															whiteSpace: 'pre-wrap',
+															mb: mat.fileUrl ? 1 : 0,
+														}}
+													>
 														{mat.description}
 													</Typography>
 													{mat.fileUrl && (
@@ -1009,7 +1238,11 @@ export default function CourseCreatePage() {
 															target='_blank'
 															rel='noopener noreferrer'
 															variant='body2'
-															sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+															sx={{
+																color: 'primary.main',
+																textDecoration: 'none',
+																'&:hover': { textDecoration: 'underline' },
+															}}
 														>
 															Open Resource &rarr;
 														</Typography>
@@ -1018,7 +1251,9 @@ export default function CourseCreatePage() {
 												<IconButton
 													size='small'
 													color='error'
-													onClick={() => void handleDeleteStudyMaterial(mat._id)}
+													onClick={() =>
+														void handleDeleteStudyMaterial(mat._id)
+													}
 													sx={{ ml: 1, flexShrink: 0 }}
 												>
 													<DeleteIcon fontSize='small' />

@@ -42,12 +42,26 @@ import { courseService } from '../../services/course.service';
 import { enrollmentService } from '../../services/enrollment.service';
 import { announcementService } from '../../services/announcement.service';
 import { studyMaterialService } from '../../services/studyMaterial.service';
-import { formatLectureDuration, formatSectionDuration } from '../../utils/duration';
-import type { ICourse, ILecture, IAnnouncement, IStudyMaterial } from '../../types/index';
+import {
+	formatLectureDuration,
+	formatSectionDuration,
+} from '../../utils/duration';
+import type {
+	ICourse,
+	ILecture,
+	IAnnouncement,
+	IStudyMaterial,
+} from '../../types/index';
 import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar';
 import { useAuth } from '../../context/useAuth';
 
-type NavSection = 'course_overview' | 'video_lectures' | 'teacher' | 'announcements' | 'study_materials' | 'qa';
+type NavSection =
+	| 'course_overview'
+	| 'video_lectures'
+	| 'teacher'
+	| 'announcements'
+	| 'study_materials'
+	| 'qa';
 
 const getYouTubeId = (url: string) => {
 	const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
@@ -55,11 +69,27 @@ const getYouTubeId = (url: string) => {
 };
 
 const NAV_ITEMS: { key: NavSection; label: string; icon: React.ReactNode }[] = [
-	{ key: 'course_overview', label: 'Course Overview', icon: <InfoOutlinedIcon /> },
-	{ key: 'video_lectures', label: 'Video Lectures', icon: <PlayCircleOutlinedIcon /> },
+	{
+		key: 'course_overview',
+		label: 'Course Overview',
+		icon: <InfoOutlinedIcon />,
+	},
+	{
+		key: 'video_lectures',
+		label: 'Video Lectures',
+		icon: <PlayCircleOutlinedIcon />,
+	},
 	{ key: 'teacher', label: 'Teacher', icon: <PersonOutlinedIcon /> },
-	{ key: 'announcements', label: 'Announcements', icon: <CampaignOutlinedIcon /> },
-	{ key: 'study_materials', label: 'Study Materials', icon: <MenuBookOutlinedIcon /> },
+	{
+		key: 'announcements',
+		label: 'Announcements',
+		icon: <CampaignOutlinedIcon />,
+	},
+	{
+		key: 'study_materials',
+		label: 'Study Materials',
+		icon: <MenuBookOutlinedIcon />,
+	},
 	{ key: 'qa', label: 'Q & A', icon: <QuestionAnswerOutlinedIcon /> },
 ];
 
@@ -81,7 +111,11 @@ export default function StudentCourseLearningPage() {
 	const [studyMaterials, setStudyMaterials] = useState<IStudyMaterial[]>([]);
 	const [smPosting, setSmPosting] = useState(false);
 	const [showSmForm, setShowSmForm] = useState(false);
-	const [smForm, setSmForm] = useState({ title: '', description: '', fileUrl: '' });
+	const [smForm, setSmForm] = useState({
+		title: '',
+		description: '',
+		fileUrl: '',
+	});
 
 	useEffect(() => {
 		if (!courseId) return;
@@ -89,7 +123,9 @@ export default function StudentCourseLearningPage() {
 			.getById(courseId)
 			.then((r) => {
 				setCourse(r.data);
-				const first = r.data?.sections?.flatMap((s) => s.lectures).find((l) => l.videoUrl);
+				const first = r.data?.sections
+					?.flatMap((s) => s.lectures)
+					.find((l) => l.videoUrl);
 				if (first) setActiveLecture(first);
 			})
 			.finally(() => setLoading(false));
@@ -188,14 +224,27 @@ export default function StudentCourseLearningPage() {
 		}
 	};
 
-	const videoId = activeLecture?.videoUrl ? getYouTubeId(activeLecture.videoUrl) : null;
-	const totalLectures = course?.sections?.reduce((a, s) => a + s.lectures.length, 0) ?? 0;
+	const videoId = activeLecture?.videoUrl
+		? getYouTubeId(activeLecture.videoUrl)
+		: null;
+	const totalLectures =
+		course?.sections?.reduce((a, s) => a + s.lectures.length, 0) ?? 0;
 	const totalDurationSec =
-		course?.sections?.reduce((a, s) => a + s.lectures.reduce((b, l) => b + (l.duration ?? 0), 0), 0) ?? 0;
+		course?.sections?.reduce(
+			(a, s) => a + s.lectures.reduce((b, l) => b + (l.duration ?? 0), 0),
+			0,
+		) ?? 0;
 
 	if (loading) {
 		return (
-			<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+			<Box
+				sx={{
+					display: 'flex',
+					justifyContent: 'center',
+					alignItems: 'center',
+					height: '100vh',
+				}}
+			>
 				<CircularProgress />
 			</Box>
 		);
@@ -203,19 +252,41 @@ export default function StudentCourseLearningPage() {
 
 	if (!course) {
 		return (
-			<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+			<Box
+				sx={{
+					display: 'flex',
+					justifyContent: 'center',
+					alignItems: 'center',
+					height: '100vh',
+				}}
+			>
 				<Typography color='text.secondary'>Course not found.</Typography>
 			</Box>
 		);
 	}
 
 	return (
-		<Box sx={{ display: 'flex', height: user?.role === 'Teacher' ? '100%' : '100vh', overflow: 'hidden', bgcolor: 'background.default' }}>
+		<Box
+			sx={{
+				display: 'flex',
+				height: user?.role === 'Teacher' ? '100%' : '100vh',
+				overflow: 'hidden',
+				bgcolor: 'background.default',
+			}}
+		>
 			{/* ── Main student sidebar (hidden for teachers) ─────────── */}
 			{user?.role !== 'Teacher' && <StudentSidebar />}
 
 			{/* ── Learning area ───────────────────────────────────────── */}
-			<Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+			<Box
+				sx={{
+					flex: 1,
+					display: 'flex',
+					flexDirection: 'column',
+					overflow: 'hidden',
+					minWidth: 0,
+				}}
+			>
 				{/* Top bar */}
 				<Box
 					sx={{
@@ -239,12 +310,23 @@ export default function StudentCourseLearningPage() {
 					<Box sx={{ flex: 1, minWidth: 0 }}>
 						<Typography
 							variant='subtitle1'
-							sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}
+							sx={{
+								fontWeight: 700,
+								overflow: 'hidden',
+								textOverflow: 'ellipsis',
+								whiteSpace: 'nowrap',
+								lineHeight: 1.3,
+							}}
 						>
 							{course.title}
 						</Typography>
 						{activeNav === 'video_lectures' && activeLecture && (
-							<Typography variant='caption' color='text.secondary' noWrap sx={{ display: 'block' }}>
+							<Typography
+								variant='caption'
+								color='text.secondary'
+								noWrap
+								sx={{ display: 'block' }}
+							>
 								{activeLecture.title}
 							</Typography>
 						)}
@@ -277,7 +359,10 @@ export default function StudentCourseLearningPage() {
 											mx: 1,
 											my: 0.25,
 											borderRadius: 1.5,
-											'&.Mui-selected': { bgcolor: 'primary.50', color: 'primary.main' },
+											'&.Mui-selected': {
+												bgcolor: 'primary.50',
+												color: 'primary.main',
+											},
 											'&.Mui-selected:hover': { bgcolor: 'primary.100' },
 										}}
 									>
@@ -307,7 +392,15 @@ export default function StudentCourseLearningPage() {
 					</Box>
 
 					{/* ── Center content ────────────────────────────────── */}
-					<Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', minWidth: 0 }}>
+					<Box
+						sx={{
+							flex: 1,
+							display: 'flex',
+							flexDirection: 'column',
+							overflow: 'auto',
+							minWidth: 0,
+						}}
+					>
 						{/* ── Video Lectures ─────────────────────────────── */}
 						{activeNav === 'video_lectures' && (
 							<>
@@ -328,19 +421,41 @@ export default function StudentCourseLearningPage() {
 											title={activeLecture?.title ?? 'Lecture'}
 											allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
 											allowFullScreen
-											sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+											sx={{
+												position: 'absolute',
+												inset: 0,
+												width: '100%',
+												height: '100%',
+												border: 'none',
+											}}
 										/>
 									) : (
-										<Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+										<Box
+											sx={{
+												position: 'absolute',
+												inset: 0,
+												display: 'flex',
+												alignItems: 'center',
+												justifyContent: 'center',
+											}}
+										>
 											<Typography color='grey.500'>
-												{activeLecture ? 'No video available for this lecture' : 'Select a lecture to start watching'}
+												{activeLecture
+													? 'No video available for this lecture'
+													: 'Select a lecture to start watching'}
 											</Typography>
 										</Box>
 									)}
 								</Box>
 
 								{activeLecture && (
-									<Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
+									<Box
+										sx={{
+											p: 3,
+											borderBottom: '1px solid',
+											borderColor: 'divider',
+										}}
+									>
 										<Typography variant='h6' sx={{ fontWeight: 700, mb: 0.5 }}>
 											{activeLecture.title}
 										</Typography>
@@ -350,8 +465,13 @@ export default function StudentCourseLearningPage() {
 											</Typography>
 										)}
 										{activeLecture.duration != null && (
-											<Typography variant='caption' color='text.secondary' sx={{ mt: 0.5, display: 'block' }}>
-												Duration: {formatLectureDuration(activeLecture.duration)}
+											<Typography
+												variant='caption'
+												color='text.secondary'
+												sx={{ mt: 0.5, display: 'block' }}
+											>
+												Duration:{' '}
+												{formatLectureDuration(activeLecture.duration)}
 											</Typography>
 										)}
 									</Box>
@@ -362,11 +482,17 @@ export default function StudentCourseLearningPage() {
 						{/* ── Course Overview ────────────────────────────── */}
 						{activeNav === 'course_overview' && (
 							<Box sx={{ p: { xs: 3, md: 4 }, maxWidth: 860 }}>
-								<Typography variant='h4' sx={{ fontWeight: 800, mb: 0.75, lineHeight: 1.25 }}>
+								<Typography
+									variant='h4'
+									sx={{ fontWeight: 800, mb: 0.75, lineHeight: 1.25 }}
+								>
 									{course.title}
 								</Typography>
 								{course.subtitle && (
-									<Typography variant='h6' sx={{ fontWeight: 400, color: 'text.secondary', mb: 2 }}>
+									<Typography
+										variant='h6'
+										sx={{ fontWeight: 400, color: 'text.secondary', mb: 2 }}
+									>
 										{course.subtitle}
 									</Typography>
 								)}
@@ -392,13 +518,17 @@ export default function StudentCourseLearningPage() {
 										bgcolor: 'grey.50',
 										border: '1px solid',
 										borderColor: 'divider',
-										borderRadius: 2,
+										borderRadius: 0.5,
 									}}
 								>
 									<StatItem
 										icon={<PeopleOutlinedIcon />}
 										label='Enrolled Students'
-										value={enrolledCount !== null ? enrolledCount.toLocaleString() : '—'}
+										value={
+											enrolledCount !== null
+												? enrolledCount.toLocaleString()
+												: '—'
+										}
 									/>
 									<StatItem
 										icon={<OndemandVideoIcon />}
@@ -408,7 +538,11 @@ export default function StudentCourseLearningPage() {
 									<StatItem
 										icon={<AccessTimeIcon />}
 										label='Total Duration'
-										value={totalDurationSec > 0 ? formatSectionDuration(totalDurationSec) : '—'}
+										value={
+											totalDurationSec > 0
+												? formatSectionDuration(totalDurationSec)
+												: '—'
+										}
 									/>
 									<StatItem
 										icon={<MenuBookOutlinedIcon />}
@@ -427,9 +561,20 @@ export default function StudentCourseLearningPage() {
 										<Grid container spacing={1}>
 											{course.whatYouWillLearn.map((item, i) => (
 												<Grid key={i} size={{ xs: 12, sm: 6 }}>
-													<Box sx={{ display: 'flex', gap: 1.25, alignItems: 'flex-start' }}>
+													<Box
+														sx={{
+															display: 'flex',
+															gap: 1.25,
+															alignItems: 'flex-start',
+														}}
+													>
 														<CheckCircleOutlinedIcon
-															sx={{ color: 'success.main', fontSize: 18, flexShrink: 0, mt: 0.2 }}
+															sx={{
+																color: 'success.main',
+																fontSize: 18,
+																flexShrink: 0,
+																mt: 0.2,
+															}}
 														/>
 														<Typography variant='body2'>{item}</Typography>
 													</Box>
@@ -461,7 +606,12 @@ export default function StudentCourseLearningPage() {
 										</Typography>
 										<Box
 											dangerouslySetInnerHTML={{ __html: course.description }}
-											sx={{ '& p': { mt: 0, mb: 1.5 }, '& ul': { pl: 3 }, lineHeight: 1.8, color: 'text.secondary' }}
+											sx={{
+												'& p': { mt: 0, mb: 1.5 },
+												'& ul': { pl: 3 },
+												lineHeight: 1.8,
+												color: 'text.secondary',
+											}}
 										/>
 									</Box>
 								)}
@@ -474,14 +624,24 @@ export default function StudentCourseLearningPage() {
 								<Typography variant='h5' sx={{ fontWeight: 700, mb: 1 }}>
 									Your Instructor{(course.teachers?.length ?? 0) > 1 ? 's' : ''}
 								</Typography>
-								<Typography variant='body2' color='text.secondary' sx={{ mb: 4 }}>
-									{course.teachers?.length ?? 0} instructor{(course.teachers?.length ?? 0) !== 1 ? 's' : ''} teaching this course
+								<Typography
+									variant='body2'
+									color='text.secondary'
+									sx={{ mb: 4 }}
+								>
+									{course.teachers?.length ?? 0} instructor
+									{(course.teachers?.length ?? 0) !== 1 ? 's' : ''} teaching
+									this course
 								</Typography>
 
 								{(course.teachers?.length ?? 0) === 0 ? (
-									<Typography color='text.secondary'>No instructors listed for this course.</Typography>
+									<Typography color='text.secondary'>
+										No instructors listed for this course.
+									</Typography>
 								) : (
-									<Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+									<Box
+										sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+									>
 										{course.teachers.map((teacher) => (
 											<Box
 												key={teacher._id}
@@ -500,19 +660,35 @@ export default function StudentCourseLearningPage() {
 												<Avatar
 													src={teacher.profileImage}
 													alt={teacher.name}
-													sx={{ width: 72, height: 72, fontSize: 28, bgcolor: 'primary.main', flexShrink: 0 }}
+													sx={{
+														width: 72,
+														height: 72,
+														fontSize: 28,
+														bgcolor: 'primary.main',
+														flexShrink: 0,
+													}}
 												>
 													{teacher.name.charAt(0).toUpperCase()}
 												</Avatar>
 
 												{/* Info */}
 												<Box sx={{ flex: 1, minWidth: 0 }}>
-													<Typography variant='h6' sx={{ fontWeight: 700, mb: 0.5 }}>
+													<Typography
+														variant='h6'
+														sx={{ fontWeight: 700, mb: 0.5 }}
+													>
 														{teacher.name}
 													</Typography>
 
 													{teacher.expertise?.length > 0 && (
-														<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
+														<Box
+															sx={{
+																display: 'flex',
+																flexWrap: 'wrap',
+																gap: 0.75,
+																mb: 1.5,
+															}}
+														>
 															{teacher.expertise.map((exp) => (
 																<Chip
 																	key={exp}
@@ -526,64 +702,102 @@ export default function StudentCourseLearningPage() {
 													)}
 
 													{teacher.bio && (
-														<Typography variant='body2' color='text.secondary' sx={{ lineHeight: 1.7 }}>
+														<Typography
+															variant='body2'
+															color='text.secondary'
+															sx={{ lineHeight: 1.7 }}
+														>
 															{teacher.bio}
 														</Typography>
 													)}
 
 													{/* Social links */}
-													{teacher.socialLinks && Object.values(teacher.socialLinks).some(Boolean) && (
-														<Box sx={{ display: 'flex', gap: 1.5, mt: 1.5, flexWrap: 'wrap' }}>
-															{teacher.socialLinks.website && (
-																<Typography
-																	component='a'
-																	href={teacher.socialLinks.website}
-																	target='_blank'
-																	rel='noopener noreferrer'
-																	variant='caption'
-																	sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-																>
-																	Website
-																</Typography>
-															)}
-															{teacher.socialLinks.linkedin && (
-																<Typography
-																	component='a'
-																	href={teacher.socialLinks.linkedin}
-																	target='_blank'
-																	rel='noopener noreferrer'
-																	variant='caption'
-																	sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-																>
-																	LinkedIn
-																</Typography>
-															)}
-															{teacher.socialLinks.twitter && (
-																<Typography
-																	component='a'
-																	href={teacher.socialLinks.twitter}
-																	target='_blank'
-																	rel='noopener noreferrer'
-																	variant='caption'
-																	sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-																>
-																	Twitter
-																</Typography>
-															)}
-															{teacher.socialLinks.youtube && (
-																<Typography
-																	component='a'
-																	href={teacher.socialLinks.youtube}
-																	target='_blank'
-																	rel='noopener noreferrer'
-																	variant='caption'
-																	sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-																>
-																	YouTube
-																</Typography>
-															)}
-														</Box>
-													)}
+													{teacher.socialLinks &&
+														Object.values(teacher.socialLinks).some(
+															Boolean,
+														) && (
+															<Box
+																sx={{
+																	display: 'flex',
+																	gap: 1.5,
+																	mt: 1.5,
+																	flexWrap: 'wrap',
+																}}
+															>
+																{teacher.socialLinks.website && (
+																	<Typography
+																		component='a'
+																		href={teacher.socialLinks.website}
+																		target='_blank'
+																		rel='noopener noreferrer'
+																		variant='caption'
+																		sx={{
+																			color: 'primary.main',
+																			textDecoration: 'none',
+																			'&:hover': {
+																				textDecoration: 'underline',
+																			},
+																		}}
+																	>
+																		Website
+																	</Typography>
+																)}
+																{teacher.socialLinks.linkedin && (
+																	<Typography
+																		component='a'
+																		href={teacher.socialLinks.linkedin}
+																		target='_blank'
+																		rel='noopener noreferrer'
+																		variant='caption'
+																		sx={{
+																			color: 'primary.main',
+																			textDecoration: 'none',
+																			'&:hover': {
+																				textDecoration: 'underline',
+																			},
+																		}}
+																	>
+																		LinkedIn
+																	</Typography>
+																)}
+																{teacher.socialLinks.twitter && (
+																	<Typography
+																		component='a'
+																		href={teacher.socialLinks.twitter}
+																		target='_blank'
+																		rel='noopener noreferrer'
+																		variant='caption'
+																		sx={{
+																			color: 'primary.main',
+																			textDecoration: 'none',
+																			'&:hover': {
+																				textDecoration: 'underline',
+																			},
+																		}}
+																	>
+																		Twitter
+																	</Typography>
+																)}
+																{teacher.socialLinks.youtube && (
+																	<Typography
+																		component='a'
+																		href={teacher.socialLinks.youtube}
+																		target='_blank'
+																		rel='noopener noreferrer'
+																		variant='caption'
+																		sx={{
+																			color: 'primary.main',
+																			textDecoration: 'none',
+																			'&:hover': {
+																				textDecoration: 'underline',
+																			},
+																		}}
+																	>
+																		YouTube
+																	</Typography>
+																)}
+															</Box>
+														)}
 												</Box>
 											</Box>
 										))}
@@ -595,7 +809,14 @@ export default function StudentCourseLearningPage() {
 						{/* ── Announcements ──────────────────────────────── */}
 						{activeNav === 'announcements' && (
 							<Box sx={{ p: 4, maxWidth: 800 }}>
-								<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+								<Box
+									sx={{
+										display: 'flex',
+										justifyContent: 'space-between',
+										alignItems: 'center',
+										mb: 3,
+									}}
+								>
 									<Typography variant='h5' sx={{ fontWeight: 700 }}>
 										Announcements
 									</Typography>
@@ -612,30 +833,48 @@ export default function StudentCourseLearningPage() {
 
 								{/* Post form */}
 								{canPost && showAnnForm && (
-									<Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
-										<Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 1.5 }}>
+									<Paper
+										variant='outlined'
+										sx={{ p: 2.5, mb: 3, borderRadius: 0.5 }}
+									>
+										<Typography
+											variant='subtitle2'
+											sx={{ fontWeight: 600, mb: 1.5 }}
+										>
 											New Announcement
 										</Typography>
 										<TextField
 											label='Title'
 											value={annForm.title}
-											onChange={(e) => setAnnForm((p) => ({ ...p, title: e.target.value }))}
+											onChange={(e) =>
+												setAnnForm((p) => ({ ...p, title: e.target.value }))
+											}
 											fullWidth
 											size='small'
 											sx={{ mb: 1.5 }}
 										/>
-										<TextField
-											label='Description'
+										<RichTextEditor
 											value={annForm.description}
-											onChange={(e) => setAnnForm((p) => ({ ...p, description: e.target.value }))}
-											fullWidth
-											multiline
-											rows={3}
-											size='small'
-											sx={{ mb: 1.5 }}
+											onChange={(html) =>
+												setAnnForm((p) => ({ ...p, description: html }))
+											}
+											placeholder='Enter announcement description...'
+											minHeight={100}
 										/>
-										<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-											<Button size='small' onClick={() => { setShowAnnForm(false); setAnnForm({ title: '', description: '' }); }}>
+										<Box
+											sx={{
+												display: 'flex',
+												gap: 1,
+												justifyContent: 'flex-end',
+											}}
+										>
+											<Button
+												size='small'
+												onClick={() => {
+													setShowAnnForm(false);
+													setAnnForm({ title: '', description: '' });
+												}}
+											>
 												Cancel
 											</Button>
 											<Button
@@ -652,34 +891,77 @@ export default function StudentCourseLearningPage() {
 
 								{/* Announcements list */}
 								{announcements.length === 0 ? (
-									<Typography color='text.secondary'>No announcements yet.</Typography>
+									<Typography color='text.secondary'>
+										No announcements yet.
+									</Typography>
 								) : (
-									<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+									<Box
+										sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+									>
 										{announcements.map((ann) => {
 											const canDelete =
 												user?._id === ann.postedBy._id ||
 												user?.role === 'Admin' ||
 												user?.role === 'Super Admin';
 											return (
-												<Paper key={ann._id} variant='outlined' sx={{ p: 2.5, borderRadius: 2 }}>
-													<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+												<Paper
+													key={ann._id}
+													variant='outlined'
+													sx={{ p: 2.5, borderRadius: 0.5 }}
+												>
+													<Box
+														sx={{
+															display: 'flex',
+															justifyContent: 'space-between',
+															alignItems: 'flex-start',
+														}}
+													>
 														<Box sx={{ flex: 1 }}>
-															<Typography variant='subtitle1' sx={{ fontWeight: 700, mb: 0.5 }}>
+															<Typography
+																variant='subtitle1'
+																sx={{ fontWeight: 700, mb: 0.5 }}
+															>
 																{ann.title}
 															</Typography>
-															<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+															<Box
+																sx={{
+																	display: 'flex',
+																	alignItems: 'center',
+																	gap: 1,
+																	mb: 1,
+																}}
+															>
 																<Avatar
 																	src={ann.postedBy.avatar}
-																	sx={{ width: 22, height: 22, fontSize: 12, bgcolor: 'primary.main' }}
+																	sx={{
+																		width: 22,
+																		height: 22,
+																		fontSize: 12,
+																		bgcolor: 'primary.main',
+																	}}
 																>
 																	{ann.postedBy.name[0]}
 																</Avatar>
-																<Typography variant='caption' color='text.secondary'>
-																	{ann.postedBy.name} &bull; {ann.postedBy.role} &bull;{' '}
-																	{new Date(ann.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+																<Typography
+																	variant='caption'
+																	color='text.secondary'
+																>
+																	{ann.postedBy.name} &bull; {ann.postedBy.role}{' '}
+																	&bull;{' '}
+																	{new Date(ann.createdAt).toLocaleDateString(
+																		undefined,
+																		{
+																			year: 'numeric',
+																			month: 'short',
+																			day: 'numeric',
+																		},
+																	)}
 																</Typography>
 															</Box>
-															<Typography variant='body2' sx={{ whiteSpace: 'pre-wrap' }}>
+															<Typography
+																variant='body2'
+																sx={{ whiteSpace: 'pre-wrap' }}
+															>
 																{ann.description}
 															</Typography>
 														</Box>
@@ -687,7 +969,9 @@ export default function StudentCourseLearningPage() {
 															<IconButton
 																size='small'
 																color='error'
-																onClick={() => void handleDeleteAnnouncement(ann._id)}
+																onClick={() =>
+																	void handleDeleteAnnouncement(ann._id)
+																}
 																sx={{ ml: 1, flexShrink: 0 }}
 															>
 																<DeleteIcon fontSize='small' />
@@ -705,7 +989,14 @@ export default function StudentCourseLearningPage() {
 						{/* ── Study Materials ────────────────────────────── */}
 						{activeNav === 'study_materials' && (
 							<Box sx={{ p: 4, maxWidth: 800 }}>
-								<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+								<Box
+									sx={{
+										display: 'flex',
+										justifyContent: 'space-between',
+										alignItems: 'center',
+										mb: 3,
+									}}
+								>
 									<Typography variant='h5' sx={{ fontWeight: 700 }}>
 										Study Materials
 									</Typography>
@@ -722,39 +1013,63 @@ export default function StudentCourseLearningPage() {
 
 								{/* Post form */}
 								{canPost && showSmForm && (
-									<Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
-										<Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 1.5 }}>
+									<Paper
+										variant='outlined'
+										sx={{ p: 2.5, mb: 3, borderRadius: 0.5 }}
+									>
+										<Typography
+											variant='subtitle2'
+											sx={{ fontWeight: 600, mb: 1.5 }}
+										>
 											New Study Material
 										</Typography>
 										<TextField
 											label='Title'
 											value={smForm.title}
-											onChange={(e) => setSmForm((p) => ({ ...p, title: e.target.value }))}
+											onChange={(e) =>
+												setSmForm((p) => ({ ...p, title: e.target.value }))
+											}
 											fullWidth
 											size='small'
 											sx={{ mb: 1.5 }}
 										/>
-										<TextField
-											label='Description'
+										<RichTextEditor
 											value={smForm.description}
-											onChange={(e) => setSmForm((p) => ({ ...p, description: e.target.value }))}
-											fullWidth
-											multiline
-											rows={3}
-											size='small'
-											sx={{ mb: 1.5 }}
+											onChange={(html) =>
+												setSmForm((p) => ({ ...p, description: html }))
+											}
+											placeholder='Enter study material description...'
+											minHeight={100}
 										/>
 										<TextField
 											label='Resource Link (optional)'
 											value={smForm.fileUrl}
-											onChange={(e) => setSmForm((p) => ({ ...p, fileUrl: e.target.value }))}
+											onChange={(e) =>
+												setSmForm((p) => ({ ...p, fileUrl: e.target.value }))
+											}
 											fullWidth
 											size='small'
 											placeholder='https://...'
 											sx={{ mb: 1.5 }}
 										/>
-										<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-											<Button size='small' onClick={() => { setShowSmForm(false); setSmForm({ title: '', description: '', fileUrl: '' }); }}>
+										<Box
+											sx={{
+												display: 'flex',
+												gap: 1,
+												justifyContent: 'flex-end',
+											}}
+										>
+											<Button
+												size='small'
+												onClick={() => {
+													setShowSmForm(false);
+													setSmForm({
+														title: '',
+														description: '',
+														fileUrl: '',
+													});
+												}}
+											>
 												Cancel
 											</Button>
 											<Button
@@ -771,34 +1086,80 @@ export default function StudentCourseLearningPage() {
 
 								{/* Materials list */}
 								{studyMaterials.length === 0 ? (
-									<Typography color='text.secondary'>No study materials available.</Typography>
+									<Typography color='text.secondary'>
+										No study materials available.
+									</Typography>
 								) : (
-									<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+									<Box
+										sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+									>
 										{studyMaterials.map((mat) => {
 											const canDelete =
 												user?._id === mat.postedBy._id ||
 												user?.role === 'Admin' ||
 												user?.role === 'Super Admin';
 											return (
-												<Paper key={mat._id} variant='outlined' sx={{ p: 2.5, borderRadius: 2 }}>
-													<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+												<Paper
+													key={mat._id}
+													variant='outlined'
+													sx={{ p: 2.5, borderRadius: 0.5 }}
+												>
+													<Box
+														sx={{
+															display: 'flex',
+															justifyContent: 'space-between',
+															alignItems: 'flex-start',
+														}}
+													>
 														<Box sx={{ flex: 1 }}>
-															<Typography variant='subtitle1' sx={{ fontWeight: 700, mb: 0.5 }}>
+															<Typography
+																variant='subtitle1'
+																sx={{ fontWeight: 700, mb: 0.5 }}
+															>
 																{mat.title}
 															</Typography>
-															<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+															<Box
+																sx={{
+																	display: 'flex',
+																	alignItems: 'center',
+																	gap: 1,
+																	mb: 1,
+																}}
+															>
 																<Avatar
 																	src={mat.postedBy.avatar}
-																	sx={{ width: 22, height: 22, fontSize: 12, bgcolor: 'primary.main' }}
+																	sx={{
+																		width: 22,
+																		height: 22,
+																		fontSize: 12,
+																		bgcolor: 'primary.main',
+																	}}
 																>
 																	{mat.postedBy.name[0]}
 																</Avatar>
-																<Typography variant='caption' color='text.secondary'>
-																	{mat.postedBy.name} &bull; {mat.postedBy.role} &bull;{' '}
-																	{new Date(mat.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+																<Typography
+																	variant='caption'
+																	color='text.secondary'
+																>
+																	{mat.postedBy.name} &bull; {mat.postedBy.role}{' '}
+																	&bull;{' '}
+																	{new Date(mat.createdAt).toLocaleDateString(
+																		undefined,
+																		{
+																			year: 'numeric',
+																			month: 'short',
+																			day: 'numeric',
+																		},
+																	)}
 																</Typography>
 															</Box>
-															<Typography variant='body2' sx={{ whiteSpace: 'pre-wrap', mb: mat.fileUrl ? 1 : 0 }}>
+															<Typography
+																variant='body2'
+																sx={{
+																	whiteSpace: 'pre-wrap',
+																	mb: mat.fileUrl ? 1 : 0,
+																}}
+															>
 																{mat.description}
 															</Typography>
 															{mat.fileUrl && (
@@ -808,7 +1169,11 @@ export default function StudentCourseLearningPage() {
 																	target='_blank'
 																	rel='noopener noreferrer'
 																	variant='body2'
-																	sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+																	sx={{
+																		color: 'primary.main',
+																		textDecoration: 'none',
+																		'&:hover': { textDecoration: 'underline' },
+																	}}
 																>
 																	Open Resource &rarr;
 																</Typography>
@@ -818,7 +1183,9 @@ export default function StudentCourseLearningPage() {
 															<IconButton
 																size='small'
 																color='error'
-																onClick={() => void handleDeleteStudyMaterial(mat._id)}
+																onClick={() =>
+																	void handleDeleteStudyMaterial(mat._id)
+																}
 																sx={{ ml: 1, flexShrink: 0 }}
 															>
 																<DeleteIcon fontSize='small' />
@@ -839,7 +1206,9 @@ export default function StudentCourseLearningPage() {
 								<Typography variant='h5' sx={{ fontWeight: 700, mb: 2 }}>
 									Q &amp; A
 								</Typography>
-								<Typography color='text.secondary'>No questions yet.</Typography>
+								<Typography color='text.secondary'>
+									No questions yet.
+								</Typography>
 							</Box>
 						)}
 					</Box>
@@ -872,7 +1241,8 @@ export default function StudentCourseLearningPage() {
 									Course Content
 								</Typography>
 								<Typography variant='caption' color='text.secondary'>
-									{course.sections?.length ?? 0} section{(course.sections?.length ?? 0) !== 1 ? 's' : ''} &bull;{' '}
+									{course.sections?.length ?? 0} section
+									{(course.sections?.length ?? 0) !== 1 ? 's' : ''} &bull;{' '}
 									{totalLectures} lecture{totalLectures !== 1 ? 's' : ''}
 								</Typography>
 							</Box>
@@ -895,11 +1265,18 @@ export default function StudentCourseLearningPage() {
 										sx={{ px: 2, py: 1, bgcolor: 'grey.100', minHeight: 48 }}
 									>
 										<Box>
-											<Typography sx={{ fontWeight: 600, fontSize: '0.82rem', lineHeight: 1.3 }}>
+											<Typography
+												sx={{
+													fontWeight: 600,
+													fontSize: '0.82rem',
+													lineHeight: 1.3,
+												}}
+											>
 												{section.title}
 											</Typography>
 											<Typography variant='caption' color='text.secondary'>
-												{section.lectures.length} lecture{section.lectures.length !== 1 ? 's' : ''}
+												{section.lectures.length} lecture
+												{section.lectures.length !== 1 ? 's' : ''}
 											</Typography>
 										</Box>
 									</AccordionSummary>
@@ -910,7 +1287,9 @@ export default function StudentCourseLearningPage() {
 											return (
 												<Box
 													key={lecture._id}
-													onClick={() => { if (hasVideo) setActiveLecture(lecture); }}
+													onClick={() => {
+														if (hasVideo) setActiveLecture(lecture);
+													}}
 													sx={{
 														display: 'flex',
 														alignItems: 'flex-start',
@@ -920,14 +1299,24 @@ export default function StudentCourseLearningPage() {
 														cursor: hasVideo ? 'pointer' : 'default',
 														borderTop: li > 0 ? '1px solid' : 'none',
 														borderColor: 'divider',
-														bgcolor: isActive ? 'primary.50' : 'background.paper',
+														bgcolor: isActive
+															? 'primary.50'
+															: 'background.paper',
 														transition: 'background 0.15s',
-														...(hasVideo && !isActive && { '&:hover': { bgcolor: 'action.hover' } }),
+														...(hasVideo &&
+															!isActive && {
+																'&:hover': { bgcolor: 'action.hover' },
+															}),
 													}}
 												>
 													{isActive ? (
 														<PlayCircleFilledIcon
-															sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0, mt: 0.15 }}
+															sx={{
+																fontSize: 18,
+																color: 'primary.main',
+																flexShrink: 0,
+																mt: 0.15,
+															}}
 														/>
 													) : (
 														<PlayCircleOutlinedIcon
@@ -944,7 +1333,11 @@ export default function StudentCourseLearningPage() {
 															sx={{
 																fontSize: '0.8rem',
 																fontWeight: isActive ? 700 : 400,
-																color: isActive ? 'primary.main' : hasVideo ? 'text.primary' : 'text.disabled',
+																color: isActive
+																	? 'primary.main'
+																	: hasVideo
+																		? 'text.primary'
+																		: 'text.disabled',
 																lineHeight: 1.35,
 																overflow: 'hidden',
 																textOverflow: 'ellipsis',
@@ -956,7 +1349,10 @@ export default function StudentCourseLearningPage() {
 															{lecture.title}
 														</Typography>
 														{lecture.duration != null && (
-															<Typography variant='caption' color='text.secondary'>
+															<Typography
+																variant='caption'
+																color='text.secondary'
+															>
 																{formatLectureDuration(lecture.duration)}
 															</Typography>
 														)}
@@ -983,12 +1379,24 @@ export default function StudentCourseLearningPage() {
 }
 
 // ── Stat card ─────────────────────────────────────────────────
-function StatItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function StatItem({
+	icon,
+	label,
+	value,
+}: {
+	icon: React.ReactNode;
+	label: string;
+	value: string;
+}) {
 	return (
 		<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
 			<Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box>
 			<Box>
-				<Typography sx={{ fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.15 }}>{value}</Typography>
+				<Typography
+					sx={{ fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.15 }}
+				>
+					{value}
+				</Typography>
 				<Typography variant='caption' color='text.secondary'>
 					{label}
 				</Typography>
