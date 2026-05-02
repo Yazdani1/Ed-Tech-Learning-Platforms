@@ -41,8 +41,9 @@ import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { enrollmentService } from '../../services/enrollment.service';
 import { announcementService } from '../../services/announcement.service';
+import { studyMaterialService } from '../../services/studyMaterial.service';
 import { formatLectureDuration, formatSectionDuration } from '../../utils/duration';
-import type { ICourse, ILecture, IAnnouncement } from '../../types/index';
+import type { ICourse, ILecture, IAnnouncement, IStudyMaterial } from '../../types/index';
 import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar';
 import { useAuth } from '../../context/useAuth';
 
@@ -77,6 +78,11 @@ export default function StudentCourseLearningPage() {
 	const [showAnnForm, setShowAnnForm] = useState(false);
 	const [annForm, setAnnForm] = useState({ title: '', description: '' });
 
+	const [studyMaterials, setStudyMaterials] = useState<IStudyMaterial[]>([]);
+	const [smPosting, setSmPosting] = useState(false);
+	const [showSmForm, setShowSmForm] = useState(false);
+	const [smForm, setSmForm] = useState({ title: '', description: '', fileUrl: '' });
+
 	useEffect(() => {
 		if (!courseId) return;
 		courseService
@@ -99,6 +105,15 @@ export default function StudentCourseLearningPage() {
 			announcementService
 				.getByCourse(courseId)
 				.then((r) => setAnnouncements(r.data ?? []))
+				.catch(() => {});
+		}
+	}, [activeNav, courseId]);
+
+	useEffect(() => {
+		if (activeNav === 'study_materials' && courseId) {
+			studyMaterialService
+				.getByCourse(courseId)
+				.then((r) => setStudyMaterials(r.data ?? []))
 				.catch(() => {});
 		}
 	}, [activeNav, courseId]);
@@ -134,6 +149,40 @@ export default function StudentCourseLearningPage() {
 			await announcementService.delete(id);
 			setAnnouncements((p) => p.filter((a) => a._id !== id));
 			toast.success('Announcement deleted');
+		} catch {
+			// error toast handled by interceptor
+		}
+	};
+
+	const handlePostStudyMaterial = async () => {
+		if (!smForm.title.trim() || !smForm.description.trim()) {
+			toast.error('Title and description are required');
+			return;
+		}
+		setSmPosting(true);
+		try {
+			const res = await studyMaterialService.create(courseId!, {
+				title: smForm.title,
+				description: smForm.description,
+				fileUrl: smForm.fileUrl.trim() || undefined,
+			});
+			if (res.data) setStudyMaterials((p) => [res.data!, ...p]);
+			setSmForm({ title: '', description: '', fileUrl: '' });
+			setShowSmForm(false);
+			toast.success('Study material added');
+		} catch {
+			// error toast handled by interceptor
+		} finally {
+			setSmPosting(false);
+		}
+	};
+
+	const handleDeleteStudyMaterial = async (id: string) => {
+		if (!confirm('Delete this study material?')) return;
+		try {
+			await studyMaterialService.delete(id);
+			setStudyMaterials((p) => p.filter((m) => m._id !== id));
+			toast.success('Study material deleted');
 		} catch {
 			// error toast handled by interceptor
 		}
@@ -655,11 +704,132 @@ export default function StudentCourseLearningPage() {
 
 						{/* ── Study Materials ────────────────────────────── */}
 						{activeNav === 'study_materials' && (
-							<Box sx={{ p: 4 }}>
-								<Typography variant='h5' sx={{ fontWeight: 700, mb: 2 }}>
-									Study Materials
-								</Typography>
-								<Typography color='text.secondary'>No study materials available.</Typography>
+							<Box sx={{ p: 4, maxWidth: 800 }}>
+								<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+									<Typography variant='h5' sx={{ fontWeight: 700 }}>
+										Study Materials
+									</Typography>
+									{canPost && (
+										<Button
+											variant='contained'
+											startIcon={<AddIcon />}
+											onClick={() => setShowSmForm((p) => !p)}
+										>
+											Add Material
+										</Button>
+									)}
+								</Box>
+
+								{/* Post form */}
+								{canPost && showSmForm && (
+									<Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
+										<Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 1.5 }}>
+											New Study Material
+										</Typography>
+										<TextField
+											label='Title'
+											value={smForm.title}
+											onChange={(e) => setSmForm((p) => ({ ...p, title: e.target.value }))}
+											fullWidth
+											size='small'
+											sx={{ mb: 1.5 }}
+										/>
+										<TextField
+											label='Description'
+											value={smForm.description}
+											onChange={(e) => setSmForm((p) => ({ ...p, description: e.target.value }))}
+											fullWidth
+											multiline
+											rows={3}
+											size='small'
+											sx={{ mb: 1.5 }}
+										/>
+										<TextField
+											label='Resource Link (optional)'
+											value={smForm.fileUrl}
+											onChange={(e) => setSmForm((p) => ({ ...p, fileUrl: e.target.value }))}
+											fullWidth
+											size='small'
+											placeholder='https://...'
+											sx={{ mb: 1.5 }}
+										/>
+										<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+											<Button size='small' onClick={() => { setShowSmForm(false); setSmForm({ title: '', description: '', fileUrl: '' }); }}>
+												Cancel
+											</Button>
+											<Button
+												size='small'
+												variant='contained'
+												onClick={() => void handlePostStudyMaterial()}
+												disabled={smPosting}
+											>
+												{smPosting ? <CircularProgress size={16} /> : 'Add'}
+											</Button>
+										</Box>
+									</Paper>
+								)}
+
+								{/* Materials list */}
+								{studyMaterials.length === 0 ? (
+									<Typography color='text.secondary'>No study materials available.</Typography>
+								) : (
+									<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+										{studyMaterials.map((mat) => {
+											const canDelete =
+												user?._id === mat.postedBy._id ||
+												user?.role === 'Admin' ||
+												user?.role === 'Super Admin';
+											return (
+												<Paper key={mat._id} variant='outlined' sx={{ p: 2.5, borderRadius: 2 }}>
+													<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+														<Box sx={{ flex: 1 }}>
+															<Typography variant='subtitle1' sx={{ fontWeight: 700, mb: 0.5 }}>
+																{mat.title}
+															</Typography>
+															<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+																<Avatar
+																	src={mat.postedBy.avatar}
+																	sx={{ width: 22, height: 22, fontSize: 12, bgcolor: 'primary.main' }}
+																>
+																	{mat.postedBy.name[0]}
+																</Avatar>
+																<Typography variant='caption' color='text.secondary'>
+																	{mat.postedBy.name} &bull; {mat.postedBy.role} &bull;{' '}
+																	{new Date(mat.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+																</Typography>
+															</Box>
+															<Typography variant='body2' sx={{ whiteSpace: 'pre-wrap', mb: mat.fileUrl ? 1 : 0 }}>
+																{mat.description}
+															</Typography>
+															{mat.fileUrl && (
+																<Typography
+																	component='a'
+																	href={mat.fileUrl}
+																	target='_blank'
+																	rel='noopener noreferrer'
+																	variant='body2'
+																	sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+																>
+																	Open Resource &rarr;
+																</Typography>
+															)}
+														</Box>
+														{canDelete && (
+															<IconButton
+																size='small'
+																color='error'
+																onClick={() => void handleDeleteStudyMaterial(mat._id)}
+																sx={{ ml: 1, flexShrink: 0 }}
+															>
+																<DeleteIcon fontSize='small' />
+															</IconButton>
+														)}
+													</Box>
+												</Paper>
+											);
+										})}
+									</Box>
+								)}
 							</Box>
 						)}
 

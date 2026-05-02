@@ -133,6 +133,22 @@ export interface IEnrollmentStats {
   thisMonthEarned: number;
 }
 
+export interface IStudyMaterial {
+  _id: string;
+  course: string;
+  title: string;
+  description: string;
+  fileUrl?: string;
+  postedBy: {
+    _id: string;
+    name: string;
+    avatar?: string;
+    role: UserRole;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface IAnnouncement {
   _id: string;
   course: string;
