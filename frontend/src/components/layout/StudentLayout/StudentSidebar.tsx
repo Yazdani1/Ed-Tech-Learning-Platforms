@@ -16,7 +16,6 @@ import {
 import HomeIcon from '@mui/icons-material/Home';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import BookIcon from '@mui/icons-material/Book';
-import ExploreIcon from '@mui/icons-material/Explore';
 import PersonIcon from '@mui/icons-material/Person';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -37,7 +36,6 @@ const navItems = [
 	},
 	{ label: 'Profile', icon: <PersonIcon />, path: '/student/profile' },
 	{ label: 'nav.myCourses', icon: <BookIcon />, path: '/student/courses' },
-	{ label: 'nav.browse', icon: <ExploreIcon />, path: '/courses' },
 	{ label: 'Pricing', icon: <CardMembershipIcon />, path: '/pricing' },
 ];
 
