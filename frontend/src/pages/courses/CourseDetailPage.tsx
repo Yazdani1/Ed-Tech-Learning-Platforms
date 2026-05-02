@@ -727,9 +727,12 @@ export default function CourseDetailPage() {
 					</Grid>
 
 					{/* ── Right sticky card ────────────────────────────────── */}
-					<Grid size={{ xs: 12, md: 4 }}>
-						<Box sx={{ position: 'sticky', top: 84 }}>
-							<Paper elevation={3} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+					<Grid size={{ xs: 12, md: 4 }} sx={{ mt: { md: -32 }, zIndex: 10 }}>
+						<Box sx={{ position: 'sticky', top: 90 }}>
+							<Paper
+								elevation={3}
+								sx={{ borderRadius: 0.5, overflow: 'hidden' }}
+							>
 								{/* Intro video / cover image */}
 								<Box
 									sx={{
