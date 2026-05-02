@@ -41,7 +41,7 @@ export default function CourseCard({
 				sx={{
 					border: '1px solid',
 					borderColor: 'divider',
-					borderRadius: 3,
+					borderRadius: 1,
 					height: '100%',
 					display: 'flex',
 					flexDirection: 'column',
