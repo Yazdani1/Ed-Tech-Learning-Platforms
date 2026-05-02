@@ -222,6 +222,17 @@ export default function CourseCreatePage() {
 			const res = await courseService.create(fd);
 			savedId = res.data?._id as string;
 			setCourseId(savedId);
+			// Auto-add Introduction section with Course Introduction lecture
+			try {
+				const section = await courseService.addSection(savedId, 'Introduction');
+				const sectionId = (section.data as { _id: string })?._id;
+				if (sectionId) {
+					await courseService.addLecture(savedId, sectionId, {
+						title: 'Course Introduction',
+						isPreview: true,
+					});
+				}
+			} catch { /* non-fatal */ }
 			if (showToast) toast.success('Course draft created');
 		} else {
 			await courseService.update(savedId, fd);

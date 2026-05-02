@@ -96,8 +96,11 @@ export default function CurriculumBuilder({
 		setSections((prev) => prev.filter((s) => s._id !== sectionId));
 	};
 
-	const handleAddLecture = async (sectionId: string, title: string) => {
-		await courseService.addLecture(courseId, sectionId, { title });
+	const handleAddLecture = async (
+		sectionId: string,
+		data: { title: string; videoUrl?: string; isPreview?: boolean },
+	) => {
+		await courseService.addLecture(courseId, sectionId, data);
 		void fetchCourse();
 	};
 

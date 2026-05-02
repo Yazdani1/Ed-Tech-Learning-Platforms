@@ -56,6 +56,7 @@ export default function CourseDetailPage() {
   const [enrolling, setEnrolling] = useState(false);
   const [subPlans, setSubPlans] = useState<ISubscriptionPlanConfig[]>([]);
   const [selectedOption, setSelectedOption] = useState<'subscription' | 'direct'>('direct');
+  const [playingIntro, setPlayingIntro] = useState(false);
 
   const isAdmin = user && (ADMIN_ROLES as readonly string[]).includes(user.role);
   const isStudent = user?.role === 'Student';
@@ -140,6 +141,28 @@ export default function CourseDetailPage() {
     );
 
   const totalLectures = course.sections?.reduce((acc, s) => acc + s.lectures.length, 0) ?? 0;
+
+  // Find intro lecture: first lecture named "Course Introduction" OR first isPreview lecture, OR first lecture with a videoUrl
+  const introLecture = (() => {
+    for (const section of course.sections ?? []) {
+      for (const lec of section.lectures) {
+        if (lec.title.toLowerCase().includes('course introduction') && lec.videoUrl) return lec;
+      }
+    }
+    for (const section of course.sections ?? []) {
+      for (const lec of section.lectures) {
+        if (lec.isPreview && lec.videoUrl) return lec;
+      }
+    }
+    return null;
+  })();
+
+  const getYouTubeId = (url: string) => {
+    const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : null;
+  };
+
+  const introVideoId = introLecture ? getYouTubeId(introLecture.videoUrl!) : null;
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -313,26 +336,48 @@ export default function CourseDetailPage() {
                         </Typography>
                       </AccordionSummary>
                       <AccordionDetails sx={{ p: 0 }}>
-                        {section.lectures.map((lecture, li) => (
-                          <Box
-                            key={lecture._id}
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1.5,
-                              px: 2.5,
-                              py: 1.25,
-                              borderTop: li > 0 ? '1px solid' : 'none',
-                              borderColor: 'divider',
-                            }}
-                          >
-                            <PlayCircleOutlinedIcon fontSize="small" color="action" />
-                            <Typography variant="body2" sx={{ flex: 1 }}>{lecture.title}</Typography>
-                            {lecture.isPreview && (
-                              <Chip label="Preview" size="small" color="info" variant="outlined" />
-                            )}
-                          </Box>
-                        ))}
+                        {section.lectures.map((lecture, li) => {
+                          const vidId = lecture.videoUrl ? getYouTubeId(lecture.videoUrl) : null;
+                          const canPreview = lecture.isPreview && vidId;
+                          return (
+                            <Box
+                              key={lecture._id}
+                              component={canPreview ? 'a' : 'div'}
+                              href={canPreview ? `https://www.youtube.com/watch?v=${vidId}` : undefined}
+                              target={canPreview ? '_blank' : undefined}
+                              rel={canPreview ? 'noopener noreferrer' : undefined}
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1.5,
+                                px: 2.5,
+                                py: 1.25,
+                                borderTop: li > 0 ? '1px solid' : 'none',
+                                borderColor: 'divider',
+                                textDecoration: 'none',
+                                color: 'inherit',
+                                ...(canPreview && {
+                                  cursor: 'pointer',
+                                  '&:hover': { bgcolor: 'action.hover' },
+                                }),
+                              }}
+                            >
+                              <PlayCircleOutlinedIcon
+                                fontSize="small"
+                                sx={{ color: canPreview ? 'info.main' : 'action.active' }}
+                              />
+                              <Typography
+                                variant="body2"
+                                sx={{ flex: 1, color: canPreview ? 'info.main' : 'inherit' }}
+                              >
+                                {lecture.title}
+                              </Typography>
+                              {lecture.isPreview && (
+                                <Chip label="Free Preview" size="small" color="info" variant="outlined" />
+                              )}
+                            </Box>
+                          );
+                        })}
                         {section.lectures.length === 0 && (
                           <Box sx={{ px: 2.5, py: 2 }}>
                             <Typography variant="body2" color="text.secondary">No lectures yet.</Typography>
@@ -457,20 +502,51 @@ export default function CourseDetailPage() {
           <Grid size={{ xs: 12, md: 4 }}>
             <Box sx={{ position: 'sticky', top: 84 }}>
               <Paper elevation={3} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-                {/* Cover image */}
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: 200,
-                    bgcolor: 'grey.200',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {course.coverImage ? (
+                {/* Intro video / cover image */}
+                <Box sx={{ width: '100%', height: 200, bgcolor: 'grey.900', position: 'relative', overflow: 'hidden' }}>
+                  {introVideoId && playingIntro ? (
+                    /* Embedded YouTube player */
+                    <Box
+                      component="iframe"
+                      src={`https://www.youtube.com/embed/${introVideoId}?autoplay=1`}
+                      title="Course Introduction"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      sx={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                    />
+                  ) : introVideoId ? (
+                    /* Thumbnail with play button overlay */
+                    <Box
+                      sx={{ width: '100%', height: '100%', position: 'relative', cursor: 'pointer' }}
+                      onClick={() => setPlayingIntro(true)}
+                    >
+                      <Box
+                        component="img"
+                        src={`https://img.youtube.com/vi/${introVideoId}/hqdefault.jpg`}
+                        alt="Course Introduction"
+                        sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
+                      {/* Dark overlay */}
+                      <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.35)' }} />
+                      {/* Play button */}
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 0.75,
+                        }}
+                      >
+                        <PlayCircleOutlinedIcon sx={{ fontSize: 56, color: 'white', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))' }} />
+                        <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, letterSpacing: 0.5 }}>
+                          Preview this course
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ) : course.coverImage ? (
                     <Box
                       component="img"
                       src={course.coverImage}
@@ -478,7 +554,9 @@ export default function CourseDetailPage() {
                       sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <SchoolIcon sx={{ fontSize: 64, color: 'grey.400' }} />
+                    <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <SchoolIcon sx={{ fontSize: 64, color: 'grey.600' }} />
+                    </Box>
                   )}
                 </Box>
 

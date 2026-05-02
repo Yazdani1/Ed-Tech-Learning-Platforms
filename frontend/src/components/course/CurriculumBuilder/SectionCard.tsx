@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import {
 	Box,
+	Button,
 	Card,
 	CardContent,
-	IconButton,
-	TextField,
-	Typography,
-	Button,
-	Tooltip,
 	Collapse,
+	FormControlLabel,
+	IconButton,
+	Switch,
+	TextField,
+	Tooltip,
+	Typography,
 } from '@mui/material';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import EditIcon from '@mui/icons-material/Edit';
@@ -26,12 +28,8 @@ interface SectionCardProps {
 	courseId: string;
 	onUpdateSection: (sectionId: string, title: string) => Promise<void>;
 	onDeleteSection: (sectionId: string) => Promise<void>;
-	onAddLecture: (sectionId: string, title: string) => Promise<void>;
-	onUpdateLecture: (
-		sectionId: string,
-		lectureId: string,
-		data: Partial<ILecture>,
-	) => Promise<void>;
+	onAddLecture: (sectionId: string, data: Pick<ILecture, 'title'> & { videoUrl?: string; isPreview?: boolean }) => Promise<void>;
+	onUpdateLecture: (sectionId: string, lectureId: string, data: Partial<ILecture>) => Promise<void>;
 	onDeleteLecture: (sectionId: string, lectureId: string) => Promise<void>;
 }
 
@@ -48,7 +46,9 @@ export default function SectionCard({
 	const [editingTitle, setEditingTitle] = useState(false);
 	const [title, setTitle] = useState(section.title);
 	const [addingLecture, setAddingLecture] = useState(false);
-	const [newLectureTitle, setNewLectureTitle] = useState('');
+	const [newTitle, setNewTitle] = useState('');
+	const [newVideoUrl, setNewVideoUrl] = useState('');
+	const [newIsPreview, setNewIsPreview] = useState(false);
 
 	const handleSaveTitle = async () => {
 		if (title.trim()) await onUpdateSection(section._id, title.trim());
@@ -56,9 +56,22 @@ export default function SectionCard({
 	};
 
 	const handleAddLecture = async () => {
-		if (!newLectureTitle.trim()) return;
-		await onAddLecture(section._id, newLectureTitle.trim());
-		setNewLectureTitle('');
+		if (!newTitle.trim()) return;
+		await onAddLecture(section._id, {
+			title: newTitle.trim(),
+			videoUrl: newVideoUrl.trim() || undefined,
+			isPreview: newIsPreview,
+		});
+		setNewTitle('');
+		setNewVideoUrl('');
+		setNewIsPreview(false);
+		setAddingLecture(false);
+	};
+
+	const handleCancelAdd = () => {
+		setNewTitle('');
+		setNewVideoUrl('');
+		setNewIsPreview(false);
 		setAddingLecture(false);
 	};
 
@@ -105,42 +118,26 @@ export default function SectionCard({
 									autoFocus
 								/>
 								<Tooltip title='Save'>
-									<IconButton
-										size='small'
-										color='primary'
-										onClick={() => void handleSaveTitle()}
-									>
+									<IconButton size='small' color='primary' onClick={() => void handleSaveTitle()}>
 										<CheckIcon />
 									</IconButton>
 								</Tooltip>
 								<Tooltip title='Cancel'>
-									<IconButton
-										size='small'
-										onClick={() => setEditingTitle(false)}
-									>
+									<IconButton size='small' onClick={() => setEditingTitle(false)}>
 										<CloseIcon />
 									</IconButton>
 								</Tooltip>
 							</>
 						) : (
 							<>
-								<Typography sx={{ flex: 1, fontWeight: 600 }}>
-									{section.title}
-								</Typography>
+								<Typography sx={{ flex: 1, fontWeight: 600 }}>{section.title}</Typography>
 								<Tooltip title='Edit section'>
-									<IconButton
-										size='small'
-										onClick={() => setEditingTitle(true)}
-									>
+									<IconButton size='small' onClick={() => setEditingTitle(true)}>
 										<EditIcon fontSize='small' />
 									</IconButton>
 								</Tooltip>
 								<Tooltip title='Delete section'>
-									<IconButton
-										size='small'
-										color='error'
-										onClick={() => void onDeleteSection(section._id)}
-									>
+									<IconButton size='small' color='error' onClick={() => void onDeleteSection(section._id)}>
 										<DeleteIcon fontSize='small' />
 									</IconButton>
 								</Tooltip>
@@ -177,30 +174,61 @@ export default function SectionCard({
 							)}
 						</Droppable>
 
-						{/* Add lecture */}
+						{/* Add lecture form */}
 						<Collapse in={addingLecture}>
-							<Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+							<Box
+								sx={{
+									mt: 1.5,
+									p: 1.5,
+									border: '1px dashed',
+									borderColor: 'primary.light',
+									borderRadius: 1.5,
+									display: 'flex',
+									flexDirection: 'column',
+									gap: 1.25,
+								}}
+							>
 								<TextField
-									value={newLectureTitle}
-									onChange={(e) => setNewLectureTitle(e.target.value)}
+									value={newTitle}
+									onChange={(e) => setNewTitle(e.target.value)}
 									size='small'
 									placeholder='Lecture title'
-									sx={{ flex: 1 }}
+									fullWidth
 									autoFocus
 									onKeyDown={(e) => {
 										if (e.key === 'Enter') void handleAddLecture();
 									}}
 								/>
-								<Button
+								<TextField
+									value={newVideoUrl}
+									onChange={(e) => setNewVideoUrl(e.target.value)}
 									size='small'
-									variant='contained'
-									onClick={() => void handleAddLecture()}
-								>
-									Add
-								</Button>
-								<Button size='small' onClick={() => setAddingLecture(false)}>
-									Cancel
-								</Button>
+									placeholder='YouTube URL (optional) — https://youtube.com/watch?v=...'
+									fullWidth
+								/>
+								<FormControlLabel
+									control={
+										<Switch
+											size='small'
+											checked={newIsPreview}
+											onChange={(e) => setNewIsPreview(e.target.checked)}
+											color='info'
+										/>
+									}
+									label={
+										<Typography variant='body2' sx={{ color: newIsPreview ? 'info.main' : 'text.secondary', fontWeight: newIsPreview ? 600 : 400 }}>
+											Free Preview
+										</Typography>
+									}
+								/>
+								<Box sx={{ display: 'flex', gap: 1 }}>
+									<Button size='small' variant='contained' onClick={() => void handleAddLecture()}>
+										Add Lecture
+									</Button>
+									<Button size='small' onClick={handleCancelAdd}>
+										Cancel
+									</Button>
+								</Box>
 							</Box>
 						</Collapse>
 
