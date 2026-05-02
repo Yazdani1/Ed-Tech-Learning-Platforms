@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
 	Box,
@@ -31,18 +31,49 @@ const DRAWER_OPEN = 240;
 const DRAWER_CLOSED = 64;
 
 const navItems = [
-	{ label: 'Home', icon: <HomeIcon />, path: '/', exact: true, roles: ['Super Admin', 'Admin', 'Moderator'] },
-	{ label: 'nav.dashboard', icon: <DashboardIcon />, path: '/admin/dashboard', roles: ['Super Admin', 'Admin', 'Moderator'] },
-	{ label: 'Profile', icon: <PersonIcon />, path: '/admin/profile', roles: ['Super Admin', 'Admin', 'Moderator'] },
-	{ label: 'nav.courses', icon: <SchoolIcon />, path: '/admin/courses', roles: ['Super Admin', 'Admin', 'Moderator'] },
-	{ label: 'nav.teachers', icon: <PersonIcon />, path: '/admin/teachers', roles: ['Super Admin', 'Admin'] },
+	{
+		label: 'Home',
+		icon: <HomeIcon />,
+		path: '/',
+		exact: true,
+		roles: ['Super Admin', 'Admin', 'Moderator'],
+	},
+	{
+		label: 'nav.dashboard',
+		icon: <DashboardIcon />,
+		path: '/admin/dashboard',
+		roles: ['Super Admin', 'Admin', 'Moderator'],
+	},
+	{
+		label: 'Profile',
+		icon: <PersonIcon />,
+		path: '/admin/profile',
+		roles: ['Super Admin', 'Admin', 'Moderator'],
+	},
+	{
+		label: 'nav.courses',
+		icon: <SchoolIcon />,
+		path: '/admin/courses',
+		roles: ['Super Admin', 'Admin', 'Moderator'],
+	},
+	{
+		label: 'nav.teachers',
+		icon: <PersonIcon />,
+		path: '/admin/teachers',
+		roles: ['Super Admin', 'Admin'],
+	},
 	{
 		label: 'nav.categories',
 		icon: <CategoryIcon />,
 		path: '/admin/categories',
 		roles: ['Super Admin', 'Admin', 'Moderator'],
 	},
-	{ label: 'User List', icon: <PeopleIcon />, path: '/admin/users', roles: ['Super Admin', 'Admin'] },
+	{
+		label: 'User List',
+		icon: <PeopleIcon />,
+		path: '/admin/users',
+		roles: ['Super Admin', 'Admin'],
+	},
 	{
 		label: 'nav.subscriptions',
 		icon: <CardMembershipIcon />,
@@ -56,11 +87,19 @@ const superAdminItems = [
 ];
 
 export default function AdminSidebar() {
-	const [open, setOpen] = useState(true);
 	const { user, logout } = useAuth();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const location = useLocation();
+
+	const isCourseCreateEditPage =
+		location.pathname.includes('/courses/create') ||
+		location.pathname.includes('/edit');
+	const [open, setOpen] = useState(!isCourseCreateEditPage);
+
+	useEffect(() => {
+		if (isCourseCreateEditPage) setOpen(false);
+	}, [isCourseCreateEditPage]);
 
 	const handleLogout = async () => {
 		await logout();
@@ -112,42 +151,44 @@ export default function AdminSidebar() {
 
 			{/* Nav items */}
 			<List sx={{ flex: 1, pt: 1 }}>
-				{navItems.filter((item) => !user?.role || item.roles.includes(user.role)).map((item) => {
-					const active = item.exact
-						? location.pathname === item.path
-						: location.pathname.startsWith(item.path);
-					return (
-						<Tooltip
-							key={item.path}
-							title={open ? '' : t(item.label)}
-							placement='right'
-						>
-							<ListItemButton
-								onClick={() => navigate(item.path)}
-								selected={active}
-								sx={{
-									mx: 1,
-									borderRadius: 2,
-									mb: 0.5,
-									minHeight: 44,
-									justifyContent: open ? 'initial' : 'center',
-									px: open ? 2 : 1.5,
-								}}
+				{navItems
+					.filter((item) => !user?.role || item.roles.includes(user.role))
+					.map((item) => {
+						const active = item.exact
+							? location.pathname === item.path
+							: location.pathname.startsWith(item.path);
+						return (
+							<Tooltip
+								key={item.path}
+								title={open ? '' : t(item.label)}
+								placement='right'
 							>
-								<ListItemIcon
+								<ListItemButton
+									onClick={() => navigate(item.path)}
+									selected={active}
 									sx={{
-										minWidth: 0,
-										mr: open ? 2 : 0,
-										color: active ? 'primary.main' : 'inherit',
+										mx: 1,
+										borderRadius: 2,
+										mb: 0.5,
+										minHeight: 44,
+										justifyContent: open ? 'initial' : 'center',
+										px: open ? 2 : 1.5,
 									}}
 								>
-									{item.icon}
-								</ListItemIcon>
-								{open && <ListItemText primary={t(item.label)} />}
-							</ListItemButton>
-						</Tooltip>
-					);
-				})}
+									<ListItemIcon
+										sx={{
+											minWidth: 0,
+											mr: open ? 2 : 0,
+											color: active ? 'primary.main' : 'inherit',
+										}}
+									>
+										{item.icon}
+									</ListItemIcon>
+									{open && <ListItemText primary={t(item.label)} />}
+								</ListItemButton>
+							</Tooltip>
+						);
+					})}
 
 				{/* Super Admin only items */}
 				{user?.role === 'Super Admin' && (
@@ -155,7 +196,15 @@ export default function AdminSidebar() {
 						{open && (
 							<Typography
 								variant='caption'
-								sx={{ px: 2, pt: 1.5, pb: 0.5, display: 'block', color: 'text.disabled', fontWeight: 700, letterSpacing: 0.5 }}
+								sx={{
+									px: 2,
+									pt: 1.5,
+									pb: 0.5,
+									display: 'block',
+									color: 'text.disabled',
+									fontWeight: 700,
+									letterSpacing: 0.5,
+								}}
 							>
 								ANALYTICS
 							</Typography>
@@ -163,7 +212,11 @@ export default function AdminSidebar() {
 						{superAdminItems.map((item) => {
 							const active = location.pathname.startsWith(item.path);
 							return (
-								<Tooltip key={item.path} title={open ? '' : item.label} placement='right'>
+								<Tooltip
+									key={item.path}
+									title={open ? '' : item.label}
+									placement='right'
+								>
 									<ListItemButton
 										onClick={() => navigate(item.path)}
 										selected={active}
