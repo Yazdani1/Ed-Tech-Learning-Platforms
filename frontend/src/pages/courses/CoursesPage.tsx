@@ -312,6 +312,7 @@ function AdminCourseRow({
 	divider: boolean;
 	onEdit: () => void;
 }) {
+	const navigate = useNavigate();
 	const isLive = course.status === 'Published';
 	const priceLabel =
 		course.pricing === 'Free'
@@ -398,7 +399,19 @@ function AdminCourseRow({
 				</Box>
 
 				{/* Earned this month */}
-				<Box sx={{ textAlign: 'center', minWidth: 130, display: { xs: 'none', md: 'block' } }}>
+				<Box
+					onClick={() => navigate(`/admin/enrollments/${course._id}`)}
+					sx={{
+						textAlign: 'center',
+						minWidth: 130,
+						display: { xs: 'none', md: 'block' },
+						cursor: 'pointer',
+						borderRadius: 2,
+						px: 1,
+						py: 0.5,
+						'&:hover': { bgcolor: 'action.hover' },
+					}}
+				>
 					<Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>$0.00</Typography>
 					<Typography variant='caption' color='text.secondary'>
 						Earned this month
@@ -406,7 +419,19 @@ function AdminCourseRow({
 				</Box>
 
 				{/* Enrollments this month */}
-				<Box sx={{ textAlign: 'center', minWidth: 130, display: { xs: 'none', md: 'block' } }}>
+				<Box
+					onClick={() => navigate(`/admin/enrollments/${course._id}`)}
+					sx={{
+						textAlign: 'center',
+						minWidth: 130,
+						display: { xs: 'none', md: 'block' },
+						cursor: 'pointer',
+						borderRadius: 2,
+						px: 1,
+						py: 0.5,
+						'&:hover': { bgcolor: 'action.hover' },
+					}}
+				>
 					<Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>0</Typography>
 					<Typography variant='caption' color='text.secondary'>
 						Enrollments this month

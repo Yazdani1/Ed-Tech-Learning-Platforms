@@ -88,3 +88,50 @@ export const checkEnrollment = asyncHandler(async (req: Request, res: Response) 
 
   res.status(200).json({ success: true, data: { isEnrolled: !!enrollment } });
 });
+
+export const getCourseEnrollments = asyncHandler(async (req: Request, res: Response) => {
+  const courseId = String(req.params.courseId);
+  const { type } = req.query;
+
+  const filter: Record<string, unknown> = { course: courseId };
+  if (type && ['free', 'paid', 'subscription'].includes(String(type))) {
+    filter.enrollmentType = type;
+  }
+
+  const enrollments = await Enrollment.find(filter)
+    .populate('student', 'name email avatar')
+    .populate('course', 'title price pricing')
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({ success: true, data: enrollments, total: enrollments.length });
+});
+
+export const getCourseEnrollmentStats = asyncHandler(async (req: Request, res: Response) => {
+  const courseId = String(req.params.courseId);
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const [total, free, paid, subscription, thisMonth] = await Promise.all([
+    Enrollment.countDocuments({ course: courseId }),
+    Enrollment.countDocuments({ course: courseId, enrollmentType: 'free' }),
+    Enrollment.countDocuments({ course: courseId, enrollmentType: 'paid' }),
+    Enrollment.countDocuments({ course: courseId, enrollmentType: 'subscription' }),
+    Enrollment.find({ course: courseId, createdAt: { $gte: startOfMonth } })
+      .populate('course', 'price pricing'),
+  ]);
+
+  const thisMonthCount = thisMonth.length;
+  const thisMonthEarned = thisMonth.reduce((sum, e) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const course = e.course as any;
+    if (e.enrollmentType === 'paid' && course?.price) {
+      return sum + course.price;
+    }
+    return sum;
+  }, 0);
+
+  res.status(200).json({
+    success: true,
+    data: { total, free, paid, subscription, thisMonthCount, thisMonthEarned },
+  });
+});

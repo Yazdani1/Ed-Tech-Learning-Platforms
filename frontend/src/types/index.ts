@@ -103,6 +103,35 @@ export interface ISubscriptionPlanConfig {
   courseCount: number;
 }
 
+export type DateRange = '7d' | '30d' | 'lifetime';
+
+export interface IPerformanceData {
+  thisMonthRevenue: number;
+  totalRevenue: number;
+  thisMonthCount: number;
+  totalEnrollments: number;
+  chartData: Array<{ date: string; revenue: number; enrollments: number }>;
+  breakdown: { free: number; paid: number; subscription: number };
+}
+
+export interface IEnrollment {
+  _id: string;
+  student: Pick<IUser, '_id' | 'name' | 'email' | 'avatar'>;
+  course: Pick<ICourse, '_id' | 'title' | 'price' | 'pricing'>;
+  enrollmentType: EnrollmentType;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IEnrollmentStats {
+  total: number;
+  free: number;
+  paid: number;
+  subscription: number;
+  thisMonthCount: number;
+  thisMonthEarned: number;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;

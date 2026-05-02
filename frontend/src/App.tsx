@@ -15,6 +15,8 @@ import CategoriesPage from './pages/categories/CategoriesPage';
 import TeachersPage from './pages/teachers/TeachersPage';
 import UsersPage from './pages/users/UsersPage';
 import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
+import AdminEnrollmentsPage from './pages/enrollments/AdminEnrollmentsPage';
+import PerformancePage from './pages/performance/PerformancePage';
 import PricingPage from './pages/pricing/PricingPage';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -48,6 +50,8 @@ export default function App() {
 					<Route path='/admin/teachers' element={<TeachersPage />} />
 					<Route path='/admin/students' element={<UsersPage />} />
 					<Route path='/admin/subscriptions' element={<SubscriptionsPage />} />
+					<Route path='/admin/enrollments/:courseId' element={<AdminEnrollmentsPage />} />
+					<Route path='/admin/performance' element={<PerformancePage />} />
 				</Route>
 			</Route>
 

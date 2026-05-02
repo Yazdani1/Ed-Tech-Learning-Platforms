@@ -20,6 +20,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import CategoryIcon from '@mui/icons-material/Category';
 import PeopleIcon from '@mui/icons-material/People';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -46,6 +47,10 @@ const navItems = [
 		icon: <CardMembershipIcon />,
 		path: '/admin/subscriptions',
 	},
+];
+
+const superAdminItems = [
+	{ label: 'Performance', icon: <BarChartIcon />, path: '/admin/performance' },
 ];
 
 export default function AdminSidebar() {
@@ -141,6 +146,50 @@ export default function AdminSidebar() {
 						</Tooltip>
 					);
 				})}
+
+				{/* Super Admin only items */}
+				{user?.role === 'Super Admin' && (
+					<>
+						{open && (
+							<Typography
+								variant='caption'
+								sx={{ px: 2, pt: 1.5, pb: 0.5, display: 'block', color: 'text.disabled', fontWeight: 700, letterSpacing: 0.5 }}
+							>
+								ANALYTICS
+							</Typography>
+						)}
+						{superAdminItems.map((item) => {
+							const active = location.pathname.startsWith(item.path);
+							return (
+								<Tooltip key={item.path} title={open ? '' : item.label} placement='right'>
+									<ListItemButton
+										onClick={() => navigate(item.path)}
+										selected={active}
+										sx={{
+											mx: 1,
+											borderRadius: 2,
+											mb: 0.5,
+											minHeight: 44,
+											justifyContent: open ? 'initial' : 'center',
+											px: open ? 2 : 1.5,
+										}}
+									>
+										<ListItemIcon
+											sx={{
+												minWidth: 0,
+												mr: open ? 2 : 0,
+												color: active ? 'primary.main' : 'inherit',
+											}}
+										>
+											{item.icon}
+										</ListItemIcon>
+										{open && <ListItemText primary={item.label} />}
+									</ListItemButton>
+								</Tooltip>
+							);
+						})}
+					</>
+				)}
 			</List>
 
 			<Divider />

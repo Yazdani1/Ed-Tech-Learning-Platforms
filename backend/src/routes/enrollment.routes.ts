@@ -4,11 +4,20 @@ import {
   unenroll,
   getMyEnrollments,
   checkEnrollment,
+  getCourseEnrollments,
+  getCourseEnrollmentStats,
 } from '../controllers/enrollment.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
+const adminOnly = authorize('Super Admin', 'Admin', 'Moderator');
+
+// Admin routes — course-specific
+router.get('/admin/course/:courseId', protect, adminOnly, getCourseEnrollments);
+router.get('/admin/course/:courseId/stats', protect, adminOnly, getCourseEnrollmentStats);
+
+// Student routes
 router.get('/', protect, authorize('Student'), getMyEnrollments);
 router.get('/:courseId/check', protect, authorize('Student'), checkEnrollment);
 router.post('/:courseId', protect, authorize('Student'), enroll);
