@@ -60,9 +60,9 @@ export default function CourseDetailPage() {
   const userSubValid = !!userActivePlan && !!userSubExpiry && new Date(userSubExpiry) > new Date();
   const courseInSub = (course?.includedInSubscription ?? false) && (course?.allowedSubscriptionPlans?.length ?? 0) > 0;
   const userSubCoversThisCourse =
-    courseInSub &&
-    userSubValid &&
-    (course?.allowedSubscriptionPlans ?? []).includes(userActivePlan!);
+    courseInSub && userSubValid && (course?.allowedSubscriptionPlans ?? []).includes(userActivePlan!);
+  const userHasWrongPlan = courseInSub && isStudent && userSubValid && !userSubCoversThisCourse;
+  const userHasNoSub = courseInSub && isStudent && !userSubValid;
 
   useEffect(() => {
     if (!id) return;
@@ -497,6 +497,7 @@ export default function CourseDetailPage() {
                     </Button>
                   ) : isStudent ? (
                     isEnrolled ? (
+                      /* ── Already enrolled ──────────────────────── */
                       <Button
                         fullWidth
                         variant="contained"
@@ -504,50 +505,188 @@ export default function CourseDetailPage() {
                         color="success"
                         startIcon={<CheckIcon />}
                         disabled
-                        sx={{ fontWeight: 700, borderRadius: 2, mb: 1 }}
+                        sx={{ fontWeight: 700, borderRadius: 2 }}
                       >
                         Enrolled
                       </Button>
+
                     ) : userSubCoversThisCourse ? (
-                      /* Student has a matching subscription — subscription enroll only */
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        size="large"
-                        disabled={enrolling}
-                        onClick={() => void handleEnroll()}
-                        startIcon={<CardMembershipIcon />}
-                        sx={{ fontWeight: 700, borderRadius: 2, mb: 1, bgcolor: '#7c3aed', '&:hover': { bgcolor: '#6d28d9' } }}
-                      >
-                        {enrolling ? <CircularProgress size={22} color="inherit" /> : 'Enroll with Subscription'}
-                      </Button>
-                    ) : (
-                      /* No matching subscription */
+                      /* ── Matching subscription ─────────────────── */
                       <>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            bgcolor: '#f5f3ff',
+                            border: '1px solid #ddd6fe',
+                            borderRadius: 2,
+                            p: 1.5,
+                            mb: 2,
+                          }}
+                        >
+                          <CardMembershipIcon sx={{ color: '#7c3aed', fontSize: 20, flexShrink: 0 }} />
+                          <Box>
+                            <Typography variant="caption" sx={{ color: '#6d28d9', fontWeight: 700, display: 'block' }}>
+                              Active subscription
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {userActivePlan} plan · Expires {new Date(userSubExpiry!).toLocaleDateString()}
+                            </Typography>
+                          </Box>
+                        </Box>
                         <Button
                           fullWidth
                           variant="contained"
                           size="large"
                           disabled={enrolling}
                           onClick={() => void handleEnroll()}
-                          sx={{ fontWeight: 700, borderRadius: 2, mb: 1 }}
+                          startIcon={<CardMembershipIcon />}
+                          sx={{ fontWeight: 700, borderRadius: 2, bgcolor: '#7c3aed', '&:hover': { bgcolor: '#6d28d9' } }}
                         >
-                          {enrolling ? <CircularProgress size={22} color="inherit" /> : (course.pricing === 'Free' ? 'Enroll Now — Free' : 'Buy Now')}
+                          {enrolling ? <CircularProgress size={22} color="inherit" /> : 'Enroll with Subscription'}
                         </Button>
-                        {courseInSub && (
+                      </>
+
+                    ) : userHasWrongPlan ? (
+                      /* ── Has subscription but wrong plan ─────────
+                           Primary: free / paid enroll as usual
+                           Secondary: plan mismatch info + upgrade     */
+                      <>
+                        {/* Primary enroll action */}
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          size="large"
+                          disabled={enrolling}
+                          onClick={() => void handleEnroll()}
+                          sx={{ fontWeight: 700, borderRadius: 2, mb: 2 }}
+                        >
+                          {enrolling
+                            ? <CircularProgress size={22} color="inherit" />
+                            : course.pricing === 'Free' ? 'Enroll Now — Free' : 'Buy Now'}
+                        </Button>
+
+                        {/* Subscription mismatch info */}
+                        <Box
+                          sx={{
+                            bgcolor: '#fff7ed',
+                            border: '1px solid #fed7aa',
+                            borderRadius: 2,
+                            p: 2,
+                          }}
+                        >
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#92400e', display: 'block', mb: 1.25 }}>
+                            Plan upgrade required to enroll free
+                          </Typography>
+
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
+                            <Typography variant="caption" color="text.secondary">Your current plan</Typography>
+                            <Chip
+                              label={userActivePlan}
+                              size="small"
+                              sx={{ bgcolor: '#0284c7', color: 'white', fontWeight: 600, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                            <Typography variant="caption" color="text.secondary">Required plan</Typography>
+                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                              {course.allowedSubscriptionPlans.map((p) => (
+                                <Chip
+                                  key={p}
+                                  label={p}
+                                  size="small"
+                                  sx={{ bgcolor: '#7c3aed', color: 'white', fontWeight: 600, fontSize: '0.7rem' }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+
                           <Button
                             fullWidth
                             variant="outlined"
-                            size="large"
+                            size="small"
                             component={RouterLink}
                             to="/pricing"
                             startIcon={<CardMembershipIcon />}
-                            sx={{ fontWeight: 600, borderRadius: 2, color: '#7c3aed', borderColor: '#7c3aed', '&:hover': { borderColor: '#6d28d9', bgcolor: '#f5f3ff' } }}
+                            sx={{ fontWeight: 600, borderRadius: 2, color: '#92400e', borderColor: '#f97316', '&:hover': { bgcolor: '#fff7ed', borderColor: '#ea580c' } }}
                           >
-                            Subscribe to Enroll Free
+                            Upgrade Subscription
                           </Button>
-                        )}
+                        </Box>
                       </>
+
+                    ) : userHasNoSub ? (
+                      /* ── No active subscription ─────────────────
+                           Primary: free / paid enroll as usual
+                           Secondary: subscription offer info          */
+                      <>
+                        {/* Primary enroll action */}
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          size="large"
+                          disabled={enrolling}
+                          onClick={() => void handleEnroll()}
+                          sx={{ fontWeight: 700, borderRadius: 2, mb: 2 }}
+                        >
+                          {enrolling
+                            ? <CircularProgress size={22} color="inherit" />
+                            : course.pricing === 'Free' ? 'Enroll Now — Free' : 'Buy Now'}
+                        </Button>
+
+                        {/* Subscription upsell */}
+                        <Box
+                          sx={{
+                            bgcolor: '#f5f3ff',
+                            border: '1px solid #ddd6fe',
+                            borderRadius: 2,
+                            p: 2,
+                          }}
+                        >
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#5b21b6', display: 'block', mb: 1 }}>
+                            Also available with a subscription
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                            Enroll for free with:
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.5 }}>
+                            {course.allowedSubscriptionPlans.map((p) => (
+                              <Chip
+                                key={p}
+                                label={p}
+                                size="small"
+                                sx={{ bgcolor: '#7c3aed', color: 'white', fontWeight: 600, fontSize: '0.7rem' }}
+                              />
+                            ))}
+                          </Box>
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            size="small"
+                            component={RouterLink}
+                            to="/pricing"
+                            startIcon={<CardMembershipIcon />}
+                            sx={{ fontWeight: 600, borderRadius: 2, color: '#7c3aed', borderColor: '#7c3aed', '&:hover': { bgcolor: '#f5f3ff', borderColor: '#6d28d9' } }}
+                          >
+                            View Subscription Plans
+                          </Button>
+                        </Box>
+                      </>
+
+                    ) : (
+                      /* ── No subscription relevance (free or paid, no sub needed) */
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        disabled={enrolling}
+                        onClick={() => void handleEnroll()}
+                        sx={{ fontWeight: 700, borderRadius: 2 }}
+                      >
+                        {enrolling ? <CircularProgress size={22} color="inherit" /> : (course.pricing === 'Free' ? 'Enroll Now — Free' : 'Buy Now')}
+                      </Button>
                     )
                   ) : (
                     /* Not logged in */
