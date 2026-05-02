@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-	AppBar,
 	Avatar,
 	Box,
 	Drawer,
@@ -10,12 +9,12 @@ import {
 	ListItemButton,
 	ListItemIcon,
 	ListItemText,
-	Toolbar,
 	Tooltip,
 	Typography,
 	Divider,
 } from '@mui/material';
 import { Outlet } from 'react-router-dom';
+import HomeIcon from '@mui/icons-material/Home';
 import SchoolIcon from '@mui/icons-material/School';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -82,6 +81,31 @@ export default function TeacherLayout() {
 				<Divider />
 
 				<List sx={{ flex: 1, pt: 1 }}>
+					<Tooltip title={open ? '' : 'Home'} placement='right'>
+						<ListItemButton
+							onClick={() => navigate('/')}
+							selected={location.pathname === '/'}
+							sx={{
+								mx: 1,
+								borderRadius: 2,
+								mb: 0.5,
+								minHeight: 44,
+								justifyContent: open ? 'initial' : 'center',
+								px: open ? 2 : 1.5,
+							}}
+						>
+							<ListItemIcon
+								sx={{
+									minWidth: 0,
+									mr: open ? 2 : 0,
+									color: location.pathname === '/' ? 'primary.main' : 'inherit',
+								}}
+							>
+								<HomeIcon />
+							</ListItemIcon>
+							{open && <ListItemText primary='Home' />}
+						</ListItemButton>
+					</Tooltip>
 					<Tooltip title={open ? '' : 'My Courses'} placement='right'>
 						<ListItemButton
 							onClick={() => navigate('/teacher/courses')}

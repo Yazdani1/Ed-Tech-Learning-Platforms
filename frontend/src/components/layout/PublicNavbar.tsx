@@ -25,7 +25,10 @@ export default function PublicNavbar() {
     if (query.trim()) navigate(`/?q=${encodeURIComponent(query.trim())}`);
   };
 
-  const dashboardPath = user?.role === 'Student' ? '/student/dashboard' : '/admin/dashboard';
+  const dashboardPath =
+    user?.role === 'Student' ? '/student/dashboard'
+    : user?.role === 'Teacher' ? '/teacher/courses'
+    : '/admin/dashboard';
 
   return (
     <AppBar
