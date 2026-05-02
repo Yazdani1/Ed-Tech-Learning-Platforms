@@ -32,6 +32,7 @@ const DRAWER_CLOSED = 64;
 const navItems = [
 	{ label: 'Home', icon: <HomeIcon />, path: '/', exact: true },
 	{ label: 'nav.dashboard', icon: <DashboardIcon />, path: '/admin/dashboard' },
+	{ label: 'Profile', icon: <PersonIcon />, path: '/admin/profile' },
 	{ label: 'nav.courses', icon: <SchoolIcon />, path: '/admin/courses' },
 	{ label: 'nav.teachers', icon: <PersonIcon />, path: '/admin/teachers' },
 	{
@@ -105,7 +106,9 @@ export default function AdminSidebar() {
 			{/* Nav items */}
 			<List sx={{ flex: 1, pt: 1 }}>
 				{navItems.map((item) => {
-					const active = item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
+					const active = item.exact
+						? location.pathname === item.path
+						: location.pathname.startsWith(item.path);
 					return (
 						<Tooltip
 							key={item.path}

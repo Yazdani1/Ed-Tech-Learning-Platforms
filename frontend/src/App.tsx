@@ -7,6 +7,7 @@ import StudentLayout from './components/layout/StudentLayout/StudentLayout';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
+import ProfilePage from './pages/dashboard/ProfilePage';
 import CoursesPage from './pages/courses/CoursesPage';
 import CourseCreatePage from './pages/courses/CourseCreatePage';
 import CourseDetailPage from './pages/courses/CourseDetailPage';
@@ -33,7 +34,8 @@ export default function App() {
 			{/* Admin routes */}
 			<Route element={<ProtectedRoute allowedRoles={[...ADMIN_ROLES]} />}>
 				<Route element={<AdminLayout />}>
-					<Route path='/admin/dashboard' element={<DashboardPage />} />
+					<Route path='/admin/dashboard' element={<DashboardPage />} />{' '}
+					<Route path='/admin/profile' element={<ProfilePage />} />{' '}
 					<Route path='/admin/courses' element={<CoursesPage />} />
 					<Route path='/admin/courses/create' element={<CourseCreatePage />} />
 					<Route path='/admin/courses/:id' element={<CourseDetailPage />} />
@@ -51,7 +53,8 @@ export default function App() {
 			{/* Student routes */}
 			<Route element={<ProtectedRoute allowedRoles={['Student']} />}>
 				<Route element={<StudentLayout />}>
-					<Route path='/student/dashboard' element={<DashboardPage />} />
+					<Route path='/student/dashboard' element={<DashboardPage />} />{' '}
+					<Route path='/student/profile' element={<ProfilePage />} />{' '}
 					<Route path='/student/courses' element={<CoursesPage />} />
 				</Route>
 			</Route>

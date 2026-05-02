@@ -22,7 +22,7 @@ const ROLE_REDIRECT: Record<UserRole, string> = {
 
 export default function LoginPage() {
 	const { t } = useTranslation();
-	const { login, user } = useAuth();
+	const { login } = useAuth();
 	const navigate = useNavigate();
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
@@ -32,8 +32,10 @@ export default function LoginPage() {
 		e.preventDefault();
 		setLoading(true);
 		try {
-			await login(email, password);
-			const redirect = user ? ROLE_REDIRECT[user.role] : '/admin/dashboard';
+			const loggedUser = await login(email, password);
+			const redirect = loggedUser
+				? ROLE_REDIRECT[loggedUser.role]
+				: '/admin/dashboard';
 			navigate(redirect, { replace: true });
 		} finally {
 			setLoading(false);

@@ -17,6 +17,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import BookIcon from '@mui/icons-material/Book';
 import ExploreIcon from '@mui/icons-material/Explore';
+import PersonIcon from '@mui/icons-material/Person';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -28,7 +29,12 @@ const DRAWER_CLOSED = 64;
 
 const navItems = [
 	{ label: 'Home', icon: <HomeIcon />, path: '/', exact: true },
-	{ label: 'nav.dashboard', icon: <DashboardIcon />, path: '/student/dashboard' },
+	{
+		label: 'nav.dashboard',
+		icon: <DashboardIcon />,
+		path: '/student/dashboard',
+	},
+	{ label: 'Profile', icon: <PersonIcon />, path: '/student/profile' },
 	{ label: 'nav.myCourses', icon: <BookIcon />, path: '/student/courses' },
 	{ label: 'nav.browse', icon: <ExploreIcon />, path: '/courses' },
 ];
@@ -89,7 +95,9 @@ export default function StudentSidebar() {
 
 			<List sx={{ flex: 1, pt: 1 }}>
 				{navItems.map((item) => {
-					const active = item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
+					const active = item.exact
+						? location.pathname === item.path
+						: location.pathname.startsWith(item.path);
 					return (
 						<Tooltip
 							key={item.path}
