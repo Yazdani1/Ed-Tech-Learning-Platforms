@@ -9,9 +9,11 @@ import {
 	DialogActions,
 	DialogContent,
 	DialogTitle,
+	Divider,
 	Grid,
 	IconButton,
 	InputAdornment,
+	Paper,
 	TextField,
 	Tooltip,
 	Typography,
@@ -20,6 +22,8 @@ import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import CourseCard from '../../components/ui/CourseCard';
@@ -197,19 +201,22 @@ export default function CoursesPage() {
 					)}
 				</>
 			) : (
-				/* ── Admin: plain grid ───────────────────────────── */
+				/* ── Admin: list rows ────────────────────────────── */
 				courses.length === 0 ? (
 					<Typography color='text.secondary' sx={{ textAlign: 'center', mt: 8 }}>
 						No courses found.
 					</Typography>
 				) : (
-					<Grid container spacing={3}>
-						{courses.map((course) => (
-							<Grid key={course._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-								<CourseCard course={course} basePath='/admin/courses' appendPath='/edit' />
-							</Grid>
+					<Paper variant='outlined' sx={{ borderRadius: 2, overflow: 'hidden' }}>
+						{courses.map((course, idx) => (
+							<AdminCourseRow
+								key={course._id}
+								course={course}
+								divider={idx < courses.length - 1}
+								onEdit={() => navigate(`/admin/courses/${course._id}/edit`)}
+							/>
 						))}
-					</Grid>
+					</Paper>
 				)
 			)}
 
@@ -292,5 +299,128 @@ function CourseCardWithRemove({
 				</IconButton>
 			</Tooltip>
 		</Box>
+	);
+}
+
+// ── Admin course list row ─────────────────────────────────────
+function AdminCourseRow({
+	course,
+	divider,
+	onEdit,
+}: {
+	course: ICourse;
+	divider: boolean;
+	onEdit: () => void;
+}) {
+	const isLive = course.status === 'Published';
+	const priceLabel =
+		course.pricing === 'Free'
+			? 'Free'
+			: course.price != null
+				? `$${course.price.toFixed(2)}`
+				: 'Paid';
+
+	return (
+		<>
+			<Box
+				sx={{
+					display: 'flex',
+					alignItems: 'center',
+					gap: 2.5,
+					px: 2.5,
+					py: 2,
+					transition: 'background 0.15s',
+					'&:hover': { bgcolor: 'action.hover' },
+				}}
+			>
+				{/* Thumbnail */}
+				<Box
+					sx={{
+						width: 96,
+						height: 64,
+						borderRadius: 1,
+						overflow: 'hidden',
+						flexShrink: 0,
+						bgcolor: 'grey.200',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+					}}
+				>
+					{course.coverImage ? (
+						<Box
+							component='img'
+							src={course.coverImage}
+							alt={course.title}
+							sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+						/>
+					) : (
+						<SchoolOutlinedIcon sx={{ color: 'grey.400', fontSize: 28 }} />
+					)}
+				</Box>
+
+				{/* Title + meta */}
+				<Box sx={{ flex: 1, minWidth: 0 }}>
+					<Typography
+						sx={{
+							fontWeight: 700,
+							fontSize: '0.95rem',
+							mb: 0.5,
+							overflow: 'hidden',
+							textOverflow: 'ellipsis',
+							whiteSpace: 'nowrap',
+						}}
+					>
+						{course.title}
+					</Typography>
+					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+						<Chip
+							label={isLive ? 'LIVE' : 'DRAFT'}
+							size='small'
+							sx={{
+								height: 20,
+								fontSize: '0.65rem',
+								fontWeight: 700,
+								bgcolor: isLive ? '#1a1a2e' : '#6b7280',
+								color: 'white',
+								borderRadius: 0.75,
+							}}
+						/>
+						<Typography variant='caption' color='text.secondary'>
+							{priceLabel} &middot; {course.visibility}
+						</Typography>
+						{course.includedInSubscription && course.allowedSubscriptionPlans.length > 0 && (
+							<Typography variant='caption' sx={{ color: '#7c3aed', fontWeight: 600 }}>
+								{course.allowedSubscriptionPlans.join(', ')}
+							</Typography>
+						)}
+					</Box>
+				</Box>
+
+				{/* Earned this month */}
+				<Box sx={{ textAlign: 'center', minWidth: 130, display: { xs: 'none', md: 'block' } }}>
+					<Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>$0.00</Typography>
+					<Typography variant='caption' color='text.secondary'>
+						Earned this month
+					</Typography>
+				</Box>
+
+				{/* Enrollments this month */}
+				<Box sx={{ textAlign: 'center', minWidth: 130, display: { xs: 'none', md: 'block' } }}>
+					<Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>0</Typography>
+					<Typography variant='caption' color='text.secondary'>
+						Enrollments this month
+					</Typography>
+				</Box>
+
+				{/* Edit button */}
+				<Tooltip title='Edit course'>
+					<IconButton onClick={onEdit} size='small' sx={{ flexShrink: 0 }}>
+						<EditOutlinedIcon fontSize='small' />
+					</IconButton>
+				</Tooltip>
+			</Box>
+			{divider && <Divider />}
+		</>
 	);
 }

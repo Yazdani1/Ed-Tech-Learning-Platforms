@@ -156,6 +156,7 @@ export default function CourseCreatePage() {
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
 	const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const initialRender = useRef(true);
+	const autoCreating = useRef(false);
 
 	const [form, setForm] = useState({
 		title: '',
@@ -176,9 +177,49 @@ export default function CourseCreatePage() {
 	});
 
 	useEffect(() => {
-		void categoryService.getAll().then((r) => setCategories(r.data ?? []));
-		void teacherService.getAll().then((r) => setTeachers(r.data ?? []));
-	}, []);
+		Promise.all([categoryService.getAll(), teacherService.getAll()]).then(
+			([catRes, tchRes]) => {
+				const cats = catRes.data ?? [];
+				setCategories(cats);
+				setTeachers(tchRes.data ?? []);
+
+				// Auto-create draft for new courses
+				if (!id && !autoCreating.current) {
+					autoCreating.current = true;
+					const firstCat = cats[0]?._id ?? '';
+					const fd = new FormData();
+					fd.append('title', 'Untitled Course');
+					if (firstCat) fd.append('category', firstCat);
+					fd.append('visibility', 'Private');
+					fd.append('pricing', 'Free');
+					fd.append('includedInSubscription', 'false');
+					fd.append('teachers', JSON.stringify([]));
+					fd.append('allowedSubscriptionPlans', JSON.stringify([]));
+					fd.append('whatYouWillLearn', JSON.stringify([]));
+					fd.append('whatYouWillGet', JSON.stringify([]));
+					fd.append('requirements', JSON.stringify([]));
+					courseService.create(fd).then(async (res) => {
+						const newId = res.data?._id as string | undefined;
+						if (!newId) return;
+						setCourseId(newId);
+						if (firstCat) setForm((f) => ({ ...f, category: firstCat }));
+						navigate(`/admin/courses/${newId}/edit`, { replace: true });
+						// Auto-add Introduction section + Course Introduction lecture
+						try {
+							const secRes = await courseService.addSection(newId, 'Introduction');
+							const sectionId = (secRes.data as { _id: string })?._id;
+							if (sectionId) {
+								await courseService.addLecture(newId, sectionId, {
+									title: 'Course Introduction',
+									isPreview: true,
+								});
+							}
+						} catch { /* non-fatal */ }
+					}).catch(() => {});
+				}
+			}
+		);
+	}, [id]);
 
 	const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
 		setForm((p) => ({ ...p, [key]: value }));
@@ -208,31 +249,24 @@ export default function CourseCreatePage() {
 	const persistCourse = async (status?: 'Draft' | 'Published') => {
 		const showToast = Boolean(status);
 
-		if (!form.title || !form.category) {
-			if (showToast) {
-				toast.error('Title and category are required');
-			}
+		if (showToast && !form.category) {
+			toast.error('Please select a category before publishing');
 			return null;
 		}
 
+		// Use "Untitled Course" as default title
+		const effectiveTitle = form.title.trim() || 'Untitled Course';
 		const fd = buildFormData();
+		// Override title in fd if empty
+		if (!form.title.trim()) fd.set('title', effectiveTitle);
+
 		let savedId = courseId;
 
 		if (!savedId) {
 			const res = await courseService.create(fd);
 			savedId = res.data?._id as string;
 			setCourseId(savedId);
-			// Auto-add Introduction section with Course Introduction lecture
-			try {
-				const section = await courseService.addSection(savedId, 'Introduction');
-				const sectionId = (section.data as { _id: string })?._id;
-				if (sectionId) {
-					await courseService.addLecture(savedId, sectionId, {
-						title: 'Course Introduction',
-						isPreview: true,
-					});
-				}
-			} catch { /* non-fatal */ }
+			navigate(`/admin/courses/${savedId}/edit`, { replace: true });
 			if (showToast) toast.success('Course draft created');
 		} else {
 			await courseService.update(savedId, fd);
@@ -248,12 +282,11 @@ export default function CourseCreatePage() {
 	};
 
 	const handleSave = async (status?: 'Draft' | 'Published') => {
-		if (!form.title || !form.category) {
-			toast.error('Title and category are required');
+		if (status === 'Published' && !form.category) {
+			toast.error('Please select a category before publishing');
 			return;
 		}
 		setSaving(true);
-
 		try {
 			const savedId = await persistCourse(status);
 			if (status === 'Published' && savedId) {
@@ -302,7 +335,7 @@ export default function CourseCreatePage() {
 			return;
 		}
 
-		if (!form.title || !form.category) return;
+		if (!courseId) return; // wait until course exists before auto-saving updates
 		if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
 		autosaveTimer.current = setTimeout(async () => {
 			setAutoSaving(true);
@@ -677,20 +710,15 @@ export default function CourseCreatePage() {
 					)}
 
 					{/* Tab 3 – Curriculum */}
-					{tab === 3 &&
-						(courseId ? (
+					{tab === 3 && (
+						courseId ? (
 							<CurriculumBuilder courseId={courseId} />
 						) : (
-							<Box sx={{ textAlign: 'center', py: 6 }}>
-								<Typography sx={{ color: 'text.secondary', mb: 2 }}>
-									Save the course first (Basic Info section) to start building
-									the curriculum.
-								</Typography>
-								<Button variant='contained' onClick={() => void handleSave()}>
-									Save Course First
-								</Button>
+							<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+								<CircularProgress />
 							</Box>
-						))}
+						)
+					)}
 				</Box>
 			</Box>
 		</Box>
