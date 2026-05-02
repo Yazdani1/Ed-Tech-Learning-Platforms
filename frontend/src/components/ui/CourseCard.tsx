@@ -25,7 +25,7 @@ export default function CourseCard({ course, basePath = '/admin/courses', append
 	const priceLabel =
 		course.pricing === 'Free'
 			? 'Free'
-			: course.price != null
+			: course.price !== null
 				? `$${course.price.toFixed(2)}`
 				: 'Paid';
 

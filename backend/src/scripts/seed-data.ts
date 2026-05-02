@@ -12,6 +12,8 @@ import { Category } from '../models/Category.model';
 import { Teacher } from '../models/Teacher.model';
 import { Course } from '../models/Course.model';
 import { User } from '../models/User.model';
+import { Section } from '../models/Section.model';
+import { Lecture } from '../models/Lecture.model';
 
 const categories = [
 	// Programming
@@ -810,6 +812,8 @@ async function seed() {
 	await Category.deleteMany({});
 	await Teacher.deleteMany({});
 	await Course.deleteMany({});
+	await Section.deleteMany({});
+	await Lecture.deleteMany({});
 
 	// Get or Create admin user by Email
 	let admin = await User.findOne({ email: 'admin@medhabee.com' });
@@ -902,12 +906,68 @@ async function seed() {
 	const createdCourses = await Course.insertMany(courseDocs as any[]);
 	console.log(`✅ Created ${createdCourses.length} courses\n`);
 
+	// Create sections and lectures for each course
+	console.log('📚 Creating sections and lectures...');
+	let totalSections = 0;
+	let totalLectures = 0;
+
+	for (const course of createdCourses) {
+		const numSections = Math.floor(Math.random() * 4) + 2; // 2-5 sections
+		const sectionDocs = [];
+
+		for (let s = 0; s < numSections; s++) {
+			sectionDocs.push({
+				course: course._id,
+				title: `Section ${s + 1}: Core Concepts`,
+				description: `Learn the fundamentals of section ${s + 1}`,
+				order: s,
+			});
+		}
+
+		const createdSections = await Section.insertMany(sectionDocs);
+		totalSections += createdSections.length;
+
+		// Add section IDs to course
+		course.sections = createdSections.map((s) => s._id);
+		await course.save();
+
+		// Create lectures for each section
+		for (const section of createdSections) {
+			const numLectures = Math.floor(Math.random() * 10) + 3; // 3-12 lectures per section
+			const lectureDocs = [];
+
+			for (let l = 0; l < numLectures; l++) {
+				const duration = Math.floor(Math.random() * 1800) + 300; // 5-35 minutes
+				lectureDocs.push({
+					section: section._id,
+					title: `Lecture ${l + 1}: Core Concepts`,
+					description: `Learn about the fundamentals in this lecture`,
+					duration: duration, // Store duration in seconds
+					order: l,
+					isPreview: l === 0, // First lecture is free preview
+					videoUrl: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`, // Sample video URL
+				});
+			}
+
+			const createdLectures = await Lecture.insertMany(lectureDocs);
+			section.lectures = createdLectures.map((l) => l._id);
+			await section.save();
+			totalLectures += createdLectures.length;
+		}
+	}
+
+	console.log(
+		`✅ Created ${totalSections} sections with ${totalLectures} lectures\n`,
+	);
+
 	// Summary
 	console.log('═══════════════════════════════════════');
 	console.log('🎉 Seed complete!');
 	console.log(`   Categories : ${createdCategories.length}`);
 	console.log(`   Teachers   : ${createdTeachers.length}`);
 	console.log(`   Courses    : ${createdCourses.length}`);
+	console.log(`   Sections   : ${totalSections}`);
+	console.log(`   Lectures   : ${totalLectures}`);
 	console.log('═══════════════════════════════════════');
 
 	process.exit(0);

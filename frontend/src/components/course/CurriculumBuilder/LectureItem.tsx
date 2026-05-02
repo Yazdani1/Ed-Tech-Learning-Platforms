@@ -11,6 +11,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PlayCircleOutlinedIcon from '@mui/icons-material/PlayCircleOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import type { ILecture } from '../../../types/index';
+import { parseDuration, formatLectureDuration, secondsToInput } from '../../../utils/duration';
 
 interface LectureItemProps {
   lecture: ILecture;
@@ -25,12 +26,13 @@ export default function LectureItem({ lecture, index, onUpdate, onDelete }: Lect
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(lecture.title);
   const [videoUrl, setVideoUrl] = useState(lecture.videoUrl ?? '');
+  const [durationInput, setDurationInput] = useState(secondsToInput(lecture.duration ?? 0));
   const [isPreview, setIsPreview] = useState(lecture.isPreview ?? false);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
-    await onUpdate(lecture._id, { title, videoUrl, isPreview });
+    await onUpdate(lecture._id, { title, videoUrl, isPreview, duration: parseDuration(durationInput) || undefined });
     setSaving(false);
     setEditing(false);
   };
@@ -38,6 +40,7 @@ export default function LectureItem({ lecture, index, onUpdate, onDelete }: Lect
   const handleCancel = () => {
     setTitle(lecture.title);
     setVideoUrl(lecture.videoUrl ?? '');
+    setDurationInput(secondsToInput(lecture.duration ?? 0));
     setIsPreview(lecture.isPreview ?? false);
     setEditing(false);
   };

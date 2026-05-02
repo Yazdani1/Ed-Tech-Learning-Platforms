@@ -45,6 +45,7 @@ export interface ILecture {
   title: string;
   description?: string;
   videoUrl?: string;
+  duration?: number; // seconds
   order: number;
   isPreview: boolean;
 }

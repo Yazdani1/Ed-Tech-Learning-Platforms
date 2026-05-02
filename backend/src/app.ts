@@ -9,7 +9,13 @@ import apiRoutes from './routes/index';
 
 const app: Application = express();
 
-app.use(cors({ origin: config.clientUrl, credentials: true }));
+// Allow both localhost:3000 and localhost:3001 for development
+const corsOrigins =
+	process.env.NODE_ENV === 'production'
+		? process.env.CLIENT_URL
+		: /^http:\/\/localhost:\d+$/;
+
+app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
