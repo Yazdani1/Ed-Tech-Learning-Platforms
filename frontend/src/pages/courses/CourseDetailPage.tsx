@@ -68,7 +68,7 @@ export default function CourseDetailPage() {
 	const { user } = useAuth();
 	const [course, setCourse] = useState<ICourse | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [expandAll, setExpandAll] = useState(false);
+	const [expanded, setExpanded] = useState<string[]>([]);
 	const [isEnrolled, setIsEnrolled] = useState(false);
 	const [enrolling, setEnrolling] = useState(false);
 	const [subPlans, setSubPlans] = useState<ISubscriptionPlanConfig[]>([]);
@@ -448,10 +448,19 @@ export default function CourseDetailPage() {
 									</Typography>
 									<Button
 										size='small'
-										onClick={() => setExpandAll((p) => !p)}
+										onClick={() => {
+											if (!course?.sections) return;
+											const allIds = course.sections.map((s) => s._id);
+											if (expanded.length === allIds.length) {
+												setExpanded([]);
+											} else {
+												setExpanded(allIds);
+											}
+										}}
 										sx={{ color: 'primary.main', fontWeight: 600 }}
 									>
-										{expandAll
+										{expanded.length === (course?.sections?.length ?? 0) &&
+										(course?.sections?.length ?? 0) > 0
 											? 'Collapse all sections'
 											: 'Expand all sections'}
 									</Button>
@@ -476,8 +485,14 @@ export default function CourseDetailPage() {
 									{course.sections.map((section, si) => (
 										<Accordion
 											key={section._id}
-											expanded={expandAll}
-											onChange={() => setExpandAll((p) => !p)}
+											expanded={expanded.includes(section._id)}
+											onChange={(_e, isExpanded) => {
+												setExpanded((prev) =>
+													isExpanded
+														? [...prev, section._id]
+														: prev.filter((id) => id !== section._id),
+												);
+											}}
 											elevation={0}
 											disableGutters
 											sx={{
