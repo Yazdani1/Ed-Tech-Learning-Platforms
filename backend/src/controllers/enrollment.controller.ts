@@ -106,6 +106,12 @@ export const getCourseEnrollments = asyncHandler(async (req: Request, res: Respo
   res.status(200).json({ success: true, data: enrollments, total: enrollments.length });
 });
 
+export const getCourseEnrollmentCount = asyncHandler(async (req: Request, res: Response) => {
+  const courseId = String(req.params.courseId);
+  const count = await Enrollment.countDocuments({ course: courseId });
+  res.status(200).json({ success: true, data: { count } });
+});
+
 export const getCourseEnrollmentStats = asyncHandler(async (req: Request, res: Response) => {
   const courseId = String(req.params.courseId);
   const now = new Date();

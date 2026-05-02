@@ -9,4 +9,7 @@ export const enrollmentService = {
 
   getCourseStats: (courseId: string) =>
     api.get<IEnrollmentStats>(`/enrollments/admin/course/${courseId}/stats`),
+
+  getCourseCount: (courseId: string) =>
+    api.get<{ count: number }>(`/enrollments/course/${courseId}/count`),
 };

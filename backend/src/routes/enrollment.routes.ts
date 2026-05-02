@@ -6,6 +6,7 @@ import {
   checkEnrollment,
   getCourseEnrollments,
   getCourseEnrollmentStats,
+  getCourseEnrollmentCount,
 } from '../controllers/enrollment.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
 
@@ -16,6 +17,9 @@ const adminOnly = authorize('Super Admin', 'Admin', 'Moderator');
 // Admin routes — course-specific
 router.get('/admin/course/:courseId', protect, adminOnly, getCourseEnrollments);
 router.get('/admin/course/:courseId/stats', protect, adminOnly, getCourseEnrollmentStats);
+
+// Any authenticated user — public enrollment count for a course
+router.get('/course/:courseId/count', protect, getCourseEnrollmentCount);
 
 // Student routes
 router.get('/', protect, authorize('Student'), getMyEnrollments);

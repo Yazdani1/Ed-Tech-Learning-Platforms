@@ -17,6 +17,7 @@ import UsersPage from './pages/users/UsersPage';
 import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
 import AdminEnrollmentsPage from './pages/enrollments/AdminEnrollmentsPage';
 import PerformancePage from './pages/performance/PerformancePage';
+import StudentCourseLearningPage from './pages/courses/StudentCourseLearningPage';
 import PricingPage from './pages/pricing/PricingPage';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -57,6 +58,8 @@ export default function App() {
 
 			{/* Student routes */}
 			<Route element={<ProtectedRoute allowedRoles={['Student']} />}>
+				{/* Full-screen learning page — no StudentLayout sidebar */}
+				<Route path='/student/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
 				<Route element={<StudentLayout />}>
 					<Route path='/student/dashboard' element={<DashboardPage />} />{' '}
 					<Route path='/student/profile' element={<ProfilePage />} />{' '}
