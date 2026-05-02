@@ -121,7 +121,7 @@ export const getPerformanceOverview = asyncHandler(async (req: Request, res: Res
 });
 
 export const getPerformanceCourses = asyncHandler(async (_req: Request, res: Response) => {
-  const courses = await Course.find({ status: 'Published' })
+  const courses = await Course.find()
     .select('title coverImage pricing price status')
     .sort({ createdAt: -1 });
 
