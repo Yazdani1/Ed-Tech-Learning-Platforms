@@ -65,7 +65,7 @@ const CARD_PALETTE = [
 export default function CourseDetailPage() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
-	const { user } = useAuth();
+	const { user, isLoading: authLoading } = useAuth();
 	const [course, setCourse] = useState<ICourse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [expanded, setExpanded] = useState<string[]>([]);
@@ -105,7 +105,7 @@ export default function CourseDetailPage() {
 	) as Partial<Record<string, number>>;
 
 	useEffect(() => {
-		if (!id) return;
+		if (!id || authLoading) return;
 		courseService
 			.getById(id)
 			.then((r) => {
@@ -124,7 +124,7 @@ export default function CourseDetailPage() {
 				}
 			})
 			.finally(() => setLoading(false));
-	}, [id, user, navigate]);
+	}, [id, authLoading, user, navigate]);
 
 	useEffect(() => {
 		if (!id || !isStudent) return;

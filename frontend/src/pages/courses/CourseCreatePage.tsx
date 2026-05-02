@@ -17,11 +17,14 @@ import {
 	Divider,
 	IconButton,
 	Paper,
+	Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
+import PreviewIcon from '@mui/icons-material/Visibility';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
@@ -156,6 +159,7 @@ export default function CourseCreatePage() {
 	const [saving, setSaving] = useState(false);
 	const [autoSaving, setAutoSaving] = useState(false);
 	const [lastSaved, setLastSaved] = useState('');
+	const [courseStatus, setCourseStatus] = useState<'Draft' | 'Published'>('Draft');
 	const [loadingCourse, setLoadingCourse] = useState(false);
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
@@ -286,6 +290,7 @@ export default function CourseCreatePage() {
 
 		if (status) {
 			await courseService.updateStatus(savedId, status);
+			setCourseStatus(status);
 		}
 
 		setLastSaved(new Date().toLocaleTimeString());
@@ -299,10 +304,7 @@ export default function CourseCreatePage() {
 		}
 		setSaving(true);
 		try {
-			const savedId = await persistCourse(status);
-			if (status === 'Published' && savedId) {
-				navigate('/admin/courses');
-			}
+			await persistCourse(status);
 		} finally {
 			setSaving(false);
 		}
@@ -401,6 +403,7 @@ export default function CourseCreatePage() {
 				const data = r.data;
 				if (!data) return;
 				setCourseId(data._id);
+				setCourseStatus(data.status ?? 'Draft');
 				setForm({
 					title: data.title || '',
 					subtitle: data.subtitle || '',
@@ -456,10 +459,30 @@ export default function CourseCreatePage() {
 					mb: 3,
 				}}
 			>
-				<Typography variant='h4' sx={{ fontWeight: 700 }}>
-					{isEdit ? 'Edit Course' : 'Create Course'}
-				</Typography>
-				<Box sx={{ display: 'flex', gap: 1 }}>
+				<Box>
+					<Typography variant='h4' sx={{ fontWeight: 700 }}>
+						{isEdit ? 'Edit Course' : 'Create Course'}
+					</Typography>
+					{courseId && (
+						<Typography variant='caption' sx={{ color: courseStatus === 'Published' ? 'success.main' : 'text.secondary', fontWeight: 600 }}>
+							{courseStatus === 'Published' ? 'Published' : 'Draft'}
+						</Typography>
+					)}
+				</Box>
+				<Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+					{courseId && (
+						<Tooltip title={courseStatus === 'Published' ? 'View public course page' : 'Preview course details'}>
+							<Button
+								variant='outlined'
+								color={courseStatus === 'Published' ? 'success' : 'inherit'}
+								size='small'
+								startIcon={courseStatus === 'Published' ? <OpenInNewIcon /> : <PreviewIcon />}
+								onClick={() => window.open(`/courses/${courseId}`, '_blank')}
+							>
+								{courseStatus === 'Published' ? 'View Live' : 'Preview'}
+							</Button>
+						</Tooltip>
+					)}
 					<Button
 						variant='outlined'
 						onClick={() => void handleSave('Draft')}
@@ -486,12 +509,12 @@ export default function CourseCreatePage() {
 			>
 				<Box sx={{ width: '100%', maxWidth: { md: 320 } }}>
 					<Paper
-						variant='outlined'
+						elevation={2}
 						sx={{
 							position: { md: 'sticky' },
 							top: 90,
 							p: 2,
-							borderRadius: 3,
+							borderRadius: '4px',
 						}}
 					>
 						<Typography variant='subtitle1' sx={{ fontWeight: 700, mb: 2 }}>
@@ -532,7 +555,7 @@ export default function CourseCreatePage() {
 					</Paper>
 				</Box>
 
-				<Box sx={{ flex: 1, width: '100%' }}>
+				<Paper elevation={2} sx={{ flex: 1, width: '100%', borderRadius: '4px', p: 3 }}>
 					{/* Tab 0 – Basic Info */}
 					{tab === 0 && (
 						<Box
@@ -1007,7 +1030,7 @@ export default function CourseCreatePage() {
 							)}
 						</Box>
 					)}
-				</Box>
+				</Paper>
 			</Box>
 		</Box>
 	);
