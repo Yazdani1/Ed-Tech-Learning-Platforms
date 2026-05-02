@@ -12,6 +12,7 @@ interface AuthContextType {
 		password: string,
 	) => Promise<IUser | null>;
 	logout: () => Promise<void>;
+	refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(

@@ -87,6 +87,17 @@ export interface ISubscription {
   assignedBy?: Pick<IUser, '_id' | 'name'>;
 }
 
+export interface ISubscriptionPlanConfig {
+  _id: string;
+  plan: SubscriptionPlan;
+  price: number;
+  duration: number;
+  features: string[];
+  badge?: string;
+  color?: string;
+  isActive: boolean;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;

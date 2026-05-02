@@ -29,6 +29,7 @@ import { courseService } from '../../services/course.service';
 import PublicNavbar from '../../components/layout/PublicNavbar';
 import type { ICourse } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
+import CardMembershipIcon from '@mui/icons-material/CardMembership';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
@@ -53,6 +54,15 @@ export default function CourseDetailPage() {
 
   const isAdmin = user && (ADMIN_ROLES as readonly string[]).includes(user.role);
   const isStudent = user?.role === 'Student';
+
+  const userActivePlan = user?.activeSubscription?.plan;
+  const userSubExpiry = user?.activeSubscription?.endDate;
+  const userSubValid = !!userActivePlan && !!userSubExpiry && new Date(userSubExpiry) > new Date();
+  const courseInSub = (course?.includedInSubscription ?? false) && (course?.allowedSubscriptionPlans?.length ?? 0) > 0;
+  const userSubCoversThisCourse =
+    courseInSub &&
+    userSubValid &&
+    (course?.allowedSubscriptionPlans ?? []).includes(userActivePlan!);
 
   useEffect(() => {
     if (!id) return;
@@ -458,10 +468,17 @@ export default function CourseDetailPage() {
                   <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
                     {course.pricing === 'Free' ? 'Free' : `৳ ${course.price?.toLocaleString() ?? ''}`}
                   </Typography>
-                  {course.includedInSubscription && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Also included in subscription
-                    </Typography>
+                  {courseInSub && (
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Included in subscription:
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
+                        {course.allowedSubscriptionPlans.map((p) => (
+                          <Chip key={p} label={p} size="small" sx={{ bgcolor: '#7c3aed', color: 'white', fontWeight: 600, fontSize: '0.7rem' }} />
+                        ))}
+                      </Box>
+                    </Box>
                   )}
 
                   <Divider sx={{ my: 2 }} />
@@ -491,19 +508,49 @@ export default function CourseDetailPage() {
                       >
                         Enrolled
                       </Button>
-                    ) : (
+                    ) : userSubCoversThisCourse ? (
+                      /* Student has a matching subscription — subscription enroll only */
                       <Button
                         fullWidth
                         variant="contained"
                         size="large"
                         disabled={enrolling}
                         onClick={() => void handleEnroll()}
-                        sx={{ fontWeight: 700, borderRadius: 2, mb: 1 }}
+                        startIcon={<CardMembershipIcon />}
+                        sx={{ fontWeight: 700, borderRadius: 2, mb: 1, bgcolor: '#7c3aed', '&:hover': { bgcolor: '#6d28d9' } }}
                       >
-                        {enrolling ? <CircularProgress size={22} color="inherit" /> : (course.pricing === 'Free' ? 'Enroll Now — Free' : 'Buy Now')}
+                        {enrolling ? <CircularProgress size={22} color="inherit" /> : 'Enroll with Subscription'}
                       </Button>
+                    ) : (
+                      /* No matching subscription */
+                      <>
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          size="large"
+                          disabled={enrolling}
+                          onClick={() => void handleEnroll()}
+                          sx={{ fontWeight: 700, borderRadius: 2, mb: 1 }}
+                        >
+                          {enrolling ? <CircularProgress size={22} color="inherit" /> : (course.pricing === 'Free' ? 'Enroll Now — Free' : 'Buy Now')}
+                        </Button>
+                        {courseInSub && (
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            size="large"
+                            component={RouterLink}
+                            to="/pricing"
+                            startIcon={<CardMembershipIcon />}
+                            sx={{ fontWeight: 600, borderRadius: 2, color: '#7c3aed', borderColor: '#7c3aed', '&:hover': { borderColor: '#6d28d9', bgcolor: '#f5f3ff' } }}
+                          >
+                            Subscribe to Enroll Free
+                          </Button>
+                        )}
+                      </>
                     )
                   ) : (
+                    /* Not logged in */
                     <>
                       <Button
                         fullWidth
@@ -515,6 +562,19 @@ export default function CourseDetailPage() {
                       >
                         {course.pricing === 'Free' ? 'Enroll Free' : 'Get Started'}
                       </Button>
+                      {courseInSub && (
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          size="large"
+                          component={RouterLink}
+                          to="/pricing"
+                          startIcon={<CardMembershipIcon />}
+                          sx={{ fontWeight: 600, borderRadius: 2, mb: 1, color: '#7c3aed', borderColor: '#7c3aed', '&:hover': { borderColor: '#6d28d9', bgcolor: '#f5f3ff' } }}
+                        >
+                          Enroll with Subscription
+                        </Button>
+                      )}
                       <Button
                         fullWidth
                         variant="outlined"

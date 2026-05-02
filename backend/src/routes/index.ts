@@ -6,6 +6,7 @@ import teacherRouter from './teacher.routes';
 import categoryRouter from './category.routes';
 import courseRouter from './course.routes';
 import subscriptionRouter from './subscription.routes';
+import subscriptionPlanConfigRouter from './subscriptionPlanConfig.routes';
 import enrollmentRouter from './enrollment.routes';
 
 const router = Router();
@@ -17,6 +18,7 @@ router.use('/teachers', teacherRouter);
 router.use('/categories', categoryRouter);
 router.use('/courses', courseRouter);
 router.use('/subscriptions', subscriptionRouter);
+router.use('/subscription-plans', subscriptionPlanConfigRouter);
 router.use('/enrollments', enrollmentRouter);
 
 export default router;

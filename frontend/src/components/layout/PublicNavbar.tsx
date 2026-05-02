@@ -93,6 +93,14 @@ export default function PublicNavbar() {
           >
             Browse
           </Button>
+          <Button
+            component={RouterLink}
+            to="/pricing"
+            color="inherit"
+            sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
+          >
+            Pricing
+          </Button>
 
           {user ? (
             <>

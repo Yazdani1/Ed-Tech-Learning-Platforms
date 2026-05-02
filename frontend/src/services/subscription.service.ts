@@ -6,5 +6,7 @@ export const subscriptionService = {
 	getMySubscription: () => api.get<ISubscription>('/subscriptions/my'),
 	assign: (data: { userId: string; plan: SubscriptionPlan; endDate: string }) =>
 		api.post<ISubscription>('/subscriptions/assign', data),
-	cancel: (id: string) => api.put(`/subscriptions/${id}/cancel`),
+	cancel: (id: string) => api.patch(`/subscriptions/${id}/cancel`),
+	subscribe: (plan: SubscriptionPlan) =>
+		api.post<ISubscription>('/subscriptions/subscribe', { plan }),
 };

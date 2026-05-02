@@ -1,0 +1,273 @@
+import { useEffect, useState } from 'react';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import {
+	Box,
+	Button,
+	Card,
+	CardActions,
+	CardContent,
+	Chip,
+	CircularProgress,
+	Container,
+	Divider,
+	Grid,
+	Typography,
+} from '@mui/material';
+import CheckIcon from '@mui/icons-material/Check';
+import CardMembershipIcon from '@mui/icons-material/CardMembership';
+import toast from 'react-hot-toast';
+import PublicNavbar from '../../components/layout/PublicNavbar';
+import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
+import { subscriptionService } from '../../services/subscription.service';
+import type { ISubscriptionPlanConfig, SubscriptionPlan } from '../../types/index';
+import { useAuth } from '../../context/useAuth';
+
+const DEFAULT_COLORS: Record<SubscriptionPlan, string> = {
+	Basic: '#0284c7',
+	Premium: '#7c3aed',
+	Gold: '#d97706',
+	'Quiz Only': '#059669',
+};
+
+export default function PricingPage() {
+	const { user, refreshUser } = useAuth();
+	const navigate = useNavigate();
+	const [plans, setPlans] = useState<ISubscriptionPlanConfig[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [subscribing, setSubscribing] = useState<SubscriptionPlan | null>(null);
+
+	const isStudent = user?.role === 'Student';
+	const activePlan = user?.activeSubscription?.plan;
+	const activePlanExpiry = user?.activeSubscription?.endDate;
+	const isActivePlanValid = activePlanExpiry && new Date(activePlanExpiry) > new Date();
+
+	useEffect(() => {
+		subscriptionPlanConfigService
+			.getAll()
+			.then((res) => setPlans(res.data ?? []))
+			.finally(() => setLoading(false));
+	}, []);
+
+	const handleSubscribe = async (plan: SubscriptionPlan) => {
+		if (!user) {
+			navigate('/auth/register');
+			return;
+		}
+		if (!isStudent) {
+			toast.error('Only students can subscribe to plans');
+			return;
+		}
+		setSubscribing(plan);
+		try {
+			await subscriptionService.subscribe(plan);
+			await refreshUser?.();
+			toast.success(`Subscribed to ${plan} plan!`);
+		} catch {
+			toast.error('Failed to subscribe. Please try again.');
+		} finally {
+			setSubscribing(null);
+		}
+	};
+
+	return (
+		<Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+			<PublicNavbar />
+
+			{/* Hero */}
+			<Box sx={{ bgcolor: '#1c1d1f', color: 'white', py: { xs: 6, md: 9 }, textAlign: 'center' }}>
+				<Container maxWidth='md'>
+					<Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+						<CardMembershipIcon sx={{ fontSize: 48, color: '#a78bfa' }} />
+					</Box>
+					<Typography variant='h3' sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '2rem', md: '2.75rem' } }}>
+						Choose Your Plan
+					</Typography>
+					<Typography variant='h6' sx={{ fontWeight: 400, opacity: 0.8, maxWidth: 560, mx: 'auto' }}>
+						Unlock unlimited access to courses with a subscription that fits your learning goals.
+					</Typography>
+					{isStudent && isActivePlanValid && (
+						<Chip
+							label={`Current plan: ${activePlan} · Expires ${new Date(activePlanExpiry!).toLocaleDateString()}`}
+							sx={{ mt: 3, bgcolor: '#7c3aed', color: 'white', fontWeight: 600, fontSize: '0.875rem', px: 1 }}
+						/>
+					)}
+				</Container>
+			</Box>
+
+			{/* Plan cards */}
+			<Container maxWidth='lg' sx={{ py: { xs: 5, md: 8 } }}>
+				{loading ? (
+					<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+						<CircularProgress />
+					</Box>
+				) : plans.length === 0 ? (
+					<Box sx={{ textAlign: 'center', mt: 8 }}>
+						<Typography variant='h6' color='text.secondary'>
+							No subscription plans available yet. Check back soon!
+						</Typography>
+					</Box>
+				) : (
+					<Grid container spacing={3} sx={{ justifyContent: 'center' }}>
+						{plans.map((plan) => {
+							const accentColor = plan.color || DEFAULT_COLORS[plan.plan] || '#1976d2';
+							const isCurrent = isStudent && isActivePlanValid && activePlan === plan.plan;
+							return (
+								<Grid key={plan._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+									<Card
+										elevation={isCurrent ? 6 : 1}
+										sx={{
+											borderRadius: 3,
+											border: '2px solid',
+											borderColor: isCurrent ? accentColor : 'divider',
+											height: '100%',
+											display: 'flex',
+											flexDirection: 'column',
+											transition: 'transform 0.15s, box-shadow 0.15s',
+											'&:hover': { transform: 'translateY(-4px)', boxShadow: 6 },
+											position: 'relative',
+											overflow: 'visible',
+										}}
+									>
+										{/* Badge */}
+										{(plan.badge || isCurrent) && (
+											<Box
+												sx={{
+													position: 'absolute',
+													top: -14,
+													left: '50%',
+													transform: 'translateX(-50%)',
+												}}
+											>
+												<Chip
+													label={isCurrent ? 'Current Plan' : plan.badge}
+													size='small'
+													sx={{
+														bgcolor: isCurrent ? '#16a34a' : accentColor,
+														color: 'white',
+														fontWeight: 700,
+														fontSize: '0.75rem',
+														px: 0.5,
+													}}
+												/>
+											</Box>
+										)}
+
+										<CardContent sx={{ flex: 1, pt: plan.badge || isCurrent ? 3.5 : 2.5 }}>
+											<Typography
+												variant='h6'
+												sx={{ fontWeight: 700, color: accentColor, mb: 0.5 }}
+											>
+												{plan.plan}
+											</Typography>
+
+											<Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mb: 0.5 }}>
+												<Typography variant='h3' sx={{ fontWeight: 800 }}>
+													৳{plan.price.toLocaleString()}
+												</Typography>
+											</Box>
+											<Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
+												for {plan.duration === 1 ? '1 month' : `${plan.duration} months`}
+											</Typography>
+
+											<Divider sx={{ mb: 2 }} />
+
+											<Box>
+												{plan.features.map((feat, i) => (
+													<Box
+														key={i}
+														sx={{ display: 'flex', gap: 1.25, alignItems: 'flex-start', mb: 1 }}
+													>
+														<CheckIcon
+															sx={{ fontSize: 17, color: accentColor, mt: 0.2, flexShrink: 0 }}
+														/>
+														<Typography variant='body2'>{feat}</Typography>
+													</Box>
+												))}
+											</Box>
+										</CardContent>
+
+										<CardActions sx={{ p: 2, pt: 0 }}>
+											{isCurrent ? (
+												<Button fullWidth variant='outlined' disabled sx={{ borderRadius: 2, fontWeight: 700 }}>
+													Active Plan
+												</Button>
+											) : isStudent && isActivePlanValid ? (
+												<Button
+													fullWidth
+													variant='contained'
+													disabled={subscribing === plan.plan}
+													onClick={() => void handleSubscribe(plan.plan)}
+													sx={{ borderRadius: 2, fontWeight: 700, bgcolor: accentColor, '&:hover': { bgcolor: accentColor, opacity: 0.9 } }}
+												>
+													{subscribing === plan.plan ? <CircularProgress size={20} color='inherit' /> : 'Switch Plan'}
+												</Button>
+											) : !user ? (
+												<Button
+													fullWidth
+													variant='contained'
+													component={RouterLink}
+													to='/auth/register'
+													sx={{ borderRadius: 2, fontWeight: 700, bgcolor: accentColor, '&:hover': { bgcolor: accentColor, opacity: 0.9 } }}
+												>
+													Get Started
+												</Button>
+											) : (
+												<Button
+													fullWidth
+													variant='contained'
+													disabled={subscribing === plan.plan}
+													onClick={() => void handleSubscribe(plan.plan)}
+													sx={{ borderRadius: 2, fontWeight: 700, bgcolor: accentColor, '&:hover': { bgcolor: accentColor, opacity: 0.9 } }}
+												>
+													{subscribing === plan.plan ? <CircularProgress size={20} color='inherit' /> : 'Subscribe'}
+												</Button>
+											)}
+										</CardActions>
+									</Card>
+								</Grid>
+							);
+						})}
+					</Grid>
+				)}
+
+				{/* Upsell for logged-out visitors */}
+				{!user && plans.length > 0 && (
+					<Box
+						sx={{
+							mt: 7,
+							p: 4,
+							borderRadius: 3,
+							bgcolor: 'grey.50',
+							border: '1px solid',
+							borderColor: 'divider',
+							textAlign: 'center',
+						}}
+					>
+						<Typography variant='h6' sx={{ fontWeight: 700, mb: 1 }}>
+							Already have an account?
+						</Typography>
+						<Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
+							Sign in to subscribe and start learning.
+						</Typography>
+						<Button
+							component={RouterLink}
+							to='/auth/login'
+							variant='outlined'
+							sx={{ fontWeight: 600, mr: 1 }}
+						>
+							Sign In
+						</Button>
+						<Button
+							component={RouterLink}
+							to='/auth/register'
+							variant='contained'
+							sx={{ fontWeight: 600 }}
+						>
+							Create Account
+						</Button>
+					</Box>
+				)}
+			</Container>
+		</Box>
+	);
+}

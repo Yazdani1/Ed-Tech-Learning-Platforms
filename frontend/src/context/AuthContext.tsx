@@ -38,6 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		toast.success('Logged out successfully');
 	};
 
+	const refreshUser = async () => {
+		const res = await authService.getMe();
+		setUser(res.data ?? null);
+	};
+
 	return (
 		<AuthContext.Provider
 			value={{
@@ -47,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				login,
 				register,
 				logout,
+				refreshUser,
 			}}
 		>
 			{children}
