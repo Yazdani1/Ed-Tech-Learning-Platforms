@@ -1,8 +1,23 @@
 import type { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { User } from '../models/User.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { UserRole } from '../types/index';
+
+export const createUser = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, password, role } = req.body as { name: string; email: string; password: string; role?: UserRole };
+  if (!name || !email || !password) throw new AppError('Name, email and password are required', 400);
+
+  const existing = await User.findOne({ email });
+  if (existing) throw new AppError('Email is already in use', 400);
+
+  const hashed = await bcrypt.hash(password, 12);
+  const validRoles: UserRole[] = ['Super Admin', 'Admin', 'Moderator', 'Teacher', 'Student'];
+  const user = await User.create({ name, email, password: hashed, role: role && validRoles.includes(role) ? role : 'Student' });
+
+  res.status(201).json({ success: true, message: 'User created', data: { _id: user._id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt } });
+});
 
 export const getUsers = asyncHandler(async (_req: Request, res: Response) => {
   const users = await User.find().select('-password').sort({ createdAt: -1 });

@@ -31,6 +31,7 @@ export interface ITeacher {
     twitter?: string;
     youtube?: string;
   };
+  userId?: string;
 }
 
 export interface ICategory {

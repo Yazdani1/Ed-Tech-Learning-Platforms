@@ -1,20 +1,27 @@
 import { useEffect, useState } from 'react';
 import {
 	Box,
-	Typography,
+	Button,
+	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
+	FormControl,
+	IconButton,
+	MenuItem,
+	Paper,
+	Select,
 	Table,
 	TableBody,
 	TableCell,
 	TableContainer,
 	TableHead,
 	TableRow,
-	Paper,
-	IconButton,
-	MenuItem,
-	Select,
-	FormControl,
-	CircularProgress,
+	TextField,
+	Typography,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import toast from 'react-hot-toast';
 import { userService } from '../../services/user.service';
@@ -28,9 +35,14 @@ const USER_ROLES: IUser['role'][] = [
 	'Student',
 ];
 
+const DEFAULT_FORM = { name: '', email: '', password: '', role: 'Student' as IUser['role'] };
+
 export default function UsersPage() {
 	const [users, setUsers] = useState<IUser[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [dialogOpen, setDialogOpen] = useState(false);
+	const [form, setForm] = useState(DEFAULT_FORM);
+	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
 		loadUsers();
@@ -43,12 +55,32 @@ export default function UsersPage() {
 			.finally(() => setLoading(false));
 	};
 
+	const handleCreate = async () => {
+		if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
+			toast.error('Name, email and password are required');
+			return;
+		}
+		setSaving(true);
+		try {
+			await userService.create(form);
+			toast.success('User created');
+			setDialogOpen(false);
+			setForm(DEFAULT_FORM);
+			loadUsers();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Failed to create user';
+			toast.error(msg);
+		} finally {
+			setSaving(false);
+		}
+	};
+
 	const handleRoleChange = async (userId: string, newRole: IUser['role']) => {
 		try {
 			await userService.updateRole(userId, newRole);
 			toast.success('Role updated');
 			loadUsers();
-		} catch (error) {
+		} catch {
 			toast.error('Failed to update role');
 		}
 	};
@@ -59,16 +91,21 @@ export default function UsersPage() {
 			await userService.delete(id);
 			toast.success('User deleted');
 			loadUsers();
-		} catch (error) {
+		} catch {
 			toast.error('Failed to delete user');
 		}
 	};
 
 	return (
 		<Box>
-			<Typography variant='h4' sx={{ fontWeight: 700, mb: 3 }}>
-				Users
-			</Typography>
+			<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+				<Typography variant='h4' sx={{ fontWeight: 700 }}>
+					User List
+				</Typography>
+				<Button variant='contained' startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+					Create User
+				</Button>
+			</Box>
 
 			{loading ? (
 				<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
@@ -135,6 +172,54 @@ export default function UsersPage() {
 					</Table>
 				</TableContainer>
 			)}
+
+			{/* Create User Dialog */}
+			<Dialog open={dialogOpen} onClose={() => { setDialogOpen(false); setForm(DEFAULT_FORM); }} maxWidth='sm' fullWidth>
+				<DialogTitle>Create User</DialogTitle>
+				<DialogContent>
+					<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+						<TextField
+							label='Name'
+							value={form.name}
+							onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+							fullWidth
+							required
+						/>
+						<TextField
+							label='Email'
+							type='email'
+							value={form.email}
+							onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+							fullWidth
+							required
+						/>
+						<TextField
+							label='Password'
+							type='password'
+							value={form.password}
+							onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+							fullWidth
+							required
+						/>
+						<FormControl fullWidth>
+							<Select
+								value={form.role}
+								onChange={(e) => setForm((p) => ({ ...p, role: e.target.value as IUser['role'] }))}
+							>
+								{USER_ROLES.map((role) => (
+									<MenuItem key={role} value={role}>{role}</MenuItem>
+								))}
+							</Select>
+						</FormControl>
+					</Box>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => { setDialogOpen(false); setForm(DEFAULT_FORM); }}>Cancel</Button>
+					<Button variant='contained' onClick={() => void handleCreate()} disabled={saving}>
+						{saving ? <CircularProgress size={18} /> : 'Create'}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Box>
 	);
 }

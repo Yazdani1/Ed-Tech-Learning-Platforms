@@ -13,8 +13,8 @@ export const errorHandler = (
     return;
   }
 
-  // Mongoose duplicate key
-  if ('code' in err && (err as NodeJS.ErrnoException).code === '11000') {
+  // Mongoose duplicate key (MongoDB sends numeric 11000)
+  if ('code' in err && Number((err as { code: unknown }).code) === 11000) {
     res.status(400).json({ success: false, message: 'Duplicate field value entered' });
     return;
   }

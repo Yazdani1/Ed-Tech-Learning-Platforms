@@ -31,21 +31,23 @@ const DRAWER_OPEN = 240;
 const DRAWER_CLOSED = 64;
 
 const navItems = [
-	{ label: 'Home', icon: <HomeIcon />, path: '/', exact: true },
-	{ label: 'nav.dashboard', icon: <DashboardIcon />, path: '/admin/dashboard' },
-	{ label: 'Profile', icon: <PersonIcon />, path: '/admin/profile' },
-	{ label: 'nav.courses', icon: <SchoolIcon />, path: '/admin/courses' },
-	{ label: 'nav.teachers', icon: <PersonIcon />, path: '/admin/teachers' },
+	{ label: 'Home', icon: <HomeIcon />, path: '/', exact: true, roles: ['Super Admin', 'Admin', 'Moderator'] },
+	{ label: 'nav.dashboard', icon: <DashboardIcon />, path: '/admin/dashboard', roles: ['Super Admin', 'Admin', 'Moderator'] },
+	{ label: 'Profile', icon: <PersonIcon />, path: '/admin/profile', roles: ['Super Admin', 'Admin', 'Moderator'] },
+	{ label: 'nav.courses', icon: <SchoolIcon />, path: '/admin/courses', roles: ['Super Admin', 'Admin', 'Moderator'] },
+	{ label: 'nav.teachers', icon: <PersonIcon />, path: '/admin/teachers', roles: ['Super Admin', 'Admin'] },
 	{
 		label: 'nav.categories',
 		icon: <CategoryIcon />,
 		path: '/admin/categories',
+		roles: ['Super Admin', 'Admin', 'Moderator'],
 	},
-	{ label: 'nav.students', icon: <PeopleIcon />, path: '/admin/students' },
+	{ label: 'User List', icon: <PeopleIcon />, path: '/admin/users', roles: ['Super Admin', 'Admin'] },
 	{
 		label: 'nav.subscriptions',
 		icon: <CardMembershipIcon />,
 		path: '/admin/subscriptions',
+		roles: ['Super Admin', 'Admin'],
 	},
 ];
 
@@ -110,7 +112,7 @@ export default function AdminSidebar() {
 
 			{/* Nav items */}
 			<List sx={{ flex: 1, pt: 1 }}>
-				{navItems.map((item) => {
+				{navItems.filter((item) => !user?.role || item.roles.includes(user.role)).map((item) => {
 					const active = item.exact
 						? location.pathname === item.path
 						: location.pathname.startsWith(item.path);

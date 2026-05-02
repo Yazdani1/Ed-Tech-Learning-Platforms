@@ -16,7 +16,7 @@ const ROLE_REDIRECT: Record<UserRole, string> = {
 	'Super Admin': '/admin/dashboard',
 	Admin: '/admin/dashboard',
 	Moderator: '/admin/dashboard',
-	Teacher: '/admin/dashboard',
+	Teacher: '/teacher/courses',
 	Student: '/student/dashboard',
 };
 

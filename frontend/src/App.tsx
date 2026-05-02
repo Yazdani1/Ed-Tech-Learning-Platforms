@@ -3,6 +3,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import AuthLayout from './components/layout/AuthLayout';
 import AdminLayout from './components/layout/AdminLayout/AdminLayout';
 import StudentLayout from './components/layout/StudentLayout/StudentLayout';
+import TeacherLayout from './components/layout/TeacherLayout/TeacherLayout';
 
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -18,11 +19,12 @@ import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
 import AdminEnrollmentsPage from './pages/enrollments/AdminEnrollmentsPage';
 import PerformancePage from './pages/performance/PerformancePage';
 import StudentCourseLearningPage from './pages/courses/StudentCourseLearningPage';
+import TeacherCoursesPage from './pages/courses/TeacherCoursesPage';
 import PricingPage from './pages/pricing/PricingPage';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
 
-const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator', 'Teacher'] as const;
+const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
 export default function App() {
 	return (
@@ -49,7 +51,7 @@ export default function App() {
 					/>
 					<Route path='/admin/categories' element={<CategoriesPage />} />
 					<Route path='/admin/teachers' element={<TeachersPage />} />
-					<Route path='/admin/students' element={<UsersPage />} />
+					<Route path='/admin/users' element={<UsersPage />} />
 					<Route path='/admin/subscriptions' element={<SubscriptionsPage />} />
 					<Route path='/admin/enrollments/:courseId' element={<AdminEnrollmentsPage />} />
 					<Route path='/admin/performance' element={<PerformancePage />} />
@@ -64,6 +66,14 @@ export default function App() {
 					<Route path='/student/dashboard' element={<DashboardPage />} />{' '}
 					<Route path='/student/profile' element={<ProfilePage />} />{' '}
 					<Route path='/student/courses' element={<CoursesPage />} />
+				</Route>
+			</Route>
+
+			{/* Teacher routes */}
+			<Route element={<ProtectedRoute allowedRoles={['Teacher']} />}>
+				<Route path='/teacher/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
+				<Route element={<TeacherLayout />}>
+					<Route path='/teacher/courses' element={<TeacherCoursesPage />} />
 				</Route>
 			</Route>
 

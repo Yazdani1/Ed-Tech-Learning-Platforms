@@ -124,7 +124,7 @@ export default function StudentCourseLearningPage() {
 					}}
 				>
 					<Tooltip title='Back to My Courses'>
-						<IconButton size='small' onClick={() => navigate('/student/courses')}>
+						<IconButton size='small' onClick={() => navigate(-1)}>
 							<ArrowBackIcon fontSize='small' />
 						</IconButton>
 					</Tooltip>
