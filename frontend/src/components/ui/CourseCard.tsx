@@ -14,9 +14,10 @@ const PLAN_COLORS: Record<string, string> = {
 interface CourseCardProps {
 	course: ICourse;
 	basePath?: string;
+	appendPath?: string;
 }
 
-export default function CourseCard({ course, basePath = '/admin/courses' }: CourseCardProps) {
+export default function CourseCard({ course, basePath = '/admin/courses', appendPath = '' }: CourseCardProps) {
 	const navigate = useNavigate();
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
@@ -50,7 +51,7 @@ export default function CourseCard({ course, basePath = '/admin/courses' }: Cour
 				onMouseLeave={() => setAnchorEl(null)}
 			>
 				<CardActionArea
-					onClick={() => navigate(`${basePath}/${course._id}`)}
+					onClick={() => navigate(`${basePath}/${course._id}${appendPath}`)}
 					sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
 				>
 					{/* Cover image */}

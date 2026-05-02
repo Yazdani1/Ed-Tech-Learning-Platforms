@@ -206,7 +206,7 @@ export default function CoursesPage() {
 					<Grid container spacing={3}>
 						{courses.map((course) => (
 							<Grid key={course._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-								<CourseCard course={course} basePath='/admin/courses' />
+								<CourseCard course={course} basePath='/admin/courses' appendPath='/edit' />
 							</Grid>
 						))}
 					</Grid>
