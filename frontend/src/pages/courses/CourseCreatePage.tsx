@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
+	Avatar,
 	Box,
 	Button,
 	TextField,
@@ -13,19 +14,22 @@ import {
 	FormLabel,
 	CircularProgress,
 	Chip,
+	Divider,
 	IconButton,
 	Paper,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
 import { teacherService } from '../../services/teacher.service';
+import { announcementService } from '../../services/announcement.service';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import CurriculumBuilder from '../../components/course/CurriculumBuilder/CurriculumBuilder';
-import type { ICategory, ITeacher, SubscriptionPlan } from '../../types/index';
+import type { ICategory, ITeacher, IAnnouncement, SubscriptionPlan } from '../../types/index';
 
 const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 	'Basic',
@@ -154,6 +158,9 @@ export default function CourseCreatePage() {
 	const [loadingCourse, setLoadingCourse] = useState(false);
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
+	const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
+	const [annForm, setAnnForm] = useState({ title: '', description: '' });
+	const [annPosting, setAnnPosting] = useState(false);
 	const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const initialRender = useRef(true);
 	const autoCreating = useRef(false);
@@ -297,7 +304,46 @@ export default function CourseCreatePage() {
 		}
 	};
 
-	const tabs = ['Basic Info', 'Media', 'Learning Content', 'Curriculum'];
+	const tabs = ['Basic Info', 'Media', 'Learning Content', 'Curriculum', 'Announcements'];
+
+	useEffect(() => {
+		if (tab === 4 && courseId) {
+			announcementService
+				.getByCourse(courseId)
+				.then((r) => setAnnouncements(r.data ?? []))
+				.catch(() => {});
+		}
+	}, [tab, courseId]);
+
+	const handlePostAnnouncement = async () => {
+		if (!annForm.title.trim() || !annForm.description.trim()) {
+			toast.error('Title and description are required');
+			return;
+		}
+		if (!courseId) { toast.error('Save the course first'); return; }
+		setAnnPosting(true);
+		try {
+			const res = await announcementService.create(courseId, annForm);
+			if (res.data) setAnnouncements((p) => [res.data!, ...p]);
+			setAnnForm({ title: '', description: '' });
+			toast.success('Announcement posted');
+		} catch {
+			// handled by interceptor
+		} finally {
+			setAnnPosting(false);
+		}
+	};
+
+	const handleDeleteAnnouncement = async (annId: string) => {
+		if (!confirm('Delete this announcement?')) return;
+		try {
+			await announcementService.delete(annId);
+			setAnnouncements((p) => p.filter((a) => a._id !== annId));
+			toast.success('Announcement deleted');
+		} catch {
+			// handled by interceptor
+		}
+	};
 
 	useEffect(() => {
 		if (!id) return;
@@ -718,6 +764,94 @@ export default function CourseCreatePage() {
 								<CircularProgress />
 							</Box>
 						)
+					)}
+
+					{/* Tab 4 – Announcements */}
+					{tab === 4 && (
+						<Box sx={{ maxWidth: 720 }}>
+							<Typography variant='h6' sx={{ fontWeight: 700, mb: 3 }}>
+								Announcements
+							</Typography>
+
+							{/* Post form */}
+							<Paper variant='outlined' sx={{ p: 2.5, mb: 4, borderRadius: 2 }}>
+								<Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 1.5 }}>
+									New Announcement
+								</Typography>
+								<TextField
+									label='Title'
+									value={annForm.title}
+									onChange={(e) => setAnnForm((p) => ({ ...p, title: e.target.value }))}
+									fullWidth
+									size='small'
+									sx={{ mb: 1.5 }}
+								/>
+								<TextField
+									label='Description'
+									value={annForm.description}
+									onChange={(e) => setAnnForm((p) => ({ ...p, description: e.target.value }))}
+									fullWidth
+									multiline
+									rows={3}
+									size='small'
+									sx={{ mb: 1.5 }}
+								/>
+								<Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+									<Button
+										variant='contained'
+										startIcon={<AddIcon />}
+										onClick={() => void handlePostAnnouncement()}
+										disabled={annPosting || !courseId}
+									>
+										{annPosting ? <CircularProgress size={16} /> : 'Post'}
+									</Button>
+								</Box>
+							</Paper>
+
+							<Divider sx={{ mb: 3 }} />
+
+							{/* Existing announcements */}
+							{announcements.length === 0 ? (
+								<Typography color='text.secondary'>No announcements yet.</Typography>
+							) : (
+								<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+									{announcements.map((ann) => (
+										<Paper key={ann._id} variant='outlined' sx={{ p: 2.5, borderRadius: 2 }}>
+											<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+												<Box sx={{ flex: 1 }}>
+													<Typography variant='subtitle1' sx={{ fontWeight: 700, mb: 0.5 }}>
+														{ann.title}
+													</Typography>
+													<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+														<Avatar
+															src={ann.postedBy.avatar}
+															sx={{ width: 22, height: 22, fontSize: 12, bgcolor: 'primary.main' }}
+														>
+															{ann.postedBy.name[0]}
+														</Avatar>
+														<Typography variant='caption' color='text.secondary'>
+															{ann.postedBy.name} &bull; {ann.postedBy.role} &bull;{' '}
+															{new Date(ann.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+														</Typography>
+													</Box>
+													<Typography variant='body2' sx={{ whiteSpace: 'pre-wrap' }}>
+														{ann.description}
+													</Typography>
+												</Box>
+												<IconButton
+													size='small'
+													color='error'
+													onClick={() => void handleDeleteAnnouncement(ann._id)}
+													sx={{ ml: 1, flexShrink: 0 }}
+												>
+													<DeleteIcon fontSize='small' />
+												</IconButton>
+											</Box>
+										</Paper>
+									))}
+								</Box>
+							)}
+						</Box>
 					)}
 				</Box>
 			</Box>

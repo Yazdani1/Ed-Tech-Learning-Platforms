@@ -30,7 +30,7 @@ export const getCourseById = asyncHandler(
 	async (req: Request, res: Response) => {
 		const course = await Course.findById(req.params.id)
 			.populate('category', 'name slug')
-			.populate('teachers', 'name bio profileImage expertise')
+			.populate('teachers', 'name bio profileImage expertise socialLinks userId')
 			.populate({ path: 'sections', populate: { path: 'lectures' } });
 
 		if (!course) throw new AppError('Course not found', 404);

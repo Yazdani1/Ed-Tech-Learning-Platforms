@@ -6,6 +6,7 @@ import {
 	AccordionSummary,
 	Avatar,
 	Box,
+	Button,
 	Chip,
 	CircularProgress,
 	Divider,
@@ -15,6 +16,8 @@ import {
 	ListItemButton,
 	ListItemIcon,
 	ListItemText,
+	Paper,
+	TextField,
 	Tooltip,
 	Typography,
 } from '@mui/material';
@@ -32,11 +35,16 @@ import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { enrollmentService } from '../../services/enrollment.service';
+import { announcementService } from '../../services/announcement.service';
 import { formatLectureDuration, formatSectionDuration } from '../../utils/duration';
-import type { ICourse, ILecture } from '../../types/index';
+import type { ICourse, ILecture, IAnnouncement } from '../../types/index';
 import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar';
+import { useAuth } from '../../context/useAuth';
 
 type NavSection = 'course_overview' | 'video_lectures' | 'teacher' | 'announcements' | 'study_materials' | 'qa';
 
@@ -57,11 +65,17 @@ const NAV_ITEMS: { key: NavSection; label: string; icon: React.ReactNode }[] = [
 export default function StudentCourseLearningPage() {
 	const { courseId } = useParams<{ courseId: string }>();
 	const navigate = useNavigate();
+	const { user } = useAuth();
 	const [course, setCourse] = useState<ICourse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [activeNav, setActiveNav] = useState<NavSection>('video_lectures');
 	const [activeLecture, setActiveLecture] = useState<ILecture | null>(null);
 	const [enrolledCount, setEnrolledCount] = useState<number | null>(null);
+
+	const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
+	const [annPosting, setAnnPosting] = useState(false);
+	const [showAnnForm, setShowAnnForm] = useState(false);
+	const [annForm, setAnnForm] = useState({ title: '', description: '' });
 
 	useEffect(() => {
 		if (!courseId) return;
@@ -79,6 +93,51 @@ export default function StudentCourseLearningPage() {
 			.then((r) => setEnrolledCount(r.data?.count ?? null))
 			.catch(() => {});
 	}, [courseId]);
+
+	useEffect(() => {
+		if (activeNav === 'announcements' && courseId) {
+			announcementService
+				.getByCourse(courseId)
+				.then((r) => setAnnouncements(r.data ?? []))
+				.catch(() => {});
+		}
+	}, [activeNav, courseId]);
+
+	const isTeacherAssigned =
+		user?.role === 'Teacher' &&
+		(course?.teachers ?? []).some((t) => t.userId === user?._id);
+	const canPost =
+		user?.role === 'Super Admin' || user?.role === 'Admin' || isTeacherAssigned;
+
+	const handlePostAnnouncement = async () => {
+		if (!annForm.title.trim() || !annForm.description.trim()) {
+			toast.error('Title and description are required');
+			return;
+		}
+		setAnnPosting(true);
+		try {
+			const res = await announcementService.create(courseId!, annForm);
+			if (res.data) setAnnouncements((p) => [res.data!, ...p]);
+			setAnnForm({ title: '', description: '' });
+			setShowAnnForm(false);
+			toast.success('Announcement posted');
+		} catch {
+			// error toast handled by interceptor
+		} finally {
+			setAnnPosting(false);
+		}
+	};
+
+	const handleDeleteAnnouncement = async (id: string) => {
+		if (!confirm('Delete this announcement?')) return;
+		try {
+			await announcementService.delete(id);
+			setAnnouncements((p) => p.filter((a) => a._id !== id));
+			toast.success('Announcement deleted');
+		} catch {
+			// error toast handled by interceptor
+		}
+	};
 
 	const videoId = activeLecture?.videoUrl ? getYouTubeId(activeLecture.videoUrl) : null;
 	const totalLectures = course?.sections?.reduce((a, s) => a + s.lectures.length, 0) ?? 0;
@@ -103,8 +162,8 @@ export default function StudentCourseLearningPage() {
 
 	return (
 		<Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden', bgcolor: 'background.default' }}>
-			{/* ── Main student sidebar ────────────────────────────────── */}
-			<StudentSidebar />
+			{/* ── Main student sidebar (hidden for teachers) ─────────── */}
+			{user?.role !== 'Teacher' && <StudentSidebar />}
 
 			{/* ── Learning area ───────────────────────────────────────── */}
 			<Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
@@ -486,11 +545,111 @@ export default function StudentCourseLearningPage() {
 
 						{/* ── Announcements ──────────────────────────────── */}
 						{activeNav === 'announcements' && (
-							<Box sx={{ p: 4 }}>
-								<Typography variant='h5' sx={{ fontWeight: 700, mb: 2 }}>
-									Announcements
-								</Typography>
-								<Typography color='text.secondary'>No announcements yet.</Typography>
+							<Box sx={{ p: 4, maxWidth: 800 }}>
+								<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+									<Typography variant='h5' sx={{ fontWeight: 700 }}>
+										Announcements
+									</Typography>
+									{canPost && (
+										<Button
+											variant='contained'
+											startIcon={<AddIcon />}
+											onClick={() => setShowAnnForm((p) => !p)}
+										>
+											Post Announcement
+										</Button>
+									)}
+								</Box>
+
+								{/* Post form */}
+								{canPost && showAnnForm && (
+									<Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
+										<Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 1.5 }}>
+											New Announcement
+										</Typography>
+										<TextField
+											label='Title'
+											value={annForm.title}
+											onChange={(e) => setAnnForm((p) => ({ ...p, title: e.target.value }))}
+											fullWidth
+											size='small'
+											sx={{ mb: 1.5 }}
+										/>
+										<TextField
+											label='Description'
+											value={annForm.description}
+											onChange={(e) => setAnnForm((p) => ({ ...p, description: e.target.value }))}
+											fullWidth
+											multiline
+											rows={3}
+											size='small'
+											sx={{ mb: 1.5 }}
+										/>
+										<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+											<Button size='small' onClick={() => { setShowAnnForm(false); setAnnForm({ title: '', description: '' }); }}>
+												Cancel
+											</Button>
+											<Button
+												size='small'
+												variant='contained'
+												onClick={() => void handlePostAnnouncement()}
+												disabled={annPosting}
+											>
+												{annPosting ? <CircularProgress size={16} /> : 'Post'}
+											</Button>
+										</Box>
+									</Paper>
+								)}
+
+								{/* Announcements list */}
+								{announcements.length === 0 ? (
+									<Typography color='text.secondary'>No announcements yet.</Typography>
+								) : (
+									<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+										{announcements.map((ann) => {
+											const canDelete =
+												user?._id === ann.postedBy._id ||
+												user?.role === 'Admin' ||
+												user?.role === 'Super Admin';
+											return (
+												<Paper key={ann._id} variant='outlined' sx={{ p: 2.5, borderRadius: 2 }}>
+													<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+														<Box sx={{ flex: 1 }}>
+															<Typography variant='subtitle1' sx={{ fontWeight: 700, mb: 0.5 }}>
+																{ann.title}
+															</Typography>
+															<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+																<Avatar
+																	src={ann.postedBy.avatar}
+																	sx={{ width: 22, height: 22, fontSize: 12, bgcolor: 'primary.main' }}
+																>
+																	{ann.postedBy.name[0]}
+																</Avatar>
+																<Typography variant='caption' color='text.secondary'>
+																	{ann.postedBy.name} &bull; {ann.postedBy.role} &bull;{' '}
+																	{new Date(ann.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+																</Typography>
+															</Box>
+															<Typography variant='body2' sx={{ whiteSpace: 'pre-wrap' }}>
+																{ann.description}
+															</Typography>
+														</Box>
+														{canDelete && (
+															<IconButton
+																size='small'
+																color='error'
+																onClick={() => void handleDeleteAnnouncement(ann._id)}
+																sx={{ ml: 1, flexShrink: 0 }}
+															>
+																<DeleteIcon fontSize='small' />
+															</IconButton>
+														)}
+													</Box>
+												</Paper>
+											);
+										})}
+									</Box>
+								)}
 							</Box>
 						)}
 

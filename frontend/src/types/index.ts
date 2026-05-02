@@ -133,6 +133,21 @@ export interface IEnrollmentStats {
   thisMonthEarned: number;
 }
 
+export interface IAnnouncement {
+  _id: string;
+  course: string;
+  title: string;
+  description: string;
+  postedBy: {
+    _id: string;
+    name: string;
+    avatar?: string;
+    role: UserRole;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
