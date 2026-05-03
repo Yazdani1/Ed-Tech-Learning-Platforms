@@ -28,7 +28,7 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const browseCourses = asyncHandler(async (req: Request, res: Response) => {
-	const { search, courseTypes, categories, subscriptionPlans } = req.query as Record<string, string>;
+	const { search, courseTypes, categories, subscriptionPlans, page, limit } = req.query as Record<string, string>;
 
 	// Security: hard-coded — public users only ever see Published + Public courses
 	const filter: Record<string, unknown> = {
@@ -57,13 +57,33 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		}
 	}
 
-	const courses = await Course.find(filter)
+	const query = Course.find(filter)
 		.populate('category', 'name slug')
 		.populate('courseType', 'name slug description')
 		.populate('teachers', 'name profileImage')
 		.sort({ createdAt: -1 });
 
-	res.status(200).json({ success: true, data: courses, total: courses.length });
+	const currentPage = Math.max(Number(page) || 1, 1);
+	const perPage = Math.min(Math.max(Number(limit) || 8, 1), 100);
+	const total = await Course.countDocuments(filter);
+	const totalPages = Math.max(Math.ceil(total / perPage), 1);
+	const safePage = Math.min(currentPage, totalPages);
+
+	const courses = await query.skip((safePage - 1) * perPage).limit(perPage);
+
+	res.status(200).json({
+		success: true,
+		data: courses,
+		total,
+		pagination: {
+			page: safePage,
+			limit: perPage,
+			total,
+			totalPages,
+			hasNextPage: safePage < totalPages,
+			hasPrevPage: safePage > 1,
+		},
+	});
 });
 
 export const getCourseById = asyncHandler(
@@ -343,4 +363,3 @@ export const bulkUpdateCourses = asyncHandler(
 		});
 	},
 );
-

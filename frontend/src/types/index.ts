@@ -211,4 +211,14 @@ export interface ApiResponse<T = unknown> {
   message?: string;
   data?: T;
   total?: number;
+  pagination?: IPaginationMeta;
+}
+
+export interface IPaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }

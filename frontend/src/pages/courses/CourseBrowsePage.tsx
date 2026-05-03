@@ -16,14 +16,18 @@ import { courseTypeService } from '../../services/courseType.service';
 import CourseCard from '../../components/ui/CourseCard';
 import PublicNavbar from '../../components/layout/PublicNavbar';
 import CourseFilterSidebar from '../../components/course/CourseFilterSidebar';
+import AppPagination from '../../components/common/AppPagination';
 import { useAuth } from '../../context/useAuth';
 import { encodeParam, decodeParam } from '../../utils/urlParams';
 import type {
 	ICourse,
 	ICategory,
 	ICourseType,
+	IPaginationMeta,
 	SubscriptionPlan,
 } from '../../types/index';
+
+const COURSE_BROWSE_PAGE_SIZE = 8;
 
 export default function CourseBrowsePage() {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -39,6 +43,10 @@ export default function CourseBrowsePage() {
 	const urlPlans = decodeParam(searchParams.get('subscriptionPlans') ?? '')
 		.split(',')
 		.filter(Boolean) as SubscriptionPlan[];
+	const urlPage = Math.max(
+		Number(decodeParam(searchParams.get('page') ?? '')) || 1,
+		1,
+	);
 
 	const [searchInput, setSearchInput] = useState(urlSearch);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,9 +60,11 @@ export default function CourseBrowsePage() {
 	const [fetchState, setFetchState] = useState<{
 		key: string;
 		courses: ICourse[];
+		pagination: IPaginationMeta | null;
 	}>({
 		key: '__init__',
 		courses: [],
+		pagination: null,
 	});
 	const loading = fetchState.key !== paramsKey;
 
@@ -93,6 +103,8 @@ export default function CourseBrowsePage() {
 		}
 		if (urlCategories.length > 0) params.categories = urlCategories.join(',');
 		if (urlPlans.length > 0) params.subscriptionPlans = urlPlans.join(',');
+		params.page = String(urlPage);
+		params.limit = String(COURSE_BROWSE_PAGE_SIZE);
 
 		courseService
 			.browse(params)
@@ -103,9 +115,12 @@ export default function CourseBrowsePage() {
 					courses: Array.isArray(data)
 						? data.filter((c): c is ICourse => Boolean(c?._id))
 						: [],
+					pagination: res.pagination ?? null,
 				});
 			})
-			.catch(() => setFetchState({ key: paramsKey, courses: [] }));
+			.catch(() =>
+				setFetchState({ key: paramsKey, courses: [], pagination: null }),
+			);
 	}, [paramsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const updateParams = (patch: Record<string, string | null>) => {
@@ -113,7 +128,7 @@ export default function CourseBrowsePage() {
 			(prev) => {
 				const next = new URLSearchParams(prev);
 				for (const [key, val] of Object.entries(patch)) {
-					if (val) next.set(key, encodeParam(val));
+					if (val) next.set(key, key === 'page' ? val : encodeParam(val));
 					else next.delete(key);
 				}
 				return next;
@@ -128,7 +143,7 @@ export default function CourseBrowsePage() {
 		if (debounceRef.current) clearTimeout(debounceRef.current);
 		debounceRef.current = setTimeout(() => {
 			isDebouncing.current = false;
-			updateParams({ q: value.trim() || null });
+			updateParams({ q: value.trim() || null, page: null });
 		}, 350);
 	};
 
@@ -136,21 +151,21 @@ export default function CourseBrowsePage() {
 		const next = urlCourseTypes.includes(id)
 			? urlCourseTypes.filter((x) => x !== id)
 			: [...urlCourseTypes, id];
-		updateParams({ courseTypes: next.join(',') || null });
+		updateParams({ courseTypes: next.join(',') || null, page: null });
 	};
 
 	const toggleCategory = (id: string) => {
 		const next = urlCategories.includes(id)
 			? urlCategories.filter((x) => x !== id)
 			: [...urlCategories, id];
-		updateParams({ categories: next.join(',') || null });
+		updateParams({ categories: next.join(',') || null, page: null });
 	};
 
 	const togglePlan = (plan: SubscriptionPlan) => {
 		const next = urlPlans.includes(plan)
 			? urlPlans.filter((x) => x !== plan)
 			: [...urlPlans, plan];
-		updateParams({ subscriptionPlans: next.join(',') || null });
+		updateParams({ subscriptionPlans: next.join(',') || null, page: null });
 	};
 
 	const clearAll = () => {
@@ -161,6 +176,7 @@ export default function CourseBrowsePage() {
 	const activeFilterCount =
 		urlCourseTypes.length + urlCategories.length + urlPlans.length;
 	const hasActiveFilter = urlSearch || activeFilterCount > 0;
+	const pagination = fetchState.pagination;
 
 	return (
 		<Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -264,6 +280,21 @@ export default function CourseBrowsePage() {
 									</Grid>
 								))}
 							</Grid>
+						)}
+						{pagination && (
+							<AppPagination
+								page={pagination.page}
+								totalPages={pagination.totalPages}
+								totalItems={pagination.total}
+								pageSize={pagination.limit}
+								disabled={loading}
+								onChange={(page) => {
+									updateParams({
+										page: page > 1 ? String(page) : null,
+									});
+									window.scrollTo({ top: 0, behavior: 'smooth' });
+								}}
+							/>
 						)}
 					</Box>
 				</Box>
