@@ -23,6 +23,7 @@ import StudentCourseLearningPage from './pages/courses/StudentCourseLearningPage
 import TeacherCoursesPage from './pages/courses/TeacherCoursesPage';
 import PricingPage from './pages/pricing/PricingPage';
 import HomePage from './pages/HomePage';
+import CourseBrowsePage from './pages/courses/CourseBrowsePage';
 import NotFoundPage from './pages/NotFoundPage';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
@@ -81,6 +82,7 @@ export default function App() {
 
 			{/* Public routes */}
 			<Route path='/pricing' element={<PricingPage />} />
+			<Route path='/courses' element={<CourseBrowsePage />} />
 			<Route path='/courses/:id' element={<CourseDetailPage />} />
 
 			<Route path='*' element={<NotFoundPage />} />

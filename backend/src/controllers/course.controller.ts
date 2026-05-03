@@ -27,6 +27,45 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 	res.status(200).json({ success: true, data: courses, total: courses.length });
 });
 
+export const browseCourses = asyncHandler(async (req: Request, res: Response) => {
+	const { search, courseTypes, categories, subscriptionPlans } = req.query as Record<string, string>;
+
+	// Security: hard-coded — public users only ever see Published + Public courses
+	const filter: Record<string, unknown> = {
+		status: 'Published',
+		visibility: 'Public',
+	};
+
+	if (search?.trim())
+		filter.title = { $regex: search.trim(), $options: 'i' };
+
+	if (courseTypes) {
+		const ids = courseTypes.split(',').map((s) => s.trim()).filter((s) => Types.ObjectId.isValid(s)).map((s) => new Types.ObjectId(s));
+		if (ids.length > 0) filter.courseType = { $in: ids };
+	}
+
+	if (categories) {
+		const ids = categories.split(',').map((s) => s.trim()).filter((s) => Types.ObjectId.isValid(s)).map((s) => new Types.ObjectId(s));
+		if (ids.length > 0) filter.category = { $in: ids };
+	}
+
+	if (subscriptionPlans) {
+		const plans = subscriptionPlans.split(',').map((s) => s.trim()).filter(Boolean);
+		if (plans.length > 0) {
+			filter.includedInSubscription = true;
+			filter.allowedSubscriptionPlans = { $in: plans };
+		}
+	}
+
+	const courses = await Course.find(filter)
+		.populate('category', 'name slug')
+		.populate('courseType', 'name slug description')
+		.populate('teachers', 'name profileImage')
+		.sort({ createdAt: -1 });
+
+	res.status(200).json({ success: true, data: courses, total: courses.length });
+});
+
 export const getCourseById = asyncHandler(
 	async (req: Request, res: Response) => {
 		const course = await Course.findById(req.params.id)

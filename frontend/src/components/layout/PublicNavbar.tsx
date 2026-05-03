@@ -22,7 +22,7 @@ export default function PublicNavbar() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) navigate(`/?q=${encodeURIComponent(query.trim())}`);
+    navigate(`/courses${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''}`);
   };
 
   const dashboardPath =
@@ -90,7 +90,7 @@ export default function PublicNavbar() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
           <Button
             component={RouterLink}
-            to="/"
+            to="/courses"
             color="inherit"
             sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
           >

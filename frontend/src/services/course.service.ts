@@ -5,6 +5,9 @@ export const courseService = {
   getAll: (params?: Record<string, string>) =>
     api.get<ICourse[]>('/courses', { params }),
 
+  browse: (params?: Record<string, string>) =>
+    api.get<ICourse[]>('/courses/browse', { params }),
+
   getById: (id: string) => api.get<ICourse>(`/courses/${id}`),
 
   create: (data: FormData) => api.post<ICourse>('/courses', data),
