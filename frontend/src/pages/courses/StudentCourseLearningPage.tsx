@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
 	Accordion,
@@ -160,7 +160,7 @@ export default function StudentCourseLearningPage() {
 		user?.role === 'Teacher' &&
 		(course?.teachers ?? []).some((t) => t.userId === user?._id);
 	const canPost =
-		user?.role === 'Super Admin' || user?.role === 'Admin' || isTeacherAssigned;
+		user?.role === 'Super Admin' || user?.role === 'Admin' || user?.role === 'Moderator' || isTeacherAssigned;
 
 	// Students accessing the learning page are enrolled; teachers are assigned; admins can always post
 	const canPostQA =
