@@ -1,4 +1,12 @@
-import { Box, Card, CardActionArea, Chip, Popover, Typography } from '@mui/material';
+﻿import {
+	Box,
+	Button,
+	Card,
+	CardActionArea,
+	Chip,
+	Popover,
+	Typography,
+} from '@mui/material';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -11,13 +19,33 @@ const PLAN_COLORS: Record<string, string> = {
 	'Quiz Only': '#0891b2',
 };
 
+const COURSE_TYPE_COLORS: Record<string, string> = {
+	'Web Development': '#2563eb',
+	'Data Science': '#7c3aed',
+	'Design & UX': '#f97316',
+	'Business & Marketing': '#059669',
+	'Personal Development': '#8b5cf6',
+	'Language Learning': '#db2777',
+	'Test Prep': '#0ea5e9',
+	'Health & Fitness': '#16a34a',
+	'Creative Arts': '#e11d48',
+};
+
 interface CourseCardProps {
 	course: ICourse;
 	basePath?: string;
 	appendPath?: string;
+	isEnrolled?: boolean;
+	learningPath?: string;
 }
 
-export default function CourseCard({ course, basePath = '/admin/courses', appendPath = '' }: CourseCardProps) {
+export default function CourseCard({
+	course,
+	basePath = '/admin/courses',
+	appendPath = '',
+	isEnrolled = false,
+	learningPath,
+}: CourseCardProps) {
 	const navigate = useNavigate();
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
@@ -28,6 +56,7 @@ export default function CourseCard({ course, basePath = '/admin/courses', append
 			: course.price !== null
 				? `$${course.price.toFixed(2)}`
 				: 'Paid';
+	const learnPath = learningPath ?? `/student/courses/${course._id}/learn`;
 
 	return (
 		<>
@@ -52,13 +81,21 @@ export default function CourseCard({ course, basePath = '/admin/courses', append
 			>
 				<CardActionArea
 					onClick={() => navigate(`${basePath}/${course._id}${appendPath}`)}
-					sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
+					sx={{
+						flexGrow: 1,
+						display: 'flex',
+						flexDirection: 'column',
+						alignItems: 'stretch',
+					}}
 				>
 					{/* Cover image + course type badge */}
 					<Box sx={{ overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
 						<Box
 							component='img'
-							src={course.coverImage ?? 'https://placehold.co/400x200?text=No+Image'}
+							src={
+								course.coverImage ??
+								'https://placehold.co/400x200?text=No+Image'
+							}
 							alt={course.title}
 							sx={{
 								width: '100%',
@@ -79,12 +116,14 @@ export default function CourseCard({ course, basePath = '/admin/courses', append
 									px: 1.25,
 									py: 0.5,
 									borderRadius: 1,
-									background: 'linear-gradient(90deg, #0f766e, #7c3aed, #0ea5e9, #0f766e)',
-									backgroundSize: '250% auto',
-									animation: 'ctSlide 3s linear infinite',
-									'@keyframes ctSlide': {
-										'0%': { backgroundPosition: '0% center' },
-										'100%': { backgroundPosition: '250% center' },
+									backgroundColor:
+										COURSE_TYPE_COLORS[course.courseType.name] ?? '#7c3aed',
+									color: 'white',
+									transform: 'translateZ(0)',
+									animation: 'pulseBadge 2.8s ease-in-out infinite',
+									'@keyframes pulseBadge': {
+										'0%, 100%': { transform: 'scale(1)' },
+										'50%': { transform: 'scale(1.03)' },
 									},
 									boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
 								}}
@@ -106,8 +145,15 @@ export default function CourseCard({ course, basePath = '/admin/courses', append
 					</Box>
 
 					{/* Card body */}
-					<Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-						{/* Title — 2-line clamp */}
+					<Box
+						sx={{
+							p: 1.5,
+							display: 'flex',
+							flexDirection: 'column',
+							flexGrow: 1,
+						}}
+					>
+						{/* Title â€” 2-line clamp */}
 						<Typography
 							sx={{
 								fontWeight: 700,
@@ -142,7 +188,8 @@ export default function CourseCard({ course, basePath = '/admin/courses', append
 							sx={{
 								fontWeight: 700,
 								fontSize: '1rem',
-								color: course.pricing === 'Free' ? 'success.main' : 'text.primary',
+								color:
+									course.pricing === 'Free' ? 'success.main' : 'text.primary',
 								mb: course.includedInSubscription ? 1 : 0,
 							}}
 						>
@@ -150,43 +197,78 @@ export default function CourseCard({ course, basePath = '/admin/courses', append
 						</Typography>
 
 						{/* Subscription plan badges */}
-						{course.includedInSubscription && course.allowedSubscriptionPlans.length > 0 && (
-							<Box>
-								<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
-									{course.allowedSubscriptionPlans.map((plan) => (
-										<Box
-											key={plan}
-											sx={{
-												display: 'inline-flex',
-												alignItems: 'center',
-												gap: 0.4,
-												px: 0.75,
-												py: 0.3,
-												borderRadius: 0.75,
-												bgcolor: PLAN_COLORS[plan] ?? '#7c3aed',
-												color: 'white',
-											}}
-										>
-											<VerifiedIcon sx={{ fontSize: 11 }} />
-											<Typography sx={{ fontSize: '0.68rem', fontWeight: 700, lineHeight: 1 }}>
-												{plan}
-											</Typography>
-										</Box>
-									))}
-									<Typography
+						{course.includedInSubscription &&
+							course.allowedSubscriptionPlans.length > 0 && (
+								<Box>
+									<Box
 										sx={{
-											fontSize: '0.7rem',
-											fontWeight: 600,
-											background: 'linear-gradient(90deg, #7c3aed, #2563eb)',
-											WebkitBackgroundClip: 'text',
-											WebkitTextFillColor: 'transparent',
-											lineHeight: 1,
+											display: 'flex',
+											flexWrap: 'wrap',
+											gap: 0.5,
+											alignItems: 'center',
 										}}
 									>
-										included free
-									</Typography>
+										{course.allowedSubscriptionPlans.map((plan) => (
+											<Box
+												key={plan}
+												sx={{
+													display: 'inline-flex',
+													alignItems: 'center',
+													gap: 0.4,
+													px: 0.75,
+													py: 0.3,
+													borderRadius: 0.75,
+													bgcolor: PLAN_COLORS[plan] ?? '#7c3aed',
+													color: 'white',
+												}}
+											>
+												<VerifiedIcon sx={{ fontSize: 11 }} />
+												<Typography
+													sx={{
+														fontSize: '0.68rem',
+														fontWeight: 700,
+														lineHeight: 1,
+													}}
+												>
+													{plan}
+												</Typography>
+											</Box>
+										))}
+										<Typography
+											sx={{
+												fontSize: '0.7rem',
+												fontWeight: 600,
+												background: 'linear-gradient(90deg, #7c3aed, #2563eb)',
+												WebkitBackgroundClip: 'text',
+												WebkitTextFillColor: 'transparent',
+												lineHeight: 1,
+											}}
+										>
+											included free
+										</Typography>
+									</Box>
 								</Box>
-							</Box>
+							)}
+						{isEnrolled && (
+							<Button
+								fullWidth
+								variant='contained'
+								color='success'
+								size='small'
+								onClick={(e) => {
+									e.stopPropagation();
+									e.preventDefault();
+									navigate(learnPath);
+								}}
+								sx={{
+									mt: 1.25,
+									textTransform: 'none',
+									fontWeight: 700,
+									borderRadius: 2,
+								}}
+							>
+								Go to this course
+							</Button>
 						)}
 					</Box>
 				</CardActionArea>
@@ -211,17 +293,25 @@ export default function CourseCard({ course, basePath = '/admin/courses', append
 					)}
 					{course.description && (
 						<Typography variant='body2' color='text.secondary' sx={{ mb: 1.5 }}>
-							{course.description.slice(0, 140)}{course.description.length > 140 ? '…' : ''}
+							{course.description.slice(0, 140)}
+							{course.description.length > 140 ? 'â€¦' : ''}
 						</Typography>
 					)}
 					{course.whatYouWillLearn?.length > 0 && (
 						<Box>
-							<Typography variant='caption' sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+							<Typography
+								variant='caption'
+								sx={{
+									fontWeight: 700,
+									textTransform: 'uppercase',
+									letterSpacing: 0.5,
+								}}
+							>
 								What you'll learn
 							</Typography>
 							{course.whatYouWillLearn.slice(0, 3).map((item, i) => (
 								<Typography key={i} variant='body2' sx={{ mt: 0.4 }}>
-									• {item}
+									â€¢ {item}
 								</Typography>
 							))}
 						</Box>

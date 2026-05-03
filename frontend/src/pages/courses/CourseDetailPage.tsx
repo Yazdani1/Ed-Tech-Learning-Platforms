@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -73,6 +73,7 @@ export default function CourseDetailPage() {
 	const [loading, setLoading] = useState(true);
 	const [expanded, setExpanded] = useState<string[]>([]);
 	const [isEnrolled, setIsEnrolled] = useState(false);
+	const [enrollmentDate, setEnrollmentDate] = useState<string | null>(null);
 	const [enrolling, setEnrolling] = useState(false);
 	const [subPlans, setSubPlans] = useState<ISubscriptionPlanConfig[]>([]);
 	const [selectedOption, setSelectedOption] = useState<
@@ -135,6 +136,7 @@ export default function CourseDetailPage() {
 			.checkEnrollment(id)
 			.then((r) => {
 				setIsEnrolled(r.data?.isEnrolled ?? false);
+				setEnrollmentDate(r.data?.enrolledAt ?? null);
 			})
 			.catch(() => {
 				/* not enrolled */
@@ -230,7 +232,7 @@ export default function CourseDetailPage() {
 		<Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
 			<PublicNavbar />
 
-			{/* ── Dark hero ──────────────────────────────────────────── */}
+			{/* â”€â”€ Dark hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<Box sx={{ bgcolor: '#1c1d1f', color: 'white', py: { xs: 5, md: 7 } }}>
 				<Container maxWidth='lg'>
 					<Grid container spacing={4}>
@@ -253,7 +255,7 @@ export default function CourseDetailPage() {
 								{course.category?.name && (
 									<>
 										<Typography variant='caption' sx={{ color: 'grey.500' }}>
-											›
+											â€º
 										</Typography>
 										<Typography variant='caption' sx={{ color: '#a78bfa' }}>
 											{course.category.name}
@@ -263,7 +265,7 @@ export default function CourseDetailPage() {
 								{course.courseType?.name && (
 									<>
 										<Typography variant='caption' sx={{ color: 'grey.500' }}>
-											›
+											â€º
 										</Typography>
 										<Typography variant='caption' sx={{ color: '#a78bfa' }}>
 											{course.courseType.name}
@@ -324,7 +326,14 @@ export default function CourseDetailPage() {
 								/>
 								{course.courseType?.name && (
 									<Chip
-										icon={<ClassIcon sx={{ fontSize: '14px !important', color: 'white !important' }} />}
+										icon={
+											<ClassIcon
+												sx={{
+													fontSize: '14px !important',
+													color: 'white !important',
+												}}
+											/>
+										}
 										label={course.courseType.name}
 										size='small'
 										sx={{ bgcolor: '#0f766e', color: 'white', fontWeight: 600 }}
@@ -363,19 +372,17 @@ export default function CourseDetailPage() {
 									))}
 								</Box>
 							)}
-
 						</Grid>
 					</Grid>
 				</Container>
 			</Box>
 
-			{/* ── Body ────────────────────────────────────────────────── */}
+			{/* â”€â”€ Body â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<Container maxWidth='lg' sx={{ py: { xs: 4, md: 6 } }}>
 				<Grid container spacing={4} sx={{ alignItems: 'flex-start' }}>
-					{/* ── Left column ──────────────────────────────────────── */}
+					{/* â”€â”€ Left column â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 					<Grid size={{ xs: 12, md: 8 }}>
-
-						{/* ── Course Type & Schedule Card ───────────────────────── */}
+						{/* â”€â”€ Course Type & Schedule Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 						{(course.courseType || course.startDate || course.endDate) && (
 							<Box
 								sx={{
@@ -391,7 +398,8 @@ export default function CourseDetailPage() {
 								<Box
 									sx={{
 										height: 5,
-										background: 'linear-gradient(90deg, #0f766e, #7c3aed, #0ea5e9, #0f766e)',
+										background:
+											'linear-gradient(90deg, #0f766e, #7c3aed, #0ea5e9, #0f766e)',
 										backgroundSize: '300% 100%',
 										animation: 'barSlide 4s linear infinite',
 										'@keyframes barSlide': {
@@ -403,7 +411,9 @@ export default function CourseDetailPage() {
 
 								<Box sx={{ p: 3 }}>
 									{course.courseType && (
-										<Box sx={{ mb: course.startDate || course.endDate ? 2.5 : 0 }}>
+										<Box
+											sx={{ mb: course.startDate || course.endDate ? 2.5 : 0 }}
+										>
 											<Typography
 												variant='overline'
 												sx={{
@@ -470,14 +480,27 @@ export default function CourseDetailPage() {
 														>
 															Start Date
 														</Typography>
-														<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-															<CalendarTodayIcon sx={{ fontSize: 18, color: '#0f766e' }} />
-															<Typography sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
-																{new Date(course.startDate).toLocaleDateString(undefined, {
-																	year: 'numeric',
-																	month: 'long',
-																	day: 'numeric',
-																})}
+														<Box
+															sx={{
+																display: 'flex',
+																alignItems: 'center',
+																gap: 1,
+															}}
+														>
+															<CalendarTodayIcon
+																sx={{ fontSize: 18, color: '#0f766e' }}
+															/>
+															<Typography
+																sx={{ fontWeight: 700, fontSize: '0.95rem' }}
+															>
+																{new Date(course.startDate).toLocaleDateString(
+																	undefined,
+																	{
+																		year: 'numeric',
+																		month: 'long',
+																		day: 'numeric',
+																	},
+																)}
 															</Typography>
 														</Box>
 													</Box>
@@ -496,14 +519,27 @@ export default function CourseDetailPage() {
 														>
 															End Date
 														</Typography>
-														<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-															<EventIcon sx={{ fontSize: 18, color: '#7c3aed' }} />
-															<Typography sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
-																{new Date(course.endDate).toLocaleDateString(undefined, {
-																	year: 'numeric',
-																	month: 'long',
-																	day: 'numeric',
-																})}
+														<Box
+															sx={{
+																display: 'flex',
+																alignItems: 'center',
+																gap: 1,
+															}}
+														>
+															<EventIcon
+																sx={{ fontSize: 18, color: '#7c3aed' }}
+															/>
+															<Typography
+																sx={{ fontWeight: 700, fontSize: '0.95rem' }}
+															>
+																{new Date(course.endDate).toLocaleDateString(
+																	undefined,
+																	{
+																		year: 'numeric',
+																		month: 'long',
+																		day: 'numeric',
+																	},
+																)}
 															</Typography>
 														</Box>
 													</Box>
@@ -634,7 +670,7 @@ export default function CourseDetailPage() {
 									color='text.secondary'
 									sx={{ mb: 2 }}
 								>
-									{course.sections.length} sections • {totalLectures} lectures
+									{course.sections.length} sections â€¢ {totalLectures} lectures
 								</Typography>
 
 								<Box
@@ -685,7 +721,7 @@ export default function CourseDetailPage() {
 													sx={{ mr: 1, alignSelf: 'center' }}
 												>
 													{section.lectures.length} lecture
-													{section.lectures.length !== 1 ? 's' : ''} •{' '}
+													{section.lectures.length !== 1 ? 's' : ''} â€¢{' '}
 													{formatSectionDuration(getSectionDuration(section))}
 												</Typography>
 											</AccordionSummary>
@@ -866,7 +902,7 @@ export default function CourseDetailPage() {
 															sx={{ mb: 1.5, lineHeight: 1.5 }}
 														>
 															{teacher.bio.length > 80
-																? `${teacher.bio.slice(0, 80)}…`
+																? `${teacher.bio.slice(0, 80)}â€¦`
 																: teacher.bio}
 														</Typography>
 													)}
@@ -904,7 +940,7 @@ export default function CourseDetailPage() {
 						)}
 					</Grid>
 
-					{/* ── Right sticky card ────────────────────────────────── */}
+					{/* â”€â”€ Right sticky card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 					<Grid size={{ xs: 12, md: 4 }} sx={{ mt: { md: -32 }, zIndex: 10 }}>
 						<Box sx={{ position: 'sticky', top: 90 }}>
 							<Paper
@@ -1020,7 +1056,7 @@ export default function CourseDetailPage() {
 								</Box>
 
 								<Box sx={{ p: 3 }}>
-									{/* ── Admin ──────────────────────────────────────── */}
+									{/* â”€â”€ Admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 									{isAdmin ? (
 										<>
 											<Button
@@ -1056,13 +1092,30 @@ export default function CourseDetailPage() {
 														text: 'Certificate of completion',
 													},
 													...(course.courseType?.name
-														? [{ icon: <ClassIcon sx={{ fontSize: 16 }} />, text: `Type: ${course.courseType.name}` }]
+														? [
+																{
+																	icon: <ClassIcon sx={{ fontSize: 16 }} />,
+																	text: `Type: ${course.courseType.name}`,
+																},
+															]
 														: []),
 													...(course.startDate
-														? [{ icon: <CalendarTodayIcon sx={{ fontSize: 16 }} />, text: `Starts: ${new Date(course.startDate).toLocaleDateString()}` }]
+														? [
+																{
+																	icon: (
+																		<CalendarTodayIcon sx={{ fontSize: 16 }} />
+																	),
+																	text: `Starts: ${new Date(course.startDate).toLocaleDateString()}`,
+																},
+															]
 														: []),
 													...(course.endDate
-														? [{ icon: <EventIcon sx={{ fontSize: 16 }} />, text: `Ends: ${new Date(course.endDate).toLocaleDateString()}` }]
+														? [
+																{
+																	icon: <EventIcon sx={{ fontSize: 16 }} />,
+																	text: `Ends: ${new Date(course.endDate).toLocaleDateString()}`,
+																},
+															]
 														: []),
 												].map(({ icon, text }) => (
 													<Box
@@ -1085,7 +1138,7 @@ export default function CourseDetailPage() {
 											</Box>
 										</>
 									) : isStudent && isEnrolled ? (
-										/* ── Already enrolled ──────────────────────────── */
+										/* â”€â”€ Already enrolled â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 										<>
 											<Button
 												fullWidth
@@ -1096,7 +1149,7 @@ export default function CourseDetailPage() {
 												disabled
 												sx={{ fontWeight: 700, borderRadius: 2 }}
 											>
-												Enrolled
+												Go to this course
 											</Button>
 											<Box sx={{ mt: 2 }}>
 												{[
@@ -1139,9 +1192,9 @@ export default function CourseDetailPage() {
 											</Box>
 										</>
 									) : (
-										/* ── Not enrolled: radio-option layout ─────────── */
+										/* â”€â”€ Not enrolled: radio-option layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 										<>
-											{/* ── Option A: Subscribe and save (only if course is in sub) */}
+											{/* â”€â”€ Option A: Subscribe and save (only if course is in sub) */}
 											{courseInSub && (
 												<Box
 													onClick={() => setSelectedOption('subscription')}
@@ -1208,7 +1261,8 @@ export default function CourseDetailPage() {
 																	variant='caption'
 																	color='text.secondary'
 																>
-																	From ৳{lowestSubPrice.toLocaleString()} /month
+																	From à§³{lowestSubPrice.toLocaleString()}{' '}
+																	/month
 																</Typography>
 															) : (
 																<Typography
@@ -1263,13 +1317,13 @@ export default function CourseDetailPage() {
 																				variant='caption'
 																				color='text.secondary'
 																			>
-																				{userActivePlan} plan · Expires{' '}
+																				{userActivePlan} plan Â· Expires{' '}
 																				{new Date(
 																					userSubExpiry!,
 																				).toLocaleDateString()}
 																				{(planCountMap[userActivePlan!] ?? 0) >
 																					0 &&
-																					` · ${planCountMap[userActivePlan!]} courses included`}
+																					` Â· ${planCountMap[userActivePlan!]} courses included`}
 																			</Typography>
 																		</Box>
 																	</Box>
@@ -1484,7 +1538,7 @@ export default function CourseDetailPage() {
 																				>
 																					<strong>{p}</strong> plan
 																					{count > 0 &&
-																						` · access to ${count} course${count !== 1 ? 's' : ''} for free`}
+																						` Â· access to ${count} course${count !== 1 ? 's' : ''} for free`}
 																				</Typography>
 																			</Box>
 																		);
@@ -1536,7 +1590,7 @@ export default function CourseDetailPage() {
 												</Box>
 											)}
 
-											{/* ── Option B: Buy / Enroll directly ────────── */}
+											{/* â”€â”€ Option B: Buy / Enroll directly â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 											<Box
 												onClick={() =>
 													courseInSub && setSelectedOption('direct')
@@ -1613,7 +1667,7 @@ export default function CourseDetailPage() {
 														>
 															{course.pricing === 'Free'
 																? 'Free'
-																: `৳${course.price?.toLocaleString() ?? ''}`}
+																: `à§³${course.price?.toLocaleString() ?? ''}`}
 														</Typography>
 													</Box>
 												</Box>
@@ -1685,7 +1739,7 @@ export default function CourseDetailPage() {
 																			color='inherit'
 																		/>
 																	) : course.pricing === 'Free' ? (
-																		'Enroll Now — Free'
+																		'Enroll Now â€” Free'
 																	) : (
 																		'Buy Now'
 																	)}
@@ -1753,7 +1807,7 @@ export default function CourseDetailPage() {
 				</Grid>
 			</Container>
 
-			{/* ── Free Preview Modal ─────────────────────────────────── */}
+			{/* â”€â”€ Free Preview Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<Dialog
 				open={Boolean(previewLecture)}
 				onClose={() => setPreviewLecture(null)}
@@ -1779,7 +1833,7 @@ export default function CourseDetailPage() {
 							variant='caption'
 							sx={{ color: 'grey.400', display: 'block', mb: 0.25 }}
 						>
-							Free Preview — {course.title}
+							Free Preview â€” {course.title}
 						</Typography>
 						<Typography
 							sx={{
