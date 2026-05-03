@@ -3,6 +3,7 @@ import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import {
 	Box,
 	Button,
+	CardActionArea,
 	Chip,
 	CircularProgress,
 	Container,
@@ -14,6 +15,8 @@ import SchoolIcon from '@mui/icons-material/School';
 import PeopleIcon from '@mui/icons-material/People';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import CategoryIcon from '@mui/icons-material/Category';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { courseService } from '../services/course.service';
 import { categoryService } from '../services/category.service';
 import { courseTypeService } from '../services/courseType.service';
@@ -50,6 +53,15 @@ const STATS = [
 		value: '95%',
 		label: 'Satisfaction Rate',
 	},
+];
+
+const CATEGORY_GRADIENTS = [
+	'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+	'linear-gradient(135deg, #7c2d12 0%, #f97316 100%)',
+	'linear-gradient(135deg, #1d4ed8 0%, #38bdf8 100%)',
+	'linear-gradient(135deg, #86198f 0%, #ec4899 100%)',
+	'linear-gradient(135deg, #166534 0%, #84cc16 100%)',
+	'linear-gradient(135deg, #4338ca 0%, #a78bfa 100%)',
 ];
 
 export default function HomePage() {
@@ -362,6 +374,175 @@ export default function HomePage() {
 					</Box>
 				</Container>
 			</Box>
+
+			{categories.length > 0 && (
+				<Box sx={{ bgcolor: 'background.paper' }}>
+					<Container maxWidth='xl' sx={{ pt: 7, pb: 6 }}>
+						<Box
+							sx={{
+								display: 'flex',
+								justifyContent: 'space-between',
+								alignItems: { xs: 'flex-start', md: 'flex-end' },
+								gap: 2,
+								mb: 3,
+								flexDirection: { xs: 'column', md: 'row' },
+							}}
+						>
+							<Box>
+								<Typography variant='h4' sx={{ fontWeight: 800 }}>
+									Explore by Category
+								</Typography>
+								<Typography
+									variant='body1'
+									color='text.secondary'
+									sx={{ mt: 0.5 }}
+								>
+									Pick a subject and jump straight into matching courses.
+								</Typography>
+							</Box>
+							<Button
+								component={RouterLink}
+								to='/courses'
+								endIcon={<ArrowForwardIcon />}
+								sx={{ fontWeight: 700 }}
+							>
+								View all courses
+							</Button>
+						</Box>
+
+						<Grid container spacing={2.5}>
+							{categories.map((category, index) => {
+								const gradient =
+									CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length];
+								const initial = category.name.trim().charAt(0).toUpperCase();
+
+								return (
+									<Grid key={category._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+										<CardActionArea
+											component={RouterLink}
+											to={`/courses?categories=${encodeParam(category._id)}`}
+											sx={{
+												position: 'relative',
+												overflow: 'hidden',
+												display: 'flex',
+												alignItems: 'center',
+												gap: 1.75,
+												minHeight: 118,
+												p: 2,
+												borderRadius: 1,
+												border: '1px solid',
+												borderColor: 'divider',
+												bgcolor: 'background.paper',
+												textDecoration: 'none',
+												boxShadow: '0 10px 28px rgba(15,23,42,0.06)',
+												transition:
+													'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
+												'&::before': {
+													content: '""',
+													position: 'absolute',
+													inset: 0,
+													background: gradient,
+													opacity: 0.08,
+													transition: 'opacity 0.25s ease',
+												},
+												'&::after': {
+													content: '""',
+													position: 'absolute',
+													top: -40,
+													right: -28,
+													width: 96,
+													height: 96,
+													borderRadius: '50%',
+													background: gradient,
+													opacity: 0.14,
+													transition: 'transform 0.35s ease, opacity 0.25s ease',
+												},
+												'&:hover': {
+													transform: 'translateY(-4px)',
+													boxShadow: '0 16px 38px rgba(15,23,42,0.13)',
+													borderColor: 'primary.light',
+												},
+												'&:hover::before': { opacity: 0.14 },
+												'&:hover::after': {
+													transform: 'scale(1.2) translate(-6px, 8px)',
+													opacity: 0.22,
+												},
+												'&:hover .category-icon': {
+													transform: 'translateY(-2px) rotate(-3deg)',
+												},
+												'&:hover .category-arrow': {
+													opacity: 1,
+													transform: 'translateX(0)',
+												},
+											}}
+										>
+											<Box
+												className='category-icon'
+												sx={{
+													position: 'relative',
+													width: 52,
+													height: 52,
+													borderRadius: 1,
+													flexShrink: 0,
+													display: 'grid',
+													placeItems: 'center',
+													color: 'white',
+													background: gradient,
+													boxShadow: '0 10px 22px rgba(15,23,42,0.18)',
+													transition: 'transform 0.25s ease',
+												}}
+											>
+												{initial ? (
+													<Typography
+														variant='h5'
+														sx={{ fontWeight: 900, lineHeight: 1 }}
+													>
+														{initial}
+													</Typography>
+												) : (
+													<CategoryIcon />
+												)}
+											</Box>
+
+											<Box sx={{ position: 'relative', minWidth: 0, flex: 1 }}>
+												<Typography
+													variant='subtitle1'
+													sx={{
+														fontWeight: 800,
+														color: 'text.primary',
+														lineHeight: 1.25,
+														overflowWrap: 'anywhere',
+													}}
+												>
+													{category.name}
+												</Typography>
+												<Typography
+													variant='caption'
+													color='text.secondary'
+													sx={{ display: 'block', mt: 0.75, fontWeight: 600 }}
+												>
+													Browse category courses
+												</Typography>
+											</Box>
+
+											<ArrowForwardIcon
+												className='category-arrow'
+												sx={{
+													position: 'relative',
+													color: 'text.secondary',
+													opacity: 0.45,
+													transform: 'translateX(-4px)',
+													transition: 'opacity 0.25s ease, transform 0.25s ease',
+												}}
+											/>
+										</CardActionArea>
+									</Grid>
+								);
+							})}
+						</Grid>
+					</Container>
+				</Box>
+			)}
 
 			<Divider sx={{ mx: { xs: 2, md: 'auto' }, maxWidth: 'lg', mt: 2 }} />
 
