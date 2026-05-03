@@ -1,4 +1,4 @@
-﻿import {
+import {
 	Box,
 	Button,
 	Card,
@@ -7,6 +7,7 @@
 	Popover,
 	Typography,
 } from '@mui/material';
+import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -116,30 +117,51 @@ export default function CourseCard({
 									px: 1.25,
 									py: 0.5,
 									borderRadius: 1,
-									backgroundColor:
-										COURSE_TYPE_COLORS[course.courseType.name] ?? '#7c3aed',
+									background:
+										'linear-gradient(90deg, #0f766e 0%, #7c3aed 40%, #0ea5e9 70%, #0f766e 100%)',
+									backgroundSize: '250% auto',
 									color: 'white',
 									transform: 'translateZ(0)',
-									animation: 'pulseBadge 2.8s ease-in-out infinite',
-									'@keyframes pulseBadge': {
-										'0%, 100%': { transform: 'scale(1)' },
-										'50%': { transform: 'scale(1.03)' },
+									animation: 'typeShimmer 3s linear infinite, colorBlinkGlow 2s ease-in-out infinite',
+									'@keyframes typeShimmer': {
+										'0%': { backgroundPosition: '0% center' },
+										'100%': { backgroundPosition: '250% center' },
 									},
-									boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+									'@keyframes colorBlinkGlow': {
+										'0%, 100%': { 
+											transform: 'scale(1)',
+											filter: 'brightness(1)',
+											boxShadow: '0 2px 10px rgba(0,0,0,0.3)' 
+										},
+										'50%': { 
+											transform: 'scale(1.06)',
+											filter: 'brightness(1.4)',
+											boxShadow: '0 4px 18px rgba(255, 255, 255, 0.5)' 
+										},
+									},
 								}}
 							>
-								<Typography
+								<Box
 									sx={{
-										fontSize: '0.65rem',
-										fontWeight: 800,
-										color: 'white',
-										letterSpacing: 0.75,
-										lineHeight: 1,
-										textTransform: 'uppercase',
+										display: 'flex',
+										alignItems: 'center',
+										gap: 0.5,
 									}}
 								>
-									{course.courseType.name}
-								</Typography>
+									<VerifiedIcon sx={{ fontSize: 13, color: 'white' }} />
+									<Typography
+										sx={{
+											fontSize: '0.65rem',
+											fontWeight: 800,
+											color: 'white',
+											letterSpacing: 0.75,
+											lineHeight: 1,
+											textTransform: 'uppercase',
+										}}
+									>
+										{course.courseType.name}
+									</Typography>
+								</Box>
 							</Box>
 						)}
 					</Box>
@@ -222,7 +244,7 @@ export default function CourseCard({
 													color: 'white',
 												}}
 											>
-												<VerifiedIcon sx={{ fontSize: 11 }} />
+												<CardMembershipIcon sx={{ fontSize: 11 }} />
 												<Typography
 													sx={{
 														fontSize: '0.68rem',

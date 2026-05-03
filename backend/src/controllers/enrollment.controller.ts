@@ -68,6 +68,7 @@ export const getMyEnrollments = asyncHandler(
 				path: 'course',
 				populate: [
 					{ path: 'category', select: 'name slug' },
+					{ path: 'courseType', select: 'name slug description' },
 					{ path: 'teachers', select: 'name profileImage' },
 				],
 			})
