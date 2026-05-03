@@ -1145,12 +1145,22 @@ export default function CourseDetailPage() {
 												variant='contained'
 												size='large'
 												color='success'
-												startIcon={<CheckIcon />}
-												disabled
+												startIcon={<SchoolIcon />}
+												onClick={() => navigate(`/student/courses/${id}/learn`)}
 												sx={{ fontWeight: 700, borderRadius: 2 }}
 											>
 												Go to this course
 											</Button>
+											{enrollmentDate && (
+												<Typography
+													variant='body2'
+													color='text.secondary'
+													sx={{ mt: 1 }}
+												>
+													Enrolled on{' '}
+													{new Date(enrollmentDate).toLocaleDateString()}
+												</Typography>
+											)}
 											<Box sx={{ mt: 2 }}>
 												{[
 													{
