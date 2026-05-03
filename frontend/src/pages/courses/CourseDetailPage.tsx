@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import PlayCircleOutlinedIcon from '@mui/icons-material/PlayCircleOutlined';
 import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
 import CheckIcon from '@mui/icons-material/Check';
@@ -1070,6 +1071,18 @@ export default function CourseDetailPage() {
 												sx={{ fontWeight: 700, borderRadius: 2 }}
 											>
 												Edit Course
+											</Button>
+											<Button
+												fullWidth
+												variant='outlined'
+												size='large'
+												startIcon={<VisibilityOutlinedIcon />}
+												onClick={() =>
+													navigate(`/admin/courses/${course._id}/learn`)
+												}
+												sx={{ fontWeight: 700, borderRadius: 2, mt: 1.5 }}
+											>
+												Student View
 											</Button>
 											<Box sx={{ mt: 2 }}>
 												{[

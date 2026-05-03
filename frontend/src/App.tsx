@@ -58,6 +58,7 @@ export default function App() {
 					<Route path='/admin/subscriptions' element={<SubscriptionsPage />} />
 					<Route path='/admin/enrollments/:courseId' element={<AdminEnrollmentsPage />} />
 					<Route path='/admin/performance' element={<PerformancePage />} />
+					<Route path='/admin/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
 				</Route>
 			</Route>
 

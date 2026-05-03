@@ -23,6 +23,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import TuneIcon from '@mui/icons-material/Tune';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import toast from 'react-hot-toast';
@@ -227,6 +228,7 @@ export default function CoursesPage() {
 								course={course}
 								divider={idx < courses.length - 1}
 								onEdit={() => navigate(`/admin/courses/${course._id}/edit`)}
+								onStudentView={() => navigate(`/admin/courses/${course._id}/learn`)}
 							/>
 						))}
 					</Paper>
@@ -340,10 +342,12 @@ function AdminCourseRow({
 	course,
 	divider,
 	onEdit,
+	onStudentView,
 }: {
 	course: ICourse;
 	divider: boolean;
 	onEdit: () => void;
+	onStudentView: () => void;
 }) {
 	const navigate = useNavigate();
 	const isLive = course.status === 'Published';
@@ -470,6 +474,13 @@ function AdminCourseRow({
 						Enrollments this month
 					</Typography>
 				</Box>
+
+				{/* Student View button */}
+				<Tooltip title='Student view'>
+					<IconButton onClick={onStudentView} size='small' sx={{ flexShrink: 0 }}>
+						<VisibilityOutlinedIcon fontSize='small' />
+					</IconButton>
+				</Tooltip>
 
 				{/* Edit button */}
 				<Tooltip title='Edit course'>

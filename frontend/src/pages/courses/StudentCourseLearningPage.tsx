@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
 	Accordion,
@@ -54,6 +54,7 @@ import type {
 } from '../../types/index';
 import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar';
 import { useAuth } from '../../context/useAuth';
+import RichTextEditor from '../../components/course/RichTextEditor';
 
 type NavSection =
 	| 'course_overview'
@@ -265,17 +266,20 @@ export default function StudentCourseLearningPage() {
 		);
 	}
 
+	const isAdminRole = user?.role === 'Admin' || user?.role === 'Super Admin' || user?.role === 'Moderator';
+	const isTeacherOrAdmin = user?.role === 'Teacher' || isAdminRole;
+
 	return (
 		<Box
 			sx={{
 				display: 'flex',
-				height: user?.role === 'Teacher' ? '100%' : '100vh',
+				height: isTeacherOrAdmin ? '100%' : '100vh',
 				overflow: 'hidden',
 				bgcolor: 'background.default',
 			}}
 		>
-			{/* ── Main student sidebar (hidden for teachers) ─────────── */}
-			{user?.role !== 'Teacher' && <StudentSidebar />}
+			{/* ── Main student sidebar (hidden for teachers and admins who have their own layout) ─── */}
+			{!isTeacherOrAdmin && <StudentSidebar />}
 
 			{/* ── Learning area ───────────────────────────────────────── */}
 			<Box
@@ -958,12 +962,15 @@ export default function StudentCourseLearningPage() {
 																	)}
 																</Typography>
 															</Box>
-															<Typography
-																variant='body2'
-																sx={{ whiteSpace: 'pre-wrap' }}
-															>
-																{ann.description}
-															</Typography>
+															<Box
+																sx={{
+																	fontSize: '0.875rem',
+																	lineHeight: 1.6,
+																	'& p': { m: 0, mb: 0.5 },
+																	'& ul, & ol': { pl: 2.5, my: 0.5 },
+																}}
+																dangerouslySetInnerHTML={{ __html: ann.description }}
+															/>
 														</Box>
 														{canDelete && (
 															<IconButton
@@ -1153,15 +1160,16 @@ export default function StudentCourseLearningPage() {
 																	)}
 																</Typography>
 															</Box>
-															<Typography
-																variant='body2'
+															<Box
 																sx={{
-																	whiteSpace: 'pre-wrap',
+																	fontSize: '0.875rem',
+																	lineHeight: 1.6,
 																	mb: mat.fileUrl ? 1 : 0,
+																	'& p': { m: 0, mb: 0.5 },
+																	'& ul, & ol': { pl: 2.5, my: 0.5 },
 																}}
-															>
-																{mat.description}
-															</Typography>
+																dangerouslySetInnerHTML={{ __html: mat.description }}
+															/>
 															{mat.fileUrl && (
 																<Typography
 																	component='a'
