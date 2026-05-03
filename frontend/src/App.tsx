@@ -13,6 +13,7 @@ import CoursesPage from './pages/courses/CoursesPage';
 import CourseCreatePage from './pages/courses/CourseCreatePage';
 import CourseDetailPage from './pages/courses/CourseDetailPage';
 import CategoriesPage from './pages/categories/CategoriesPage';
+import CourseTypesPage from './pages/courseTypes/CourseTypesPage';
 import TeachersPage from './pages/teachers/TeachersPage';
 import UsersPage from './pages/users/UsersPage';
 import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
@@ -50,6 +51,7 @@ export default function App() {
 						element={<CourseCreatePage />}
 					/>
 					<Route path='/admin/categories' element={<CategoriesPage />} />
+					<Route path='/admin/course-types' element={<CourseTypesPage />} />
 					<Route path='/admin/teachers' element={<TeachersPage />} />
 					<Route path='/admin/users' element={<UsersPage />} />
 					<Route path='/admin/subscriptions' element={<SubscriptionsPage />} />

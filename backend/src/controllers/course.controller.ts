@@ -20,6 +20,7 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 
 	const courses = await Course.find(filter)
 		.populate('category', 'name slug')
+		.populate('courseType', 'name slug')
 		.populate('teachers', 'name profileImage')
 		.sort({ createdAt: -1 });
 
@@ -30,6 +31,7 @@ export const getCourseById = asyncHandler(
 	async (req: Request, res: Response) => {
 		const course = await Course.findById(req.params.id)
 			.populate('category', 'name slug')
+			.populate('courseType', 'name slug')
 			.populate('teachers', 'name bio profileImage expertise socialLinks userId')
 			.populate({ path: 'sections', populate: { path: 'lectures' } });
 
@@ -44,6 +46,7 @@ export const createCourse = asyncHandler(
 			title: string;
 			subtitle?: string;
 			category: string;
+			courseType: string;
 			teachers?: string;
 			visibility?: string;
 			pricing?: string;
@@ -52,8 +55,8 @@ export const createCourse = asyncHandler(
 			allowedSubscriptionPlans?: string;
 		};
 
-		if (!body.title || !body.category)
-			throw new AppError('Title and category are required', 400);
+		if (!body.title || !body.category || !body.courseType)
+			throw new AppError('Title, category, and course type are required', 400);
 
 		let coverImage: string | undefined;
 		let coverImagePublicId: string | undefined;
@@ -71,6 +74,7 @@ export const createCourse = asyncHandler(
 			title: body.title,
 			subtitle: body.subtitle,
 			category: new Types.ObjectId(body.category),
+			courseType: new Types.ObjectId(body.courseType),
 			teachers: body.teachers
 				? (JSON.parse(body.teachers) as string[]).map(
 						(id) => new Types.ObjectId(id),
@@ -118,6 +122,8 @@ export const updateCourse = asyncHandler(
 		if (body.description !== undefined) course.description = body.description;
 		if (body.category !== undefined)
 			course.category = new Types.ObjectId(body.category);
+		if (body.courseType !== undefined)
+			course.courseType = new Types.ObjectId(body.courseType);
 		if (body.visibility !== undefined)
 			course.visibility = body.visibility as 'Public' | 'Private';
 		if (body.pricing !== undefined)

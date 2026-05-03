@@ -28,6 +28,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
+import { courseTypeService } from '../../services/courseType.service';
 import { teacherService } from '../../services/teacher.service';
 import { announcementService } from '../../services/announcement.service';
 import { studyMaterialService } from '../../services/studyMaterial.service';
@@ -35,6 +36,7 @@ import RichTextEditor from '../../components/course/RichTextEditor';
 import CurriculumBuilder from '../../components/course/CurriculumBuilder/CurriculumBuilder';
 import type {
 	ICategory,
+	ICourseType,
 	ITeacher,
 	IAnnouncement,
 	IStudyMaterial,
@@ -170,6 +172,7 @@ export default function CourseCreatePage() {
 	);
 	const [loadingCourse, setLoadingCourse] = useState(false);
 	const [categories, setCategories] = useState<ICategory[]>([]);
+	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
 	const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
 	const [annForm, setAnnForm] = useState({ title: '', description: '' });
@@ -191,6 +194,7 @@ export default function CourseCreatePage() {
 		title: '',
 		subtitle: '',
 		category: '',
+		courseType: '',
 		selectedTeachers: [] as string[],
 		description: '',
 		coverImage: null as File | null,
@@ -206,56 +210,66 @@ export default function CourseCreatePage() {
 	});
 
 	useEffect(() => {
-		Promise.all([categoryService.getAll(), teacherService.getAll()]).then(
-			([catRes, tchRes]) => {
-				const cats = catRes.data ?? [];
-				setCategories(cats);
-				setTeachers(tchRes.data ?? []);
+		Promise.all([
+			categoryService.getAll(),
+			courseTypeService.getAll(),
+			teacherService.getAll(),
+		]).then(([catRes, ctRes, tchRes]) => {
+			const cats = catRes.data ?? [];
+			const types = ctRes.data ?? [];
+			setCategories(cats);
+			setCourseTypes(types);
+			setTeachers(tchRes.data ?? []);
 
-				// Auto-create draft for new courses
-				if (!id && !autoCreating.current) {
-					autoCreating.current = true;
-					const firstCat = cats[0]?._id ?? '';
-					const fd = new FormData();
-					fd.append('title', 'Untitled Course');
-					if (firstCat) fd.append('category', firstCat);
-					fd.append('visibility', 'Private');
-					fd.append('pricing', 'Free');
-					fd.append('includedInSubscription', 'false');
-					fd.append('teachers', JSON.stringify([]));
-					fd.append('allowedSubscriptionPlans', JSON.stringify([]));
-					fd.append('whatYouWillLearn', JSON.stringify([]));
-					fd.append('whatYouWillGet', JSON.stringify([]));
-					fd.append('requirements', JSON.stringify([]));
-					courseService
-						.create(fd)
-						.then(async (res) => {
-							const newId = res.data?._id as string | undefined;
-							if (!newId) return;
-							setCourseId(newId);
-							if (firstCat) setForm((f) => ({ ...f, category: firstCat }));
-							navigate(`/admin/courses/${newId}/edit`, { replace: true });
-							// Auto-add Introduction section + Course Introduction lecture
-							try {
-								const secRes = await courseService.addSection(
-									newId,
-									'Introduction',
-								);
-								const sectionId = (secRes.data as { _id: string })?._id;
-								if (sectionId) {
-									await courseService.addLecture(newId, sectionId, {
-										title: 'Course Introduction',
-										isPreview: true,
-									});
-								}
-							} catch {
-								/* non-fatal */
+			// Auto-create draft for new courses
+			if (!id && !autoCreating.current) {
+				autoCreating.current = true;
+				const firstCat = cats[0]?._id ?? '';
+				const firstType = types[0]?._id ?? '';
+				const fd = new FormData();
+				fd.append('title', 'Untitled Course');
+				if (firstCat) fd.append('category', firstCat);
+				if (firstType) fd.append('courseType', firstType);
+				fd.append('visibility', 'Private');
+				fd.append('pricing', 'Free');
+				fd.append('includedInSubscription', 'false');
+				fd.append('teachers', JSON.stringify([]));
+				fd.append('allowedSubscriptionPlans', JSON.stringify([]));
+				fd.append('whatYouWillLearn', JSON.stringify([]));
+				fd.append('whatYouWillGet', JSON.stringify([]));
+				fd.append('requirements', JSON.stringify([]));
+				courseService
+					.create(fd)
+					.then(async (res) => {
+						const newId = res.data?._id as string | undefined;
+						if (!newId) return;
+						setCourseId(newId);
+						setForm((f) => ({
+							...f,
+							...(firstCat ? { category: firstCat } : {}),
+							...(firstType ? { courseType: firstType } : {}),
+						}));
+						navigate(`/admin/courses/${newId}/edit`, { replace: true });
+						// Auto-add Introduction section + Course Introduction lecture
+						try {
+							const secRes = await courseService.addSection(
+								newId,
+								'Introduction',
+							);
+							const sectionId = (secRes.data as { _id: string })?._id;
+							if (sectionId) {
+								await courseService.addLecture(newId, sectionId, {
+									title: 'Course Introduction',
+									isPreview: true,
+								});
 							}
-						})
-						.catch(() => {});
-				}
-			},
-		);
+						} catch {
+							/* non-fatal */
+						}
+					})
+					.catch(() => {});
+			}
+		});
 	}, [id]);
 
 	const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
@@ -266,6 +280,7 @@ export default function CourseCreatePage() {
 		fd.append('title', form.title);
 		fd.append('subtitle', form.subtitle);
 		fd.append('category', form.category);
+		fd.append('courseType', form.courseType);
 		fd.append('description', form.description);
 		fd.append('visibility', form.visibility);
 		fd.append('pricing', form.pricing);
@@ -286,8 +301,8 @@ export default function CourseCreatePage() {
 	const persistCourse = async (status?: 'Draft' | 'Published') => {
 		const showToast = Boolean(status);
 
-		if (showToast && !form.category) {
-			toast.error('Please select a category before publishing');
+		if (showToast && (!form.category || !form.courseType)) {
+			toast.error('Please select a category and course type before publishing');
 			return null;
 		}
 
@@ -320,8 +335,8 @@ export default function CourseCreatePage() {
 	};
 
 	const handleSave = async (status?: 'Draft' | 'Published') => {
-		if (status === 'Published' && !form.category) {
-			toast.error('Please select a category before publishing');
+		if (status === 'Published' && (!form.category || !form.courseType)) {
+			toast.error('Please select a category and course type before publishing');
 			return;
 		}
 		setSaving(true);
@@ -445,6 +460,7 @@ export default function CourseCreatePage() {
 					title: data.title || '',
 					subtitle: data.subtitle || '',
 					category: data.category?._id || '',
+					courseType: data.courseType?._id || '',
 					selectedTeachers: data.teachers?.map((t) => t._id) ?? [],
 					description: data.description || '',
 					coverImage: null,
@@ -649,6 +665,25 @@ export default function CourseCreatePage() {
 								{categories.map((c) => (
 									<MenuItem key={c._id} value={c._id}>
 										{c.name}
+									</MenuItem>
+								))}
+							</TextField>
+
+							<TextField
+								label='Course Type *'
+								select
+								value={form.courseType}
+								onChange={(e) => set('courseType', e.target.value)}
+								fullWidth
+								helperText={
+									courseTypes.length === 0
+										? 'No course types available. Create one in Course Types first.'
+										: undefined
+								}
+							>
+								{courseTypes.map((ct) => (
+									<MenuItem key={ct._id} value={ct._id}>
+										{ct.name}
 									</MenuItem>
 								))}
 							</TextField>

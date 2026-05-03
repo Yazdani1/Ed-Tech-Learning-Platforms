@@ -41,6 +41,13 @@ export interface ICategory {
   description?: string;
 }
 
+export interface ICourseType {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
 export interface ILecture {
   _id: string;
   title: string;
@@ -67,6 +74,7 @@ export interface ICourse {
   description: string;
   coverImage?: string;
   category: ICategory;
+  courseType?: ICourseType;
   teachers: ITeacher[];
   visibility: CourseVisibility;
   pricing: CoursePricing;
