@@ -120,6 +120,14 @@ export default function PublicNavbar() {
           >
             Pricing
           </Button>
+          <Button
+            component={RouterLink}
+            to="/teachers"
+            color="inherit"
+            sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
+          >
+            Teachers
+          </Button>
 
           {user ? (
             <>

@@ -25,6 +25,7 @@ import PricingPage from './pages/pricing/PricingPage';
 import HomePage from './pages/HomePage';
 import CourseBrowsePage from './pages/courses/CourseBrowsePage';
 import NotFoundPage from './pages/NotFoundPage';
+import PublicTeachersPage from './pages/teachers/PublicTeachersPage';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
@@ -85,6 +86,7 @@ export default function App() {
 			<Route path='/pricing' element={<PricingPage />} />
 			<Route path='/courses' element={<CourseBrowsePage />} />
 			<Route path='/courses/:id' element={<CourseDetailPage />} />
+			<Route path='/teachers' element={<PublicTeachersPage />} />
 
 			<Route path='*' element={<NotFoundPage />} />
 		</Routes>
