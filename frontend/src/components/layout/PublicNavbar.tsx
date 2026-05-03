@@ -14,6 +14,7 @@ import {
 import SchoolIcon from '@mui/icons-material/School';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../../context/useAuth';
+import { encodeParam } from '../../utils/urlParams';
 
 export default function PublicNavbar() {
   const [query, setQuery] = useState('');

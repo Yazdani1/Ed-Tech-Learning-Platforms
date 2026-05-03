@@ -20,6 +20,7 @@ import { courseTypeService } from '../services/courseType.service';
 import CourseCard from '../components/ui/CourseCard';
 import PublicNavbar from '../components/layout/PublicNavbar';
 import CourseFilterSidebar from '../components/course/CourseFilterSidebar';
+import { encodeParam, decodeParam } from '../utils/urlParams';
 import type { ICourse, ICategory, ICourseType, SubscriptionPlan } from '../types/index';
 
 const STATS = [
@@ -33,11 +34,11 @@ export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const paramsKey = searchParams.toString();
 
-  // ── All filter values derived from URL ───────────────────────
-  const urlSearch = searchParams.get('q') ?? '';
-  const urlCourseTypes = (searchParams.get('courseTypes') ?? '').split(',').filter(Boolean);
-  const urlCategories = (searchParams.get('categories') ?? '').split(',').filter(Boolean);
-  const urlPlans = (searchParams.get('subscriptionPlans') ?? '').split(',').filter(Boolean) as SubscriptionPlan[];
+  // ── All filter values derived from URL (decoded) ────────────
+  const urlSearch = decodeParam(searchParams.get('q') ?? '');
+  const urlCourseTypes = decodeParam(searchParams.get('courseTypes') ?? '').split(',').filter(Boolean);
+  const urlCategories = decodeParam(searchParams.get('categories') ?? '').split(',').filter(Boolean);
+  const urlPlans = decodeParam(searchParams.get('subscriptionPlans') ?? '').split(',').filter(Boolean) as SubscriptionPlan[];
 
   // ── Local state for search input only (smooth typing) ────────
   const [searchInput, setSearchInput] = useState(urlSearch);
@@ -90,7 +91,7 @@ export default function HomePage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       for (const [key, val] of Object.entries(patch)) {
-        if (val) next.set(key, val);
+        if (val) next.set(key, encodeParam(val));
         else next.delete(key);
       }
       return next;
