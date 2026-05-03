@@ -110,7 +110,7 @@ export default function PublicNavbar() {
             color="inherit"
             sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
           >
-            Browse
+            All Courses
           </Button>
           <Button
             component={RouterLink}
