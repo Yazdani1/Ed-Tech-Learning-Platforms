@@ -12,7 +12,7 @@ import { protect, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
-const adminOnly = authorize('Super Admin', 'Admin', 'Moderator');
+const adminOnly = authorize('Super Admin', 'Admin');
 
 // Admin routes — course-specific
 router.get('/admin/course/:courseId', protect, adminOnly, getCourseEnrollments);

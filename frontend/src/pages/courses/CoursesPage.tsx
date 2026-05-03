@@ -48,6 +48,7 @@ export default function CoursesPage() {
 
 	const isAdmin = user && (ADMIN_ROLES as readonly string[]).includes(user.role);
 	const isStudent = user?.role === 'Student';
+	const isModerator = user?.role === 'Moderator';
 
 	useEffect(() => {
 		if (authLoading) return;
@@ -102,7 +103,7 @@ export default function CoursesPage() {
 				<Typography variant='h4' sx={{ fontWeight: 700 }}>
 					{isStudent ? 'My Courses' : 'Courses'}
 				</Typography>
-				{isAdmin && (
+				{isAdmin && !isModerator && (
 					<Box sx={{ display: 'flex', gap: 1 }}>
 						<Button
 							variant='outlined'
@@ -227,6 +228,7 @@ export default function CoursesPage() {
 								key={course._id}
 								course={course}
 								divider={idx < courses.length - 1}
+								isModerator={isModerator}
 								onEdit={() => navigate(`/admin/courses/${course._id}/edit`)}
 								onStudentView={() => navigate(`/admin/courses/${course._id}/learn`)}
 							/>
@@ -236,7 +238,7 @@ export default function CoursesPage() {
 			)}
 
 			{/* Bulk edit modal (admin only) */}
-			{isAdmin && (
+			{isAdmin && !isModerator && (
 				<BulkEditModal
 					open={bulkOpen}
 					courses={courses}
@@ -341,11 +343,13 @@ function CourseCardWithRemove({
 function AdminCourseRow({
 	course,
 	divider,
+	isModerator,
 	onEdit,
 	onStudentView,
 }: {
 	course: ICourse;
 	divider: boolean;
+	isModerator?: boolean;
 	onEdit: () => void;
 	onStudentView: () => void;
 }) {
@@ -436,44 +440,48 @@ function AdminCourseRow({
 				</Box>
 
 				{/* Earned this month */}
-				<Box
-					onClick={() => navigate(`/admin/enrollments/${course._id}`)}
-					sx={{
-						textAlign: 'center',
-						minWidth: 130,
-						display: { xs: 'none', md: 'block' },
-						cursor: 'pointer',
-						borderRadius: 2,
-						px: 1,
-						py: 0.5,
-						'&:hover': { bgcolor: 'action.hover' },
-					}}
-				>
-					<Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>$0.00</Typography>
-					<Typography variant='caption' color='text.secondary'>
-						Earned this month
-					</Typography>
-				</Box>
+				{!isModerator && (
+					<Box
+						onClick={() => navigate(`/admin/enrollments/${course._id}`)}
+						sx={{
+							textAlign: 'center',
+							minWidth: 130,
+							display: { xs: 'none', md: 'block' },
+							cursor: 'pointer',
+							borderRadius: 2,
+							px: 1,
+							py: 0.5,
+							'&:hover': { bgcolor: 'action.hover' },
+						}}
+					>
+						<Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>$0.00</Typography>
+						<Typography variant='caption' color='text.secondary'>
+							Earned this month
+						</Typography>
+					</Box>
+				)}
 
 				{/* Enrollments this month */}
-				<Box
-					onClick={() => navigate(`/admin/enrollments/${course._id}`)}
-					sx={{
-						textAlign: 'center',
-						minWidth: 130,
-						display: { xs: 'none', md: 'block' },
-						cursor: 'pointer',
-						borderRadius: 2,
-						px: 1,
-						py: 0.5,
-						'&:hover': { bgcolor: 'action.hover' },
-					}}
-				>
-					<Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>0</Typography>
-					<Typography variant='caption' color='text.secondary'>
-						Enrollments this month
-					</Typography>
-				</Box>
+				{!isModerator && (
+					<Box
+						onClick={() => navigate(`/admin/enrollments/${course._id}`)}
+						sx={{
+							textAlign: 'center',
+							minWidth: 130,
+							display: { xs: 'none', md: 'block' },
+							cursor: 'pointer',
+							borderRadius: 2,
+							px: 1,
+							py: 0.5,
+							'&:hover': { bgcolor: 'action.hover' },
+						}}
+					>
+						<Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>0</Typography>
+						<Typography variant='caption' color='text.secondary'>
+							Enrollments this month
+						</Typography>
+					</Box>
+				)}
 
 				{/* Student View button */}
 				<Tooltip title='Student view'>
@@ -483,11 +491,13 @@ function AdminCourseRow({
 				</Tooltip>
 
 				{/* Edit button */}
-				<Tooltip title='Edit course'>
-					<IconButton onClick={onEdit} size='small' sx={{ flexShrink: 0 }}>
-						<EditOutlinedIcon fontSize='small' />
-					</IconButton>
-				</Tooltip>
+				{!isModerator && (
+					<Tooltip title='Edit course'>
+						<IconButton onClick={onEdit} size='small' sx={{ flexShrink: 0 }}>
+							<EditOutlinedIcon fontSize='small' />
+						</IconButton>
+					</Tooltip>
+				)}
 			</Box>
 			{divider && <Divider />}
 		</>

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -86,6 +86,7 @@ export default function CourseDetailPage() {
 	const isAdmin =
 		user && (ADMIN_ROLES as readonly string[]).includes(user.role);
 	const isStudent = user?.role === 'Student';
+	const isModerator = user?.role === 'Moderator';
 
 	const userActivePlan = user?.activeSubscription?.plan;
 	const userSubExpiry = user?.activeSubscription?.endDate;
@@ -1060,18 +1061,20 @@ export default function CourseDetailPage() {
 									{/* â”€â”€ Admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 									{isAdmin ? (
 										<>
-											<Button
-												fullWidth
-												variant='contained'
-												size='large'
-												startIcon={<EditIcon />}
-												onClick={() =>
-													navigate(`/admin/courses/${course._id}/edit`)
-												}
-												sx={{ fontWeight: 700, borderRadius: 2 }}
-											>
-												Edit Course
-											</Button>
+											{!isModerator && (
+												<Button
+													fullWidth
+													variant='contained'
+													size='large'
+													startIcon={<EditIcon />}
+													onClick={() =>
+														navigate(`/admin/courses/${course._id}/edit`)
+													}
+													sx={{ fontWeight: 700, borderRadius: 2 }}
+												>
+													Edit Course
+												</Button>
+											)}
 											<Button
 												fullWidth
 												variant='outlined'
@@ -1080,7 +1083,7 @@ export default function CourseDetailPage() {
 												onClick={() =>
 													navigate(`/admin/courses/${course._id}/learn`)
 												}
-												sx={{ fontWeight: 700, borderRadius: 2, mt: 1.5 }}
+												sx={{ fontWeight: 700, borderRadius: 2, mt: !isModerator ? 1.5 : 0 }}
 											>
 												Student View
 											</Button>
