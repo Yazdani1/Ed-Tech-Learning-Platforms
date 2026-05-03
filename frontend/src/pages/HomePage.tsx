@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import {
 	Box,
@@ -24,8 +24,7 @@ import CourseCard, { CourseCardSkeleton } from '../components/ui/CourseCard';
 import PublicNavbar from '../components/layout/PublicNavbar';
 import CourseFilterSidebar from '../components/course/CourseFilterSidebar';
 import AppPagination from '../components/common/AppPagination';
-import TeacherMarqueeSection from '../components/teacher/TeacherMarqueeSection';
-import ThreeLearningScene from '../components/home/ThreeLearningScene';
+import RenderWhenNearViewport from '../components/common/RenderWhenNearViewport';
 import { useAuth } from '../context/useAuth';
 import { encodeParam, decodeParam } from '../utils/urlParams';
 import type {
@@ -71,6 +70,10 @@ const CATEGORY_GRADIENTS = [
 
 const HOME_COURSES_PAGE_SIZE = 8;
 const HOME_COURSE_SKELETONS = Array.from({ length: HOME_COURSES_PAGE_SIZE });
+const ThreeLearningScene = lazy(() => import('../components/home/ThreeLearningScene'));
+const TeacherMarqueeSection = lazy(
+	() => import('../components/teacher/TeacherMarqueeSection'),
+);
 
 const CLASS_OPTIONS = [
 	{
@@ -784,38 +787,39 @@ export default function HomePage() {
 			</Box>
 
 			{/* ── Footer ───────────────────────────────────────────────── */}
-			<Box
-				sx={{
-					position: 'relative',
-					overflow: 'hidden',
-					color: 'white',
-					background:
-						'linear-gradient(135deg, #050816 0%, #18204f 38%, #123c49 72%, #2d1b69 100%)',
-					'&::before': {
-						content: '""',
-						position: 'absolute',
-						inset: 0,
+			<RenderWhenNearViewport minHeight={180} rootMargin='700px'>
+				<Box
+					sx={{
+						position: 'relative',
+						overflow: 'hidden',
+						color: 'white',
 						background:
-							'radial-gradient(circle at 18% 22%, rgba(255,209,102,0.18), transparent 28%), radial-gradient(circle at 84% 18%, rgba(255,107,107,0.13), transparent 27%), radial-gradient(circle at 72% 82%, rgba(20,184,166,0.18), transparent 30%), linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.1) 45%, transparent 62%)',
-						backgroundSize: '100% 100%, 100% 100%, 240% 100%',
-						animation: 'ecosystemBandShine 7s ease-in-out infinite',
-					},
-					'&::after': {
-						content: '""',
-						position: 'absolute',
-						left: 0,
-						right: 0,
-						bottom: 0,
-						height: 1,
-						background:
-							'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
-					},
-					'@keyframes ecosystemBandShine': {
-						'0%, 100%': { backgroundPosition: '0 0, 0 0, -140% 0' },
-						'50%': { backgroundPosition: '0 0, 0 0, 160% 0' },
-					},
-				}}
-			>
+							'linear-gradient(135deg, #050816 0%, #18204f 38%, #123c49 72%, #2d1b69 100%)',
+						'&::before': {
+							content: '""',
+							position: 'absolute',
+							inset: 0,
+							background:
+								'radial-gradient(circle at 18% 22%, rgba(255,209,102,0.18), transparent 28%), radial-gradient(circle at 84% 18%, rgba(255,107,107,0.13), transparent 27%), radial-gradient(circle at 72% 82%, rgba(20,184,166,0.18), transparent 30%), linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.1) 45%, transparent 62%)',
+							backgroundSize: '100% 100%, 100% 100%, 240% 100%',
+							animation: 'ecosystemBandShine 7s ease-in-out infinite',
+						},
+						'&::after': {
+							content: '""',
+							position: 'absolute',
+							left: 0,
+							right: 0,
+							bottom: 0,
+							height: 1,
+							background:
+								'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
+						},
+						'@keyframes ecosystemBandShine': {
+							'0%, 100%': { backgroundPosition: '0 0, 0 0, -140% 0' },
+							'50%': { backgroundPosition: '0 0, 0 0, 160% 0' },
+						},
+					}}
+				>
 				<Container maxWidth='xl' sx={{ position: 'relative', py: { xs: 7, md: 9 } }}>
 					<Grid container spacing={5} sx={{ alignItems: 'center' }}>
 						<Grid size={{ xs: 12, md: 5 }}>
@@ -883,7 +887,18 @@ export default function HomePage() {
 									},
 								}}
 							>
-								<ThreeLearningScene />
+								<Suspense
+									fallback={
+										<Box
+											sx={{
+												width: '100%',
+												height: { xs: 300, md: 420 },
+											}}
+										/>
+									}
+								>
+									<ThreeLearningScene />
+								</Suspense>
 								<Box
 									sx={{
 										position: 'absolute',
@@ -916,7 +931,8 @@ export default function HomePage() {
 						</Grid>
 					</Grid>
 				</Container>
-			</Box>
+				</Box>
+			</RenderWhenNearViewport>
 
 			{courseTypes.length > 0 && (
 			<Box sx={{ bgcolor: 'background.paper' }}>
@@ -1224,7 +1240,11 @@ export default function HomePage() {
 				</Container>
 			</Box>
 
-			<TeacherMarqueeSection teachers={teachers} />
+			<RenderWhenNearViewport minHeight={160} rootMargin='700px'>
+				<Suspense fallback={null}>
+					<TeacherMarqueeSection teachers={teachers} />
+				</Suspense>
+			</RenderWhenNearViewport>
 
 			<Box sx={{ bgcolor: 'grey.900', color: 'grey.400', py: 5 }}>
 				<Container maxWidth='lg'>

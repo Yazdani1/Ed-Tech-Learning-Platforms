@@ -1,38 +1,41 @@
+import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AuthLayout from './components/layout/AuthLayout';
 import AdminLayout from './components/layout/AdminLayout/AdminLayout';
 import StudentLayout from './components/layout/StudentLayout/StudentLayout';
 import TeacherLayout from './components/layout/TeacherLayout/TeacherLayout';
+import LoadingSpinner from './components/common/LoadingSpinner';
 
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-import DashboardPage from './pages/dashboard/DashboardPage';
-import ProfilePage from './pages/dashboard/ProfilePage';
-import CoursesPage from './pages/courses/CoursesPage';
-import CourseCreatePage from './pages/courses/CourseCreatePage';
-import CourseDetailPage from './pages/courses/CourseDetailPage';
-import CategoriesPage from './pages/categories/CategoriesPage';
-import CourseTypesPage from './pages/courseTypes/CourseTypesPage';
-import TeachersPage from './pages/teachers/TeachersPage';
-import UsersPage from './pages/users/UsersPage';
-import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
-import AdminEnrollmentsPage from './pages/enrollments/AdminEnrollmentsPage';
-import PerformancePage from './pages/performance/PerformancePage';
-import StudentCourseLearningPage from './pages/courses/StudentCourseLearningPage';
-import TeacherCoursesPage from './pages/courses/TeacherCoursesPage';
-import PricingPage from './pages/pricing/PricingPage';
-import HomePage from './pages/HomePage';
-import CourseBrowsePage from './pages/courses/CourseBrowsePage';
-import NotFoundPage from './pages/NotFoundPage';
-import PublicTeachersPage from './pages/teachers/PublicTeachersPage';
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
+const ProfilePage = lazy(() => import('./pages/dashboard/ProfilePage'));
+const CoursesPage = lazy(() => import('./pages/courses/CoursesPage'));
+const CourseCreatePage = lazy(() => import('./pages/courses/CourseCreatePage'));
+const CourseDetailPage = lazy(() => import('./pages/courses/CourseDetailPage'));
+const CategoriesPage = lazy(() => import('./pages/categories/CategoriesPage'));
+const CourseTypesPage = lazy(() => import('./pages/courseTypes/CourseTypesPage'));
+const TeachersPage = lazy(() => import('./pages/teachers/TeachersPage'));
+const UsersPage = lazy(() => import('./pages/users/UsersPage'));
+const SubscriptionsPage = lazy(() => import('./pages/subscriptions/SubscriptionsPage'));
+const AdminEnrollmentsPage = lazy(() => import('./pages/enrollments/AdminEnrollmentsPage'));
+const PerformancePage = lazy(() => import('./pages/performance/PerformancePage'));
+const StudentCourseLearningPage = lazy(() => import('./pages/courses/StudentCourseLearningPage'));
+const TeacherCoursesPage = lazy(() => import('./pages/courses/TeacherCoursesPage'));
+const PricingPage = lazy(() => import('./pages/pricing/PricingPage'));
+const HomePage = lazy(() => import('./pages/HomePage'));
+const CourseBrowsePage = lazy(() => import('./pages/courses/CourseBrowsePage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const PublicTeachersPage = lazy(() => import('./pages/teachers/PublicTeachersPage'));
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
 export default function App() {
 	return (
-		<Routes>
-			<Route path='/' element={<HomePage />} />
+		<Suspense fallback={<LoadingSpinner />}>
+			<Routes>
+				<Route path='/' element={<HomePage />} />
 
 			{/* Auth */}
 			<Route element={<AuthLayout />}>
@@ -91,6 +94,7 @@ export default function App() {
 			<Route path='/teachers' element={<PublicTeachersPage />} />
 
 			<Route path='*' element={<NotFoundPage />} />
-		</Routes>
+			</Routes>
+		</Suspense>
 	);
 }

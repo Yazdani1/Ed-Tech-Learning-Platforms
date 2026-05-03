@@ -16,6 +16,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../../context/useAuth';
 import { encodeParam, decodeParam } from '../../utils/urlParams';
 
+const prefetchPublicRoutes = () => {
+	void import('../../pages/courses/CourseBrowsePage');
+	void import('../../pages/pricing/PricingPage');
+	void import('../../pages/teachers/PublicTeachersPage');
+};
+
 export default function PublicNavbar() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -29,6 +35,21 @@ export default function PublicNavbar() {
   useEffect(() => {
     setQuery(currentQ);
   }, [currentQ]);
+
+  useEffect(() => {
+    const win = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    if (win.requestIdleCallback) {
+      const id = win.requestIdleCallback(prefetchPublicRoutes, { timeout: 2500 });
+      return () => win.cancelIdleCallback?.(id);
+    }
+
+    const id = window.setTimeout(prefetchPublicRoutes, 1200);
+    return () => window.clearTimeout(id);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +129,8 @@ export default function PublicNavbar() {
             component={RouterLink}
             to="/courses"
             color="inherit"
+            onMouseEnter={prefetchPublicRoutes}
+            onFocus={prefetchPublicRoutes}
             sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
           >
             All Courses
@@ -116,6 +139,8 @@ export default function PublicNavbar() {
             component={RouterLink}
             to="/pricing"
             color="inherit"
+            onMouseEnter={prefetchPublicRoutes}
+            onFocus={prefetchPublicRoutes}
             sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
           >
             Pricing
@@ -124,6 +149,8 @@ export default function PublicNavbar() {
             component={RouterLink}
             to="/teachers"
             color="inherit"
+            onMouseEnter={prefetchPublicRoutes}
+            onFocus={prefetchPublicRoutes}
             sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
           >
             Teachers
