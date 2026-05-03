@@ -36,7 +36,9 @@ import { studyMaterialService } from '../../services/studyMaterial.service';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import CurriculumBuilder from '../../components/course/CurriculumBuilder/CurriculumBuilder';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
+import YouBadge from '../../components/common/YouBadge';
 import { formatDateTime, formatTime } from '../../utils/dateTime';
+import { useAuth } from '../../context/useAuth';
 import type {
 	ICategory,
 	ICourseType,
@@ -164,6 +166,7 @@ function ArrayFieldEditor({
 export default function CourseCreatePage() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
+	const { user } = useAuth();
 	const isEdit = Boolean(id);
 	const [tab, setTab] = useState(0);
 	const [courseId, setCourseId] = useState(id ?? '');
@@ -1165,7 +1168,9 @@ export default function CourseCreatePage() {
 															variant='caption'
 															color='text.secondary'
 														>
-															{ann.postedBy.name} &bull; {ann.postedBy.role}{' '}
+															{ann.postedBy.name}{' '}
+															{user?._id === ann.postedBy._id && <YouBadge />}{' '}
+															&bull; {ann.postedBy.role}{' '}
 															&bull; {formatDateTime(ann.createdAt)}
 														</Typography>
 													</Box>
@@ -1398,7 +1403,9 @@ export default function CourseCreatePage() {
 															variant='caption'
 															color='text.secondary'
 														>
-															{mat.postedBy.name} &bull; {mat.postedBy.role}{' '}
+															{mat.postedBy.name}{' '}
+															{user?._id === mat.postedBy._id && <YouBadge />}{' '}
+															&bull; {mat.postedBy.role}{' '}
 															&bull;{' '}
 															{formatDateTime(mat.createdAt)}
 														</Typography>

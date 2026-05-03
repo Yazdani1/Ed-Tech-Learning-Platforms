@@ -24,6 +24,7 @@ import type { IQuestion, IAnswer } from '../../types/index';
 import RichTextEditor from './RichTextEditor';
 import ItemActionMenu from '../common/ItemActionMenu';
 import { formatDateTime } from '../../utils/dateTime';
+import YouBadge from '../common/YouBadge';
 
 interface CourseQASectionProps {
 	courseId: string;
@@ -389,7 +390,8 @@ export default function CourseQASection({
 							{qaDetail.question.postedBy.name[0]}
 						</Avatar>
 						<Typography variant='caption' color='text.secondary'>
-							{qaDetail.question.postedBy.name}
+							{qaDetail.question.postedBy.name}{' '}
+							{userId === qaDetail.question.postedBy._id && <YouBadge />}
 							{' · '}
 							<Chip
 								label={qaDetail.question.postedBy.role}
@@ -591,7 +593,8 @@ export default function CourseQASection({
 								</Avatar>
 								<Box sx={{ flex: 1 }}>
 									<Typography variant='caption' sx={{ fontWeight: 600 }}>
-										{answer.postedBy.name}
+										{answer.postedBy.name}{' '}
+										{userId === answer.postedBy._id && <YouBadge />}
 									</Typography>
 									<Typography
 										variant='caption'
@@ -983,6 +986,7 @@ export default function CourseQASection({
 												<Typography variant='caption' color='text.secondary' noWrap>
 													{q.postedBy.name}
 												</Typography>
+												{userId === q.postedBy._id && <YouBadge />}
 												<Chip
 													label={q.postedBy.role}
 													size='small'

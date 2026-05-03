@@ -60,6 +60,7 @@ import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar
 import { useAuth } from '../../context/useAuth';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
+import YouBadge from '../../components/common/YouBadge';
 
 type NavSection =
 	| 'course_overview'
@@ -1069,7 +1070,9 @@ export default function StudentCourseLearningPage() {
 																	variant='caption'
 																	color='text.secondary'
 																>
-																	{ann.postedBy.name} &bull; {ann.postedBy.role}{' '}
+																	{ann.postedBy.name}{' '}
+																	{user?._id === ann.postedBy._id && <YouBadge />}{' '}
+																	&bull; {ann.postedBy.role}{' '}
 																	&bull; {formatDateTime(ann.createdAt)}
 																</Typography>
 															</Box>
@@ -1325,7 +1328,9 @@ export default function StudentCourseLearningPage() {
 																	variant='caption'
 																	color='text.secondary'
 																>
-																	{mat.postedBy.name} &bull; {mat.postedBy.role}{' '}
+																	{mat.postedBy.name}{' '}
+																	{user?._id === mat.postedBy._id && <YouBadge />}{' '}
+																	&bull; {mat.postedBy.role}{' '}
 																	&bull;{' '}
 																	{formatDateTime(mat.createdAt)}
 																</Typography>
