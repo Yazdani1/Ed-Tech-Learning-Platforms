@@ -19,30 +19,30 @@ export default function ThreeLearningScene() {
 		mount.appendChild(renderer.domElement);
 
 		const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
-		const pointLight = new THREE.PointLight(0x7dd3fc, 80, 16);
+		const pointLight = new THREE.PointLight(0x67e8f9, 86, 16);
 		pointLight.position.set(3, 3, 4);
-		const warmLight = new THREE.PointLight(0xffd166, 36, 14);
+		const warmLight = new THREE.PointLight(0xffc857, 44, 14);
 		warmLight.position.set(-3, -2, 3);
 		scene.add(ambientLight, pointLight, warmLight);
 
 		const core = new THREE.Mesh(
 			new THREE.IcosahedronGeometry(1.38, 2),
 			new THREE.MeshStandardMaterial({
-				color: 0xfff3b0,
-				metalness: 0.32,
-				roughness: 0.18,
-				emissive: 0xff8a00,
-				emissiveIntensity: 0.18,
+				color: 0xf8fafc,
+				metalness: 0.42,
+				roughness: 0.16,
+				emissive: 0x67e8f9,
+				emissiveIntensity: 0.2,
 			}),
 		);
 		scene.add(core);
 
 		const ringMaterial = new THREE.MeshStandardMaterial({
-			color: 0xffffff,
-			metalness: 0.18,
-			roughness: 0.2,
+			color: 0xb6f3ff,
+			metalness: 0.22,
+			roughness: 0.18,
 			transparent: true,
-			opacity: 0.82,
+			opacity: 0.86,
 		});
 
 		const rings = [
@@ -59,10 +59,10 @@ export default function ThreeLearningScene() {
 		rings.forEach((ring) => scene.add(ring));
 
 		const orbitItems = [
-			{ color: 0xffd166, radius: 2.35, size: 0.18, speed: 0.82 },
-			{ color: 0xff6b6b, radius: 3.05, size: 0.15, speed: -0.62 },
-			{ color: 0xf8fafc, radius: 3.55, size: 0.14, speed: 0.5 },
-			{ color: 0xffb703, radius: 2.7, size: 0.12, speed: -0.9 },
+			{ color: 0x67e8f9, radius: 2.35, size: 0.18, speed: 0.82 },
+			{ color: 0xfb7185, radius: 3.05, size: 0.15, speed: -0.62 },
+			{ color: 0xbef264, radius: 3.55, size: 0.14, speed: 0.5 },
+			{ color: 0xffc857, radius: 2.7, size: 0.12, speed: -0.9 },
 		].map((item) => {
 			const mesh = new THREE.Mesh(
 				new THREE.SphereGeometry(item.size, 24, 24),
@@ -82,10 +82,10 @@ export default function ThreeLearningScene() {
 				mesh: new THREE.Mesh(
 					new THREE.BoxGeometry(0.34, 0.34, 0.34),
 					new THREE.MeshStandardMaterial({
-						color: 0x38bdf8,
-						emissive: 0xffffff,
-						emissiveIntensity: 0.1,
-						roughness: 0.28,
+						color: 0xbef264,
+						emissive: 0x84cc16,
+						emissiveIntensity: 0.16,
+						roughness: 0.24,
 					}),
 				),
 				base: new THREE.Vector3(-3.6, 1.25, -0.35),
@@ -95,10 +95,10 @@ export default function ThreeLearningScene() {
 				mesh: new THREE.Mesh(
 					new THREE.OctahedronGeometry(0.26, 0),
 					new THREE.MeshStandardMaterial({
-						color: 0xffffff,
-						emissive: 0xffd166,
-						emissiveIntensity: 0.22,
-						roughness: 0.24,
+						color: 0xffc857,
+						emissive: 0xfb7185,
+						emissiveIntensity: 0.18,
+						roughness: 0.2,
 					}),
 				),
 				base: new THREE.Vector3(3.45, 1.05, -0.25),
@@ -108,10 +108,10 @@ export default function ThreeLearningScene() {
 				mesh: new THREE.Mesh(
 					new THREE.TorusKnotGeometry(0.2, 0.055, 64, 10),
 					new THREE.MeshStandardMaterial({
-						color: 0xff6b6b,
-						emissive: 0xffd166,
-						emissiveIntensity: 0.16,
-						roughness: 0.22,
+						color: 0x67e8f9,
+						emissive: 0xbef264,
+						emissiveIntensity: 0.12,
+						roughness: 0.2,
 					}),
 				),
 				base: new THREE.Vector3(-2.95, -1.35, 0.1),
@@ -132,10 +132,10 @@ export default function ThreeLearningScene() {
 		const particles = new THREE.Points(
 			particlesGeometry,
 			new THREE.PointsMaterial({
-				color: 0xfff7ed,
+				color: 0xe0f2fe,
 				size: 0.03,
 				transparent: true,
-				opacity: 0.72,
+				opacity: 0.78,
 			}),
 		);
 		scene.add(particles);
