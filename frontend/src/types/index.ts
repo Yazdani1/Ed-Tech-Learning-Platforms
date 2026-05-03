@@ -75,6 +75,8 @@ export interface ICourse {
   coverImage?: string;
   category: ICategory;
   courseType?: ICourseType;
+  startDate?: string;
+  endDate?: string;
   teachers: ITeacher[];
   visibility: CourseVisibility;
   pricing: CoursePricing;

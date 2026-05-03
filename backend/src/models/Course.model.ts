@@ -9,6 +9,8 @@ export interface ICourse extends Document {
   coverImagePublicId?: string;
   category: Types.ObjectId;
   courseType: Types.ObjectId;
+  startDate?: Date;
+  endDate?: Date;
   teachers: Types.ObjectId[];
   visibility: CourseVisibility;
   pricing: CoursePricing;
@@ -34,6 +36,8 @@ const courseSchema = new Schema<ICourse>(
     coverImagePublicId: String,
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     courseType: { type: Schema.Types.ObjectId, ref: 'CourseType' },
+    startDate: { type: Date },
+    endDate: { type: Date },
     teachers: [{ type: Schema.Types.ObjectId, ref: 'Teacher' }],
     visibility: { type: String, enum: ['Public', 'Private'], default: 'Private' },
     pricing: { type: String, enum: ['Free', 'Paid'], default: 'Free' },

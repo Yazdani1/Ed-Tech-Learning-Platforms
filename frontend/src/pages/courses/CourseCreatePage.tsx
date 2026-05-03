@@ -195,6 +195,8 @@ export default function CourseCreatePage() {
 		subtitle: '',
 		category: '',
 		courseType: '',
+		startDate: '',
+		endDate: '',
 		selectedTeachers: [] as string[],
 		description: '',
 		coverImage: null as File | null,
@@ -281,6 +283,8 @@ export default function CourseCreatePage() {
 		fd.append('subtitle', form.subtitle);
 		fd.append('category', form.category);
 		fd.append('courseType', form.courseType);
+		if (form.startDate) fd.append('startDate', form.startDate);
+		if (form.endDate) fd.append('endDate', form.endDate);
 		fd.append('description', form.description);
 		fd.append('visibility', form.visibility);
 		fd.append('pricing', form.pricing);
@@ -456,11 +460,15 @@ export default function CourseCreatePage() {
 				if (!data) return;
 				setCourseId(data._id);
 				setCourseStatus(data.status ?? 'Draft');
+				const toInputDate = (iso?: string) =>
+					iso ? iso.slice(0, 10) : '';
 				setForm({
 					title: data.title || '',
 					subtitle: data.subtitle || '',
 					category: data.category?._id || '',
 					courseType: data.courseType?._id || '',
+					startDate: toInputDate(data.startDate),
+					endDate: toInputDate(data.endDate),
 					selectedTeachers: data.teachers?.map((t) => t._id) ?? [],
 					description: data.description || '',
 					coverImage: null,
@@ -687,6 +695,28 @@ export default function CourseCreatePage() {
 									</MenuItem>
 								))}
 							</TextField>
+
+							<Box sx={{ display: 'flex', gap: 2 }}>
+								<TextField
+									label='Start Date'
+									type='date'
+									value={form.startDate}
+									onChange={(e) => set('startDate', e.target.value)}
+									sx={{ flex: 1 }}
+									slotProps={{ inputLabel: { shrink: true } }}
+									helperText='Optional'
+								/>
+								<TextField
+									label='End Date'
+									type='date'
+									value={form.endDate}
+									onChange={(e) => set('endDate', e.target.value)}
+									sx={{ flex: 1 }}
+									slotProps={{ inputLabel: { shrink: true } }}
+									helperText='Optional'
+									inputProps={{ min: form.startDate || undefined }}
+								/>
+							</Box>
 
 							<TextField
 								label='Teachers'

@@ -47,6 +47,8 @@ export const createCourse = asyncHandler(
 			subtitle?: string;
 			category: string;
 			courseType: string;
+			startDate?: string;
+			endDate?: string;
 			teachers?: string;
 			visibility?: string;
 			pricing?: string;
@@ -75,6 +77,8 @@ export const createCourse = asyncHandler(
 			subtitle: body.subtitle,
 			category: new Types.ObjectId(body.category),
 			courseType: new Types.ObjectId(body.courseType),
+			startDate: body.startDate ? new Date(body.startDate) : undefined,
+			endDate: body.endDate ? new Date(body.endDate) : undefined,
 			teachers: body.teachers
 				? (JSON.parse(body.teachers) as string[]).map(
 						(id) => new Types.ObjectId(id),
@@ -124,6 +128,10 @@ export const updateCourse = asyncHandler(
 			course.category = new Types.ObjectId(body.category);
 		if (body.courseType !== undefined)
 			course.courseType = new Types.ObjectId(body.courseType);
+		if (body.startDate !== undefined)
+			course.startDate = body.startDate ? new Date(body.startDate) : undefined;
+		if (body.endDate !== undefined)
+			course.endDate = body.endDate ? new Date(body.endDate) : undefined;
 		if (body.visibility !== undefined)
 			course.visibility = body.visibility as 'Public' | 'Private';
 		if (body.pricing !== undefined)

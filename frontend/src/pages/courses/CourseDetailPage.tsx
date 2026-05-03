@@ -30,6 +30,9 @@ import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import SchoolIcon from '@mui/icons-material/School';
+import ClassIcon from '@mui/icons-material/Class';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import EventIcon from '@mui/icons-material/Event';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import AllInclusiveIcon from '@mui/icons-material/AllInclusive';
 import DevicesIcon from '@mui/icons-material/Devices';
@@ -257,6 +260,16 @@ export default function CourseDetailPage() {
 										</Typography>
 									</>
 								)}
+								{course.courseType?.name && (
+									<>
+										<Typography variant='caption' sx={{ color: 'grey.500' }}>
+											›
+										</Typography>
+										<Typography variant='caption' sx={{ color: '#a78bfa' }}>
+											{course.courseType.name}
+										</Typography>
+									</>
+								)}
 							</Box>
 
 							<Typography
@@ -309,6 +322,14 @@ export default function CourseDetailPage() {
 										fontWeight: 600,
 									}}
 								/>
+								{course.courseType?.name && (
+									<Chip
+										icon={<ClassIcon sx={{ fontSize: '14px !important', color: 'white !important' }} />}
+										label={course.courseType.name}
+										size='small'
+										sx={{ bgcolor: '#0f766e', color: 'white', fontWeight: 600 }}
+									/>
+								)}
 								{course.includedInSubscription && (
 									<Chip
 										label='Subscription'
@@ -340,6 +361,41 @@ export default function CourseDetailPage() {
 											{i < course.teachers.length - 1 ? ',' : ''}
 										</Typography>
 									))}
+								</Box>
+							)}
+
+							{(course.startDate || course.endDate) && (
+								<Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mt: 1 }}>
+									{course.startDate && (
+										<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+											<CalendarTodayIcon sx={{ fontSize: 14, opacity: 0.6 }} />
+											<Typography variant='caption' sx={{ opacity: 0.75 }}>
+												Starts:{' '}
+												<strong>
+													{new Date(course.startDate).toLocaleDateString(undefined, {
+														year: 'numeric',
+														month: 'long',
+														day: 'numeric',
+													})}
+												</strong>
+											</Typography>
+										</Box>
+									)}
+									{course.endDate && (
+										<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+											<EventIcon sx={{ fontSize: 14, opacity: 0.6 }} />
+											<Typography variant='caption' sx={{ opacity: 0.75 }}>
+												Ends:{' '}
+												<strong>
+													{new Date(course.endDate).toLocaleDateString(undefined, {
+														year: 'numeric',
+														month: 'long',
+														day: 'numeric',
+													})}
+												</strong>
+											</Typography>
+										</Box>
+									)}
 								</Box>
 							)}
 						</Grid>
@@ -892,6 +948,15 @@ export default function CourseDetailPage() {
 														),
 														text: 'Certificate of completion',
 													},
+													...(course.courseType?.name
+														? [{ icon: <ClassIcon sx={{ fontSize: 16 }} />, text: `Type: ${course.courseType.name}` }]
+														: []),
+													...(course.startDate
+														? [{ icon: <CalendarTodayIcon sx={{ fontSize: 16 }} />, text: `Starts: ${new Date(course.startDate).toLocaleDateString()}` }]
+														: []),
+													...(course.endDate
+														? [{ icon: <EventIcon sx={{ fontSize: 16 }} />, text: `Ends: ${new Date(course.endDate).toLocaleDateString()}` }]
+														: []),
 												].map(({ icon, text }) => (
 													<Box
 														key={text}
