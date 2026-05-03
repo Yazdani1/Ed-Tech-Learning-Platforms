@@ -432,7 +432,7 @@ function AdminCourseRow({
 							}}
 						/>
 						<Typography variant='caption' color='text.secondary'>
-							{priceLabel} &middot; {course.visibility}
+							{priceLabel} &middot; {course.visibility} &middot; {course.teachers?.length ?? 0} Teacher{(course.teachers?.length ?? 0) !== 1 ? 's' : ''}
 						</Typography>
 						{course.includedInSubscription && course.allowedSubscriptionPlans.length > 0 && (
 							<Typography variant='caption' sx={{ color: '#7c3aed', fontWeight: 600 }}>

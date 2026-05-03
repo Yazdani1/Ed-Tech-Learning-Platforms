@@ -42,6 +42,7 @@ import { courseService } from '../../services/course.service';
 import { enrollmentService } from '../../services/enrollment.service';
 import { announcementService } from '../../services/announcement.service';
 import { studyMaterialService } from '../../services/studyMaterial.service';
+import { qaService } from '../../services/qa.service';
 import {
 	formatLectureDuration,
 	formatSectionDuration,
@@ -104,6 +105,7 @@ export default function StudentCourseLearningPage() {
 	const [activeNav, setActiveNav] = useState<NavSection>('video_lectures');
 	const [activeLecture, setActiveLecture] = useState<ILecture | null>(null);
 	const [enrolledCount, setEnrolledCount] = useState<number | null>(null);
+	const [qaCount, setQaCount] = useState<number>(0);
 
 	const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
 	const [annPosting, setAnnPosting] = useState(false);
@@ -135,6 +137,11 @@ export default function StudentCourseLearningPage() {
 		enrollmentService
 			.getCourseCount(courseId)
 			.then((r) => setEnrolledCount(r.data?.count ?? null))
+			.catch(() => {});
+
+		qaService
+			.getCourseQuestions(courseId)
+			.then((r) => setQaCount(r.data?.length ?? 0))
 			.catch(() => {});
 	}, [courseId]);
 
@@ -537,6 +544,7 @@ export default function StudentCourseLearningPage() {
 										gridTemplateColumns: {
 											xs: '1fr 1fr',
 											sm: 'repeat(3, 1fr)',
+											md: 'repeat(4, 1fr)',
 										},
 										gap: { xs: 2.5, sm: 3 },
 										mb: 4,
@@ -585,6 +593,16 @@ export default function StudentCourseLearningPage() {
 										icon={<MenuBookOutlinedIcon />}
 										label='Study Materials'
 										value={String(studyMaterials.length)}
+									/>
+									<StatItem
+										icon={<QuestionAnswerOutlinedIcon />}
+										label='Q & A Questions'
+										value={String(qaCount)}
+									/>
+									<StatItem
+										icon={<PersonOutlinedIcon />}
+										label='Total Teachers'
+										value={String(course.teachers?.length ?? 0)}
 									/>
 								</Box>
 
