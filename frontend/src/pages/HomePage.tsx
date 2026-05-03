@@ -72,40 +72,31 @@ const CATEGORY_GRADIENTS = [
 const HOME_COURSES_PAGE_SIZE = 8;
 const HOME_COURSE_SKELETONS = Array.from({ length: HOME_COURSES_PAGE_SIZE });
 
-const LEARNING_FORMATS = [
-	{
-		title: 'Live Courses',
-		label: 'Interactive',
-		description:
-			'Join scheduled live classes with teachers, questions, feedback, and guided study flow.',
-	},
-	{
-		title: 'Recorded Courses',
-		label: 'Self-paced',
-		description:
-			'Learn any time with structured lessons, preview lectures, resources, and progress continuity.',
-	},
-	{
-		title: 'Seminars',
-		label: 'Focused',
-		description:
-			'Attend topic-based sessions for exam prep, career guidance, product demos, and expert talks.',
-	},
-	{
-		title: 'Language Courses',
-		label: 'Multi-skill',
-		description:
-			'Practice speaking, listening, grammar, vocabulary, and writing with guided course tracks.',
-	},
-];
-
 const CLASS_OPTIONS = [
-	'One-to-one mentoring',
-	'Small group classes',
-	'Batch-based live programs',
-	'Teacher-led assignments',
-	'Class recordings after sessions',
-	'Discussion support between lessons',
+	{
+		title: 'One-to-one mentoring',
+		description: 'Private sessions for focused goals, weak points, and personal pace.',
+	},
+	{
+		title: 'Small group classes',
+		description: 'Collaborative classes with peer energy and teacher attention.',
+	},
+	{
+		title: 'Batch-based live programs',
+		description: 'Scheduled cohorts for exam prep, skills, and structured programs.',
+	},
+	{
+		title: 'Teacher-led assignments',
+		description: 'Practice tasks, feedback, and guided improvement after lessons.',
+	},
+	{
+		title: 'Class recordings',
+		description: 'Rewatch important sessions when revising or catching up.',
+	},
+	{
+		title: 'Discussion support',
+		description: 'Ask questions and continue learning between live classes.',
+	},
 ];
 
 const PLATFORM_TOOLS = [
@@ -549,59 +540,149 @@ export default function HomePage() {
 				</Container>
 			</Box>
 
+			{courseTypes.length > 0 && (
 			<Box sx={{ bgcolor: 'background.paper' }}>
 				<Container maxWidth='xl' sx={{ py: { xs: 6, md: 8 } }}>
 					<Box sx={{ mb: 4, maxWidth: 720 }}>
 						<Typography variant='h4' sx={{ fontWeight: 900 }}>
-							Learn in the format that fits your goal
+							Learn what matches your ambition
 						</Typography>
 						<Typography variant='body1' color='text.secondary' sx={{ mt: 1 }}>
-							From structured courses to focused seminars, learners can choose
-							the path that matches their schedule and study style.
+							These learning paths come directly from the course types available
+							on the platform, so students see real options they can explore.
 						</Typography>
 					</Box>
 					<Grid container spacing={2.5}>
-						{LEARNING_FORMATS.map((item, index) => (
-							<Grid key={item.title} size={{ xs: 12, sm: 6, md: 3 }}>
-								<Box
+						{courseTypes.map((courseType, index) => {
+							const gradient = CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length];
+
+							return (
+							<Grid key={courseType._id} size={{ xs: 12, sm: 6, md: 3 }}>
+								<CardActionArea
+									component={RouterLink}
+									to={`/courses?courseTypes=${encodeParam(courseType._id)}`}
 									sx={{
 										height: '100%',
-										p: 2.5,
+										minHeight: 210,
+										p: 2.75,
 										borderRadius: 1,
 										border: '1px solid',
 										borderColor: 'divider',
 										bgcolor: 'background.paper',
 										position: 'relative',
 										overflow: 'hidden',
+										display: 'flex',
+										alignItems: 'stretch',
+										textDecoration: 'none',
 										transition: 'transform 0.25s ease, box-shadow 0.25s ease',
 										'&::before': {
 											content: '""',
 											position: 'absolute',
 											inset: 0,
-											background: CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length],
-											opacity: 0.09,
+											background: `${gradient}, linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.58) 45%, transparent 62%)`,
+											backgroundSize: '240% 240%, 260% 100%',
+											opacity: 0.2,
+											animation:
+												'courseTypeGradient 5.5s ease-in-out infinite, courseTypeShine 5s ease-in-out infinite',
+										},
+										'&::after': {
+											content: '""',
+											position: 'absolute',
+											width: 128,
+											height: 128,
+											borderRadius: '50%',
+											right: -42,
+											top: -48,
+											background: gradient,
+											opacity: 0.18,
+											filter: 'blur(1px)',
 										},
 										'&:hover': {
 											transform: 'translateY(-4px)',
 											boxShadow: '0 16px 36px rgba(15,23,42,0.11)',
 										},
+										'&:hover .course-type-arrow': {
+											transform: 'translateX(4px)',
+											opacity: 1,
+										},
+										'@keyframes courseTypeGradient': {
+											'0%, 100%': { backgroundPosition: '0% 50%, -140% 0' },
+											'50%': { backgroundPosition: '100% 50%, 160% 0' },
+										},
+										'@keyframes courseTypeShine': {
+											'0%, 35%': { filter: 'saturate(1.05) brightness(1)' },
+											'65%': { filter: 'saturate(1.35) brightness(1.08)' },
+											'100%': { filter: 'saturate(1.05) brightness(1)' },
+										},
 									}}
 								>
-									<Box sx={{ position: 'relative' }}>
-										<Chip label={item.label} size='small' sx={{ fontWeight: 800, mb: 2 }} />
-										<Typography variant='h6' sx={{ fontWeight: 850, mb: 1 }}>
-											{item.title}
+									<Box
+										sx={{
+											position: 'relative',
+											display: 'flex',
+											flexDirection: 'column',
+											width: '100%',
+										}}
+									>
+										<Chip
+											label={`Path ${index + 1}`}
+											size='small'
+											sx={{ fontWeight: 800, mb: 2, alignSelf: 'flex-start' }}
+										/>
+										<Typography
+											variant='h4'
+											sx={{
+												fontWeight: 950,
+												lineHeight: 1.05,
+												mb: 1.5,
+												background: gradient,
+												WebkitBackgroundClip: 'text',
+												WebkitTextFillColor: 'transparent',
+												overflowWrap: 'anywhere',
+											}}
+										>
+											{courseType.name}
 										</Typography>
-										<Typography variant='body2' color='text.secondary' sx={{ lineHeight: 1.7 }}>
-											{item.description}
+										<Typography
+											variant='body2'
+											color='text.secondary'
+											sx={{ lineHeight: 1.7 }}
+										>
+											{courseType.description ||
+												'Explore courses, teachers, and learning materials in this track.'}
 										</Typography>
+										<Box sx={{ flexGrow: 1 }} />
+										<Box
+											sx={{
+												display: 'flex',
+												alignItems: 'center',
+												gap: 0.75,
+												mt: 2,
+												color: 'primary.main',
+												fontWeight: 800,
+											}}
+										>
+											<Typography variant='body2' sx={{ fontWeight: 800 }}>
+												Explore courses
+											</Typography>
+											<ArrowForwardIcon
+												className='course-type-arrow'
+												sx={{
+													fontSize: 18,
+													opacity: 0.65,
+													transition: 'transform 0.25s ease, opacity 0.25s ease',
+												}}
+											/>
+										</Box>
 									</Box>
-								</Box>
+								</CardActionArea>
 							</Grid>
-						))}
+							);
+						})}
 					</Grid>
 				</Container>
 			</Box>
+			)}
 
 			<Box sx={{ bgcolor: 'grey.50' }}>
 				<Container maxWidth='xl' sx={{ py: { xs: 6, md: 8 } }}>
@@ -616,31 +697,65 @@ export default function HomePage() {
 							</Typography>
 						</Grid>
 						<Grid size={{ xs: 12, md: 7 }}>
-							<Grid container spacing={1.5}>
-								{CLASS_OPTIONS.map((item) => (
-									<Grid key={item} size={{ xs: 12, sm: 6 }}>
+							<Grid container spacing={2}>
+								{CLASS_OPTIONS.map((item, index) => (
+									<Grid key={item.title} size={{ xs: 12, sm: 6 }}>
 										<Box
 											sx={{
-												display: 'flex',
-												alignItems: 'center',
-												gap: 1.25,
-												p: 1.75,
+												height: '100%',
+												p: 2,
 												borderRadius: 1,
 												bgcolor: 'background.paper',
 												border: '1px solid',
 												borderColor: 'divider',
+												position: 'relative',
+												overflow: 'hidden',
+												transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+												'&::before': {
+													content: '""',
+													position: 'absolute',
+													inset: 0,
+													background:
+														CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length],
+													opacity: 0.08,
+												},
+												'&:hover': {
+													transform: 'translateY(-3px)',
+													boxShadow: '0 12px 30px rgba(15,23,42,0.1)',
+												},
 											}}
 										>
-											<Box
-												sx={{
-													width: 10,
-													height: 10,
-													borderRadius: '50%',
-													bgcolor: 'primary.main',
-													flexShrink: 0,
-												}}
-											/>
-											<Typography sx={{ fontWeight: 700 }}>{item}</Typography>
+											<Box sx={{ position: 'relative', display: 'flex', gap: 1.5 }}>
+												<Box
+													sx={{
+														width: 42,
+														height: 42,
+														borderRadius: 1,
+														flexShrink: 0,
+														display: 'grid',
+														placeItems: 'center',
+														color: 'white',
+														fontWeight: 900,
+														background:
+															CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length],
+														boxShadow: '0 10px 24px rgba(15,23,42,0.14)',
+													}}
+												>
+													{index + 1}
+												</Box>
+												<Box>
+													<Typography sx={{ fontWeight: 850, mb: 0.5 }}>
+														{item.title}
+													</Typography>
+													<Typography
+														variant='body2'
+														color='text.secondary'
+														sx={{ lineHeight: 1.6 }}
+													>
+														{item.description}
+													</Typography>
+												</Box>
+											</Box>
 										</Box>
 									</Grid>
 								))}

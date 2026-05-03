@@ -24,7 +24,7 @@ export default function ThreeLearningScene() {
 		scene.add(ambientLight, pointLight);
 
 		const core = new THREE.Mesh(
-			new THREE.IcosahedronGeometry(1.08, 2),
+			new THREE.IcosahedronGeometry(1.38, 2),
 			new THREE.MeshStandardMaterial({
 				color: 0x2563eb,
 				metalness: 0.25,
@@ -44,9 +44,9 @@ export default function ThreeLearningScene() {
 		});
 
 		const rings = [
-			new THREE.Mesh(new THREE.TorusGeometry(2.05, 0.025, 12, 160), ringMaterial),
-			new THREE.Mesh(new THREE.TorusGeometry(2.75, 0.018, 12, 160), ringMaterial.clone()),
-			new THREE.Mesh(new THREE.TorusGeometry(3.35, 0.014, 12, 160), ringMaterial.clone()),
+			new THREE.Mesh(new THREE.TorusGeometry(2.35, 0.028, 12, 160), ringMaterial),
+			new THREE.Mesh(new THREE.TorusGeometry(3.05, 0.02, 12, 160), ringMaterial.clone()),
+			new THREE.Mesh(new THREE.TorusGeometry(3.55, 0.016, 12, 160), ringMaterial.clone()),
 		];
 
 		rings[0].rotation.x = Math.PI / 2.8;
@@ -57,10 +57,10 @@ export default function ThreeLearningScene() {
 		rings.forEach((ring) => scene.add(ring));
 
 		const orbitItems = [
-			{ color: 0xf97316, radius: 2.05, size: 0.16, speed: 0.82 },
-			{ color: 0xec4899, radius: 2.75, size: 0.13, speed: -0.62 },
-			{ color: 0x84cc16, radius: 3.35, size: 0.12, speed: 0.5 },
-			{ color: 0xa78bfa, radius: 2.45, size: 0.1, speed: -0.9 },
+			{ color: 0xf97316, radius: 2.35, size: 0.18, speed: 0.82 },
+			{ color: 0xec4899, radius: 3.05, size: 0.15, speed: -0.62 },
+			{ color: 0x84cc16, radius: 3.55, size: 0.14, speed: 0.5 },
+			{ color: 0xa78bfa, radius: 2.7, size: 0.12, speed: -0.9 },
 		].map((item) => {
 			const mesh = new THREE.Mesh(
 				new THREE.SphereGeometry(item.size, 24, 24),
