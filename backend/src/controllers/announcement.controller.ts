@@ -15,7 +15,7 @@ export const getCourseAnnouncements = asyncHandler(async (req: Request, res: Res
 
 export const createAnnouncement = asyncHandler(async (req: Request, res: Response) => {
   const { title, description } = req.body as { title: string; description: string };
-  const { courseId } = req.params;
+  const courseId = req.params.courseId as string;
 
   if (!title?.trim()) throw new AppError('Title is required', 400);
   if (!description?.trim()) throw new AppError('Description is required', 400);
@@ -54,4 +54,24 @@ export const deleteAnnouncement = asyncHandler(async (req: Request, res: Respons
 
   await announcement.deleteOne();
   res.status(200).json({ success: true, message: 'Announcement deleted' });
+});
+
+export const updateAnnouncement = asyncHandler(async (req: Request, res: Response) => {
+  const { title, description } = req.body as { title?: string; description?: string };
+  const announcement = await Announcement.findById(req.params.id);
+  if (!announcement) throw new AppError('Announcement not found', 404);
+
+  const isOwner = announcement.postedBy.toString() === (req.user._id as Types.ObjectId).toString();
+  const isAdmin = req.user.role === 'Super Admin' || req.user.role === 'Admin' || req.user.role === 'Moderator';
+
+  if (!isOwner && !isAdmin) throw new AppError('Not authorized to update this announcement', 403);
+  if (!title?.trim()) throw new AppError('Title is required', 400);
+  if (!description?.trim()) throw new AppError('Description is required', 400);
+
+  announcement.title = title.trim();
+  announcement.description = description.trim();
+  await announcement.save();
+
+  const populated = await announcement.populate('postedBy', 'name avatar role');
+  res.status(200).json({ success: true, message: 'Announcement updated', data: populated });
 });

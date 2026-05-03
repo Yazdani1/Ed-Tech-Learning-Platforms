@@ -11,6 +11,9 @@ export const qaService = {
   createQuestion: (courseId: string, data: { title: string; description: string }) =>
     api.post<IQuestion>(`/qa/questions/course/${courseId}`, data),
 
+  updateQuestion: (id: string, data: { title: string; description: string }) =>
+    api.put<IQuestion>(`/qa/questions/${id}`, data),
+
   deleteQuestion: (id: string) => api.delete(`/qa/questions/${id}`),
 
   upvoteQuestion: (id: string) =>
@@ -18,6 +21,9 @@ export const qaService = {
 
   createAnswer: (questionId: string, data: { body: string }) =>
     api.post<IAnswer>(`/qa/answers/question/${questionId}`, data),
+
+  updateAnswer: (id: string, data: { body: string }) =>
+    api.put<IAnswer>(`/qa/answers/${id}`, data),
 
   deleteAnswer: (id: string) => api.delete(`/qa/answers/${id}`),
 

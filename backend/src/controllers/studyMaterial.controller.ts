@@ -15,7 +15,7 @@ export const getCourseStudyMaterials = asyncHandler(async (req: Request, res: Re
 
 export const createStudyMaterial = asyncHandler(async (req: Request, res: Response) => {
   const { title, description, fileUrl } = req.body as { title: string; description: string; fileUrl?: string };
-  const { courseId } = req.params;
+  const courseId = req.params.courseId as string;
 
   if (!title?.trim()) throw new AppError('Title is required', 400);
   if (!description?.trim()) throw new AppError('Description is required', 400);
@@ -55,4 +55,25 @@ export const deleteStudyMaterial = asyncHandler(async (req: Request, res: Respon
 
   await material.deleteOne();
   res.status(200).json({ success: true, message: 'Study material deleted' });
+});
+
+export const updateStudyMaterial = asyncHandler(async (req: Request, res: Response) => {
+  const { title, description, fileUrl } = req.body as { title?: string; description?: string; fileUrl?: string };
+  const material = await StudyMaterial.findById(req.params.id);
+  if (!material) throw new AppError('Study material not found', 404);
+
+  const isOwner = material.postedBy.toString() === (req.user._id as Types.ObjectId).toString();
+  const isAdmin = req.user.role === 'Super Admin' || req.user.role === 'Admin' || req.user.role === 'Moderator';
+
+  if (!isOwner && !isAdmin) throw new AppError('Not authorized to update this study material', 403);
+  if (!title?.trim()) throw new AppError('Title is required', 400);
+  if (!description?.trim()) throw new AppError('Description is required', 400);
+
+  material.title = title.trim();
+  material.description = description.trim();
+  material.fileUrl = fileUrl?.trim() || undefined;
+  await material.save();
+
+  const populated = await material.populate('postedBy', 'name avatar role');
+  res.status(200).json({ success: true, message: 'Study material updated', data: populated });
 });

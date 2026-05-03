@@ -121,6 +121,35 @@ export const deleteQuestion = asyncHandler(async (req: Request, res: Response) =
   res.status(200).json({ success: true, message: 'Question deleted' });
 });
 
+export const updateQuestion = asyncHandler(async (req: Request, res: Response) => {
+  const { title, description } = req.body as { title?: string; description?: string };
+  const question = await Question.findById(req.params.id);
+  if (!question) throw new AppError('Question not found', 404);
+
+  const isOwner = question.postedBy.toString() === (req.user._id as Types.ObjectId).toString();
+  const isAdmin =
+    req.user.role === 'Super Admin' ||
+    req.user.role === 'Admin' ||
+    req.user.role === 'Moderator';
+
+  if (!isOwner && !isAdmin) throw new AppError('Not authorized to update this question', 403);
+  if (!title?.trim()) throw new AppError('Title is required', 400);
+  if (!description?.trim()) throw new AppError('Description is required', 400);
+
+  question.title = title.trim();
+  question.description = description.trim();
+  await question.save();
+
+  const populated = await question.populate('postedBy', 'name avatar role');
+  const answerCount = await Answer.countDocuments({ question: question._id });
+
+  res.status(200).json({
+    success: true,
+    message: 'Question updated',
+    data: { ...(populated.toObject() as object), answerCount },
+  });
+});
+
 export const upvoteQuestion = asyncHandler(async (req: Request, res: Response) => {
   const question = await Question.findById(req.params.id);
   if (!question) throw new AppError('Question not found', 404);
@@ -181,6 +210,27 @@ export const deleteAnswer = asyncHandler(async (req: Request, res: Response) => 
   await answer.deleteOne();
 
   res.status(200).json({ success: true, message: 'Answer deleted' });
+});
+
+export const updateAnswer = asyncHandler(async (req: Request, res: Response) => {
+  const { body } = req.body as { body?: string };
+  const answer = await Answer.findById(req.params.id);
+  if (!answer) throw new AppError('Answer not found', 404);
+
+  const isOwner = answer.postedBy.toString() === (req.user._id as Types.ObjectId).toString();
+  const isAdmin =
+    req.user.role === 'Super Admin' ||
+    req.user.role === 'Admin' ||
+    req.user.role === 'Moderator';
+
+  if (!isOwner && !isAdmin) throw new AppError('Not authorized to update this answer', 403);
+  if (!body?.trim()) throw new AppError('Answer body is required', 400);
+
+  answer.body = body.trim();
+  await answer.save();
+
+  const populated = await answer.populate('postedBy', 'name avatar role');
+  res.status(200).json({ success: true, message: 'Answer updated', data: populated });
 });
 
 export const upvoteAnswer = asyncHandler(async (req: Request, res: Response) => {

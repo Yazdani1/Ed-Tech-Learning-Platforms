@@ -14,6 +14,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
@@ -53,6 +54,15 @@ export default function CourseQASection({
 	const [answerEditorKey, setAnswerEditorKey] = useState(0);
 	// Same for the ask-question description editor
 	const [askEditorKey, setAskEditorKey] = useState(0);
+	const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+	const [editingQuestionForm, setEditingQuestionForm] = useState({
+		title: '',
+		description: '',
+	});
+	const [questionUpdating, setQuestionUpdating] = useState(false);
+	const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
+	const [editingAnswerBody, setEditingAnswerBody] = useState('');
+	const [answerUpdating, setAnswerUpdating] = useState(false);
 
 	useEffect(() => {
 		setQaLoading(true);
@@ -66,6 +76,7 @@ export default function CourseQASection({
 
 	const isAdminOrMod = ['Admin', 'Super Admin', 'Moderator'].includes(userRole);
 	const canDelete = (ownerId: string) => userId === ownerId || isAdminOrMod;
+	const canEdit = canDelete;
 
 	// ── Handlers ──────────────────────────────────────────────
 
@@ -110,6 +121,44 @@ export default function CourseQASection({
 			toast.success('Question deleted');
 		} catch {
 			//
+		}
+	};
+
+	const startEditQuestion = (question: IQuestion) => {
+		setEditingAnswerId(null);
+		setEditingQuestionId(question._id);
+		setEditingQuestionForm({
+			title: question.title,
+			description: question.description,
+		});
+	};
+
+	const handleUpdateQuestion = async () => {
+		if (!editingQuestionId) return;
+		if (!editingQuestionForm.title.trim() || !editingQuestionForm.description.trim()) {
+			toast.error('Title and description are required');
+			return;
+		}
+
+		setQuestionUpdating(true);
+		try {
+			const res = await qaService.updateQuestion(editingQuestionId, editingQuestionForm);
+			if (res.data) {
+				setQuestions((p) =>
+					p.map((q) => (q._id === editingQuestionId ? res.data! : q)),
+				);
+				setQaDetail((p) =>
+					p && p.question._id === editingQuestionId
+						? { ...p, question: res.data! }
+						: p,
+				);
+			}
+			setEditingQuestionId(null);
+			toast.success('Question updated');
+		} catch {
+			//
+		} finally {
+			setQuestionUpdating(false);
 		}
 	};
 
@@ -195,6 +244,41 @@ export default function CourseQASection({
 		}
 	};
 
+	const startEditAnswer = (answer: IAnswer) => {
+		setEditingQuestionId(null);
+		setEditingAnswerId(answer._id);
+		setEditingAnswerBody(answer.body);
+	};
+
+	const handleUpdateAnswer = async () => {
+		if (!editingAnswerId || !editingAnswerBody.trim()) return;
+
+		setAnswerUpdating(true);
+		try {
+			const res = await qaService.updateAnswer(editingAnswerId, {
+				body: editingAnswerBody,
+			});
+			if (res.data) {
+				setQaDetail((p) =>
+					p
+						? {
+								...p,
+								answers: p.answers.map((a) =>
+									a._id === editingAnswerId ? res.data! : a,
+								),
+							}
+						: p,
+				);
+			}
+			setEditingAnswerId(null);
+			toast.success('Answer updated');
+		} catch {
+			//
+		} finally {
+			setAnswerUpdating(false);
+		}
+	};
+
 	const handleUpvoteAnswer = async (answerId: string) => {
 		const toggle = (ids: string[]) =>
 			ids.includes(userId)
@@ -264,9 +348,38 @@ export default function CourseQASection({
 						mb: 3,
 					}}
 				>
-					<Typography variant='h5' sx={{ fontWeight: 700, mb: 1.5 }}>
-						{qaDetail.question.title}
-					</Typography>
+					{editingQuestionId === qaDetail.question._id ? (
+						<Box sx={{ mb: 2 }}>
+							<TextField
+								label='Title'
+								value={editingQuestionForm.title}
+								onChange={(e) =>
+									setEditingQuestionForm((p) => ({
+										...p,
+										title: e.target.value,
+									}))
+								}
+								fullWidth
+								size='small'
+								sx={{ mb: 1.5 }}
+							/>
+							<RichTextEditor
+								value={editingQuestionForm.description}
+								onChange={(html) =>
+									setEditingQuestionForm((p) => ({
+										...p,
+										description: html,
+									}))
+								}
+								placeholder='Update your question...'
+								minHeight={130}
+							/>
+						</Box>
+					) : (
+						<Typography variant='h5' sx={{ fontWeight: 700, mb: 1.5 }}>
+							{qaDetail.question.title}
+						</Typography>
+					)}
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
 						<Avatar
 							src={qaDetail.question.postedBy.avatar}
@@ -290,45 +403,91 @@ export default function CourseQASection({
 							})}
 						</Typography>
 					</Box>
-					<Box
-						sx={{
-							fontSize: '0.9rem',
-							lineHeight: 1.7,
-							'& p': { m: 0, mb: 0.5 },
-							'& ul, & ol': { pl: 2.5, my: 0.5 },
-						}}
-						dangerouslySetInnerHTML={{ __html: qaDetail.question.description }}
-					/>
+					{editingQuestionId !== qaDetail.question._id && (
+						<Box
+							sx={{
+								fontSize: '0.9rem',
+								lineHeight: 1.7,
+								'& p': { m: 0, mb: 0.5 },
+								'& ul, & ol': { pl: 2.5, my: 0.5 },
+							}}
+							dangerouslySetInnerHTML={{ __html: qaDetail.question.description }}
+						/>
+					)}
 					<Divider sx={{ my: 2 }} />
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-						<Tooltip
-							title={
-								qaDetail.question.upvotes.includes(userId)
-									? 'Remove upvote'
-									: 'Upvote'
-							}
-						>
-							<Button
-								size='small'
-								startIcon={
-									qaDetail.question.upvotes.includes(userId) ? (
-										<ThumbUpIcon fontSize='small' />
-									) : (
-										<ThumbUpOutlinedIcon fontSize='small' />
-									)
-								}
-								onClick={() => void handleUpvoteQuestion(qaDetail.question._id)}
-								color={
-									qaDetail.question.upvotes.includes(userId) ? 'primary' : 'inherit'
-								}
-								sx={{ fontWeight: 600 }}
+						{editingQuestionId === qaDetail.question._id ? (
+							<Box
+								sx={{
+									display: 'flex',
+									justifyContent: 'flex-end',
+									gap: 1,
+									width: '100%',
+								}}
 							>
-								{qaDetail.question.upvotes.length}
-							</Button>
-						</Tooltip>
-						{canDelete(qaDetail.question.postedBy._id) && (
+								<Button
+									size='small'
+									onClick={() => setEditingQuestionId(null)}
+								>
+									Cancel
+								</Button>
+								<Button
+									size='small'
+									variant='contained'
+									onClick={() => void handleUpdateQuestion()}
+									disabled={
+										questionUpdating ||
+										!editingQuestionForm.title.trim() ||
+										!editingQuestionForm.description.trim()
+									}
+								>
+									{questionUpdating ? (
+										<CircularProgress size={16} color='inherit' />
+									) : (
+										'Update'
+									)}
+								</Button>
+							</Box>
+						) : (
+							<Tooltip
+								title={
+									qaDetail.question.upvotes.includes(userId)
+										? 'Remove upvote'
+										: 'Upvote'
+								}
+							>
+								<Button
+									size='small'
+									startIcon={
+										qaDetail.question.upvotes.includes(userId) ? (
+											<ThumbUpIcon fontSize='small' />
+										) : (
+											<ThumbUpOutlinedIcon fontSize='small' />
+										)
+									}
+									onClick={() => void handleUpvoteQuestion(qaDetail.question._id)}
+									color={
+										qaDetail.question.upvotes.includes(userId)
+											? 'primary'
+											: 'inherit'
+									}
+									sx={{ fontWeight: 600 }}
+								>
+									{qaDetail.question.upvotes.length}
+								</Button>
+							</Tooltip>
+						)}
+						{canEdit(qaDetail.question.postedBy._id) &&
+							editingQuestionId !== qaDetail.question._id && (
 							<ItemActionMenu
 								actions={[
+									{
+										label: 'Edit',
+										icon: (
+											<EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
+										),
+										onClick: () => startEditQuestion(qaDetail.question),
+									},
 									{
 										label: 'Delete',
 										color: 'error',
@@ -456,9 +615,17 @@ export default function CourseQASection({
 										})}
 									</Typography>
 								</Box>
-								{canDelete(answer.postedBy._id) && (
+								{canEdit(answer.postedBy._id) &&
+									editingAnswerId !== answer._id && (
 									<ItemActionMenu
 										actions={[
+											{
+												label: 'Edit',
+												icon: (
+													<EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
+												),
+												onClick: () => startEditAnswer(answer),
+											},
 											{
 												label: 'Delete',
 												color: 'error',
@@ -471,39 +638,81 @@ export default function CourseQASection({
 									/>
 								)}
 							</Box>
-							<Box
-								sx={{
-									fontSize: '0.875rem',
-									lineHeight: 1.7,
-									mb: 1.5,
-									'& p': { m: 0, mb: 0.5 },
-									'& ul, & ol': { pl: 2.5, my: 0.5 },
-								}}
-								dangerouslySetInnerHTML={{ __html: answer.body }}
-							/>
-							<Tooltip
-								title={
-									answer.upvotes.includes(userId)
-										? 'Remove upvote'
-										: 'Upvote this answer'
-								}
-							>
-								<Button
-									size='small'
-									startIcon={
-										answer.upvotes.includes(userId) ? (
-											<ThumbUpIcon fontSize='small' />
-										) : (
-											<ThumbUpOutlinedIcon fontSize='small' />
-										)
-									}
-									onClick={() => void handleUpvoteAnswer(answer._id)}
-									color={answer.upvotes.includes(userId) ? 'primary' : 'inherit'}
-									sx={{ fontWeight: 600 }}
-								>
-									{answer.upvotes.length}
-								</Button>
-							</Tooltip>
+							{editingAnswerId === answer._id ? (
+								<Box>
+									<RichTextEditor
+										value={editingAnswerBody}
+										onChange={setEditingAnswerBody}
+										placeholder='Update your answer...'
+										minHeight={110}
+									/>
+									<Box
+										sx={{
+											display: 'flex',
+											justifyContent: 'flex-end',
+											gap: 1,
+											mt: 1.5,
+										}}
+									>
+										<Button
+											size='small'
+											onClick={() => setEditingAnswerId(null)}
+										>
+											Cancel
+										</Button>
+										<Button
+											size='small'
+											variant='contained'
+											onClick={() => void handleUpdateAnswer()}
+											disabled={answerUpdating || !editingAnswerBody.trim()}
+										>
+											{answerUpdating ? (
+												<CircularProgress size={16} color='inherit' />
+											) : (
+												'Update'
+											)}
+										</Button>
+									</Box>
+								</Box>
+							) : (
+								<>
+									<Box
+										sx={{
+											fontSize: '0.875rem',
+											lineHeight: 1.7,
+											mb: 1.5,
+											'& p': { m: 0, mb: 0.5 },
+											'& ul, & ol': { pl: 2.5, my: 0.5 },
+										}}
+										dangerouslySetInnerHTML={{ __html: answer.body }}
+									/>
+									<Tooltip
+										title={
+											answer.upvotes.includes(userId)
+												? 'Remove upvote'
+												: 'Upvote this answer'
+										}
+									>
+										<Button
+											size='small'
+											startIcon={
+												answer.upvotes.includes(userId) ? (
+													<ThumbUpIcon fontSize='small' />
+												) : (
+													<ThumbUpOutlinedIcon fontSize='small' />
+												)
+											}
+											onClick={() => void handleUpvoteAnswer(answer._id)}
+											color={
+												answer.upvotes.includes(userId) ? 'primary' : 'inherit'
+											}
+											sx={{ fontWeight: 600 }}
+										>
+											{answer.upvotes.length}
+										</Button>
+									</Tooltip>
+								</>
+							)}
 						</Paper>
 					))}
 				</Box>
@@ -635,17 +844,25 @@ export default function CourseQASection({
 							<Paper
 								key={q._id}
 								variant='outlined'
-								onClick={() => void handleViewQuestion(q)}
+								onClick={
+									editingQuestionId === q._id
+										? undefined
+										: () => void handleViewQuestion(q)
+								}
 								sx={{
 									p: 2.5,
 									borderRadius: 0.5,
 									boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
-									cursor: 'pointer',
+									cursor: editingQuestionId === q._id ? 'default' : 'pointer',
 									transition: 'box-shadow 0.2s, border-color 0.2s',
-									'&:hover': {
-										boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-										borderColor: 'primary.main',
-									},
+									...(editingQuestionId === q._id
+										? {}
+										: {
+												'&:hover': {
+													boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+													borderColor: 'primary.main',
+												},
+											}),
 								}}
 							>
 								<Box
@@ -688,26 +905,60 @@ export default function CourseQASection({
 
 									{/* Content */}
 									<Box sx={{ flex: 1, minWidth: 0 }}>
-										<Typography
-											variant='subtitle1'
-											sx={{ fontWeight: 700, mb: 0.5, lineHeight: 1.3 }}
-										>
-											{q.title}
-										</Typography>
-										<Typography
-											variant='body2'
-											color='text.secondary'
-											sx={{
-												mb: 1.5,
-												display: '-webkit-box',
-												WebkitLineClamp: 2,
-												WebkitBoxOrient: 'vertical',
-												overflow: 'hidden',
-											}}
-											dangerouslySetInnerHTML={{
-												__html: q.description.replace(/<[^>]*>/g, ' ').trim(),
-											}}
-										/>
+										{editingQuestionId === q._id ? (
+											<Box
+												onClick={(e) => e.stopPropagation()}
+												sx={{ mb: 1.5 }}
+											>
+												<TextField
+													label='Title'
+													value={editingQuestionForm.title}
+													onChange={(e) =>
+														setEditingQuestionForm((p) => ({
+															...p,
+															title: e.target.value,
+														}))
+													}
+													fullWidth
+													size='small'
+													sx={{ mb: 1.5 }}
+												/>
+												<RichTextEditor
+													value={editingQuestionForm.description}
+													onChange={(html) =>
+														setEditingQuestionForm((p) => ({
+															...p,
+															description: html,
+														}))
+													}
+													placeholder='Update your question...'
+													minHeight={120}
+												/>
+											</Box>
+										) : (
+											<>
+												<Typography
+													variant='subtitle1'
+													sx={{ fontWeight: 700, mb: 0.5, lineHeight: 1.3 }}
+												>
+													{q.title}
+												</Typography>
+												<Typography
+													variant='body2'
+													color='text.secondary'
+													sx={{
+														mb: 1.5,
+														display: '-webkit-box',
+														WebkitLineClamp: 2,
+														WebkitBoxOrient: 'vertical',
+														overflow: 'hidden',
+													}}
+													dangerouslySetInnerHTML={{
+														__html: q.description.replace(/<[^>]*>/g, ' ').trim(),
+													}}
+												/>
+											</>
+										)}
 										<Box
 											sx={{
 												display: 'flex',
@@ -781,9 +1032,48 @@ export default function CourseQASection({
 													{q.answerCount} answer
 													{q.answerCount !== 1 ? 's' : ''}
 												</Typography>
-												{canDelete(q.postedBy._id) && (
+												{editingQuestionId === q._id ? (
+													<Box
+														onClick={(e) => e.stopPropagation()}
+														sx={{ display: 'flex', gap: 1 }}
+													>
+														<Button
+															size='small'
+															onClick={() => setEditingQuestionId(null)}
+														>
+															Cancel
+														</Button>
+														<Button
+															size='small'
+															variant='contained'
+															onClick={() => void handleUpdateQuestion()}
+															disabled={
+																questionUpdating ||
+																!editingQuestionForm.title.trim() ||
+																!editingQuestionForm.description.trim()
+															}
+														>
+															{questionUpdating ? (
+																<CircularProgress size={16} color='inherit' />
+															) : (
+																'Update'
+															)}
+														</Button>
+													</Box>
+												) : (
+													canEdit(q.postedBy._id) && (
 													<ItemActionMenu
 														actions={[
+															{
+																label: 'Edit',
+																icon: (
+																	<EditOutlinedIcon
+																		fontSize='small'
+																		sx={{ mr: 1 }}
+																	/>
+																),
+																onClick: () => startEditQuestion(q),
+															},
 															{
 																label: 'Delete',
 																color: 'error',
@@ -798,7 +1088,7 @@ export default function CourseQASection({
 															},
 														]}
 													/>
-												)}
+												))}
 											</Box>
 										</Box>
 									</Box>

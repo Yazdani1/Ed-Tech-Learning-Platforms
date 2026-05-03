@@ -23,6 +23,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import PreviewIcon from '@mui/icons-material/Visibility';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import toast from 'react-hot-toast';
@@ -179,6 +180,9 @@ export default function CourseCreatePage() {
 	const [annForm, setAnnForm] = useState({ title: '', description: '' });
 	const [annPosting, setAnnPosting] = useState(false);
 	const [showAnnForm, setShowAnnForm] = useState(false);
+	const [editingAnnId, setEditingAnnId] = useState<string | null>(null);
+	const [editingAnnForm, setEditingAnnForm] = useState({ title: '', description: '' });
+	const [annUpdating, setAnnUpdating] = useState(false);
 	const [studyMaterials, setStudyMaterials] = useState<IStudyMaterial[]>([]);
 	const [smForm, setSmForm] = useState({
 		title: '',
@@ -187,6 +191,9 @@ export default function CourseCreatePage() {
 	});
 	const [smPosting, setSmPosting] = useState(false);
 	const [showSmForm, setShowSmForm] = useState(false);
+	const [editingSmId, setEditingSmId] = useState<string | null>(null);
+	const [editingSmForm, setEditingSmForm] = useState({ title: '', description: '', fileUrl: '' });
+	const [smUpdating, setSmUpdating] = useState(false);
 	const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const initialRender = useRef(true);
 	const autoCreating = useRef(false);
@@ -413,6 +420,34 @@ export default function CourseCreatePage() {
 		}
 	};
 
+	const startEditAnnouncement = (ann: IAnnouncement) => {
+		setEditingAnnId(ann._id);
+		setEditingAnnForm({ title: ann.title, description: ann.description });
+	};
+
+	const handleUpdateAnnouncement = async () => {
+		if (!editingAnnId) return;
+		if (!editingAnnForm.title.trim() || !editingAnnForm.description.trim()) {
+			toast.error('Title and description are required');
+			return;
+		}
+		setAnnUpdating(true);
+		try {
+			const res = await announcementService.update(editingAnnId, editingAnnForm);
+			if (res.data) {
+				setAnnouncements((p) =>
+					p.map((a) => (a._id === editingAnnId ? res.data! : a)),
+				);
+			}
+			setEditingAnnId(null);
+			toast.success('Announcement updated');
+		} catch {
+			// handled by interceptor
+		} finally {
+			setAnnUpdating(false);
+		}
+	};
+
 	const handlePostStudyMaterial = async () => {
 		if (!smForm.title.trim() || !smForm.description.trim()) {
 			toast.error('Title and description are required');
@@ -448,6 +483,42 @@ export default function CourseCreatePage() {
 			toast.success('Study material deleted');
 		} catch {
 			// handled by interceptor
+		}
+	};
+
+	const startEditStudyMaterial = (mat: IStudyMaterial) => {
+		setEditingSmId(mat._id);
+		setEditingSmForm({
+			title: mat.title,
+			description: mat.description,
+			fileUrl: mat.fileUrl ?? '',
+		});
+	};
+
+	const handleUpdateStudyMaterial = async () => {
+		if (!editingSmId) return;
+		if (!editingSmForm.title.trim() || !editingSmForm.description.trim()) {
+			toast.error('Title and description are required');
+			return;
+		}
+		setSmUpdating(true);
+		try {
+			const res = await studyMaterialService.update(editingSmId, {
+				title: editingSmForm.title,
+				description: editingSmForm.description,
+				fileUrl: editingSmForm.fileUrl.trim() || undefined,
+			});
+			if (res.data) {
+				setStudyMaterials((p) =>
+					p.map((m) => (m._id === editingSmId ? res.data! : m)),
+				);
+			}
+			setEditingSmId(null);
+			toast.success('Study material updated');
+		} catch {
+			// handled by interceptor
+		} finally {
+			setSmUpdating(false);
 		}
 	};
 
@@ -1070,12 +1141,41 @@ export default function CourseCreatePage() {
 												}}
 											>
 												<Box sx={{ flex: 1 }}>
-													<Typography
-														variant='subtitle1'
-														sx={{ fontWeight: 700, mb: 0.5 }}
-													>
-														{ann.title}
-													</Typography>
+													{editingAnnId === ann._id ? (
+														<Box sx={{ mb: 2 }}>
+															<TextField
+																label='Title'
+																value={editingAnnForm.title}
+																onChange={(e) =>
+																	setEditingAnnForm((p) => ({
+																		...p,
+																		title: e.target.value,
+																	}))
+																}
+																fullWidth
+																size='small'
+																sx={{ mb: 1.5 }}
+															/>
+															<RichTextEditor
+																value={editingAnnForm.description}
+																onChange={(html) =>
+																	setEditingAnnForm((p) => ({
+																		...p,
+																		description: html,
+																	}))
+																}
+																placeholder='Update announcement description...'
+																minHeight={100}
+															/>
+														</Box>
+													) : (
+														<Typography
+															variant='subtitle1'
+															sx={{ fontWeight: 700, mb: 0.5 }}
+														>
+															{ann.title}
+														</Typography>
+													)}
 													<Box
 														sx={{
 															display: 'flex',
@@ -1111,16 +1211,45 @@ export default function CourseCreatePage() {
 															)}
 														</Typography>
 													</Box>
-													<Typography
-														variant='body2'
-														sx={{ whiteSpace: 'pre-wrap' }}
-													>
-														{ann.description}
-													</Typography>
+													{editingAnnId === ann._id ? (
+														<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+															<Button size='small' onClick={() => setEditingAnnId(null)}>
+																Cancel
+															</Button>
+															<Button
+																size='small'
+																variant='contained'
+																onClick={() => void handleUpdateAnnouncement()}
+																disabled={annUpdating}
+															>
+																{annUpdating ? <CircularProgress size={16} /> : 'Update'}
+															</Button>
+														</Box>
+													) : (
+														<Box
+															sx={{
+																fontSize: '0.875rem',
+																lineHeight: 1.6,
+																'& p': { m: 0, mb: 0.5 },
+																'& ul, & ol': { pl: 2.5, my: 0.5 },
+															}}
+															dangerouslySetInnerHTML={{ __html: ann.description }}
+														/>
+													)}
 												</Box>
 												<Box sx={{ ml: 1, flexShrink: 0 }}>
 													<ItemActionMenu
 														actions={[
+															{
+																label: 'Edit',
+																icon: (
+																	<EditOutlinedIcon
+																		fontSize='small'
+																		sx={{ mr: 1 }}
+																	/>
+																),
+																onClick: () => startEditAnnouncement(ann),
+															},
 															{
 																label: 'Delete',
 																color: 'error',
@@ -1254,12 +1383,54 @@ export default function CourseCreatePage() {
 												}}
 											>
 												<Box sx={{ flex: 1 }}>
-													<Typography
-														variant='subtitle1'
-														sx={{ fontWeight: 700, mb: 0.5 }}
-													>
-														{mat.title}
-													</Typography>
+													{editingSmId === mat._id ? (
+														<Box sx={{ mb: 2 }}>
+															<TextField
+																label='Title'
+																value={editingSmForm.title}
+																onChange={(e) =>
+																	setEditingSmForm((p) => ({
+																		...p,
+																		title: e.target.value,
+																	}))
+																}
+																fullWidth
+																size='small'
+																sx={{ mb: 1.5 }}
+															/>
+															<RichTextEditor
+																value={editingSmForm.description}
+																onChange={(html) =>
+																	setEditingSmForm((p) => ({
+																		...p,
+																		description: html,
+																	}))
+																}
+																placeholder='Update study material description...'
+																minHeight={100}
+															/>
+															<TextField
+																label='Resource Link (optional)'
+																value={editingSmForm.fileUrl}
+																onChange={(e) =>
+																	setEditingSmForm((p) => ({
+																		...p,
+																		fileUrl: e.target.value,
+																	}))
+																}
+																fullWidth
+																size='small'
+																sx={{ mt: 1.5 }}
+															/>
+														</Box>
+													) : (
+														<Typography
+															variant='subtitle1'
+															sx={{ fontWeight: 700, mb: 0.5 }}
+														>
+															{mat.title}
+														</Typography>
+													)}
 													<Box
 														sx={{
 															display: 'flex',
@@ -1295,35 +1466,64 @@ export default function CourseCreatePage() {
 															)}
 														</Typography>
 													</Box>
-													<Typography
-														variant='body2'
-														sx={{
-															whiteSpace: 'pre-wrap',
-															mb: mat.fileUrl ? 1 : 0,
-														}}
-													>
-														{mat.description}
-													</Typography>
-													{mat.fileUrl && (
-														<Typography
-															component='a'
-															href={mat.fileUrl}
-															target='_blank'
-															rel='noopener noreferrer'
-															variant='body2'
-															sx={{
-																color: 'primary.main',
-																textDecoration: 'none',
-																'&:hover': { textDecoration: 'underline' },
-															}}
-														>
-															Open Resource &rarr;
-														</Typography>
+													{editingSmId === mat._id ? (
+														<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+															<Button size='small' onClick={() => setEditingSmId(null)}>
+																Cancel
+															</Button>
+															<Button
+																size='small'
+																variant='contained'
+																onClick={() => void handleUpdateStudyMaterial()}
+																disabled={smUpdating}
+															>
+																{smUpdating ? <CircularProgress size={16} /> : 'Update'}
+															</Button>
+														</Box>
+													) : (
+														<>
+															<Box
+																sx={{
+																	fontSize: '0.875rem',
+																	lineHeight: 1.6,
+																	mb: mat.fileUrl ? 1 : 0,
+																	'& p': { m: 0, mb: 0.5 },
+																	'& ul, & ol': { pl: 2.5, my: 0.5 },
+																}}
+																dangerouslySetInnerHTML={{ __html: mat.description }}
+															/>
+															{mat.fileUrl && (
+																<Typography
+																	component='a'
+																	href={mat.fileUrl}
+																	target='_blank'
+																	rel='noopener noreferrer'
+																	variant='body2'
+																	sx={{
+																		color: 'primary.main',
+																		textDecoration: 'none',
+																		'&:hover': { textDecoration: 'underline' },
+																	}}
+																>
+																	Open Resource &rarr;
+																</Typography>
+															)}
+														</>
 													)}
 												</Box>
 												<Box sx={{ ml: 1, flexShrink: 0 }}>
 													<ItemActionMenu
 														actions={[
+															{
+																label: 'Edit',
+																icon: (
+																	<EditOutlinedIcon
+																		fontSize='small'
+																		sx={{ mr: 1 }}
+																	/>
+																),
+																onClick: () => startEditStudyMaterial(mat),
+															},
 															{
 																label: 'Delete',
 																color: 'error',
