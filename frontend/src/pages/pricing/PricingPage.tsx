@@ -21,6 +21,7 @@ import { subscriptionPlanConfigService } from '../../services/subscriptionPlanCo
 import { subscriptionService } from '../../services/subscription.service';
 import type { ISubscriptionPlanConfig, SubscriptionPlan } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
+import { formatDate } from '../../utils/dateTime';
 
 const DEFAULT_COLORS: Record<SubscriptionPlan, string> = {
 	Basic: '#0284c7',
@@ -87,7 +88,7 @@ export default function PricingPage() {
 					</Typography>
 					{isStudent && isActivePlanValid && (
 						<Chip
-							label={`Current plan: ${activePlan} · Expires ${new Date(activePlanExpiry!).toLocaleDateString()}`}
+							label={`Current plan: ${activePlan} · Expires ${formatDate(activePlanExpiry!)}`}
 							sx={{ mt: 3, bgcolor: '#7c3aed', color: 'white', fontWeight: 600, fontSize: '0.875rem', px: 1 }}
 						/>
 					)}

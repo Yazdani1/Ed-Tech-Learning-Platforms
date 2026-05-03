@@ -48,6 +48,7 @@ import {
 	formatLectureDuration,
 	formatSectionDuration,
 } from '../../utils/duration';
+import { formatDateTime } from '../../utils/dateTime';
 import type {
 	ICourse,
 	ILecture,
@@ -1045,6 +1046,33 @@ export default function StudentCourseLearningPage() {
 														}}
 													>
 												<Box sx={{ flex: 1 }}>
+															<Box
+																sx={{
+																	display: 'flex',
+																	alignItems: 'center',
+																	gap: 1,
+																	mb: 1,
+																}}
+															>
+																<Avatar
+																	src={ann.postedBy.avatar}
+																	sx={{
+																		width: 22,
+																		height: 22,
+																		fontSize: 12,
+																		bgcolor: 'primary.main',
+																	}}
+																>
+																	{ann.postedBy.name[0]}
+																</Avatar>
+																<Typography
+																	variant='caption'
+																	color='text.secondary'
+																>
+																	{ann.postedBy.name} &bull; {ann.postedBy.role}{' '}
+																	&bull; {formatDateTime(ann.createdAt)}
+																</Typography>
+															</Box>
 															{editingAnnId === ann._id ? (
 																<Box sx={{ mb: 2 }}>
 																	<TextField
@@ -1071,77 +1099,41 @@ export default function StudentCourseLearningPage() {
 																		placeholder='Update announcement description...'
 																		minHeight={100}
 																	/>
+																	<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1.5 }}>
+																		<Button
+																			size='small'
+																			onClick={() => setEditingAnnId(null)}
+																		>
+																			Cancel
+																		</Button>
+																		<Button
+																			size='small'
+																			variant='contained'
+																			onClick={() => void handleUpdateAnnouncement()}
+																			disabled={annUpdating}
+																		>
+																			{annUpdating ? <CircularProgress size={16} /> : 'Update'}
+																		</Button>
+																	</Box>
 																</Box>
 															) : (
-																<Typography
-																	variant='subtitle1'
-																	sx={{ fontWeight: 700, mb: 0.5 }}
-																>
-																	{ann.title}
-																</Typography>
-															)}
-															<Box
-																sx={{
-																	display: 'flex',
-																	alignItems: 'center',
-																	gap: 1,
-																	mb: 1,
-																}}
-															>
-																<Avatar
-																	src={ann.postedBy.avatar}
-																	sx={{
-																		width: 22,
-																		height: 22,
-																		fontSize: 12,
-																		bgcolor: 'primary.main',
-																	}}
-																>
-																	{ann.postedBy.name[0]}
-																</Avatar>
-																<Typography
-																	variant='caption'
-																	color='text.secondary'
-																>
-																	{ann.postedBy.name} &bull; {ann.postedBy.role}{' '}
-																	&bull;{' '}
-																	{new Date(ann.createdAt).toLocaleDateString(
-																		undefined,
-																		{
-																			year: 'numeric',
-																			month: 'short',
-																			day: 'numeric',
-																		},
-																	)}
-																</Typography>
-															</Box>
-															{editingAnnId === ann._id ? (
-																<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-																	<Button
-																		size='small'
-																		onClick={() => setEditingAnnId(null)}
+																<>
+																	<Typography
+																		variant='subtitle1'
+																		sx={{ fontWeight: 700, mb: 0.5 }}
 																	>
-																		Cancel
-																	</Button>
-																	<Button
-																		size='small'
-																		variant='contained'
-																		onClick={() => void handleUpdateAnnouncement()}
-																		disabled={annUpdating}
-																	>
-																		{annUpdating ? <CircularProgress size={16} /> : 'Update'}
-																	</Button>
-																</Box>
-															) : (
-																<Box
-																	sx={{
-																		fontSize: '0.875rem',
-																		lineHeight: 1.6,
-																		'& p': { m: 0, mb: 0.5 },
-																		'& ul, & ol': { pl: 2.5, my: 0.5 },
-																	}}
-																	dangerouslySetInnerHTML={{ __html: ann.description }}
-																/>
+																		{ann.title}
+																	</Typography>
+																	<Box
+																		sx={{
+																			fontSize: '0.875rem',
+																			lineHeight: 1.6,
+																			'& p': { m: 0, mb: 0.5 },
+																			'& ul, & ol': { pl: 2.5, my: 0.5 },
+																		}}
+																		dangerouslySetInnerHTML={{ __html: ann.description }}
+																	/>
+																</>
 															)}
 														</Box>
 														<Box sx={{ ml: 1, flexShrink: 0 }}>
@@ -1310,6 +1302,34 @@ export default function StudentCourseLearningPage() {
 														}}
 													>
 												<Box sx={{ flex: 1 }}>
+															<Box
+																sx={{
+																	display: 'flex',
+																	alignItems: 'center',
+																	gap: 1,
+																	mb: 1,
+																}}
+															>
+																<Avatar
+																	src={mat.postedBy.avatar}
+																	sx={{
+																		width: 22,
+																		height: 22,
+																		fontSize: 12,
+																		bgcolor: 'primary.main',
+																	}}
+																>
+																	{mat.postedBy.name[0]}
+																</Avatar>
+																<Typography
+																	variant='caption'
+																	color='text.secondary'
+																>
+																	{mat.postedBy.name} &bull; {mat.postedBy.role}{' '}
+																	&bull;{' '}
+																	{formatDateTime(mat.createdAt)}
+																</Typography>
+															</Box>
 															{editingSmId === mat._id ? (
 																<Box sx={{ mb: 2 }}>
 																	<TextField
@@ -1349,69 +1369,31 @@ export default function StudentCourseLearningPage() {
 																		size='small'
 																		sx={{ mt: 1.5 }}
 																	/>
-																</Box>
-															) : (
-																<Typography
-																	variant='subtitle1'
-																	sx={{ fontWeight: 700, mb: 0.5 }}
-																>
-																	{mat.title}
-																</Typography>
-															)}
-															<Box
-																sx={{
-																	display: 'flex',
-																	alignItems: 'center',
-																	gap: 1,
-																	mb: 1,
-																}}
-															>
-																<Avatar
-																	src={mat.postedBy.avatar}
-																	sx={{
-																		width: 22,
-																		height: 22,
-																		fontSize: 12,
-																		bgcolor: 'primary.main',
-																	}}
-																>
-																	{mat.postedBy.name[0]}
-																</Avatar>
-																<Typography
-																	variant='caption'
-																	color='text.secondary'
-																>
-																	{mat.postedBy.name} &bull; {mat.postedBy.role}{' '}
-																	&bull;{' '}
-																	{new Date(mat.createdAt).toLocaleDateString(
-																		undefined,
-																		{
-																			year: 'numeric',
-																			month: 'short',
-																			day: 'numeric',
-																		},
-																	)}
-																</Typography>
-															</Box>
-															{editingSmId === mat._id ? (
-																<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-																	<Button
-																		size='small'
-																		onClick={() => setEditingSmId(null)}
-																	>
-																		Cancel
-																	</Button>
-																	<Button
-																		size='small'
-																		variant='contained'
-																		onClick={() => void handleUpdateStudyMaterial()}
-																		disabled={smUpdating}
-																	>
-																		{smUpdating ? <CircularProgress size={16} /> : 'Update'}
-																	</Button>
+																	<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1.5 }}>
+																		<Button
+																			size='small'
+																			onClick={() => setEditingSmId(null)}
+																		>
+																			Cancel
+																		</Button>
+																		<Button
+																			size='small'
+																			variant='contained'
+																			onClick={() => void handleUpdateStudyMaterial()}
+																			disabled={smUpdating}
+																		>
+																			{smUpdating ? <CircularProgress size={16} /> : 'Update'}
+																		</Button>
+																	</Box>
 																</Box>
 															) : (
 																<>
+																	<Typography
+																		variant='subtitle1'
+																		sx={{ fontWeight: 700, mb: 0.5 }}
+																	>
+																		{mat.title}
+																	</Typography>
 																	<Box
 																		sx={{
 																			fontSize: '0.875rem',

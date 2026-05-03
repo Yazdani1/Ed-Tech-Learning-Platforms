@@ -28,6 +28,7 @@ import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import { enrollmentService } from '../../services/enrollment.service';
 import { courseService } from '../../services/course.service';
 import type { IEnrollment, IEnrollmentStats, EnrollmentType, ICourse } from '../../types/index';
+import { formatDateTime } from '../../utils/dateTime';
 
 type SidebarView = 'students' | 'revenue';
 type FilterTab = 'all' | EnrollmentType;
@@ -319,7 +320,7 @@ export default function AdminEnrollmentsPage() {
 													</TableCell>
 													<TableCell>
 														<Typography variant='body2' color='text.secondary'>
-															{new Date(e.createdAt).toLocaleDateString()}
+															{formatDateTime(e.createdAt)}
 														</Typography>
 													</TableCell>
 													<TableCell>
@@ -396,7 +397,7 @@ export default function AdminEnrollmentsPage() {
 													</TableCell>
 													<TableCell>
 														<Typography variant='body2' color='text.secondary'>
-															{new Date(e.createdAt).toLocaleDateString()}
+															{formatDateTime(e.createdAt)}
 														</Typography>
 													</TableCell>
 													<TableCell>

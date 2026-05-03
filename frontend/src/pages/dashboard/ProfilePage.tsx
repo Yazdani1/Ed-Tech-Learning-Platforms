@@ -23,6 +23,7 @@ import { useAuth } from '../../context/useAuth';
 import { subscriptionService } from '../../services/subscription.service';
 import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import type { ISubscriptionPlanConfig } from '../../types/index';
+import { formatDate, formatDateTime } from '../../utils/dateTime';
 
 export default function ProfilePage() {
 	const { user, refreshUser } = useAuth();
@@ -103,7 +104,7 @@ export default function ProfilePage() {
 				</Box>
 
 				<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-					<Chip label={`Joined: ${new Date(user.createdAt).toLocaleDateString()}`} />
+					<Chip label={`Joined: ${formatDateTime(user.createdAt)}`} />
 					<Chip label={`Courses purchased: ${user.purchasedCourses?.length ?? 0}`} />
 					{sub && (
 						<Chip
@@ -158,7 +159,7 @@ export default function ProfilePage() {
 													Start date
 												</Typography>
 												<Typography variant='body2' sx={{ fontWeight: 600 }}>
-													{new Date(sub.startDate).toLocaleDateString()}
+													{formatDate(sub.startDate)}
 												</Typography>
 											</Box>
 										</Box>
@@ -171,7 +172,7 @@ export default function ProfilePage() {
 													Expiry date
 												</Typography>
 												<Typography variant='body2' sx={{ fontWeight: 600 }}>
-													{new Date(sub.endDate).toLocaleDateString()}
+													{formatDate(sub.endDate)}
 												</Typography>
 											</Box>
 										</Box>
@@ -272,7 +273,7 @@ export default function ProfilePage() {
 					</Grid>
 					<Grid size={{ xs: 12, sm: 6, md: 4 }}>
 						<Typography variant='subtitle2' color='text.secondary'>Joined</Typography>
-						<Typography>{new Date(user.createdAt).toLocaleDateString()}</Typography>
+						<Typography>{formatDateTime(user.createdAt)}</Typography>
 					</Grid>
 					<Grid size={{ xs: 12, sm: 6, md: 4 }}>
 						<Typography variant='subtitle2' color='text.secondary'>Purchased courses</Typography>
@@ -283,8 +284,7 @@ export default function ProfilePage() {
 							<Typography variant='subtitle2' color='text.secondary'>Subscription</Typography>
 							<Typography>
 								{sub.plan} &bull;{' '}
-								{new Date(sub.startDate).toLocaleDateString()} -{' '}
-								{new Date(sub.endDate).toLocaleDateString()}
+								{formatDate(sub.startDate)} - {formatDate(sub.endDate)}
 							</Typography>
 						</Grid>
 					)}

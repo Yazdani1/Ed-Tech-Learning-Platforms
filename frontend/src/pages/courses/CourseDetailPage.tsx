@@ -45,6 +45,7 @@ import {
 	formatLectureDuration,
 	formatSectionDuration,
 } from '../../utils/duration';
+import { formatDate, formatDateTime } from '../../utils/dateTime';
 import type {
 	ICourse,
 	ILecture,
@@ -495,14 +496,7 @@ export default function CourseDetailPage() {
 															<Typography
 																sx={{ fontWeight: 700, fontSize: '0.95rem' }}
 															>
-																{new Date(course.startDate).toLocaleDateString(
-																	undefined,
-																	{
-																		year: 'numeric',
-																		month: 'long',
-																		day: 'numeric',
-																	},
-																)}
+																{formatDate(course.startDate)}
 															</Typography>
 														</Box>
 													</Box>
@@ -534,14 +528,7 @@ export default function CourseDetailPage() {
 															<Typography
 																sx={{ fontWeight: 700, fontSize: '0.95rem' }}
 															>
-																{new Date(course.endDate).toLocaleDateString(
-																	undefined,
-																	{
-																		year: 'numeric',
-																		month: 'long',
-																		day: 'numeric',
-																	},
-																)}
+																{formatDate(course.endDate)}
 															</Typography>
 														</Box>
 													</Box>
@@ -1121,7 +1108,7 @@ export default function CourseDetailPage() {
 																	icon: (
 																		<CalendarTodayIcon sx={{ fontSize: 16 }} />
 																	),
-																	text: `Starts: ${new Date(course.startDate).toLocaleDateString()}`,
+																	text: `Starts: ${formatDate(course.startDate)}`,
 																},
 															]
 														: []),
@@ -1129,7 +1116,7 @@ export default function CourseDetailPage() {
 														? [
 																{
 																	icon: <EventIcon sx={{ fontSize: 16 }} />,
-																	text: `Ends: ${new Date(course.endDate).toLocaleDateString()}`,
+																	text: `Ends: ${formatDate(course.endDate)}`,
 																},
 															]
 														: []),
@@ -1174,7 +1161,7 @@ export default function CourseDetailPage() {
 													sx={{ mt: 1 }}
 												>
 													Enrolled on{' '}
-													{new Date(enrollmentDate).toLocaleDateString()}
+													{formatDateTime(enrollmentDate)}
 												</Typography>
 											)}
 											<Box sx={{ mt: 2 }}>
@@ -1344,9 +1331,7 @@ export default function CourseDetailPage() {
 																				color='text.secondary'
 																			>
 																				{userActivePlan} plan Â· Expires{' '}
-																				{new Date(
-																					userSubExpiry!,
-																				).toLocaleDateString()}
+																				{formatDate(userSubExpiry!)}
 																				{(planCountMap[userActivePlan!] ?? 0) >
 																					0 &&
 																					` Â· ${planCountMap[userActivePlan!]} courses included`}

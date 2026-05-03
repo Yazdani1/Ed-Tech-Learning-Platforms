@@ -42,6 +42,7 @@ import type {
 	IUser,
 	SubscriptionPlan,
 } from '../../types/index';
+import { formatDate } from '../../utils/dateTime';
 
 const SUBSCRIPTION_PLANS: SubscriptionPlan[] = ['Basic', 'Premium', 'Gold', 'Quiz Only'];
 
@@ -388,8 +389,8 @@ export default function SubscriptionsPage() {
 											<TableCell>
 												<Chip label={sub.status} size='small' color={getStatusColor(sub.status)} />
 											</TableCell>
-											<TableCell>{new Date(sub.startDate).toLocaleDateString()}</TableCell>
-											<TableCell>{new Date(sub.endDate).toLocaleDateString()}</TableCell>
+											<TableCell>{formatDate(sub.startDate)}</TableCell>
+											<TableCell>{formatDate(sub.endDate)}</TableCell>
 											<TableCell>{(sub.assignedBy as IUser)?.name || 'Self'}</TableCell>
 											<TableCell>
 												{sub.status === 'Active' && (

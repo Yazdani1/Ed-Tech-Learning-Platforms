@@ -23,6 +23,7 @@ import { qaService } from '../../services/qa.service';
 import type { IQuestion, IAnswer } from '../../types/index';
 import RichTextEditor from './RichTextEditor';
 import ItemActionMenu from '../common/ItemActionMenu';
+import { formatDateTime } from '../../utils/dateTime';
 
 interface CourseQASectionProps {
 	courseId: string;
@@ -396,11 +397,7 @@ export default function CourseQASection({
 								sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}
 							/>
 							{' · '}
-							{new Date(qaDetail.question.createdAt).toLocaleDateString(undefined, {
-								year: 'numeric',
-								month: 'short',
-								day: 'numeric',
-							})}
+							{formatDateTime(qaDetail.question.createdAt)}
 						</Typography>
 					</Box>
 					{editingQuestionId !== qaDetail.question._id && (
@@ -608,11 +605,7 @@ export default function CourseQASection({
 											sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}
 										/>
 										{' · '}
-										{new Date(answer.createdAt).toLocaleDateString(undefined, {
-											year: 'numeric',
-											month: 'short',
-											day: 'numeric',
-										})}
+										{formatDateTime(answer.createdAt)}
 									</Typography>
 								</Box>
 								{canEdit(answer.postedBy._id) &&
@@ -1007,11 +1000,7 @@ export default function CourseQASection({
 													sx={{ flexShrink: 0 }}
 												>
 													·{' '}
-													{new Date(q.createdAt).toLocaleDateString(undefined, {
-														month: 'short',
-														day: 'numeric',
-														year: 'numeric',
-													})}
+													{formatDateTime(q.createdAt)}
 												</Typography>
 											</Box>
 											<Box

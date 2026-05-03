@@ -26,6 +26,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import toast from 'react-hot-toast';
 import { userService } from '../../services/user.service';
 import type { IUser } from '../../types/index';
+import { formatDateTime } from '../../utils/dateTime';
 
 const USER_ROLES: IUser['role'][] = [
 	'Super Admin',
@@ -155,7 +156,7 @@ export default function UsersPage() {
 										</FormControl>
 									</TableCell>
 									<TableCell>
-										{new Date(user.createdAt).toLocaleDateString()}
+										{formatDateTime(user.createdAt)}
 									</TableCell>
 									<TableCell>
 										<IconButton
