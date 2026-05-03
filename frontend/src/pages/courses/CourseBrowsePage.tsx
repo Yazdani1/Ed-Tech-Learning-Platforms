@@ -4,7 +4,6 @@ import {
 	Box,
 	Button,
 	Chip,
-	CircularProgress,
 	Container,
 	Grid,
 	Typography,
@@ -13,7 +12,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
 import { courseTypeService } from '../../services/courseType.service';
-import CourseCard from '../../components/ui/CourseCard';
+import CourseCard, { CourseCardSkeleton } from '../../components/ui/CourseCard';
 import PublicNavbar from '../../components/layout/PublicNavbar';
 import CourseFilterSidebar from '../../components/course/CourseFilterSidebar';
 import AppPagination from '../../components/common/AppPagination';
@@ -28,6 +27,7 @@ import type {
 } from '../../types/index';
 
 const COURSE_BROWSE_PAGE_SIZE = 8;
+const COURSE_BROWSE_SKELETONS = Array.from({ length: COURSE_BROWSE_PAGE_SIZE });
 
 export default function CourseBrowsePage() {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -245,9 +245,13 @@ export default function CourseBrowsePage() {
 						}}
 					>
 						{loading ? (
-							<Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-								<CircularProgress />
-							</Box>
+							<Grid container spacing={3}>
+								{COURSE_BROWSE_SKELETONS.map((_, index) => (
+									<Grid key={index} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+										<CourseCardSkeleton showAction={user?.role === 'Student'} />
+									</Grid>
+								))}
+							</Grid>
 						) : fetchState.courses.length === 0 ? (
 							<Box sx={{ textAlign: 'center', py: 10 }}>
 								<SchoolIcon

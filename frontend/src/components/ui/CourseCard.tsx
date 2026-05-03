@@ -5,6 +5,7 @@ import {
 	CardActionArea,
 	Chip,
 	Popover,
+	Skeleton,
 	Typography,
 } from '@mui/material';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
@@ -20,14 +21,62 @@ const PLAN_COLORS: Record<string, string> = {
 	'Quiz Only': '#0891b2',
 };
 
-
-
 interface CourseCardProps {
 	course: ICourse;
 	basePath?: string;
 	appendPath?: string;
 	isEnrolled?: boolean;
 	learningPath?: string;
+}
+
+export function CourseCardSkeleton({ showAction = false }: { showAction?: boolean }) {
+	return (
+		<Card
+			elevation={0}
+			sx={{
+				borderRadius: 1,
+				border: '1px solid',
+				borderColor: 'divider',
+				height: '100%',
+				display: 'flex',
+				flexDirection: 'column',
+				overflow: 'hidden',
+			}}
+		>
+			<Skeleton
+				variant='rectangular'
+				animation='wave'
+				sx={{ width: '100%', height: 175, flexShrink: 0 }}
+			/>
+			<Box
+				sx={{
+					p: 1.5,
+					display: 'flex',
+					flexDirection: 'column',
+					flexGrow: 1,
+				}}
+			>
+				<Skeleton animation='wave' variant='text' sx={{ fontSize: '1rem', width: '92%' }} />
+				<Skeleton animation='wave' variant='text' sx={{ fontSize: '1rem', width: '72%', mt: -0.3 }} />
+				<Skeleton animation='wave' variant='text' sx={{ fontSize: '0.8rem', width: '58%', mt: 0.5 }} />
+
+				<Box sx={{ flexGrow: 1, minHeight: 34 }} />
+
+				<Skeleton animation='wave' variant='text' sx={{ fontSize: '1.1rem', width: 64 }} />
+				<Box sx={{ display: 'flex', gap: 0.5, mt: 0.75, flexWrap: 'wrap' }}>
+					<Skeleton animation='wave' variant='rounded' width={64} height={22} />
+					<Skeleton animation='wave' variant='rounded' width={82} height={22} />
+				</Box>
+				{showAction && (
+					<Skeleton
+						animation='wave'
+						variant='rounded'
+						sx={{ width: '100%', height: 32, mt: 1.25, borderRadius: 2 }}
+					/>
+				)}
+			</Box>
+		</Card>
+	);
 }
 
 export default function CourseCard({

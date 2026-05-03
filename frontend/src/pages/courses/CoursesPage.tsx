@@ -28,12 +28,13 @@ import TuneIcon from '@mui/icons-material/Tune';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
-import CourseCard from '../../components/ui/CourseCard';
+import CourseCard, { CourseCardSkeleton } from '../../components/ui/CourseCard';
 import BulkEditModal from '../../components/course/BulkEditModal';
 import type { ICourse } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
+const COURSE_CARD_SKELETONS = Array.from({ length: 8 });
 
 export default function CoursesPage() {
 	const { user, isLoading: authLoading } = useAuth();
@@ -145,9 +146,19 @@ export default function CoursesPage() {
 			/>
 
 			{loading ? (
-				<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-					<CircularProgress />
-				</Box>
+				isStudent ? (
+					<Grid container spacing={3}>
+						{COURSE_CARD_SKELETONS.map((_, index) => (
+							<Grid key={index} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+								<CourseCardSkeleton />
+							</Grid>
+						))}
+					</Grid>
+				) : (
+					<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+						<CircularProgress />
+					</Box>
+				)
 			) : isStudent ? (
 				/* ── Student: two labelled sections ─────────────── */
 				<>
