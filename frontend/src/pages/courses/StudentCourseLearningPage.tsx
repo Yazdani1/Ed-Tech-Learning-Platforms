@@ -37,15 +37,11 @@ import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ThumbUpIcon from '@mui/icons-material/ThumbUp';
-import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
-import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { enrollmentService } from '../../services/enrollment.service';
 import { announcementService } from '../../services/announcement.service';
 import { studyMaterialService } from '../../services/studyMaterial.service';
-import { qaService } from '../../services/qa.service';
 import {
 	formatLectureDuration,
 	formatSectionDuration,
@@ -55,9 +51,8 @@ import type {
 	ILecture,
 	IAnnouncement,
 	IStudyMaterial,
-	IQuestion,
-	IAnswer,
 } from '../../types/index';
+import CourseQASection from '../../components/course/CourseQASection';
 import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar';
 import { useAuth } from '../../context/useAuth';
 import RichTextEditor from '../../components/course/RichTextEditor';
@@ -124,17 +119,6 @@ export default function StudentCourseLearningPage() {
 		fileUrl: '',
 	});
 
-	// Q&A state
-	const [questions, setQuestions] = useState<IQuestion[]>([]);
-	const [qaLoading, setQaLoading] = useState(false);
-	const [qaDetail, setQaDetail] = useState<{ question: IQuestion; answers: IAnswer[] } | null>(null);
-	const [qaDetailLoading, setQaDetailLoading] = useState(false);
-	const [showAskForm, setShowAskForm] = useState(false);
-	const [askForm, setAskForm] = useState({ title: '', description: '' });
-	const [askPosting, setAskPosting] = useState(false);
-	const [answerBody, setAnswerBody] = useState('');
-	const [answerPosting, setAnswerPosting] = useState(false);
-
 	useEffect(() => {
 		if (!courseId) return;
 		courseService
@@ -169,18 +153,6 @@ export default function StudentCourseLearningPage() {
 				.getByCourse(courseId)
 				.then((r) => setStudyMaterials(r.data ?? []))
 				.catch(() => {});
-		}
-	}, [activeNav, courseId]);
-
-	useEffect(() => {
-		if (activeNav === 'qa' && courseId) {
-			setQaLoading(true);
-			setQaDetail(null);
-			qaService
-				.getCourseQuestions(courseId)
-				.then((r) => setQuestions(r.data ?? []))
-				.catch(() => {})
-				.finally(() => setQaLoading(false));
 		}
 	}, [activeNav, courseId]);
 
@@ -259,162 +231,6 @@ export default function StudentCourseLearningPage() {
 			toast.success('Study material deleted');
 		} catch {
 			// error toast handled by interceptor
-		}
-	};
-
-	// ── Q&A handlers ─────────────────────────────────────────
-	const handleViewQuestion = async (question: IQuestion) => {
-		setQaDetailLoading(true);
-		try {
-			const res = await qaService.getQuestion(question._id);
-			if (res.data) setQaDetail(res.data);
-		} catch {
-			//
-		} finally {
-			setQaDetailLoading(false);
-		}
-	};
-
-	const handleAskQuestion = async () => {
-		if (!askForm.title.trim() || !askForm.description.trim()) {
-			toast.error('Title and description are required');
-			return;
-		}
-		setAskPosting(true);
-		try {
-			const res = await qaService.createQuestion(courseId!, askForm);
-			if (res.data) setQuestions((p) => [res.data!, ...p]);
-			setAskForm({ title: '', description: '' });
-			setShowAskForm(false);
-			toast.success('Question posted');
-		} catch {
-			//
-		} finally {
-			setAskPosting(false);
-		}
-	};
-
-	const handleDeleteQuestion = async (id: string) => {
-		if (!confirm('Delete this question and all its answers?')) return;
-		try {
-			await qaService.deleteQuestion(id);
-			setQuestions((p) => p.filter((q) => q._id !== id));
-			if (qaDetail?.question._id === id) setQaDetail(null);
-			toast.success('Question deleted');
-		} catch {
-			//
-		}
-	};
-
-	const handleUpvoteQuestion = async (id: string) => {
-		const userId = user!._id;
-		const toggle = (ids: string[]) =>
-			ids.includes(userId) ? ids.filter((u) => u !== userId) : [...ids, userId];
-
-		setQuestions((p) =>
-			p.map((q) => (q._id === id ? { ...q, upvotes: toggle(q.upvotes) } : q)),
-		);
-		setQaDetail((p) =>
-			p && p.question._id === id
-				? { ...p, question: { ...p.question, upvotes: toggle(p.question.upvotes) } }
-				: p,
-		);
-
-		try {
-			const res = await qaService.upvoteQuestion(id);
-			if (res.data) {
-				setQuestions((p) =>
-					p.map((q) => (q._id === id ? { ...q, upvotes: res.data!.upvotes } : q)),
-				);
-				setQaDetail((p) =>
-					p && p.question._id === id
-						? { ...p, question: { ...p.question, upvotes: res.data!.upvotes } }
-						: p,
-				);
-			}
-		} catch {
-			//
-		}
-	};
-
-	const handlePostAnswer = async () => {
-		if (!answerBody.trim() || !qaDetail) return;
-		setAnswerPosting(true);
-		try {
-			const res = await qaService.createAnswer(qaDetail.question._id, { body: answerBody });
-			if (res.data) {
-				setQaDetail((p) => (p ? { ...p, answers: [...p.answers, res.data!] } : p));
-				setQuestions((p) =>
-					p.map((q) =>
-						q._id === qaDetail.question._id
-							? { ...q, answerCount: q.answerCount + 1 }
-							: q,
-					),
-				);
-			}
-			setAnswerBody('');
-			toast.success('Answer posted');
-		} catch {
-			//
-		} finally {
-			setAnswerPosting(false);
-		}
-	};
-
-	const handleDeleteAnswer = async (id: string) => {
-		if (!confirm('Delete this answer?')) return;
-		try {
-			await qaService.deleteAnswer(id);
-			setQaDetail((p) =>
-				p ? { ...p, answers: p.answers.filter((a) => a._id !== id) } : p,
-			);
-			if (qaDetail) {
-				setQuestions((p) =>
-					p.map((q) =>
-						q._id === qaDetail.question._id
-							? { ...q, answerCount: Math.max(0, q.answerCount - 1) }
-							: q,
-					),
-				);
-			}
-			toast.success('Answer deleted');
-		} catch {
-			//
-		}
-	};
-
-	const handleUpvoteAnswer = async (id: string) => {
-		const userId = user!._id;
-		const toggle = (ids: string[]) =>
-			ids.includes(userId) ? ids.filter((u) => u !== userId) : [...ids, userId];
-
-		setQaDetail((p) =>
-			p
-				? {
-						...p,
-						answers: p.answers.map((a) =>
-							a._id === id ? { ...a, upvotes: toggle(a.upvotes) } : a,
-						),
-					}
-				: p,
-		);
-
-		try {
-			const res = await qaService.upvoteAnswer(id);
-			if (res.data) {
-				setQaDetail((p) =>
-					p
-						? {
-								...p,
-								answers: p.answers.map((a) =>
-									a._id === id ? { ...a, upvotes: res.data!.upvotes } : a,
-								),
-							}
-						: p,
-				);
-			}
-		} catch {
-			//
 		}
 	};
 
@@ -673,6 +489,16 @@ export default function StudentCourseLearningPage() {
 										)}
 									</Box>
 								)}
+
+								{/* ── Q&A below video ───────────────────────────── */}
+								<Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 860 }}>
+									<CourseQASection
+										courseId={courseId!}
+										canPost={canPostQA}
+										userId={user?._id ?? ''}
+										userRole={user?.role ?? ''}
+									/>
+								</Box>
 							</>
 						)}
 
@@ -1401,434 +1227,18 @@ export default function StudentCourseLearningPage() {
 							</Box>
 						)}
 
-						{/* ── Q & A ──────────────────────────────────────── */}
-						{activeNav === 'qa' && (
-							<Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 860 }}>
-								{qaDetailLoading ? (
-									<Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-										<CircularProgress />
-									</Box>
-								) : qaDetail ? (
-									/* ── Question Detail View ── */
-									<Box>
-										<Button
-											startIcon={<ArrowBackIcon />}
-											onClick={() => setQaDetail(null)}
-											sx={{ mb: 3, fontWeight: 600 }}
-										>
-											Back to Questions
-										</Button>
-
-										{/* Question card */}
-										<Paper
-											variant='outlined'
-											sx={{
-												p: 3,
-												borderRadius: 0.5,
-												boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-												mb: 3,
-											}}
-										>
-											<Typography variant='h5' sx={{ fontWeight: 700, mb: 1.5 }}>
-												{qaDetail.question.title}
-											</Typography>
-											<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-												<Avatar
-													src={qaDetail.question.postedBy.avatar}
-													sx={{ width: 26, height: 26, fontSize: 12, bgcolor: 'primary.main' }}
-												>
-													{qaDetail.question.postedBy.name[0]}
-												</Avatar>
-												<Typography variant='caption' color='text.secondary'>
-													{qaDetail.question.postedBy.name}
-													{' · '}
-													<Chip
-														label={qaDetail.question.postedBy.role}
-														size='small'
-														sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}
-													/>
-													{' · '}
-													{new Date(qaDetail.question.createdAt).toLocaleDateString(undefined, {
-														year: 'numeric',
-														month: 'short',
-														day: 'numeric',
-													})}
-												</Typography>
-											</Box>
-											<Box
-												sx={{
-													fontSize: '0.9rem',
-													lineHeight: 1.7,
-													'& p': { m: 0, mb: 0.5 },
-													'& ul, & ol': { pl: 2.5, my: 0.5 },
-												}}
-												dangerouslySetInnerHTML={{ __html: qaDetail.question.description }}
-											/>
-											<Divider sx={{ my: 2 }} />
-											<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-												<Tooltip title={qaDetail.question.upvotes.includes(user?._id ?? '') ? 'Remove upvote' : 'Upvote'}>
-													<Button
-														size='small'
-														startIcon={
-															qaDetail.question.upvotes.includes(user?._id ?? '')
-																? <ThumbUpIcon fontSize='small' />
-																: <ThumbUpOutlinedIcon fontSize='small' />
-														}
-														onClick={() => void handleUpvoteQuestion(qaDetail.question._id)}
-														color={qaDetail.question.upvotes.includes(user?._id ?? '') ? 'primary' : 'inherit'}
-														sx={{ fontWeight: 600 }}
-													>
-														{qaDetail.question.upvotes.length}
-													</Button>
-												</Tooltip>
-												{(user?._id === qaDetail.question.postedBy._id ||
-													user?.role === 'Admin' ||
-													user?.role === 'Super Admin' ||
-													user?.role === 'Moderator') && (
-													<Tooltip title='Delete question'>
-														<IconButton
-															size='small'
-															color='error'
-															onClick={() => void handleDeleteQuestion(qaDetail.question._id)}
-														>
-															<DeleteIcon fontSize='small' />
-														</IconButton>
-													</Tooltip>
-												)}
-											</Box>
-										</Paper>
-
-										{/* Answers */}
-										<Typography variant='h6' sx={{ fontWeight: 700, mb: 2 }}>
-											{qaDetail.answers.length} Answer{qaDetail.answers.length !== 1 ? 's' : ''}
-										</Typography>
-
-										<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-											{qaDetail.answers.map((answer) => (
-												<Paper
-													key={answer._id}
-													variant='outlined'
-													sx={{
-														p: 2.5,
-														borderRadius: 0.5,
-														boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-													}}
-												>
-													<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-														<Avatar
-															src={answer.postedBy.avatar}
-															sx={{ width: 26, height: 26, fontSize: 12, bgcolor: 'secondary.main' }}
-														>
-															{answer.postedBy.name[0]}
-														</Avatar>
-														<Box sx={{ flex: 1 }}>
-															<Typography variant='caption' sx={{ fontWeight: 600 }}>
-																{answer.postedBy.name}
-															</Typography>
-															<Typography variant='caption' color='text.secondary' sx={{ ml: 0.75 }}>
-																·{' '}
-																<Chip
-																	label={answer.postedBy.role}
-																	size='small'
-																	sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}
-																/>
-																{' · '}
-																{new Date(answer.createdAt).toLocaleDateString(undefined, {
-																	year: 'numeric',
-																	month: 'short',
-																	day: 'numeric',
-																})}
-															</Typography>
-														</Box>
-														{(user?._id === answer.postedBy._id ||
-															user?.role === 'Admin' ||
-															user?.role === 'Super Admin' ||
-															user?.role === 'Moderator') && (
-															<Tooltip title='Delete answer'>
-																<IconButton
-																	size='small'
-																	color='error'
-																	onClick={() => void handleDeleteAnswer(answer._id)}
-																>
-																	<DeleteIcon fontSize='small' />
-																</IconButton>
-															</Tooltip>
-														)}
-													</Box>
-													<Box
-														sx={{
-															fontSize: '0.875rem',
-															lineHeight: 1.7,
-															mb: 1.5,
-															'& p': { m: 0, mb: 0.5 },
-															'& ul, & ol': { pl: 2.5, my: 0.5 },
-														}}
-														dangerouslySetInnerHTML={{ __html: answer.body }}
-													/>
-													<Tooltip title={answer.upvotes.includes(user?._id ?? '') ? 'Remove upvote' : 'Upvote this answer'}>
-														<Button
-															size='small'
-															startIcon={
-																answer.upvotes.includes(user?._id ?? '')
-																	? <ThumbUpIcon fontSize='small' />
-																	: <ThumbUpOutlinedIcon fontSize='small' />
-															}
-															onClick={() => void handleUpvoteAnswer(answer._id)}
-															color={answer.upvotes.includes(user?._id ?? '') ? 'primary' : 'inherit'}
-															sx={{ fontWeight: 600 }}
-														>
-															{answer.upvotes.length}
-														</Button>
-													</Tooltip>
-												</Paper>
-											))}
-										</Box>
-
-										{/* Post answer form */}
-										{canPostQA && (
-											<Paper
-												variant='outlined'
-												sx={{ p: 2.5, borderRadius: 0.5, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
-											>
-												<Typography variant='subtitle2' sx={{ fontWeight: 700, mb: 1.5 }}>
-													Your Answer
-												</Typography>
-												<RichTextEditor
-													value={answerBody}
-													onChange={setAnswerBody}
-													placeholder='Write your answer...'
-													minHeight={120}
-												/>
-												<Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
-													<Button
-														variant='contained'
-														onClick={() => void handlePostAnswer()}
-														disabled={answerPosting || !answerBody.trim()}
-													>
-														{answerPosting ? <CircularProgress size={16} color='inherit' /> : 'Post Answer'}
-													</Button>
-												</Box>
-											</Paper>
-										)}
-									</Box>
-								) : (
-									/* ── Question List View ── */
-									<>
-										<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-											<Typography variant='h5' sx={{ fontWeight: 700 }}>
-												Q &amp; A
-											</Typography>
-											{canPostQA && (
-												<Button
-													variant='contained'
-													startIcon={<AddIcon />}
-													onClick={() => setShowAskForm((p) => !p)}
-												>
-													Ask a Question
-												</Button>
-											)}
-										</Box>
-
-										{/* Ask question form */}
-										{canPostQA && showAskForm && (
-											<Paper
-												variant='outlined'
-												sx={{ p: 2.5, mb: 3, borderRadius: 0.5, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
-											>
-												<Typography variant='subtitle2' sx={{ fontWeight: 700, mb: 1.5 }}>
-													New Question
-												</Typography>
-												<TextField
-													label='Title'
-													value={askForm.title}
-													onChange={(e) => setAskForm((p) => ({ ...p, title: e.target.value }))}
-													fullWidth
-													size='small'
-													sx={{ mb: 1.5 }}
-												/>
-												<RichTextEditor
-													value={askForm.description}
-													onChange={(html) => setAskForm((p) => ({ ...p, description: html }))}
-													placeholder='Describe your question in detail...'
-													minHeight={120}
-												/>
-												<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1.5 }}>
-													<Button
-														size='small'
-														onClick={() => {
-															setShowAskForm(false);
-															setAskForm({ title: '', description: '' });
-														}}
-													>
-														Cancel
-													</Button>
-													<Button
-														size='small'
-														variant='contained'
-														onClick={() => void handleAskQuestion()}
-														disabled={askPosting}
-													>
-														{askPosting ? <CircularProgress size={16} color='inherit' /> : 'Post Question'}
-													</Button>
-												</Box>
-											</Paper>
-										)}
-
-										{/* Questions list */}
-										{qaLoading ? (
-											<Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-												<CircularProgress />
-											</Box>
-										) : questions.length === 0 ? (
-											<Box sx={{ textAlign: 'center', py: 8 }}>
-												<ForumOutlinedIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 1.5 }} />
-												<Typography variant='h6' color='text.secondary' sx={{ fontWeight: 600 }}>
-													No questions yet
-												</Typography>
-												{canPostQA && (
-													<Typography variant='body2' color='text.secondary' sx={{ mt: 0.5 }}>
-														Be the first to ask a question!
-													</Typography>
-												)}
-											</Box>
-										) : (
-											<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-												{questions.map((q) => {
-													const hasUpvoted = q.upvotes.includes(user?._id ?? '');
-													const canDelete =
-														user?._id === q.postedBy._id ||
-														user?.role === 'Admin' ||
-														user?.role === 'Super Admin' ||
-														user?.role === 'Moderator';
-													return (
-														<Paper
-															key={q._id}
-															variant='outlined'
-															onClick={() => void handleViewQuestion(q)}
-															sx={{
-																p: 2.5,
-																borderRadius: 0.5,
-																boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
-																cursor: 'pointer',
-																transition: 'box-shadow 0.2s, border-color 0.2s',
-																'&:hover': {
-																	boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-																	borderColor: 'primary.main',
-																},
-															}}
-														>
-															<Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-																{/* Left: upvote column */}
-																<Box
-																	sx={{
-																		display: 'flex',
-																		flexDirection: 'column',
-																		alignItems: 'center',
-																		gap: 0.5,
-																		minWidth: 44,
-																		flexShrink: 0,
-																	}}
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		void handleUpvoteQuestion(q._id);
-																	}}
-																>
-																	{hasUpvoted ? (
-																		<ThumbUpIcon sx={{ fontSize: 20, color: 'primary.main' }} />
-																	) : (
-																		<ThumbUpOutlinedIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-																	)}
-																	<Typography
-																		variant='caption'
-																		sx={{ fontWeight: 700, color: hasUpvoted ? 'primary.main' : 'text.secondary' }}
-																	>
-																		{q.upvotes.length}
-																	</Typography>
-																</Box>
-
-																{/* Right: content */}
-																<Box sx={{ flex: 1, minWidth: 0 }}>
-																	<Typography
-																		variant='subtitle1'
-																		sx={{ fontWeight: 700, mb: 0.5, lineHeight: 1.3 }}
-																	>
-																		{q.title}
-																	</Typography>
-																	<Typography
-																		variant='body2'
-																		color='text.secondary'
-																		sx={{
-																			mb: 1.5,
-																			display: '-webkit-box',
-																			WebkitLineClamp: 2,
-																			WebkitBoxOrient: 'vertical',
-																			overflow: 'hidden',
-																		}}
-																		dangerouslySetInnerHTML={{
-																			__html: q.description.replace(/<[^>]*>/g, ' ').trim(),
-																		}}
-																	/>
-																	<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-																		<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-																			<Avatar
-																				src={q.postedBy.avatar}
-																				sx={{ width: 20, height: 20, fontSize: 10, bgcolor: 'primary.main' }}
-																			>
-																				{q.postedBy.name[0]}
-																			</Avatar>
-																			<Typography variant='caption' color='text.secondary'>
-																				{q.postedBy.name}
-																			</Typography>
-																			<Chip
-																				label={q.postedBy.role}
-																				size='small'
-																				sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.25 }}
-																			/>
-																			<Typography variant='caption' color='text.secondary'>
-																				·{' '}
-																				{new Date(q.createdAt).toLocaleDateString(undefined, {
-																					month: 'short',
-																					day: 'numeric',
-																					year: 'numeric',
-																				})}
-																			</Typography>
-																		</Box>
-																		<Box
-																			sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}
-																		>
-																			<ForumOutlinedIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
-																			<Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary' }}>
-																				{q.answerCount} answer{q.answerCount !== 1 ? 's' : ''}
-																			</Typography>
-																			{canDelete && (
-																				<Tooltip title='Delete question'>
-																					<IconButton
-																						size='small'
-																						color='error'
-																						onClick={(e) => {
-																							e.stopPropagation();
-																							void handleDeleteQuestion(q._id);
-																						}}
-																						sx={{ ml: 0.5 }}
-																					>
-																						<DeleteIcon sx={{ fontSize: 16 }} />
-																					</IconButton>
-																				</Tooltip>
-																			)}
-																		</Box>
-																	</Box>
-																</Box>
-															</Box>
-														</Paper>
-													);
-												})}
-											</Box>
-										)}
-									</>
-								)}
-							</Box>
-						)}
-					</Box>
+					{/* ── Q & A ──────────────────────────────────────── */}
+					{activeNav === 'qa' && (
+						<Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 860 }}>
+							<CourseQASection
+								courseId={courseId!}
+								canPost={canPostQA}
+								userId={user?._id ?? ''}
+								userRole={user?.role ?? ''}
+							/>
+						</Box>
+					)}
+				</Box>
 
 					{/* ── Right lecture list (Video Lectures only) ──────── */}
 					{activeNav === 'video_lectures' && (
