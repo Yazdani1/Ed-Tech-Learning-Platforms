@@ -498,7 +498,7 @@ export default function CourseCreatePage() {
 			>
 				<Box>
 					<Typography variant='h4' sx={{ fontWeight: 700 }}>
-						{isEdit ? 'Edit Course' : 'Create Course'}
+						{isEdit ? form.title || 'Untitled Course' : 'Create Course'}
 					</Typography>
 					{courseId && (
 						<Typography
