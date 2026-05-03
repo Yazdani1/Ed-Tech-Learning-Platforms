@@ -530,18 +530,22 @@ export default function StudentCourseLearningPage() {
 									</Box>
 								)}
 
-								{/* Stats strip */}
+								{/* Stats Grid */}
 								<Box
 									sx={{
-										display: 'flex',
-										flexWrap: 'wrap',
-										gap: 3,
+										display: 'grid',
+										gridTemplateColumns: {
+											xs: '1fr 1fr',
+											sm: 'repeat(3, 1fr)',
+										},
+										gap: { xs: 2.5, sm: 3 },
 										mb: 4,
-										p: 2.5,
-										bgcolor: 'grey.50',
+										p: 3,
+										bgcolor: 'background.paper',
 										border: '1px solid',
 										borderColor: 'divider',
-										borderRadius: 0.5,
+										borderRadius: 2,
+										boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
 									}}
 								>
 									<StatItem
@@ -851,7 +855,7 @@ export default function StudentCourseLearningPage() {
 									}}
 								>
 									<Typography variant='h5' sx={{ fontWeight: 700 }}>
-										Announcements
+										Announcements ({announcements.length})
 									</Typography>
 									{canPost && (
 										<Button
@@ -1035,7 +1039,7 @@ export default function StudentCourseLearningPage() {
 									}}
 								>
 									<Typography variant='h5' sx={{ fontWeight: 700 }}>
-										Study Materials
+										Study Materials ({studyMaterials.length})
 									</Typography>
 									{canPost && (
 										<Button
