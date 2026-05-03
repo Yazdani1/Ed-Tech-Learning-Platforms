@@ -247,7 +247,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 	const selectedCount = selectedIds.size;
 
 	return (
-		<Dialog open={open} onClose={handleClose} maxWidth='xl' fullWidth PaperProps={{ sx: { height: '90vh' } }}>
+		<Dialog open={open} onClose={handleClose} maxWidth='xl' fullWidth slotProps={{ paper: { sx: { height: '90vh' } } }}>
 			{/* ── Header ────────────────────────────────────────────── */}
 			<DialogTitle sx={{ pb: 1 }}>
 				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -587,7 +587,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 														fullWidth
 														value={form.price}
 														onChange={(e) => set('price', e.target.value)}
-														inputProps={{ min: 0 }}
+														slotProps={{ htmlInput: { min: 0 } }}
 													/>
 												</Field>
 											</Box>
@@ -701,8 +701,10 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 													fullWidth
 													value={form.endDate}
 													onChange={(e) => set('endDate', e.target.value)}
-													slotProps={{ inputLabel: { shrink: true } }}
-													inputProps={{ min: form.startDate || undefined }}
+													slotProps={{
+														inputLabel: { shrink: true },
+														htmlInput: { min: form.startDate || undefined }
+													}}
 													helperText='Leave empty for no change'
 												/>
 											</Field>

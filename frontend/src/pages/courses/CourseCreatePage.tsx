@@ -712,9 +712,11 @@ export default function CourseCreatePage() {
 									value={form.endDate}
 									onChange={(e) => set('endDate', e.target.value)}
 									sx={{ flex: 1 }}
-									slotProps={{ inputLabel: { shrink: true } }}
+									slotProps={{
+										inputLabel: { shrink: true },
+										htmlInput: { min: form.startDate || undefined }
+									}}
 									helperText='Optional'
-									inputProps={{ min: form.startDate || undefined }}
 								/>
 							</Box>
 

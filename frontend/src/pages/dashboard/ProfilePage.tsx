@@ -150,11 +150,11 @@ export default function ProfilePage() {
 								</Box>
 
 								<Grid container spacing={2}>
-									<Grid item xs={12} sm={4}>
+									<Grid size={{ xs: 12, sm: 4 }}>
 										<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
 											<CalendarTodayIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
 											<Box>
-												<Typography variant='caption' color='text.secondary' display='block'>
+												<Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>
 													Start date
 												</Typography>
 												<Typography variant='body2' sx={{ fontWeight: 600 }}>
@@ -163,11 +163,11 @@ export default function ProfilePage() {
 											</Box>
 										</Box>
 									</Grid>
-									<Grid item xs={12} sm={4}>
+									<Grid size={{ xs: 12, sm: 4 }}>
 										<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
 											<CalendarTodayIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
 											<Box>
-												<Typography variant='caption' color='text.secondary' display='block'>
+												<Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>
 													Expiry date
 												</Typography>
 												<Typography variant='body2' sx={{ fontWeight: 600 }}>
@@ -177,11 +177,11 @@ export default function ProfilePage() {
 										</Box>
 									</Grid>
 									{planConfig && planConfig.courseCount > 0 && (
-										<Grid item xs={12} sm={4}>
+										<Grid size={{ xs: 12, sm: 4 }}>
 											<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
 												<MenuBookIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
 												<Box>
-													<Typography variant='caption' color='text.secondary' display='block'>
+													<Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>
 														Courses included
 													</Typography>
 													<Typography variant='body2' sx={{ fontWeight: 600 }}>
@@ -258,28 +258,28 @@ export default function ProfilePage() {
 					Account details
 				</Typography>
 				<Grid container spacing={2}>
-					<Grid item xs={12} sm={6} md={4}>
+					<Grid size={{ xs: 12, sm: 6, md: 4 }}>
 						<Typography variant='subtitle2' color='text.secondary'>Name</Typography>
 						<Typography>{user.name}</Typography>
 					</Grid>
-					<Grid item xs={12} sm={6} md={4}>
+					<Grid size={{ xs: 12, sm: 6, md: 4 }}>
 						<Typography variant='subtitle2' color='text.secondary'>Email</Typography>
 						<Typography>{user.email}</Typography>
 					</Grid>
-					<Grid item xs={12} sm={6} md={4}>
+					<Grid size={{ xs: 12, sm: 6, md: 4 }}>
 						<Typography variant='subtitle2' color='text.secondary'>Role</Typography>
 						<Typography>{user.role}</Typography>
 					</Grid>
-					<Grid item xs={12} sm={6} md={4}>
+					<Grid size={{ xs: 12, sm: 6, md: 4 }}>
 						<Typography variant='subtitle2' color='text.secondary'>Joined</Typography>
 						<Typography>{new Date(user.createdAt).toLocaleDateString()}</Typography>
 					</Grid>
-					<Grid item xs={12} sm={6} md={4}>
+					<Grid size={{ xs: 12, sm: 6, md: 4 }}>
 						<Typography variant='subtitle2' color='text.secondary'>Purchased courses</Typography>
 						<Typography>{user.purchasedCourses?.length ?? 0}</Typography>
 					</Grid>
 					{sub && (
-						<Grid item xs={12} sm={6} md={4}>
+						<Grid size={{ xs: 12, sm: 6, md: 4 }}>
 							<Typography variant='subtitle2' color='text.secondary'>Subscription</Typography>
 							<Typography>
 								{sub.plan} &bull;{' '}

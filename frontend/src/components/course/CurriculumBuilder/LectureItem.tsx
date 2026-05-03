@@ -11,7 +11,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PlayCircleOutlinedIcon from '@mui/icons-material/PlayCircleOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import type { ILecture } from '../../../types/index';
-import { parseDuration, formatLectureDuration, secondsToInput } from '../../../utils/duration';
+import { parseDuration, secondsToInput } from '../../../utils/duration';
 
 interface LectureItemProps {
   lecture: ILecture;

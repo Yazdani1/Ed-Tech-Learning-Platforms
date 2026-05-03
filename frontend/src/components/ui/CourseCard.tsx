@@ -20,17 +20,7 @@ const PLAN_COLORS: Record<string, string> = {
 	'Quiz Only': '#0891b2',
 };
 
-const COURSE_TYPE_COLORS: Record<string, string> = {
-	'Web Development': '#2563eb',
-	'Data Science': '#7c3aed',
-	'Design & UX': '#f97316',
-	'Business & Marketing': '#059669',
-	'Personal Development': '#8b5cf6',
-	'Language Learning': '#db2777',
-	'Test Prep': '#0ea5e9',
-	'Health & Fitness': '#16a34a',
-	'Creative Arts': '#e11d48',
-};
+
 
 interface CourseCardProps {
 	course: ICourse;
@@ -54,7 +44,7 @@ export default function CourseCard({
 	const priceLabel =
 		course.pricing === 'Free'
 			? 'Free'
-			: course.price !== null
+			: course.price !== null && course.price !== undefined
 				? `$${course.price.toFixed(2)}`
 				: 'Paid';
 	const learnPath = learningPath ?? `/student/courses/${course._id}/learn`;
@@ -150,6 +140,7 @@ export default function CourseCard({
 								>
 									<VerifiedIcon sx={{ fontSize: 13, color: 'white' }} />
 									<Typography
+										variant='caption'
 										sx={{
 											fontSize: '0.65rem',
 											fontWeight: 800,
@@ -177,6 +168,7 @@ export default function CourseCard({
 					>
 						{/* Title â€” 2-line clamp */}
 						<Typography
+							variant='body2'
 							sx={{
 								fontWeight: 700,
 								fontSize: '0.925rem',
@@ -207,6 +199,7 @@ export default function CourseCard({
 
 						{/* Price */}
 						<Typography
+							variant='body2'
 							sx={{
 								fontWeight: 700,
 								fontSize: '1rem',
@@ -246,6 +239,7 @@ export default function CourseCard({
 											>
 												<CardMembershipIcon sx={{ fontSize: 11 }} />
 												<Typography
+													variant='caption'
 													sx={{
 														fontSize: '0.68rem',
 														fontWeight: 700,
@@ -257,6 +251,7 @@ export default function CourseCard({
 											</Box>
 										))}
 										<Typography
+											variant='caption'
 											sx={{
 												fontSize: '0.7rem',
 												fontWeight: 600,

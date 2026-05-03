@@ -61,7 +61,7 @@ export default function TeacherCoursesPage() {
 			) : (
 				<Grid container spacing={3}>
 					{courses.map((course) => (
-						<Grid item xs={12} sm={6} md={4} key={course._id}>
+						<Grid size={{ xs: 12, sm: 6, md: 4 }} key={course._id}>
 							<Card
 								elevation={0}
 								sx={{ border: '1px solid', borderColor: 'divider', height: '100%', display: 'flex', flexDirection: 'column' }}

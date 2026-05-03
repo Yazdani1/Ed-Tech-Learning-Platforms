@@ -1839,8 +1839,8 @@ export default function CourseDetailPage() {
 				onClose={() => setPreviewLecture(null)}
 				maxWidth='md'
 				fullWidth
-				PaperProps={{
-					sx: { borderRadius: 3, overflow: 'hidden', bgcolor: '#0f0f0f' },
+				slotProps={{
+					paper: { sx: { borderRadius: 3, overflow: 'hidden', bgcolor: '#0f0f0f' } },
 				}}
 			>
 				<DialogTitle

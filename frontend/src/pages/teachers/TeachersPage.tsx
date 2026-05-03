@@ -191,7 +191,7 @@ export default function TeachersPage() {
 											{linked ? (
 												<Box>
 													<Typography variant='body2' sx={{ fontWeight: 500 }}>{linked.name}</Typography>
-													<Typography variant='caption' color='text.secondary' display='block'>{linked.email}</Typography>
+													<Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>{linked.email}</Typography>
 													<Typography variant='caption' color='primary.main'>{linked.role}</Typography>
 												</Box>
 											) : (
