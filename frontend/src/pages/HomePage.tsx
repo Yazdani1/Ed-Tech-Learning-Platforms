@@ -19,16 +19,19 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { courseService } from '../services/course.service';
 import { categoryService } from '../services/category.service';
 import { courseTypeService } from '../services/courseType.service';
+import { teacherService } from '../services/teacher.service';
 import CourseCard, { CourseCardSkeleton } from '../components/ui/CourseCard';
 import PublicNavbar from '../components/layout/PublicNavbar';
 import CourseFilterSidebar from '../components/course/CourseFilterSidebar';
 import AppPagination from '../components/common/AppPagination';
+import TeacherMarqueeSection from '../components/teacher/TeacherMarqueeSection';
 import { useAuth } from '../context/useAuth';
 import { encodeParam, decodeParam } from '../utils/urlParams';
 import type {
 	ICourse,
 	ICategory,
 	ICourseType,
+	ITeacher,
 	IPaginationMeta,
 	SubscriptionPlan,
 } from '../types/index';
@@ -96,6 +99,7 @@ export default function HomePage() {
 	// ── Reference data ───────────────────────────────────────────
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
+	const [teachers, setTeachers] = useState<ITeacher[]>([]);
 	const { user, isLoading: authLoading } = useAuth();
 	const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
 
@@ -116,12 +120,15 @@ export default function HomePage() {
 	}, [urlSearch]);
 
 	useEffect(() => {
-		Promise.all([categoryService.getAll(), courseTypeService.getAll()]).then(
-			([cats, cts]) => {
-				setCategories(cats.data ?? []);
-				setCourseTypes(cts.data ?? []);
-			},
-		);
+		Promise.all([
+			categoryService.getAll(),
+			courseTypeService.getAll(),
+			teacherService.getAll(),
+		]).then(([cats, cts, teacherRes]) => {
+			setCategories(cats.data ?? []);
+			setCourseTypes(cts.data ?? []);
+			setTeachers(teacherRes.data ?? []);
+		});
 	}, []);
 
 	useEffect(() => {
@@ -726,6 +733,8 @@ export default function HomePage() {
 			</Box>
 
 			{/* ── Footer ───────────────────────────────────────────────── */}
+			<TeacherMarqueeSection teachers={teachers} />
+
 			<Box sx={{ bgcolor: 'grey.900', color: 'grey.400', py: 5 }}>
 				<Container maxWidth='lg'>
 					<Box
