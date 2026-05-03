@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AppBar,
   Avatar,
@@ -14,16 +14,31 @@ import {
 import SchoolIcon from '@mui/icons-material/School';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../../context/useAuth';
-import { encodeParam } from '../../utils/urlParams';
+import { encodeParam, decodeParam } from '../../utils/urlParams';
 
 export default function PublicNavbar() {
-  const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  // Keep the navbar input in sync with the URL ?q= param (e.g. when the user
+  // types in the browse-page sidebar, the navbar bar should reflect it too)
+  const currentQ = decodeParam(searchParams.get('q') ?? '');
+  const [query, setQuery] = useState(currentQ);
+
+  useEffect(() => {
+    setQuery(currentQ);
+  }, [currentQ]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(`/courses${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''}`);
+    if (query.trim()) {
+      const params = new URLSearchParams();
+      params.set('q', encodeParam(query.trim()));
+      navigate(`/courses?${params.toString()}`);
+    } else {
+      navigate('/courses');
+    }
   };
 
   const dashboardPath =
