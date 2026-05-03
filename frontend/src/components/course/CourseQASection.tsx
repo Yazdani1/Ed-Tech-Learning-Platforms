@@ -6,7 +6,6 @@ import {
 	Chip,
 	CircularProgress,
 	Divider,
-	IconButton,
 	Paper,
 	TextField,
 	Tooltip,
@@ -14,7 +13,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
@@ -22,6 +21,7 @@ import toast from 'react-hot-toast';
 import { qaService } from '../../services/qa.service';
 import type { IQuestion, IAnswer } from '../../types/index';
 import RichTextEditor from './RichTextEditor';
+import ItemActionMenu from '../common/ItemActionMenu';
 
 interface CourseQASectionProps {
 	courseId: string;
@@ -327,15 +327,19 @@ export default function CourseQASection({
 							</Button>
 						</Tooltip>
 						{canDelete(qaDetail.question.postedBy._id) && (
-							<Tooltip title='Delete question'>
-								<IconButton
-									size='small'
-									color='error'
-									onClick={() => void handleDeleteQuestion(qaDetail.question._id)}
-								>
-									<DeleteIcon fontSize='small' />
-								</IconButton>
-							</Tooltip>
+							<ItemActionMenu
+								actions={[
+									{
+										label: 'Delete',
+										color: 'error',
+										icon: (
+											<DeleteOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
+										),
+										onClick: () =>
+											void handleDeleteQuestion(qaDetail.question._id),
+									},
+								]}
+							/>
 						)}
 					</Box>
 				</Paper>
@@ -453,15 +457,18 @@ export default function CourseQASection({
 									</Typography>
 								</Box>
 								{canDelete(answer.postedBy._id) && (
-									<Tooltip title='Delete answer'>
-										<IconButton
-											size='small'
-											color='error'
-											onClick={() => void handleDeleteAnswer(answer._id)}
-										>
-											<DeleteIcon fontSize='small' />
-										</IconButton>
-									</Tooltip>
+									<ItemActionMenu
+										actions={[
+											{
+												label: 'Delete',
+												color: 'error',
+												icon: (
+													<DeleteOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
+												),
+												onClick: () => void handleDeleteAnswer(answer._id),
+											},
+										]}
+									/>
 								)}
 							</Box>
 							<Box
@@ -775,19 +782,22 @@ export default function CourseQASection({
 													{q.answerCount !== 1 ? 's' : ''}
 												</Typography>
 												{canDelete(q.postedBy._id) && (
-													<Tooltip title='Delete question'>
-														<IconButton
-															size='small'
-															color='error'
-															onClick={(e) => {
-																e.stopPropagation();
-																void handleDeleteQuestion(q._id);
-															}}
-															sx={{ ml: 0.25 }}
-														>
-															<DeleteIcon sx={{ fontSize: 16 }} />
-														</IconButton>
-													</Tooltip>
+													<ItemActionMenu
+														actions={[
+															{
+																label: 'Delete',
+																color: 'error',
+																icon: (
+																	<DeleteOutlinedIcon
+																		fontSize='small'
+																		sx={{ mr: 1 }}
+																	/>
+																),
+																onClick: () =>
+																	void handleDeleteQuestion(q._id),
+															},
+														]}
+													/>
 												)}
 											</Box>
 										</Box>

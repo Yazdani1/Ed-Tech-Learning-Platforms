@@ -34,6 +34,7 @@ import { announcementService } from '../../services/announcement.service';
 import { studyMaterialService } from '../../services/studyMaterial.service';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import CurriculumBuilder from '../../components/course/CurriculumBuilder/CurriculumBuilder';
+import ItemActionMenu from '../../components/common/ItemActionMenu';
 import type {
 	ICategory,
 	ICourseType,
@@ -975,7 +976,7 @@ export default function CourseCreatePage() {
 								}}
 							>
 								<Typography variant='h6' sx={{ fontWeight: 700 }}>
-									Announcements
+									Announcements ({announcements.length})
 								</Typography>
 								<Button
 									variant='contained'
@@ -1117,14 +1118,19 @@ export default function CourseCreatePage() {
 														{ann.description}
 													</Typography>
 												</Box>
-												<IconButton
-													size='small'
-													color='error'
-													onClick={() => void handleDeleteAnnouncement(ann._id)}
-													sx={{ ml: 1, flexShrink: 0 }}
-												>
-													<DeleteIcon fontSize='small' />
-												</IconButton>
+												<Box sx={{ ml: 1, flexShrink: 0 }}>
+													<ItemActionMenu
+														actions={[
+															{
+																label: 'Delete',
+																color: 'error',
+																icon: <DeleteIcon fontSize='small' sx={{ mr: 1 }} />,
+																onClick: () =>
+																	void handleDeleteAnnouncement(ann._id),
+															},
+														]}
+													/>
+												</Box>
 											</Box>
 										</Paper>
 									))}
@@ -1145,7 +1151,7 @@ export default function CourseCreatePage() {
 								}}
 							>
 								<Typography variant='h6' sx={{ fontWeight: 700 }}>
-									Study Materials
+									Study Materials ({studyMaterials.length})
 								</Typography>
 								<Button
 									variant='contained'
@@ -1315,16 +1321,19 @@ export default function CourseCreatePage() {
 														</Typography>
 													)}
 												</Box>
-												<IconButton
-													size='small'
-													color='error'
-													onClick={() =>
-														void handleDeleteStudyMaterial(mat._id)
-													}
-													sx={{ ml: 1, flexShrink: 0 }}
-												>
-													<DeleteIcon fontSize='small' />
-												</IconButton>
+												<Box sx={{ ml: 1, flexShrink: 0 }}>
+													<ItemActionMenu
+														actions={[
+															{
+																label: 'Delete',
+																color: 'error',
+																icon: <DeleteIcon fontSize='small' sx={{ mr: 1 }} />,
+																onClick: () =>
+																	void handleDeleteStudyMaterial(mat._id),
+															},
+														]}
+													/>
+												</Box>
 											</Box>
 										</Paper>
 									))}

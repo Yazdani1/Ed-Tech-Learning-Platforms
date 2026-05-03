@@ -36,7 +36,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { enrollmentService } from '../../services/enrollment.service';
@@ -57,6 +57,7 @@ import CourseQASection from '../../components/course/CourseQASection';
 import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar';
 import { useAuth } from '../../context/useAuth';
 import RichTextEditor from '../../components/course/RichTextEditor';
+import ItemActionMenu from '../../components/common/ItemActionMenu';
 
 type NavSection =
 	| 'course_overview'
@@ -1024,18 +1025,26 @@ export default function StudentCourseLearningPage() {
 																dangerouslySetInnerHTML={{ __html: ann.description }}
 															/>
 														</Box>
-														{canDelete && (
-															<IconButton
-																size='small'
-																color='error'
-																onClick={() =>
-																	void handleDeleteAnnouncement(ann._id)
-																}
-																sx={{ ml: 1, flexShrink: 0 }}
-															>
-																<DeleteIcon fontSize='small' />
-															</IconButton>
-														)}
+														<Box sx={{ ml: 1, flexShrink: 0 }}>
+															{canDelete && (
+																<ItemActionMenu
+																	actions={[
+																		{
+																			label: 'Delete',
+																			color: 'error',
+																			icon: (
+																				<DeleteOutlinedIcon
+																					fontSize='small'
+																					sx={{ mr: 1 }}
+																				/>
+																			),
+																			onClick: () =>
+																				void handleDeleteAnnouncement(ann._id),
+																		},
+																	]}
+																/>
+															)}
+														</Box>
 													</Box>
 												</Paper>
 											);
@@ -1240,18 +1249,26 @@ export default function StudentCourseLearningPage() {
 																</Typography>
 															)}
 														</Box>
-														{canDelete && (
-															<IconButton
-																size='small'
-																color='error'
-																onClick={() =>
-																	void handleDeleteStudyMaterial(mat._id)
-																}
-																sx={{ ml: 1, flexShrink: 0 }}
-															>
-																<DeleteIcon fontSize='small' />
-															</IconButton>
-														)}
+														<Box sx={{ ml: 1, flexShrink: 0 }}>
+															{canDelete && (
+																<ItemActionMenu
+																	actions={[
+																		{
+																			label: 'Delete',
+																			color: 'error',
+																			icon: (
+																				<DeleteOutlinedIcon
+																					fontSize='small'
+																					sx={{ mr: 1 }}
+																				/>
+																			),
+																			onClick: () =>
+																				void handleDeleteStudyMaterial(mat._id),
+																		},
+																	]}
+																/>
+															)}
+														</Box>
 													</Box>
 												</Paper>
 											);
