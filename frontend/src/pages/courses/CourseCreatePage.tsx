@@ -283,8 +283,8 @@ export default function CourseCreatePage() {
 		fd.append('subtitle', form.subtitle);
 		fd.append('category', form.category);
 		fd.append('courseType', form.courseType);
-		if (form.startDate) fd.append('startDate', form.startDate);
-		if (form.endDate) fd.append('endDate', form.endDate);
+		fd.append('startDate', form.startDate);
+		fd.append('endDate', form.endDate);
 		fd.append('description', form.description);
 		fd.append('visibility', form.visibility);
 		fd.append('pricing', form.pricing);

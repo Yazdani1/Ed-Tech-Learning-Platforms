@@ -129,9 +129,9 @@ export const updateCourse = asyncHandler(
 		if (body.courseType !== undefined)
 			course.courseType = new Types.ObjectId(body.courseType);
 		if (body.startDate !== undefined)
-			course.startDate = body.startDate ? new Date(body.startDate) : undefined;
+			course.startDate = body.startDate ? new Date(body.startDate) : (null as unknown as Date);
 		if (body.endDate !== undefined)
-			course.endDate = body.endDate ? new Date(body.endDate) : undefined;
+			course.endDate = body.endDate ? new Date(body.endDate) : (null as unknown as Date);
 		if (body.visibility !== undefined)
 			course.visibility = body.visibility as 'Public' | 'Private';
 		if (body.pricing !== undefined)
