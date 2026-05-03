@@ -52,8 +52,10 @@ export default function App() {
 						path='/admin/courses/:id/edit'
 						element={<CourseCreatePage />}
 					/>
-					<Route path='/admin/categories' element={<CategoriesPage />} />
-					<Route path='/admin/course-types' element={<CourseTypesPage />} />
+					<Route element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']} />}>
+						<Route path='/admin/categories' element={<CategoriesPage />} />
+						<Route path='/admin/course-types' element={<CourseTypesPage />} />
+					</Route>
 					<Route path='/admin/teachers' element={<TeachersPage />} />
 					<Route path='/admin/users' element={<UsersPage />} />
 					<Route path='/admin/subscriptions' element={<SubscriptionsPage />} />

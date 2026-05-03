@@ -18,7 +18,6 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
 import CategoryIcon from '@mui/icons-material/Category';
-import ClassIcon from '@mui/icons-material/Class';
 import PeopleIcon from '@mui/icons-material/People';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -64,15 +63,9 @@ const navItems = [
 		roles: ['Super Admin', 'Admin'],
 	},
 	{
-		label: 'nav.categories',
+		label: 'Course Setup',
 		icon: <CategoryIcon />,
 		path: '/admin/categories',
-		roles: ['Super Admin', 'Admin', 'Moderator'],
-	},
-	{
-		label: 'Course Types',
-		icon: <ClassIcon />,
-		path: '/admin/course-types',
 		roles: ['Super Admin', 'Admin'],
 	},
 	{

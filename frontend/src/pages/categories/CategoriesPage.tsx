@@ -2,121 +2,296 @@ import { useEffect, useState } from 'react';
 import {
 	Box,
 	Button,
+	Card,
+	Chip,
+	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
-	TextField,
-	Typography,
+	IconButton,
+	Menu,
+	MenuItem,
 	Table,
 	TableBody,
 	TableCell,
 	TableContainer,
 	TableHead,
 	TableRow,
-	Paper,
-	IconButton,
-	CircularProgress,
+	TextField,
+	Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import toast from 'react-hot-toast';
 import { categoryService } from '../../services/category.service';
-import type { ICategory } from '../../types/index';
+import { courseTypeService } from '../../services/courseType.service';
+import type { ICategory, ICourseType } from '../../types/index';
+
+type ManagerKind = 'category' | 'courseType';
+type ManagedItem = ICategory | ICourseType;
+
+interface DialogState {
+	kind: ManagerKind;
+	item: ManagedItem | null;
+	open: boolean;
+}
+
+const EMPTY_FORM = { name: '', description: '' };
 
 export default function CategoriesPage() {
 	const [categories, setCategories] = useState<ICategory[]>([]);
+	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [dialogOpen, setDialogOpen] = useState(false);
-	const [editingCategory, setEditingCategory] = useState<ICategory | null>(
-		null,
-	);
-	const [form, setForm] = useState({ name: '', description: '' });
 	const [saving, setSaving] = useState(false);
+	const [form, setForm] = useState(EMPTY_FORM);
+	const [dialog, setDialog] = useState<DialogState>({
+		kind: 'category',
+		item: null,
+		open: false,
+	});
+	const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+	const [menuTarget, setMenuTarget] = useState<{
+		kind: ManagerKind;
+		item: ManagedItem;
+	} | null>(null);
 
-	const loadCategories = () => {
-		categoryService
-			.getAll()
-			.then((res) => setCategories(res.data ?? []))
+	const loadData = () => {
+		setLoading(true);
+		Promise.all([categoryService.getAll(), courseTypeService.getAll()])
+			.then(([categoryRes, courseTypeRes]) => {
+				setCategories(categoryRes.data ?? []);
+				setCourseTypes(courseTypeRes.data ?? []);
+			})
 			.finally(() => setLoading(false));
 	};
 
 	useEffect(() => {
-		loadCategories();
+		loadData();
 	}, []);
 
-	const handleOpenDialog = (category?: ICategory) => {
-		if (category) {
-			setEditingCategory(category);
-			setForm({ name: category.name, description: category.description || '' });
-		} else {
-			setEditingCategory(null);
-			setForm({ name: '', description: '' });
-		}
-		setDialogOpen(true);
+	const getLabels = (kind: ManagerKind) =>
+		kind === 'category'
+			? {
+					singular: 'Category',
+					plural: 'Categories',
+					description:
+						'Organize courses by subject area so students can browse learning paths faster.',
+				}
+			: {
+					singular: 'Course Type',
+					plural: 'Course Types',
+					description:
+						'Define what students can learn, such as live courses, recorded courses, seminars, and language tracks.',
+				};
+
+	const openDialog = (kind: ManagerKind, item: ManagedItem | null = null) => {
+		setDialog({ kind, item, open: true });
+		setForm({
+			name: item?.name ?? '',
+			description: item?.description ?? '',
+		});
 	};
 
-	const handleCloseDialog = () => {
-		setDialogOpen(false);
-		setEditingCategory(null);
-		setForm({ name: '', description: '' });
+	const closeDialog = () => {
+		setDialog((prev) => ({ ...prev, open: false, item: null }));
+		setForm(EMPTY_FORM);
+	};
+
+	const openMenu = (
+		event: React.MouseEvent<HTMLElement>,
+		kind: ManagerKind,
+		item: ManagedItem,
+	) => {
+		setMenuAnchor(event.currentTarget);
+		setMenuTarget({ kind, item });
+	};
+
+	const closeMenu = () => {
+		setMenuAnchor(null);
+		setMenuTarget(null);
 	};
 
 	const handleSave = async () => {
 		if (!form.name.trim()) {
-			toast.error('Category name is required');
+			toast.error(`${getLabels(dialog.kind).singular} name is required`);
 			return;
 		}
+
 		setSaving(true);
 		try {
-			if (editingCategory) {
-				await categoryService.update(editingCategory._id, form);
-				toast.success('Category updated');
+			if (dialog.kind === 'category') {
+				if (dialog.item) {
+					await categoryService.update(dialog.item._id, form);
+					toast.success('Category updated');
+				} else {
+					await categoryService.create(form);
+					toast.success('Category created');
+				}
+			} else if (dialog.item) {
+				await courseTypeService.update(dialog.item._id, form);
+				toast.success('Course type updated');
 			} else {
-				await categoryService.create(form);
-				toast.success('Category created');
+				await courseTypeService.create(form);
+				toast.success('Course type created');
 			}
-			loadCategories();
-			handleCloseDialog();
-		} catch (error) {
-			toast.error('Failed to save category');
+
+			loadData();
+			closeDialog();
+		} catch {
+			toast.error(`Failed to save ${getLabels(dialog.kind).singular.toLowerCase()}`);
 		} finally {
 			setSaving(false);
 		}
 	};
 
-	const handleDelete = async (id: string) => {
-		if (!confirm('Are you sure you want to delete this category?')) return;
+	const handleDelete = async () => {
+		if (!menuTarget) return;
+		const labels = getLabels(menuTarget.kind);
+		const confirmed = confirm(
+			`Are you sure you want to delete this ${labels.singular.toLowerCase()}?`,
+		);
+		if (!confirmed) {
+			closeMenu();
+			return;
+		}
+
 		try {
-			await categoryService.delete(id);
-			toast.success('Category deleted');
-			loadCategories();
-		} catch (error) {
-			toast.error('Failed to delete category');
+			if (menuTarget.kind === 'category') {
+				await categoryService.delete(menuTarget.item._id);
+				toast.success('Category deleted');
+			} else {
+				await courseTypeService.delete(menuTarget.item._id);
+				toast.success('Course type deleted');
+			}
+			loadData();
+		} catch {
+			toast.error(`Failed to delete ${labels.singular.toLowerCase()}`);
+		} finally {
+			closeMenu();
 		}
 	};
 
-	return (
-		<Box>
-			<Box
+	const renderManagerCard = (
+		kind: ManagerKind,
+		items: ManagedItem[],
+		accent: string,
+	) => {
+		const labels = getLabels(kind);
+
+		return (
+			<Card
+				elevation={0}
 				sx={{
-					display: 'flex',
-					justifyContent: 'space-between',
-					alignItems: 'center',
-					mb: 3,
+					border: '1px solid',
+					borderColor: 'divider',
+					borderRadius: 0.5,
+					overflow: 'hidden',
+					height: '100%',
 				}}
 			>
-				<Typography variant='h4' sx={{ fontWeight: 700 }}>
-					Categories
-				</Typography>
-				<Button
-					variant='contained'
-					startIcon={<AddIcon />}
-					onClick={() => handleOpenDialog()}
+				<Box
+					sx={{
+						px: 2.5,
+						py: 2,
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'space-between',
+						gap: 2,
+						borderBottom: '1px solid',
+						borderColor: 'divider',
+						bgcolor: 'grey.50',
+					}}
 				>
-					Add Category
-				</Button>
+					<Box>
+						<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 0.5 }}>
+							<Box
+								sx={{
+									width: 10,
+									height: 10,
+									borderRadius: '50%',
+									bgcolor: accent,
+								}}
+							/>
+							<Typography variant='h6' sx={{ fontWeight: 800 }}>
+								{labels.plural}
+							</Typography>
+							<Chip label={items.length} size='small' sx={{ fontWeight: 700 }} />
+						</Box>
+						<Typography variant='body2' color='text.secondary'>
+							{labels.description}
+						</Typography>
+					</Box>
+					<Button
+						variant='contained'
+						startIcon={<AddIcon />}
+						onClick={() => openDialog(kind)}
+						sx={{ flexShrink: 0, fontWeight: 700 }}
+					>
+						Add {labels.singular}
+					</Button>
+				</Box>
+
+				<TableContainer>
+					<Table size='small'>
+						<TableHead>
+							<TableRow>
+								<TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
+								<TableCell sx={{ fontWeight: 700 }}>Slug</TableCell>
+								<TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
+								<TableCell align='right' sx={{ width: 64, fontWeight: 700 }}>
+									Actions
+								</TableCell>
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							{items.length === 0 ? (
+								<TableRow>
+									<TableCell colSpan={4} align='center' sx={{ py: 6, color: 'text.secondary' }}>
+										No {labels.plural.toLowerCase()} yet.
+									</TableCell>
+								</TableRow>
+							) : (
+								items.map((item) => (
+									<TableRow key={item._id} hover>
+										<TableCell sx={{ fontWeight: 650 }}>{item.name}</TableCell>
+										<TableCell>
+											<Chip label={item.slug} size='small' variant='outlined' />
+										</TableCell>
+										<TableCell sx={{ color: 'text.secondary', maxWidth: 260 }}>
+											{item.description || '-'}
+										</TableCell>
+										<TableCell align='right'>
+											<IconButton
+												size='small'
+												onClick={(event) => openMenu(event, kind, item)}
+											>
+												<MoreVertIcon fontSize='small' />
+											</IconButton>
+										</TableCell>
+									</TableRow>
+								))
+							)}
+						</TableBody>
+					</Table>
+				</TableContainer>
+			</Card>
+		);
+	};
+
+	const activeLabels = getLabels(dialog.kind);
+
+	return (
+		<Box>
+			<Box sx={{ mb: 3 }}>
+				<Typography variant='h4' sx={{ fontWeight: 800 }}>
+					Course Setup
+				</Typography>
+				<Typography variant='body1' color='text.secondary' sx={{ mt: 0.75 }}>
+					Manage course categories and course types from one place.
+				</Typography>
 			</Box>
 
 			{loading ? (
@@ -124,74 +299,60 @@ export default function CategoriesPage() {
 					<CircularProgress />
 				</Box>
 			) : (
-				<TableContainer
-					component={Paper}
-					elevation={0}
-					sx={{ border: '1px solid', borderColor: 'divider' }}
+				<Box
+					sx={{
+						display: 'grid',
+						gridTemplateColumns: { xs: '1fr', xl: '1fr 1fr' },
+						gap: 2.5,
+					}}
 				>
-					<Table>
-						<TableHead>
-							<TableRow>
-								<TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-								<TableCell sx={{ fontWeight: 600 }}>Slug</TableCell>
-								<TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-								<TableCell sx={{ fontWeight: 600, width: 120 }}>
-									Actions
-								</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{categories.map((category) => (
-								<TableRow key={category._id}>
-									<TableCell>{category.name}</TableCell>
-									<TableCell>{category.slug}</TableCell>
-									<TableCell>{category.description || '-'}</TableCell>
-									<TableCell>
-										<IconButton
-											size='small'
-											onClick={() => handleOpenDialog(category)}
-											sx={{ mr: 1 }}
-										>
-											<EditIcon />
-										</IconButton>
-										<IconButton
-											size='small'
-											color='error'
-											onClick={() => handleDelete(category._id)}
-										>
-											<DeleteIcon />
-										</IconButton>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</TableContainer>
+					{renderManagerCard('category', categories, '#2563eb')}
+					{renderManagerCard('courseType', courseTypes, '#0f766e')}
+				</Box>
 			)}
 
-			<Dialog
-				open={dialogOpen}
-				onClose={handleCloseDialog}
-				maxWidth='sm'
-				fullWidth
+			<Menu
+				anchorEl={menuAnchor}
+				open={Boolean(menuAnchor)}
+				onClose={closeMenu}
+				anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+				transformOrigin={{ vertical: 'top', horizontal: 'right' }}
 			>
+				<MenuItem
+					onClick={() => {
+						if (menuTarget) openDialog(menuTarget.kind, menuTarget.item);
+						closeMenu();
+					}}
+				>
+					<EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
+					Edit
+				</MenuItem>
+				<MenuItem onClick={() => void handleDelete()} sx={{ color: 'error.main' }}>
+					<DeleteOutlineIcon fontSize='small' sx={{ mr: 1 }} />
+					Delete
+				</MenuItem>
+			</Menu>
+
+			<Dialog open={dialog.open} onClose={closeDialog} maxWidth='sm' fullWidth>
 				<DialogTitle>
-					{editingCategory ? 'Edit Category' : 'Add Category'}
+					{dialog.item ? 'Edit' : 'Add'} {activeLabels.singular}
 				</DialogTitle>
 				<DialogContent>
 					<TextField
 						label='Name'
 						value={form.name}
-						onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+						onChange={(event) =>
+							setForm((prev) => ({ ...prev, name: event.target.value }))
+						}
 						fullWidth
-						sx={{ mt: 2 }}
 						required
+						sx={{ mt: 2 }}
 					/>
 					<TextField
 						label='Description'
 						value={form.description}
-						onChange={(e) =>
-							setForm((p) => ({ ...p, description: e.target.value }))
+						onChange={(event) =>
+							setForm((prev) => ({ ...prev, description: event.target.value }))
 						}
 						fullWidth
 						multiline
@@ -200,8 +361,8 @@ export default function CategoriesPage() {
 					/>
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={handleCloseDialog}>Cancel</Button>
-					<Button variant='contained' onClick={handleSave} disabled={saving}>
+					<Button onClick={closeDialog}>Cancel</Button>
+					<Button variant='contained' onClick={() => void handleSave()} disabled={saving}>
 						{saving ? <CircularProgress size={18} /> : 'Save'}
 					</Button>
 				</DialogActions>
