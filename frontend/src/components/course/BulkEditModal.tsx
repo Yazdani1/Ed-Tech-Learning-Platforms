@@ -31,6 +31,7 @@ import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import IndeterminateCheckBoxIcon from '@mui/icons-material/IndeterminateCheckBox';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import toast from 'react-hot-toast';
+import RichTextEditor from './RichTextEditor';
 import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
 import { courseTypeService } from '../../services/courseType.service';
@@ -98,6 +99,10 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 	// ── Course selection ─────────────────────────────────────────
 	const [search, setSearch] = useState('');
 	const [statusFilter, setStatusFilter] = useState<'All' | 'Published' | 'Draft'>('All');
+	const [visibilityFilter, setVisibilityFilter] = useState<'All' | 'Public' | 'Private'>('All');
+	const [pricingFilter, setPricingFilter] = useState<'All' | 'Free' | 'Paid'>('All');
+	const [categoryFilter, setCategoryFilter] = useState('');
+	const [courseTypeFilter, setCourseTypeFilter] = useState('');
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
 	// ── Reference data ───────────────────────────────────────────
@@ -138,6 +143,10 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 	const handleClose = () => {
 		setSearch('');
 		setStatusFilter('All');
+		setVisibilityFilter('All');
+		setPricingFilter('All');
+		setCategoryFilter('');
+		setCourseTypeFilter('');
 		setSelectedIds(new Set());
 		setTab(0);
 		setForm(defaultForm());
@@ -148,10 +157,13 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 
 	// ── Filtered list ────────────────────────────────────────────
 	const filtered = courses.filter((c) => {
-		const matchSearch = c.title.toLowerCase().includes(search.toLowerCase());
-		const matchStatus =
-			statusFilter === 'All' || c.status === statusFilter;
-		return matchSearch && matchStatus;
+		if (search && !c.title.toLowerCase().includes(search.toLowerCase())) return false;
+		if (statusFilter !== 'All' && c.status !== statusFilter) return false;
+		if (visibilityFilter !== 'All' && c.visibility !== visibilityFilter) return false;
+		if (pricingFilter !== 'All' && c.pricing !== pricingFilter) return false;
+		if (categoryFilter && c.category?._id !== categoryFilter) return false;
+		if (courseTypeFilter && c.courseType?._id !== courseTypeFilter) return false;
+		return true;
 	});
 
 	const allSelected = filtered.length > 0 && filtered.every((c) => selectedIds.has(c._id));
@@ -264,8 +276,8 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 						borderColor: 'divider',
 					}}
 				>
-					{/* Search + status chips */}
-					<Box sx={{ p: 2, pb: 1.5 }}>
+					{/* Search + filters */}
+					<Box sx={{ p: 2, pb: 1.5, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
 						<TextField
 							size='small'
 							fullWidth
@@ -281,20 +293,71 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 									),
 								},
 							}}
-							sx={{ mb: 1.5 }}
 						/>
-						<Box sx={{ display: 'flex', gap: 0.75 }}>
-							{(['All', 'Published', 'Draft'] as const).map((s) => (
-								<Chip
-									key={s}
-									label={s}
-									size='small'
-									variant={statusFilter === s ? 'filled' : 'outlined'}
-									color={statusFilter === s ? 'primary' : 'default'}
-									onClick={() => setStatusFilter(s)}
-									sx={{ cursor: 'pointer' }}
-								/>
-							))}
+
+						{/* Status */}
+						<Box>
+							<Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Status</Typography>
+							<Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+								{(['All', 'Published', 'Draft'] as const).map((s) => (
+									<Chip key={s} label={s} size='small'
+										variant={statusFilter === s ? 'filled' : 'outlined'}
+										color={statusFilter === s ? 'primary' : 'default'}
+										onClick={() => setStatusFilter(s)} sx={{ cursor: 'pointer' }} />
+								))}
+							</Box>
+						</Box>
+
+						{/* Visibility */}
+						<Box>
+							<Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Visibility</Typography>
+							<Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+								{(['All', 'Public', 'Private'] as const).map((v) => (
+									<Chip key={v} label={v} size='small'
+										variant={visibilityFilter === v ? 'filled' : 'outlined'}
+										color={visibilityFilter === v ? 'primary' : 'default'}
+										onClick={() => setVisibilityFilter(v)} sx={{ cursor: 'pointer' }} />
+								))}
+							</Box>
+						</Box>
+
+						{/* Pricing */}
+						<Box>
+							<Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Pricing</Typography>
+							<Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+								{(['All', 'Free', 'Paid'] as const).map((p) => (
+									<Chip key={p} label={p} size='small'
+										variant={pricingFilter === p ? 'filled' : 'outlined'}
+										color={pricingFilter === p ? 'primary' : 'default'}
+										onClick={() => setPricingFilter(p)} sx={{ cursor: 'pointer' }} />
+								))}
+							</Box>
+						</Box>
+
+						{/* Category + Course Type selects */}
+						<Box sx={{ display: 'flex', gap: 1 }}>
+							<TextField
+								select size='small' sx={{ flex: 1 }}
+								value={categoryFilter}
+								onChange={(e) => setCategoryFilter(e.target.value)}
+								label='Category'
+							>
+								<MenuItem value=''>All</MenuItem>
+								{categories.map((c) => (
+									<MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
+								))}
+							</TextField>
+							<TextField
+								select size='small' sx={{ flex: 1 }}
+								value={courseTypeFilter}
+								onChange={(e) => setCourseTypeFilter(e.target.value)}
+								label='Course Type'
+							>
+								<MenuItem value=''>All</MenuItem>
+								{courseTypes.map((ct) => (
+									<MenuItem key={ct._id} value={ct._id}>{ct.name}</MenuItem>
+								))}
+							</TextField>
 						</Box>
 					</Box>
 
@@ -443,41 +506,43 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 								variant='outlined'
 								sx={{ borderRadius: 0.5, overflow: 'hidden' }}
 							>
-								{/* Course Type */}
+								{/* Course Type + Category */}
 								<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-									<Field label='Course Type'>
-										<TextField
-											select
-											size='small'
-											fullWidth
-											value={form.courseType}
-											onChange={(e) => set('courseType', e.target.value)}
-										>
-											<MenuItem value=''>— No change —</MenuItem>
-											<MenuItem value='__clear__'><em>Clear course type</em></MenuItem>
-											{courseTypes.map((ct) => (
-												<MenuItem key={ct._id} value={ct._id}>{ct.name}</MenuItem>
-											))}
-										</TextField>
-									</Field>
-								</Box>
-
-								{/* Category */}
-								<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-									<Field label='Category'>
-										<TextField
-											select
-											size='small'
-											fullWidth
-											value={form.category}
-											onChange={(e) => set('category', e.target.value)}
-										>
-											<MenuItem value=''>— No change —</MenuItem>
-											{categories.map((c) => (
-												<MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
-											))}
-										</TextField>
-									</Field>
+									<Box sx={{ display: 'flex', gap: 2 }}>
+										<Box sx={{ flex: 1 }}>
+											<Field label='Course Type'>
+												<TextField
+													select
+													size='small'
+													fullWidth
+													value={form.courseType}
+													onChange={(e) => set('courseType', e.target.value)}
+												>
+													<MenuItem value=''>— No change —</MenuItem>
+													<MenuItem value='__clear__'><em>Clear course type</em></MenuItem>
+													{courseTypes.map((ct) => (
+														<MenuItem key={ct._id} value={ct._id}>{ct.name}</MenuItem>
+													))}
+												</TextField>
+											</Field>
+										</Box>
+										<Box sx={{ flex: 1 }}>
+											<Field label='Category'>
+												<TextField
+													select
+													size='small'
+													fullWidth
+													value={form.category}
+													onChange={(e) => set('category', e.target.value)}
+												>
+													<MenuItem value=''>— No change —</MenuItem>
+													{categories.map((c) => (
+														<MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
+													))}
+												</TextField>
+											</Field>
+										</Box>
+									</Box>
 								</Box>
 
 								{/* Visibility + Pricing */}
@@ -661,13 +726,11 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 								</Box>
 								<Box sx={{ p: 2 }}>
 									<Field label='Description'>
-										<TextField
-											fullWidth
-											multiline
-											rows={6}
-											placeholder='Write your announcement…'
+										<RichTextEditor
 											value={ann.description}
-											onChange={(e) => setAnn((p) => ({ ...p, description: e.target.value }))}
+											onChange={(html) => setAnn((p) => ({ ...p, description: html }))}
+											placeholder='Write your announcement…'
+											minHeight={180}
 										/>
 									</Field>
 								</Box>
