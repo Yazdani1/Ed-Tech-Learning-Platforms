@@ -12,6 +12,7 @@ import subscriptionRouter from './subscription.routes';
 import subscriptionPlanConfigRouter from './subscriptionPlanConfig.routes';
 import enrollmentRouter from './enrollment.routes';
 import performanceRouter from './performance.routes';
+import qaRouter from './qa.routes';
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use('/subscriptions', subscriptionRouter);
 router.use('/subscription-plans', subscriptionPlanConfigRouter);
 router.use('/enrollments', enrollmentRouter);
 router.use('/performance', performanceRouter);
+router.use('/qa', qaRouter);
 
 export default router;

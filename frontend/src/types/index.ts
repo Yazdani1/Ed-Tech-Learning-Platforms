@@ -174,6 +174,38 @@ export interface IAnnouncement {
   updatedAt: string;
 }
 
+export interface IQuestion {
+  _id: string;
+  course: string;
+  title: string;
+  description: string;
+  postedBy: {
+    _id: string;
+    name: string;
+    avatar?: string;
+    role: UserRole;
+  };
+  upvotes: string[];
+  answerCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IAnswer {
+  _id: string;
+  question: string;
+  body: string;
+  postedBy: {
+    _id: string;
+    name: string;
+    avatar?: string;
+    role: UserRole;
+  };
+  upvotes: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
