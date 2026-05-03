@@ -449,322 +449,6 @@ export default function HomePage() {
 				</Container>
 			</Box>
 
-			<Box sx={{ bgcolor: 'background.default', overflow: 'hidden' }}>
-				<Container maxWidth='xl' sx={{ py: { xs: 7, md: 9 } }}>
-					<Grid container spacing={5} sx={{ alignItems: 'center' }}>
-						<Grid size={{ xs: 12, md: 5 }}>
-							<Chip
-								label='Complete learning ecosystem'
-								color='primary'
-								size='small'
-								sx={{ fontWeight: 800, mb: 2 }}
-							/>
-							<Typography
-								variant='h3'
-								sx={{
-									fontWeight: 900,
-									fontSize: { xs: '2rem', md: '2.8rem' },
-									lineHeight: 1.1,
-									mb: 2,
-								}}
-							>
-								A platform built for courses, classes, quizzes, and real outcomes
-							</Typography>
-							<Typography
-								variant='body1'
-								color='text.secondary'
-								sx={{ lineHeight: 1.8, mb: 3 }}
-							>
-								MedhaBee brings live learning, recorded lessons, seminars,
-								language programs, portfolio building, and community discussion
-								into one connected student experience.
-							</Typography>
-							<Box sx={{ display: 'flex', gap: 1.25, flexWrap: 'wrap' }}>
-								{['Live', 'Recorded', 'Seminar', 'Language', 'Quiz', 'Portfolio'].map(
-									(item) => (
-										<Chip
-											key={item}
-											label={item}
-											variant='outlined'
-											sx={{ fontWeight: 700 }}
-										/>
-									),
-								)}
-							</Box>
-						</Grid>
-						<Grid size={{ xs: 12, md: 7 }}>
-							<Box
-								sx={{
-									position: 'relative',
-									borderRadius: 2,
-									overflow: 'hidden',
-									border: '1px solid',
-									borderColor: 'divider',
-									background:
-										'linear-gradient(135deg, #020617 0%, #0f766e 45%, #2563eb 100%)',
-									boxShadow: '0 24px 70px rgba(15,23,42,0.22)',
-								}}
-							>
-								<ThreeLearningScene />
-								<Box
-									sx={{
-										position: 'absolute',
-										left: 18,
-										right: 18,
-										bottom: 18,
-										display: 'grid',
-										gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-										gap: 1,
-									}}
-								>
-									{['Learn', 'Practice', 'Showcase'].map((item) => (
-										<Box
-											key={item}
-											sx={{
-												bgcolor: 'rgba(255,255,255,0.12)',
-												color: 'white',
-												border: '1px solid rgba(255,255,255,0.18)',
-												backdropFilter: 'blur(8px)',
-												borderRadius: 1,
-												px: 1.5,
-												py: 1,
-											}}
-										>
-											<Typography sx={{ fontWeight: 800 }}>{item}</Typography>
-										</Box>
-									))}
-								</Box>
-							</Box>
-						</Grid>
-					</Grid>
-				</Container>
-			</Box>
-
-			{courseTypes.length > 0 && (
-			<Box sx={{ bgcolor: 'background.paper' }}>
-				<Container maxWidth='xl' sx={{ py: { xs: 6, md: 8 } }}>
-					<Box sx={{ mb: 4, maxWidth: 720 }}>
-						<Typography variant='h4' sx={{ fontWeight: 900 }}>
-							Learn what matches your ambition
-						</Typography>
-						<Typography variant='body1' color='text.secondary' sx={{ mt: 1 }}>
-							These learning paths come directly from the course types available
-							on the platform, so students see real options they can explore.
-						</Typography>
-					</Box>
-					<Grid container spacing={2.5}>
-						{courseTypes.map((courseType, index) => {
-							const gradient = CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length];
-
-							return (
-							<Grid key={courseType._id} size={{ xs: 12, sm: 6, md: 3 }}>
-								<CardActionArea
-									component={RouterLink}
-									to={`/courses?courseTypes=${encodeParam(courseType._id)}`}
-									sx={{
-										height: '100%',
-										minHeight: 210,
-										p: 2.75,
-										borderRadius: 1,
-										border: '1px solid',
-										borderColor: 'divider',
-										bgcolor: 'background.paper',
-										position: 'relative',
-										overflow: 'hidden',
-										display: 'flex',
-										alignItems: 'stretch',
-										textDecoration: 'none',
-										transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-										'&::before': {
-											content: '""',
-											position: 'absolute',
-											inset: 0,
-											background: `${gradient}, linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.58) 45%, transparent 62%)`,
-											backgroundSize: '240% 240%, 260% 100%',
-											opacity: 0.2,
-											animation:
-												'courseTypeGradient 5.5s ease-in-out infinite, courseTypeShine 5s ease-in-out infinite',
-										},
-										'&::after': {
-											content: '""',
-											position: 'absolute',
-											width: 128,
-											height: 128,
-											borderRadius: '50%',
-											right: -42,
-											top: -48,
-											background: gradient,
-											opacity: 0.18,
-											filter: 'blur(1px)',
-										},
-										'&:hover': {
-											transform: 'translateY(-4px)',
-											boxShadow: '0 16px 36px rgba(15,23,42,0.11)',
-										},
-										'&:hover .course-type-arrow': {
-											transform: 'translateX(4px)',
-											opacity: 1,
-										},
-										'@keyframes courseTypeGradient': {
-											'0%, 100%': { backgroundPosition: '0% 50%, -140% 0' },
-											'50%': { backgroundPosition: '100% 50%, 160% 0' },
-										},
-										'@keyframes courseTypeShine': {
-											'0%, 35%': { filter: 'saturate(1.05) brightness(1)' },
-											'65%': { filter: 'saturate(1.35) brightness(1.08)' },
-											'100%': { filter: 'saturate(1.05) brightness(1)' },
-										},
-									}}
-								>
-									<Box
-										sx={{
-											position: 'relative',
-											display: 'flex',
-											flexDirection: 'column',
-											width: '100%',
-										}}
-									>
-										<Chip
-											label={`Path ${index + 1}`}
-											size='small'
-											sx={{ fontWeight: 800, mb: 2, alignSelf: 'flex-start' }}
-										/>
-										<Typography
-											variant='h4'
-											sx={{
-												fontWeight: 950,
-												lineHeight: 1.05,
-												mb: 1.5,
-												background: gradient,
-												WebkitBackgroundClip: 'text',
-												WebkitTextFillColor: 'transparent',
-												overflowWrap: 'anywhere',
-											}}
-										>
-											{courseType.name}
-										</Typography>
-										<Typography
-											variant='body2'
-											color='text.secondary'
-											sx={{ lineHeight: 1.7 }}
-										>
-											{courseType.description ||
-												'Explore courses, teachers, and learning materials in this track.'}
-										</Typography>
-										<Box sx={{ flexGrow: 1 }} />
-										<Box
-											sx={{
-												display: 'flex',
-												alignItems: 'center',
-												gap: 0.75,
-												mt: 2,
-												color: 'primary.main',
-												fontWeight: 800,
-											}}
-										>
-											<Typography variant='body2' sx={{ fontWeight: 800 }}>
-												Explore courses
-											</Typography>
-											<ArrowForwardIcon
-												className='course-type-arrow'
-												sx={{
-													fontSize: 18,
-													opacity: 0.65,
-													transition: 'transform 0.25s ease, opacity 0.25s ease',
-												}}
-											/>
-										</Box>
-									</Box>
-								</CardActionArea>
-							</Grid>
-							);
-						})}
-					</Grid>
-				</Container>
-			</Box>
-			)}
-
-			<Box sx={{ bgcolor: 'grey.50' }}>
-				<Container maxWidth='xl' sx={{ py: { xs: 6, md: 8 } }}>
-					<Grid container spacing={4}>
-						<Grid size={{ xs: 12, md: 5 }}>
-							<Typography variant='h4' sx={{ fontWeight: 900, mb: 1 }}>
-								Class options for every learner
-							</Typography>
-							<Typography color='text.secondary' sx={{ lineHeight: 1.8 }}>
-								Support focused personal coaching, group momentum, and full
-								batch-based programs from the same platform.
-							</Typography>
-						</Grid>
-						<Grid size={{ xs: 12, md: 7 }}>
-							<Grid container spacing={2}>
-								{CLASS_OPTIONS.map((item, index) => (
-									<Grid key={item.title} size={{ xs: 12, sm: 6 }}>
-										<Box
-											sx={{
-												height: '100%',
-												p: 2,
-												borderRadius: 1,
-												bgcolor: 'background.paper',
-												border: '1px solid',
-												borderColor: 'divider',
-												position: 'relative',
-												overflow: 'hidden',
-												transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-												'&::before': {
-													content: '""',
-													position: 'absolute',
-													inset: 0,
-													background:
-														CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length],
-													opacity: 0.08,
-												},
-												'&:hover': {
-													transform: 'translateY(-3px)',
-													boxShadow: '0 12px 30px rgba(15,23,42,0.1)',
-												},
-											}}
-										>
-											<Box sx={{ position: 'relative', display: 'flex', gap: 1.5 }}>
-												<Box
-													sx={{
-														width: 42,
-														height: 42,
-														borderRadius: 1,
-														flexShrink: 0,
-														display: 'grid',
-														placeItems: 'center',
-														color: 'white',
-														fontWeight: 900,
-														background:
-															CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length],
-														boxShadow: '0 10px 24px rgba(15,23,42,0.14)',
-													}}
-												>
-													{index + 1}
-												</Box>
-												<Box>
-													<Typography sx={{ fontWeight: 850, mb: 0.5 }}>
-														{item.title}
-													</Typography>
-													<Typography
-														variant='body2'
-														color='text.secondary'
-														sx={{ lineHeight: 1.6 }}
-													>
-														{item.description}
-													</Typography>
-												</Box>
-											</Box>
-										</Box>
-									</Grid>
-								))}
-							</Grid>
-						</Grid>
-					</Grid>
-				</Container>
-			</Box>
-
 			{categories.length > 0 && (
 				<Box sx={{ bgcolor: 'background.paper' }}>
 					<Container maxWidth='xl' sx={{ pt: 7, pb: 6 }}>
@@ -1100,6 +784,365 @@ export default function HomePage() {
 			</Box>
 
 			{/* ── Footer ───────────────────────────────────────────────── */}
+			<Box
+				sx={{
+					position: 'relative',
+					overflow: 'hidden',
+					color: 'white',
+					background:
+						'linear-gradient(135deg, #050816 0%, #18204f 38%, #123c49 72%, #2d1b69 100%)',
+					'&::before': {
+						content: '""',
+						position: 'absolute',
+						inset: 0,
+						background:
+							'radial-gradient(circle at 18% 22%, rgba(255,209,102,0.18), transparent 28%), radial-gradient(circle at 84% 18%, rgba(255,107,107,0.13), transparent 27%), radial-gradient(circle at 72% 82%, rgba(20,184,166,0.18), transparent 30%), linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.1) 45%, transparent 62%)',
+						backgroundSize: '100% 100%, 100% 100%, 240% 100%',
+						animation: 'ecosystemBandShine 7s ease-in-out infinite',
+					},
+					'&::after': {
+						content: '""',
+						position: 'absolute',
+						left: 0,
+						right: 0,
+						bottom: 0,
+						height: 1,
+						background:
+							'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
+					},
+					'@keyframes ecosystemBandShine': {
+						'0%, 100%': { backgroundPosition: '0 0, 0 0, -140% 0' },
+						'50%': { backgroundPosition: '0 0, 0 0, 160% 0' },
+					},
+				}}
+			>
+				<Container maxWidth='xl' sx={{ position: 'relative', py: { xs: 7, md: 9 } }}>
+					<Grid container spacing={5} sx={{ alignItems: 'center' }}>
+						<Grid size={{ xs: 12, md: 5 }}>
+							<Chip
+								label='Complete learning ecosystem'
+								size='small'
+								sx={{
+									fontWeight: 800,
+									mb: 2,
+									color: 'white',
+									bgcolor: 'rgba(255,255,255,0.14)',
+									border: '1px solid rgba(255,255,255,0.22)',
+								}}
+							/>
+							<Typography
+								variant='h3'
+								sx={{
+									fontWeight: 900,
+									fontSize: { xs: '2rem', md: '2.8rem' },
+									lineHeight: 1.1,
+									mb: 2,
+									maxWidth: 640,
+								}}
+							>
+								A platform built for courses, classes, quizzes, and real outcomes
+							</Typography>
+							<Typography
+								variant='body1'
+								sx={{ lineHeight: 1.8, mb: 3, color: 'rgba(255,255,255,0.78)' }}
+							>
+								MedhaBee brings live learning, recorded lessons, seminars,
+								language programs, portfolio building, and community discussion
+								into one connected student experience.
+							</Typography>
+							<Box sx={{ display: 'flex', gap: 1.25, flexWrap: 'wrap' }}>
+								{['Live', 'Recorded', 'Seminar', 'Language', 'Quiz', 'Portfolio'].map(
+									(item) => (
+										<Chip
+											key={item}
+											label={item}
+											sx={{
+												fontWeight: 800,
+												color: 'white',
+												bgcolor: 'rgba(255,255,255,0.1)',
+												border: '1px solid rgba(255,255,255,0.18)',
+											}}
+										/>
+									),
+								)}
+							</Box>
+						</Grid>
+						<Grid size={{ xs: 12, md: 7 }}>
+							<Box
+								sx={{
+									position: 'relative',
+									minHeight: { xs: 320, md: 440 },
+									'&::before': {
+										content: '""',
+										position: 'absolute',
+										inset: { xs: 20, md: 32 },
+										borderRadius: '50%',
+										background:
+											'radial-gradient(circle, rgba(255,209,102,0.2), rgba(255,255,255,0.08) 34%, transparent 64%)',
+										filter: 'blur(6px)',
+									},
+								}}
+							>
+								<ThreeLearningScene />
+								<Box
+									sx={{
+										position: 'absolute',
+										left: 18,
+										right: 18,
+										bottom: 18,
+										display: 'grid',
+										gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+										gap: 1,
+									}}
+								>
+									{['Learn', 'Practice', 'Showcase'].map((item) => (
+										<Box
+											key={item}
+											sx={{
+												bgcolor: 'rgba(255,255,255,0.12)',
+												color: 'white',
+												border: '1px solid rgba(255,255,255,0.18)',
+												backdropFilter: 'blur(8px)',
+												borderRadius: 1,
+												px: 1.5,
+												py: 1,
+											}}
+										>
+											<Typography sx={{ fontWeight: 800 }}>{item}</Typography>
+										</Box>
+									))}
+								</Box>
+							</Box>
+						</Grid>
+					</Grid>
+				</Container>
+			</Box>
+
+			{courseTypes.length > 0 && (
+			<Box sx={{ bgcolor: 'background.paper' }}>
+				<Container maxWidth='xl' sx={{ py: { xs: 6, md: 8 } }}>
+					<Box sx={{ mb: 4, maxWidth: 720 }}>
+						<Typography variant='h4' sx={{ fontWeight: 900 }}>
+							Learn what matches your ambition
+						</Typography>
+						<Typography variant='body1' color='text.secondary' sx={{ mt: 1 }}>
+							These learning paths come directly from the course types available
+							on the platform, so students see real options they can explore.
+						</Typography>
+					</Box>
+					<Grid container spacing={2.5}>
+						{courseTypes.map((courseType, index) => {
+							const gradient = CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length];
+
+							return (
+							<Grid key={courseType._id} size={{ xs: 12, sm: 6, md: 3 }}>
+								<CardActionArea
+									component={RouterLink}
+									to={`/courses?courseTypes=${encodeParam(courseType._id)}`}
+									sx={{
+										height: '100%',
+										minHeight: 210,
+										p: 2.75,
+										borderRadius: 1,
+										border: '1px solid',
+										borderColor: 'divider',
+										bgcolor: 'background.paper',
+										position: 'relative',
+										overflow: 'hidden',
+										display: 'flex',
+										alignItems: 'stretch',
+										textDecoration: 'none',
+										transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+										'&::before': {
+											content: '""',
+											position: 'absolute',
+											inset: 0,
+											background: `${gradient}, linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.58) 45%, transparent 62%)`,
+											backgroundSize: '240% 240%, 260% 100%',
+											opacity: 0.2,
+											animation:
+												'courseTypeGradient 5.5s ease-in-out infinite, courseTypeShine 5s ease-in-out infinite',
+										},
+										'&::after': {
+											content: '""',
+											position: 'absolute',
+											width: 128,
+											height: 128,
+											borderRadius: '50%',
+											right: -42,
+											top: -48,
+											background: gradient,
+											opacity: 0.18,
+											filter: 'blur(1px)',
+										},
+										'&:hover': {
+											transform: 'translateY(-4px)',
+											boxShadow: '0 16px 36px rgba(15,23,42,0.11)',
+										},
+										'&:hover .course-type-arrow': {
+											transform: 'translateX(4px)',
+											opacity: 1,
+										},
+										'@keyframes courseTypeGradient': {
+											'0%, 100%': { backgroundPosition: '0% 50%, -140% 0' },
+											'50%': { backgroundPosition: '100% 50%, 160% 0' },
+										},
+										'@keyframes courseTypeShine': {
+											'0%, 35%': { filter: 'saturate(1.05) brightness(1)' },
+											'65%': { filter: 'saturate(1.35) brightness(1.08)' },
+											'100%': { filter: 'saturate(1.05) brightness(1)' },
+										},
+									}}
+								>
+									<Box
+										sx={{
+											position: 'relative',
+											display: 'flex',
+											flexDirection: 'column',
+											width: '100%',
+										}}
+									>
+										<Chip
+											label={`Path ${index + 1}`}
+											size='small'
+											sx={{ fontWeight: 800, mb: 2, alignSelf: 'flex-start' }}
+										/>
+										<Typography
+											variant='h4'
+											sx={{
+												fontWeight: 950,
+												lineHeight: 1.05,
+												mb: 1.5,
+												background: gradient,
+												WebkitBackgroundClip: 'text',
+												WebkitTextFillColor: 'transparent',
+												overflowWrap: 'anywhere',
+											}}
+										>
+											{courseType.name}
+										</Typography>
+										<Typography
+											variant='body2'
+											color='text.secondary'
+											sx={{ lineHeight: 1.7 }}
+										>
+											{courseType.description ||
+												'Explore courses, teachers, and learning materials in this track.'}
+										</Typography>
+										<Box sx={{ flexGrow: 1 }} />
+										<Box
+											sx={{
+												display: 'flex',
+												alignItems: 'center',
+												gap: 0.75,
+												mt: 2,
+												color: 'primary.main',
+												fontWeight: 800,
+											}}
+										>
+											<Typography variant='body2' sx={{ fontWeight: 800 }}>
+												Explore courses
+											</Typography>
+											<ArrowForwardIcon
+												className='course-type-arrow'
+												sx={{
+													fontSize: 18,
+													opacity: 0.65,
+													transition: 'transform 0.25s ease, opacity 0.25s ease',
+												}}
+											/>
+										</Box>
+									</Box>
+								</CardActionArea>
+							</Grid>
+							);
+						})}
+					</Grid>
+				</Container>
+			</Box>
+			)}
+
+			<Box sx={{ bgcolor: 'grey.50' }}>
+				<Container maxWidth='xl' sx={{ py: { xs: 6, md: 8 } }}>
+					<Grid container spacing={4}>
+						<Grid size={{ xs: 12, md: 5 }}>
+							<Typography variant='h4' sx={{ fontWeight: 900, mb: 1 }}>
+								Class options for every learner
+							</Typography>
+							<Typography color='text.secondary' sx={{ lineHeight: 1.8 }}>
+								Support focused personal coaching, group momentum, and full
+								batch-based programs from the same platform.
+							</Typography>
+						</Grid>
+						<Grid size={{ xs: 12, md: 7 }}>
+							<Grid container spacing={2}>
+								{CLASS_OPTIONS.map((item, index) => (
+									<Grid key={item.title} size={{ xs: 12, sm: 6 }}>
+										<Box
+											sx={{
+												height: '100%',
+												p: 2,
+												borderRadius: 1,
+												bgcolor: 'background.paper',
+												border: '1px solid',
+												borderColor: 'divider',
+												position: 'relative',
+												overflow: 'hidden',
+												transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+												'&::before': {
+													content: '""',
+													position: 'absolute',
+													inset: 0,
+													background:
+														CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length],
+													opacity: 0.08,
+												},
+												'&:hover': {
+													transform: 'translateY(-3px)',
+													boxShadow: '0 12px 30px rgba(15,23,42,0.1)',
+												},
+											}}
+										>
+											<Box sx={{ position: 'relative', display: 'flex', gap: 1.5 }}>
+												<Box
+													sx={{
+														width: 42,
+														height: 42,
+														borderRadius: 1,
+														flexShrink: 0,
+														display: 'grid',
+														placeItems: 'center',
+														color: 'white',
+														fontWeight: 900,
+														background:
+															CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length],
+														boxShadow: '0 10px 24px rgba(15,23,42,0.14)',
+													}}
+												>
+													{index + 1}
+												</Box>
+												<Box>
+													<Typography sx={{ fontWeight: 850, mb: 0.5 }}>
+														{item.title}
+													</Typography>
+													<Typography
+														variant='body2'
+														color='text.secondary'
+														sx={{ lineHeight: 1.6 }}
+													>
+														{item.description}
+													</Typography>
+												</Box>
+											</Box>
+										</Box>
+									</Grid>
+								))}
+							</Grid>
+						</Grid>
+					</Grid>
+				</Container>
+			</Box>
+
 			<Box sx={{ bgcolor: 'background.paper' }}>
 				<Container maxWidth='xl' sx={{ py: { xs: 6, md: 8 } }}>
 					<Box
