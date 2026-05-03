@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import {
+	Avatar,
 	Box,
 	Card,
 	Chip,
 	Container,
+	Divider,
 	IconButton,
+	Popover,
 	Typography,
 	CircularProgress,
 	Tooltip,
@@ -18,10 +21,14 @@ import type { ITeacher } from '../../types/index';
 
 const TeacherCard = ({ teacher, staggeredOffset }: { teacher: ITeacher; staggeredOffset: number }) => {
 	const hasSocials = teacher.socialLinks && Object.values(teacher.socialLinks).some((v) => !!v);
+	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
 	return (
+		<>
 		<Card
 			elevation={0}
+			onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
+			onMouseLeave={() => setAnchorEl(null)}
 			sx={{
 				width: 200,
 				height: 200,
@@ -135,6 +142,133 @@ const TeacherCard = ({ teacher, staggeredOffset }: { teacher: ITeacher; staggere
 				)}
 			</Box>
 		</Card>
+
+		{/* ── Hover Popover ───────────────────────────────────── */}
+		<Popover
+			open={Boolean(anchorEl)}
+			anchorEl={anchorEl}
+			onClose={() => setAnchorEl(null)}
+			anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
+			transformOrigin={{ vertical: 'center', horizontal: 'left' }}
+			disableRestoreFocus
+			sx={{ pointerEvents: 'none', ml: 1.5 }}
+			slotProps={{
+				paper: {
+					sx: {
+						width: 380,
+						borderRadius: 3,
+						overflow: 'hidden',
+						boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+					},
+				},
+			}}
+		>
+			{/* Hero banner */}
+			<Box
+				sx={{
+					height: 160,
+					background: 'linear-gradient(135deg, #0f172a 0%, #7c3aed 60%, #0ea5e9 100%)',
+					position: 'relative',
+				}}
+			>
+				<Avatar
+					src={teacher.profileImage}
+					alt={teacher.name}
+					sx={{
+						width: 90,
+						height: 90,
+						position: 'absolute',
+						bottom: -45,
+						left: 24,
+						border: '4px solid white',
+						boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+					}}
+				/>
+			</Box>
+
+			{/* Content */}
+			<Box sx={{ pt: 7, px: 3, pb: 3 }}>
+				<Typography variant='h6' sx={{ fontWeight: 800, mb: 0.25, lineHeight: 1.2 }}>
+					{teacher.name}
+				</Typography>
+
+				{teacher.expertise && teacher.expertise.length > 0 && (
+					<Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2, mt: 1 }}>
+						{teacher.expertise.map((exp) => (
+							<Chip
+								key={exp}
+								label={exp}
+								size='small'
+								sx={{
+									fontSize: '0.68rem',
+									fontWeight: 700,
+									bgcolor: 'rgba(124,58,237,0.1)',
+									color: '#7c3aed',
+								}}
+							/>
+						))}
+					</Box>
+				)}
+
+				{teacher.bio && (
+					<>
+						<Divider sx={{ mb: 2 }} />
+						<Typography
+							variant='body2'
+							color='text.secondary'
+							sx={{ lineHeight: 1.7 }}
+						>
+							{teacher.bio}
+						</Typography>
+					</>
+				)}
+
+				{hasSocials && (
+					<Box sx={{ display: 'flex', gap: 1, mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+						{teacher.socialLinks?.twitter && (
+							<Tooltip title='Twitter'>
+								<IconButton
+									size='small'
+									component='a'
+									href={teacher.socialLinks.twitter}
+									target='_blank'
+									sx={{ color: '#1DA1F2', bgcolor: 'rgba(29,161,242,0.1)', '&:hover': { bgcolor: 'rgba(29,161,242,0.2)' } }}
+								>
+									<TwitterIcon fontSize='small' />
+								</IconButton>
+							</Tooltip>
+						)}
+						{teacher.socialLinks?.linkedin && (
+							<Tooltip title='LinkedIn'>
+								<IconButton
+									size='small'
+									component='a'
+									href={teacher.socialLinks.linkedin}
+									target='_blank'
+									sx={{ color: '#0A66C2', bgcolor: 'rgba(10,102,194,0.1)', '&:hover': { bgcolor: 'rgba(10,102,194,0.2)' } }}
+								>
+									<LinkedInIcon fontSize='small' />
+								</IconButton>
+							</Tooltip>
+						)}
+						{teacher.socialLinks?.website && (
+							<Tooltip title='Website'>
+								<IconButton
+									size='small'
+									component='a'
+									href={teacher.socialLinks.website}
+									target='_blank'
+									sx={{ color: '#10b981', bgcolor: 'rgba(16,185,129,0.1)', '&:hover': { bgcolor: 'rgba(16,185,129,0.2)' } }}
+								>
+									<LanguageIcon fontSize='small' />
+								</IconButton>
+							</Tooltip>
+						)}
+					</Box>
+				)}
+			</Box>
+		</Popover>
+		</>
 	);
 };
 
