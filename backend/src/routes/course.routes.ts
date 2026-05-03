@@ -6,6 +6,7 @@ import {
 	updateCourse,
 	updateCourseStatus,
 	deleteCourse,
+	bulkUpdateCourses,
 } from '../controllers/course.controller';
 import {
 	addSection,
@@ -24,6 +25,7 @@ const router = Router();
 const adminRoles = ['Super Admin', 'Admin'] as const;
 
 router.get('/', getCourses);
+router.patch('/bulk', protect, authorize(...adminRoles), bulkUpdateCourses);
 router.get('/:id', getCourseById);
 
 router.post(

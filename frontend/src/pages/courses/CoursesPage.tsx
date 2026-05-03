@@ -23,10 +23,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import TuneIcon from '@mui/icons-material/Tune';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import CourseCard from '../../components/ui/CourseCard';
+import BulkEditModal from '../../components/course/BulkEditModal';
 import type { ICourse } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
 
@@ -40,6 +42,7 @@ export default function CoursesPage() {
 	const [loading, setLoading] = useState(true);
 	const [removeTarget, setRemoveTarget] = useState<ICourse | null>(null);
 	const [removing, setRemoving] = useState(false);
+	const [bulkOpen, setBulkOpen] = useState(false);
 	const abortRef = useRef<AbortController | null>(null);
 
 	const isAdmin = user && (ADMIN_ROLES as readonly string[]).includes(user.role);
@@ -99,13 +102,23 @@ export default function CoursesPage() {
 					{isStudent ? 'My Courses' : 'Courses'}
 				</Typography>
 				{isAdmin && (
-					<Button
-						variant='contained'
-						startIcon={<AddIcon />}
-						onClick={() => navigate('/admin/courses/create')}
-					>
-						Create Course
-					</Button>
+					<Box sx={{ display: 'flex', gap: 1 }}>
+						<Button
+							variant='outlined'
+							startIcon={<TuneIcon />}
+							onClick={() => setBulkOpen(true)}
+							disabled={courses.length === 0}
+						>
+							Bulk Edit
+						</Button>
+						<Button
+							variant='contained'
+							startIcon={<AddIcon />}
+							onClick={() => navigate('/admin/courses/create')}
+						>
+							Create Course
+						</Button>
+					</Box>
 				)}
 			</Box>
 
@@ -218,6 +231,26 @@ export default function CoursesPage() {
 						))}
 					</Paper>
 				)
+			)}
+
+			{/* Bulk edit modal (admin only) */}
+			{isAdmin && (
+				<BulkEditModal
+					open={bulkOpen}
+					courses={courses}
+					onClose={() => setBulkOpen(false)}
+					onSuccess={() => {
+						// Re-fetch courses after bulk update
+						const load = courseService.getAll(search ? { search } : {});
+						load.then((res) => {
+							const data = res.data;
+							const valid = Array.isArray(data)
+								? data.filter((c): c is ICourse => Boolean(c && (c as ICourse)._id))
+								: [];
+							setCourses(valid);
+						}).catch(() => {});
+					}}
+				/>
 			)}
 
 			{/* Remove confirmation dialog */}

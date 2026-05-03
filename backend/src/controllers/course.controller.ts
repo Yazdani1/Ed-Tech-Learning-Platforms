@@ -199,3 +199,109 @@ export const deleteCourse = asyncHandler(
 	},
 );
 
+export const bulkUpdateCourses = asyncHandler(
+	async (req: Request, res: Response) => {
+		const body = req.body as {
+			courseIds: string[];
+			updates?: {
+				courseType?: string | null;
+				category?: string;
+				startDate?: string | null;
+				endDate?: string | null;
+				visibility?: string;
+				pricing?: string;
+				price?: number | null;
+				includedInSubscription?: boolean;
+				allowedSubscriptionPlans?: SubscriptionPlan[];
+				teachers?: string[];
+			};
+			announcement?: { title: string; description: string };
+		};
+
+		const { courseIds, updates, announcement } = body;
+
+		if (!Array.isArray(courseIds) || courseIds.length === 0)
+			throw new AppError('courseIds must be a non-empty array', 400);
+
+		if (!updates && !announcement)
+			throw new AppError('Provide at least one field to update or an announcement', 400);
+
+		const invalidId = courseIds.find((id) => !Types.ObjectId.isValid(id));
+		if (invalidId) throw new AppError(`Invalid course ID: ${invalidId}`, 400);
+
+		const objectIds = courseIds.map((id) => new Types.ObjectId(id));
+
+		// Verify all courses exist
+		const found = await Course.countDocuments({ _id: { $in: objectIds } });
+		if (found !== courseIds.length)
+			throw new AppError('One or more courses were not found', 404);
+
+		// ── Field updates ──────────────────────────────────────────────
+		if (updates && Object.keys(updates).length > 0) {
+			const $set: Record<string, unknown> = {};
+
+			if ('courseType' in updates)
+				$set.courseType = updates.courseType ? new Types.ObjectId(updates.courseType) : null;
+			if ('category' in updates) {
+				if (!Types.ObjectId.isValid(updates.category!))
+					throw new AppError('Invalid category ID', 400);
+				$set.category = new Types.ObjectId(updates.category!);
+			}
+			if ('startDate' in updates)
+				$set.startDate = updates.startDate ? new Date(updates.startDate) : null;
+			if ('endDate' in updates)
+				$set.endDate = updates.endDate ? new Date(updates.endDate) : null;
+			if ('visibility' in updates) {
+				if (!['Public', 'Private'].includes(updates.visibility!))
+					throw new AppError('Visibility must be Public or Private', 400);
+				$set.visibility = updates.visibility;
+			}
+			if ('pricing' in updates) {
+				if (!['Free', 'Paid'].includes(updates.pricing!))
+					throw new AppError('Pricing must be Free or Paid', 400);
+				$set.pricing = updates.pricing;
+				if (updates.pricing === 'Paid' && updates.price == null)
+					throw new AppError('Price is required when pricing is Paid', 400);
+			}
+			if ('price' in updates) $set.price = updates.price;
+			if ('includedInSubscription' in updates)
+				$set.includedInSubscription = updates.includedInSubscription;
+			if ('allowedSubscriptionPlans' in updates)
+				$set.allowedSubscriptionPlans = updates.allowedSubscriptionPlans;
+			if ('teachers' in updates) {
+				const invalidTeacher = (updates.teachers ?? []).find(
+					(id) => !Types.ObjectId.isValid(id),
+				);
+				if (invalidTeacher) throw new AppError(`Invalid teacher ID: ${invalidTeacher}`, 400);
+				$set.teachers = (updates.teachers ?? []).map((id) => new Types.ObjectId(id));
+			}
+
+			if (Object.keys($set).length > 0)
+				await Course.updateMany({ _id: { $in: objectIds } }, { $set });
+		}
+
+		// ── Bulk announcement ──────────────────────────────────────────
+		if (announcement) {
+			const { title, description } = announcement;
+			if (!title?.trim()) throw new AppError('Announcement title is required', 400);
+			if (!description?.trim()) throw new AppError('Announcement description is required', 400);
+
+			const { Announcement } = await import('../models/Announcement.model');
+			await Announcement.insertMany(
+				objectIds.map((courseId) => ({
+					course: courseId,
+					title: title.trim(),
+					description: description.trim(),
+					postedBy: req.user._id,
+				})),
+			);
+		}
+
+		res.status(200).json({
+			success: true,
+			message: `Successfully updated ${courseIds.length} course${courseIds.length !== 1 ? 's' : ''}`,
+			updatedCount: courseIds.length,
+		});
+	},
+);
+

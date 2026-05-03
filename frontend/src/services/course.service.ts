@@ -16,6 +16,23 @@ export const courseService = {
 
   delete: (id: string) => api.delete(`/courses/${id}`),
 
+  bulkUpdate: (payload: {
+    courseIds: string[];
+    updates?: {
+      courseType?: string | null;
+      category?: string;
+      startDate?: string | null;
+      endDate?: string | null;
+      visibility?: string;
+      pricing?: string;
+      price?: number | null;
+      includedInSubscription?: boolean;
+      allowedSubscriptionPlans?: string[];
+      teachers?: string[];
+    };
+    announcement?: { title: string; description: string };
+  }) => api.patch('/courses/bulk', payload),
+
   // Enrollment
   getEnrolled: () => api.get<ICourse[]>('/enrollments'),
   checkEnrollment: (id: string) => api.get<{ isEnrolled: boolean }>(`/enrollments/${id}/check`),
