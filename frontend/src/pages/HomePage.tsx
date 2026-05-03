@@ -25,6 +25,7 @@ import PublicNavbar from '../components/layout/PublicNavbar';
 import CourseFilterSidebar from '../components/course/CourseFilterSidebar';
 import AppPagination from '../components/common/AppPagination';
 import TeacherMarqueeSection from '../components/teacher/TeacherMarqueeSection';
+import ThreeLearningScene from '../components/home/ThreeLearningScene';
 import { useAuth } from '../context/useAuth';
 import { encodeParam, decodeParam } from '../utils/urlParams';
 import type {
@@ -70,6 +71,65 @@ const CATEGORY_GRADIENTS = [
 
 const HOME_COURSES_PAGE_SIZE = 8;
 const HOME_COURSE_SKELETONS = Array.from({ length: HOME_COURSES_PAGE_SIZE });
+
+const LEARNING_FORMATS = [
+	{
+		title: 'Live Courses',
+		label: 'Interactive',
+		description:
+			'Join scheduled live classes with teachers, questions, feedback, and guided study flow.',
+	},
+	{
+		title: 'Recorded Courses',
+		label: 'Self-paced',
+		description:
+			'Learn any time with structured lessons, preview lectures, resources, and progress continuity.',
+	},
+	{
+		title: 'Seminars',
+		label: 'Focused',
+		description:
+			'Attend topic-based sessions for exam prep, career guidance, product demos, and expert talks.',
+	},
+	{
+		title: 'Language Courses',
+		label: 'Multi-skill',
+		description:
+			'Practice speaking, listening, grammar, vocabulary, and writing with guided course tracks.',
+	},
+];
+
+const CLASS_OPTIONS = [
+	'One-to-one mentoring',
+	'Small group classes',
+	'Batch-based live programs',
+	'Teacher-led assignments',
+	'Class recordings after sessions',
+	'Discussion support between lessons',
+];
+
+const PLATFORM_TOOLS = [
+	{
+		title: 'MCQ Quiz Engine',
+		description:
+			'Practice topic-wise quizzes, timed tests, answer review, and performance tracking.',
+	},
+	{
+		title: 'Portfolio Website Builder',
+		description:
+			'Students can create a personal portfolio to showcase projects, products, skills, and certificates.',
+	},
+	{
+		title: 'Discussion Forum',
+		description:
+			'Ask questions, answer classmates, follow course discussions, and learn as a community.',
+	},
+	{
+		title: 'Learning Materials',
+		description:
+			'Access study files, announcements, preview videos, and teacher-provided resources in one place.',
+	},
+];
 
 export default function HomePage() {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -395,6 +455,198 @@ export default function HomePage() {
 							</Box>
 						))}
 					</Box>
+				</Container>
+			</Box>
+
+			<Box sx={{ bgcolor: 'background.default', overflow: 'hidden' }}>
+				<Container maxWidth='xl' sx={{ py: { xs: 7, md: 9 } }}>
+					<Grid container spacing={5} sx={{ alignItems: 'center' }}>
+						<Grid size={{ xs: 12, md: 5 }}>
+							<Chip
+								label='Complete learning ecosystem'
+								color='primary'
+								size='small'
+								sx={{ fontWeight: 800, mb: 2 }}
+							/>
+							<Typography
+								variant='h3'
+								sx={{
+									fontWeight: 900,
+									fontSize: { xs: '2rem', md: '2.8rem' },
+									lineHeight: 1.1,
+									mb: 2,
+								}}
+							>
+								A platform built for courses, classes, quizzes, and real outcomes
+							</Typography>
+							<Typography
+								variant='body1'
+								color='text.secondary'
+								sx={{ lineHeight: 1.8, mb: 3 }}
+							>
+								MedhaBee brings live learning, recorded lessons, seminars,
+								language programs, portfolio building, and community discussion
+								into one connected student experience.
+							</Typography>
+							<Box sx={{ display: 'flex', gap: 1.25, flexWrap: 'wrap' }}>
+								{['Live', 'Recorded', 'Seminar', 'Language', 'Quiz', 'Portfolio'].map(
+									(item) => (
+										<Chip
+											key={item}
+											label={item}
+											variant='outlined'
+											sx={{ fontWeight: 700 }}
+										/>
+									),
+								)}
+							</Box>
+						</Grid>
+						<Grid size={{ xs: 12, md: 7 }}>
+							<Box
+								sx={{
+									position: 'relative',
+									borderRadius: 2,
+									overflow: 'hidden',
+									border: '1px solid',
+									borderColor: 'divider',
+									background:
+										'linear-gradient(135deg, #020617 0%, #0f766e 45%, #2563eb 100%)',
+									boxShadow: '0 24px 70px rgba(15,23,42,0.22)',
+								}}
+							>
+								<ThreeLearningScene />
+								<Box
+									sx={{
+										position: 'absolute',
+										left: 18,
+										right: 18,
+										bottom: 18,
+										display: 'grid',
+										gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+										gap: 1,
+									}}
+								>
+									{['Learn', 'Practice', 'Showcase'].map((item) => (
+										<Box
+											key={item}
+											sx={{
+												bgcolor: 'rgba(255,255,255,0.12)',
+												color: 'white',
+												border: '1px solid rgba(255,255,255,0.18)',
+												backdropFilter: 'blur(8px)',
+												borderRadius: 1,
+												px: 1.5,
+												py: 1,
+											}}
+										>
+											<Typography sx={{ fontWeight: 800 }}>{item}</Typography>
+										</Box>
+									))}
+								</Box>
+							</Box>
+						</Grid>
+					</Grid>
+				</Container>
+			</Box>
+
+			<Box sx={{ bgcolor: 'background.paper' }}>
+				<Container maxWidth='xl' sx={{ py: { xs: 6, md: 8 } }}>
+					<Box sx={{ mb: 4, maxWidth: 720 }}>
+						<Typography variant='h4' sx={{ fontWeight: 900 }}>
+							Learn in the format that fits your goal
+						</Typography>
+						<Typography variant='body1' color='text.secondary' sx={{ mt: 1 }}>
+							From structured courses to focused seminars, learners can choose
+							the path that matches their schedule and study style.
+						</Typography>
+					</Box>
+					<Grid container spacing={2.5}>
+						{LEARNING_FORMATS.map((item, index) => (
+							<Grid key={item.title} size={{ xs: 12, sm: 6, md: 3 }}>
+								<Box
+									sx={{
+										height: '100%',
+										p: 2.5,
+										borderRadius: 1,
+										border: '1px solid',
+										borderColor: 'divider',
+										bgcolor: 'background.paper',
+										position: 'relative',
+										overflow: 'hidden',
+										transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+										'&::before': {
+											content: '""',
+											position: 'absolute',
+											inset: 0,
+											background: CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length],
+											opacity: 0.09,
+										},
+										'&:hover': {
+											transform: 'translateY(-4px)',
+											boxShadow: '0 16px 36px rgba(15,23,42,0.11)',
+										},
+									}}
+								>
+									<Box sx={{ position: 'relative' }}>
+										<Chip label={item.label} size='small' sx={{ fontWeight: 800, mb: 2 }} />
+										<Typography variant='h6' sx={{ fontWeight: 850, mb: 1 }}>
+											{item.title}
+										</Typography>
+										<Typography variant='body2' color='text.secondary' sx={{ lineHeight: 1.7 }}>
+											{item.description}
+										</Typography>
+									</Box>
+								</Box>
+							</Grid>
+						))}
+					</Grid>
+				</Container>
+			</Box>
+
+			<Box sx={{ bgcolor: 'grey.50' }}>
+				<Container maxWidth='xl' sx={{ py: { xs: 6, md: 8 } }}>
+					<Grid container spacing={4}>
+						<Grid size={{ xs: 12, md: 5 }}>
+							<Typography variant='h4' sx={{ fontWeight: 900, mb: 1 }}>
+								Class options for every learner
+							</Typography>
+							<Typography color='text.secondary' sx={{ lineHeight: 1.8 }}>
+								Support focused personal coaching, group momentum, and full
+								batch-based programs from the same platform.
+							</Typography>
+						</Grid>
+						<Grid size={{ xs: 12, md: 7 }}>
+							<Grid container spacing={1.5}>
+								{CLASS_OPTIONS.map((item) => (
+									<Grid key={item} size={{ xs: 12, sm: 6 }}>
+										<Box
+											sx={{
+												display: 'flex',
+												alignItems: 'center',
+												gap: 1.25,
+												p: 1.75,
+												borderRadius: 1,
+												bgcolor: 'background.paper',
+												border: '1px solid',
+												borderColor: 'divider',
+											}}
+										>
+											<Box
+												sx={{
+													width: 10,
+													height: 10,
+													borderRadius: '50%',
+													bgcolor: 'primary.main',
+													flexShrink: 0,
+												}}
+											/>
+											<Typography sx={{ fontWeight: 700 }}>{item}</Typography>
+										</Box>
+									</Grid>
+								))}
+							</Grid>
+						</Grid>
+					</Grid>
 				</Container>
 			</Box>
 
@@ -733,6 +985,87 @@ export default function HomePage() {
 			</Box>
 
 			{/* ── Footer ───────────────────────────────────────────────── */}
+			<Box sx={{ bgcolor: 'background.paper' }}>
+				<Container maxWidth='xl' sx={{ py: { xs: 6, md: 8 } }}>
+					<Box
+						sx={{
+							display: 'flex',
+							justifyContent: 'space-between',
+							alignItems: { xs: 'flex-start', md: 'flex-end' },
+							gap: 2,
+							mb: 4,
+							flexDirection: { xs: 'column', md: 'row' },
+						}}
+					>
+						<Box sx={{ maxWidth: 760 }}>
+							<Typography variant='h4' sx={{ fontWeight: 900 }}>
+								More than watching lessons
+							</Typography>
+							<Typography
+								variant='body1'
+								color='text.secondary'
+								sx={{ mt: 1, lineHeight: 1.7 }}
+							>
+								Students can practice, discuss, collect resources, and build a
+								portfolio that shows what they can actually do.
+							</Typography>
+						</Box>
+						<Button
+							component={RouterLink}
+							to='/auth/register'
+							variant='contained'
+							sx={{ fontWeight: 800 }}
+						>
+							Start learning
+						</Button>
+					</Box>
+
+					<Grid container spacing={2.5}>
+						{PLATFORM_TOOLS.map((item, index) => (
+							<Grid key={item.title} size={{ xs: 12, sm: 6, md: 3 }}>
+								<Box
+									sx={{
+										height: '100%',
+										p: 2.5,
+										borderRadius: 1,
+										border: '1px solid',
+										borderColor: 'divider',
+										bgcolor: index % 2 === 0 ? 'grey.50' : 'background.paper',
+										display: 'flex',
+										flexDirection: 'column',
+										gap: 1.5,
+										transition: 'transform 0.25s ease, border-color 0.25s ease',
+										'&:hover': {
+											transform: 'translateY(-4px)',
+											borderColor: 'primary.light',
+										},
+									}}
+								>
+									<Box
+										sx={{
+											width: 44,
+											height: 44,
+											borderRadius: 1,
+											background: CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length],
+										}}
+									/>
+									<Typography variant='h6' sx={{ fontWeight: 850 }}>
+										{item.title}
+									</Typography>
+									<Typography
+										variant='body2'
+										color='text.secondary'
+										sx={{ lineHeight: 1.7 }}
+									>
+										{item.description}
+									</Typography>
+								</Box>
+							</Grid>
+						))}
+					</Grid>
+				</Container>
+			</Box>
+
 			<TeacherMarqueeSection teachers={teachers} />
 
 			<Box sx={{ bgcolor: 'grey.900', color: 'grey.400', py: 5 }}>
