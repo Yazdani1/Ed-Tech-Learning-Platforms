@@ -63,6 +63,14 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		.populate('teachers', 'name profileImage')
 		.sort({ createdAt: -1 });
 
+	const shouldPaginate = Boolean(page || limit);
+
+	if (!shouldPaginate) {
+		const courses = await query;
+		res.status(200).json({ success: true, data: courses, total: courses.length });
+		return;
+	}
+
 	const currentPage = Math.max(Number(page) || 1, 1);
 	const perPage = Math.min(Math.max(Number(limit) || 8, 1), 100);
 	const total = await Course.countDocuments(filter);
