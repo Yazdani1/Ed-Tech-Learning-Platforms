@@ -1,6 +1,7 @@
 import {
 	Box,
 	Checkbox,
+	Chip,
 	FormControlLabel,
 	FormGroup,
 	InputAdornment,
@@ -58,9 +59,46 @@ export default function CourseFilterSidebar({
 }: Props) {
 	return (
 		<Box>
-			<Paper variant='outlined' sx={{ borderRadius: 0.5, overflow: 'hidden' }}>
-				{/* Search */}
-				<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+			{/* The Paper itself scrolls independently — sections stay visible without scrolling the whole page */}
+			<Paper
+				variant='outlined'
+				sx={{
+					borderRadius: 0.5,
+					overflow: 'hidden',
+					maxHeight: 'calc(100vh - 120px)',
+					overflowY: 'auto',
+					display: 'flex',
+					flexDirection: 'column',
+				}}
+			>
+				{/* Header */}
+				<Box
+					sx={{
+						px: 2,
+						py: 1.25,
+						borderBottom: '1px solid',
+						borderColor: 'divider',
+						flexShrink: 0,
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'space-between',
+						bgcolor: 'grey.50',
+					}}
+				>
+					<Typography variant='subtitle2' sx={{ fontWeight: 700 }}>Filters</Typography>
+					{activeFilterCount > 0 && (
+						<Chip
+							label={`${activeFilterCount} active`}
+							size='small'
+							color='primary'
+							onDelete={onClearAll}
+							sx={{ fontWeight: 700, fontSize: '0.7rem' }}
+						/>
+					)}
+				</Box>
+
+				{/* Search — pinned, never scrolls away */}
+				<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
 					<Section label='Search'>
 						<TextField
 							size='small'
@@ -83,89 +121,83 @@ export default function CourseFilterSidebar({
 
 				{/* Course Type */}
 				{courseTypes.length > 0 && (
-					<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+					<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
 						<Section label='Course Type'>
-							<FormGroup>
-								{courseTypes.map((ct) => (
-									<FormControlLabel
-										key={ct._id}
-										control={
-											<Checkbox
-												size='small'
-												checked={selectedCourseTypes.includes(ct._id)}
-												onChange={() => onToggleCourseType(ct._id)}
-											/>
-										}
-										label={<Typography variant='body2'>{ct.name}</Typography>}
-										sx={{ mr: 0 }}
-									/>
-								))}
-							</FormGroup>
+							<Box sx={{ maxHeight: 200, overflowY: 'auto', pr: 0.5 }}>
+								<FormGroup>
+									{courseTypes.map((ct) => (
+										<FormControlLabel
+											key={ct._id}
+											control={
+												<Checkbox
+													size='small'
+													checked={selectedCourseTypes.includes(ct._id)}
+													onChange={() => onToggleCourseType(ct._id)}
+												/>
+											}
+											label={<Typography variant='body2'>{ct.name}</Typography>}
+											sx={{ mr: 0 }}
+										/>
+									))}
+								</FormGroup>
+							</Box>
 						</Section>
 					</Box>
 				)}
 
 				{/* Category */}
 				{categories.length > 0 && (
-					<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+					<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
 						<Section label='Category'>
-							<FormGroup>
-								{categories.map((cat) => (
-									<FormControlLabel
-										key={cat._id}
-										control={
-											<Checkbox
-												size='small'
-												checked={selectedCategories.includes(cat._id)}
-												onChange={() => onToggleCategory(cat._id)}
-											/>
-										}
-										label={<Typography variant='body2'>{cat.name}</Typography>}
-										sx={{ mr: 0 }}
-									/>
-								))}
-							</FormGroup>
+							<Box sx={{ maxHeight: 200, overflowY: 'auto', pr: 0.5 }}>
+								<FormGroup>
+									{categories.map((cat) => (
+										<FormControlLabel
+											key={cat._id}
+											control={
+												<Checkbox
+													size='small'
+													checked={selectedCategories.includes(cat._id)}
+													onChange={() => onToggleCategory(cat._id)}
+												/>
+											}
+											label={<Typography variant='body2'>{cat.name}</Typography>}
+											sx={{ mr: 0 }}
+										/>
+									))}
+								</FormGroup>
+							</Box>
 						</Section>
 					</Box>
 				)}
 
 				{/* Subscription */}
-				<Box sx={{ p: 2 }}>
+				<Box sx={{ p: 2, flexShrink: 0 }}>
 					<Section label='Subscription'>
 						<Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 1 }}>
 							Show courses available under these plans
 						</Typography>
-						<FormGroup>
-							{PLANS.map((plan) => (
-								<FormControlLabel
-									key={plan}
-									control={
-										<Checkbox
-											size='small'
-											checked={selectedPlans.includes(plan)}
-											onChange={() => onTogglePlan(plan)}
-										/>
-									}
-									label={<Typography variant='body2'>{plan}</Typography>}
-									sx={{ mr: 0 }}
-								/>
-							))}
-						</FormGroup>
+						<Box sx={{ maxHeight: 200, overflowY: 'auto', pr: 0.5 }}>
+							<FormGroup>
+								{PLANS.map((plan) => (
+									<FormControlLabel
+										key={plan}
+										control={
+											<Checkbox
+												size='small'
+												checked={selectedPlans.includes(plan)}
+												onChange={() => onTogglePlan(plan)}
+											/>
+										}
+										label={<Typography variant='body2'>{plan}</Typography>}
+										sx={{ mr: 0 }}
+									/>
+								))}
+							</FormGroup>
+						</Box>
 					</Section>
 				</Box>
 			</Paper>
-
-			{activeFilterCount > 0 && (
-				<Box onClick={onClearAll} sx={{ mt: 1.5, textAlign: 'center', cursor: 'pointer' }}>
-					<Typography
-						variant='caption'
-						color='primary'
-						sx={{ fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
-					>
-						Clear all filters
-					</Typography>
-				</Box>
-			)}
 		</Box>
 	);
 }
