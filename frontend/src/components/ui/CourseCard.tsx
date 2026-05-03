@@ -54,8 +54,8 @@ export default function CourseCard({ course, basePath = '/admin/courses', append
 					onClick={() => navigate(`${basePath}/${course._id}${appendPath}`)}
 					sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
 				>
-					{/* Cover image */}
-					<Box sx={{ overflow: 'hidden', flexShrink: 0 }}>
+					{/* Cover image + course type badge */}
+					<Box sx={{ overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
 						<Box
 							component='img'
 							src={course.coverImage ?? 'https://placehold.co/400x200?text=No+Image'}
@@ -69,6 +69,40 @@ export default function CourseCard({ course, basePath = '/admin/courses', append
 								'&:hover': { transform: 'scale(1.04)' },
 							}}
 						/>
+
+						{course.courseType && (
+							<Box
+								sx={{
+									position: 'absolute',
+									top: 10,
+									left: 10,
+									px: 1.25,
+									py: 0.5,
+									borderRadius: 1,
+									background: 'linear-gradient(90deg, #0f766e, #7c3aed, #0ea5e9, #0f766e)',
+									backgroundSize: '250% auto',
+									animation: 'ctSlide 3s linear infinite',
+									'@keyframes ctSlide': {
+										'0%': { backgroundPosition: '0% center' },
+										'100%': { backgroundPosition: '250% center' },
+									},
+									boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+								}}
+							>
+								<Typography
+									sx={{
+										fontSize: '0.65rem',
+										fontWeight: 800,
+										color: 'white',
+										letterSpacing: 0.75,
+										lineHeight: 1,
+										textTransform: 'uppercase',
+									}}
+								>
+									{course.courseType.name}
+								</Typography>
+							</Box>
+						)}
 					</Box>
 
 					{/* Card body */}

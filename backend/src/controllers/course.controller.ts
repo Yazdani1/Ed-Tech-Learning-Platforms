@@ -20,7 +20,7 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 
 	const courses = await Course.find(filter)
 		.populate('category', 'name slug')
-		.populate('courseType', 'name slug')
+		.populate('courseType', 'name slug description')
 		.populate('teachers', 'name profileImage')
 		.sort({ createdAt: -1 });
 
@@ -31,7 +31,7 @@ export const getCourseById = asyncHandler(
 	async (req: Request, res: Response) => {
 		const course = await Course.findById(req.params.id)
 			.populate('category', 'name slug')
-			.populate('courseType', 'name slug')
+			.populate('courseType', 'name slug description')
 			.populate('teachers', 'name bio profileImage expertise socialLinks userId')
 			.populate({ path: 'sections', populate: { path: 'lectures' } });
 
