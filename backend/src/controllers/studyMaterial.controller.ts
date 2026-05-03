@@ -49,7 +49,7 @@ export const deleteStudyMaterial = asyncHandler(async (req: Request, res: Respon
   if (!material) throw new AppError('Study material not found', 404);
 
   const isOwner = material.postedBy.toString() === (req.user._id as Types.ObjectId).toString();
-  const isAdmin = req.user.role === 'Super Admin' || req.user.role === 'Admin';
+  const isAdmin = req.user.role === 'Super Admin' || req.user.role === 'Admin' || req.user.role === 'Moderator';
 
   if (!isOwner && !isAdmin) throw new AppError('Not authorized to delete this study material', 403);
 

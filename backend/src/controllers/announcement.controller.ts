@@ -48,7 +48,7 @@ export const deleteAnnouncement = asyncHandler(async (req: Request, res: Respons
   if (!announcement) throw new AppError('Announcement not found', 404);
 
   const isOwner = announcement.postedBy.toString() === (req.user._id as Types.ObjectId).toString();
-  const isAdmin = req.user.role === 'Super Admin' || req.user.role === 'Admin';
+  const isAdmin = req.user.role === 'Super Admin' || req.user.role === 'Admin' || req.user.role === 'Moderator';
 
   if (!isOwner && !isAdmin) throw new AppError('Not authorized to delete this announcement', 403);
 

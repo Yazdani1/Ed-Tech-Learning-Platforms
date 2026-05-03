@@ -139,22 +139,22 @@ export default function StudentCourseLearningPage() {
 	}, [courseId]);
 
 	useEffect(() => {
-		if (activeNav === 'announcements' && courseId) {
+		if (courseId) {
 			announcementService
 				.getByCourse(courseId)
 				.then((r) => setAnnouncements(r.data ?? []))
 				.catch(() => {});
 		}
-	}, [activeNav, courseId]);
+	}, [courseId]);
 
 	useEffect(() => {
-		if (activeNav === 'study_materials' && courseId) {
+		if (courseId) {
 			studyMaterialService
 				.getByCourse(courseId)
 				.then((r) => setStudyMaterials(r.data ?? []))
 				.catch(() => {});
 		}
-	}, [activeNav, courseId]);
+	}, [courseId]);
 
 	const isTeacherAssigned =
 		user?.role === 'Teacher' &&
@@ -572,6 +572,16 @@ export default function StudentCourseLearningPage() {
 										label='Sections'
 										value={String(course.sections?.length ?? 0)}
 									/>
+									<StatItem
+										icon={<CampaignOutlinedIcon />}
+										label='Announcements'
+										value={String(announcements.length)}
+									/>
+									<StatItem
+										icon={<MenuBookOutlinedIcon />}
+										label='Study Materials'
+										value={String(studyMaterials.length)}
+									/>
 								</Box>
 
 								<Divider sx={{ mb: 4 }} />
@@ -925,7 +935,8 @@ export default function StudentCourseLearningPage() {
 											const canDelete =
 												user?._id === ann.postedBy._id ||
 												user?.role === 'Admin' ||
-												user?.role === 'Super Admin';
+												user?.role === 'Super Admin' ||
+												user?.role === 'Moderator';
 											return (
 												<Paper
 													key={ann._id}
@@ -1123,7 +1134,8 @@ export default function StudentCourseLearningPage() {
 											const canDelete =
 												user?._id === mat.postedBy._id ||
 												user?.role === 'Admin' ||
-												user?.role === 'Super Admin';
+												user?.role === 'Super Admin' ||
+												user?.role === 'Moderator';
 											return (
 												<Paper
 													key={mat._id}
