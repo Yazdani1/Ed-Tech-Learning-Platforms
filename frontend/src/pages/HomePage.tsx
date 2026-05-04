@@ -11,9 +11,6 @@ import {
 	Typography,
 } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
-import PeopleIcon from '@mui/icons-material/People';
-import PlayCircleIcon from '@mui/icons-material/PlayCircle';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
 import CategoryIcon from '@mui/icons-material/Category';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { courseService } from '../services/course.service';
@@ -35,29 +32,6 @@ import type {
 	IPaginationMeta,
 	SubscriptionPlan,
 } from '../types/index';
-
-const STATS = [
-	{
-		icon: <MenuBookIcon sx={{ color: 'primary.main' }} />,
-		value: '100+',
-		label: 'Courses',
-	},
-	{
-		icon: <PeopleIcon sx={{ color: 'primary.main' }} />,
-		value: '50+',
-		label: 'Expert Teachers',
-	},
-	{
-		icon: <PlayCircleIcon sx={{ color: 'primary.main' }} />,
-		value: '1,000+',
-		label: 'Students Enrolled',
-	},
-	{
-		icon: <SchoolIcon sx={{ color: 'primary.main' }} />,
-		value: '95%',
-		label: 'Satisfaction Rate',
-	},
-];
 
 const CATEGORY_GRADIENTS = [
 	'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
@@ -412,46 +386,6 @@ export default function HomePage() {
 			</Box>
 
 			{/* ── Stats bar ────────────────────────────────────────────── */}
-			<Box
-				sx={{
-					bgcolor: 'grey.50',
-					borderBottom: '1px solid',
-					borderColor: 'divider',
-				}}
-			>
-				<Container maxWidth='lg'>
-					<Box
-						sx={{
-							display: 'flex',
-							gap: { xs: 3, md: 6 },
-							py: 3,
-							flexWrap: 'wrap',
-							justifyContent: { xs: 'center', md: 'flex-start' },
-						}}
-					>
-						{STATS.map(({ icon, value, label }) => (
-							<Box
-								key={label}
-								sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
-							>
-								{icon}
-								<Box>
-									<Typography
-										variant='subtitle1'
-										sx={{ fontWeight: 800, lineHeight: 1.2 }}
-									>
-										{value}
-									</Typography>
-									<Typography variant='caption' color='text.secondary'>
-										{label}
-									</Typography>
-								</Box>
-							</Box>
-						))}
-					</Box>
-				</Container>
-			</Box>
-
 			{categories.length > 0 && (
 				<Box sx={{ bgcolor: 'background.paper' }}>
 					<Container maxWidth='xl' sx={{ pt: 7, pb: 6 }}>
