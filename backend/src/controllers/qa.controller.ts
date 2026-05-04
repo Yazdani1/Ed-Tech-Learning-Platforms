@@ -159,7 +159,7 @@ export const getCourseQuestions = asyncHandler(async (req: Request, res: Respons
 });
 
 export const getAllCourseQuestions = asyncHandler(async (_req: Request, res: Response) => {
-  const questions = await Question.find({})
+  const questions = await Question.find({ isResolved: { $ne: true } })
     .populate('postedBy', 'name avatar role')
     .populate('course', 'title subtitle status coverImage')
     .sort({ createdAt: -1 });

@@ -35,7 +35,13 @@ export default function AdminCourseQAPage() {
 		setLoading(true);
 		qaService
 			.getAllCourseQuestions()
-			.then((res) => setGroups(res.data ?? []))
+			.then((res) =>
+				setGroups(
+					(res.data ?? []).filter((group) =>
+						group.questions.some((question) => !question.isResolved),
+					),
+				),
+			)
 			.catch(() => {})
 			.finally(() => setLoading(false));
 	}, []);
