@@ -19,6 +19,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
 import CategoryIcon from '@mui/icons-material/Category';
 import PeopleIcon from '@mui/icons-material/People';
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -54,6 +55,12 @@ const navItems = [
 		label: 'nav.courses',
 		icon: <SchoolIcon />,
 		path: '/admin/courses',
+		roles: ['Super Admin', 'Admin', 'Moderator'],
+	},
+	{
+		label: 'All Course Q & A',
+		icon: <QuestionAnswerIcon />,
+		path: '/admin/course-qa',
 		roles: ['Super Admin', 'Admin', 'Moderator'],
 	},
 	{

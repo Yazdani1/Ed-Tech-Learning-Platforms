@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
 	Accordion,
 	AccordionDetails,
@@ -103,10 +103,14 @@ const NAV_ITEMS: { key: NavSection; label: string; icon: React.ReactNode }[] = [
 export default function StudentCourseLearningPage() {
 	const { courseId } = useParams<{ courseId: string }>();
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
 	const { user } = useAuth();
 	const [course, setCourse] = useState<ICourse | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [activeNav, setActiveNav] = useState<NavSection>('video_lectures');
+	const initialQuestionId = searchParams.get('questionId');
+	const [activeNav, setActiveNav] = useState<NavSection>(
+		initialQuestionId ? 'qa' : 'video_lectures',
+	);
 	const [activeLecture, setActiveLecture] = useState<ILecture | null>(null);
 	const [enrolledCount, setEnrolledCount] = useState<number | null>(null);
 	const [qaCount, setQaCount] = useState<number>(0);
@@ -158,6 +162,10 @@ export default function StudentCourseLearningPage() {
 			.then((r) => setQaCount(r.data?.length ?? 0))
 			.catch(() => {});
 	}, [courseId]);
+
+	useEffect(() => {
+		if (initialQuestionId) setActiveNav('qa');
+	}, [initialQuestionId]);
 
 	useEffect(() => {
 		if (courseId) {
@@ -578,6 +586,7 @@ export default function StudentCourseLearningPage() {
 										canPost={canPostQA}
 										userId={user?._id ?? ''}
 										userRole={user?.role ?? ''}
+										initialQuestionId={initialQuestionId}
 									/>
 								</Box>
 							</>
@@ -1475,6 +1484,7 @@ export default function StudentCourseLearningPage() {
 								canPost={canPostQA}
 								userId={user?._id ?? ''}
 								userRole={user?.role ?? ''}
+								initialQuestionId={initialQuestionId}
 							/>
 						</Box>
 					)}

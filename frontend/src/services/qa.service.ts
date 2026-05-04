@@ -1,7 +1,10 @@
 import api from './api';
-import type { IQuestion, IAnswer } from '../types/index';
+import type { IQuestion, IAnswer, ICourseQuestionGroup } from '../types/index';
 
 export const qaService = {
+  getAllCourseQuestions: () =>
+    api.get<ICourseQuestionGroup[]>('/qa/admin/course-questions'),
+
   getCourseQuestions: (courseId: string) =>
     api.get<IQuestion[]>(`/qa/questions/course/${courseId}`),
 

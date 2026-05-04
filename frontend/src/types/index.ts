@@ -216,6 +216,17 @@ export interface IAnswer {
   updatedAt: string;
 }
 
+export interface ICourseQuestionGroup {
+  course: {
+    _id: string;
+    title: string;
+    subtitle?: string;
+    status?: CourseStatus;
+    coverImage?: string;
+  };
+  questions: IQuestion[];
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;

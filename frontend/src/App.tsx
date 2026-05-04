@@ -21,6 +21,7 @@ const UsersPage = lazy(() => import('./pages/users/UsersPage'));
 const SubscriptionsPage = lazy(() => import('./pages/subscriptions/SubscriptionsPage'));
 const AdminEnrollmentsPage = lazy(() => import('./pages/enrollments/AdminEnrollmentsPage'));
 const PerformancePage = lazy(() => import('./pages/performance/PerformancePage'));
+const AdminCourseQAPage = lazy(() => import('./pages/qa/AdminCourseQAPage'));
 const StudentCourseLearningPage = lazy(() => import('./pages/courses/StudentCourseLearningPage'));
 const TeacherCoursesPage = lazy(() => import('./pages/courses/TeacherCoursesPage'));
 const PricingPage = lazy(() => import('./pages/pricing/PricingPage'));
@@ -63,6 +64,7 @@ export default function App() {
 					<Route path='/admin/users' element={<UsersPage />} />
 					<Route path='/admin/subscriptions' element={<SubscriptionsPage />} />
 					<Route path='/admin/enrollments/:courseId' element={<AdminEnrollmentsPage />} />
+					<Route path='/admin/course-qa' element={<AdminCourseQAPage />} />
 					<Route path='/admin/performance' element={<PerformancePage />} />
 					<Route path='/admin/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
 				</Route>

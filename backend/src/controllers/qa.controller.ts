@@ -158,6 +158,51 @@ export const getCourseQuestions = asyncHandler(async (req: Request, res: Respons
   res.status(200).json({ success: true, data: result, total: result.length });
 });
 
+export const getAllCourseQuestions = asyncHandler(async (_req: Request, res: Response) => {
+  const questions = await Question.find({})
+    .populate('postedBy', 'name avatar role')
+    .populate('course', 'title subtitle status coverImage')
+    .sort({ createdAt: -1 });
+
+  const questionIds = questions.map((q) => q._id as Types.ObjectId);
+  const statsMap = await getQuestionAnswerStats(questionIds);
+  const groupMap = new Map<string, { course: unknown; questions: object[] }>();
+
+  questions.forEach((q) => {
+    const course = q.course as unknown as { _id: Types.ObjectId };
+    if (!course?._id) return;
+
+    const stats = statsMap.get((q._id as Types.ObjectId).toString()) ?? {
+      answerCount: 0,
+      staffAnswerCount: 0,
+    };
+    const courseId = course._id.toString();
+
+    if (!groupMap.has(courseId)) {
+      groupMap.set(courseId, { course, questions: [] });
+    }
+
+    const questionObject = q.toObject() as unknown as Record<string, unknown>;
+    questionObject.course = courseId;
+
+    groupMap.get(courseId)!.questions.push({
+      ...questionObject,
+      isResolved: Boolean(q.isResolved),
+      answerCount: stats.answerCount,
+      staffAnswerCount: stats.staffAnswerCount,
+      hasStaffAnswer: stats.staffAnswerCount > 0,
+    });
+  });
+
+  const groups = Array.from(groupMap.values()).sort((a, b) => {
+    const courseA = a.course as { title?: string };
+    const courseB = b.course as { title?: string };
+    return (courseA.title ?? '').localeCompare(courseB.title ?? '');
+  });
+
+  res.status(200).json({ success: true, data: groups, total: groups.length });
+});
+
 export const getQuestionWithAnswers = asyncHandler(async (req: Request, res: Response) => {
   const question = await Question.findById(req.params.id)
     .populate('postedBy', 'name avatar role');

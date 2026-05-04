@@ -35,6 +35,7 @@ interface CourseQASectionProps {
 	canPost: boolean;
 	userId: string;
 	userRole: string;
+	initialQuestionId?: string | null;
 }
 
 type QuestionFilter = 'all' | 'needsStaffAnswer' | 'unresolved' | 'resolved';
@@ -46,6 +47,7 @@ export default function CourseQASection({
 	canPost,
 	userId,
 	userRole,
+	initialQuestionId,
 }: CourseQASectionProps) {
 	const [questions, setQuestions] = useState<IQuestion[]>([]);
 	const [qaLoading, setQaLoading] = useState(true);
@@ -85,6 +87,19 @@ export default function CourseQASection({
 			.catch(() => {})
 			.finally(() => setQaLoading(false));
 	}, [courseId]);
+
+	useEffect(() => {
+		if (!initialQuestionId) return;
+
+		setQaDetailLoading(true);
+		qaService
+			.getQuestion(initialQuestionId)
+			.then((res) => {
+				if (res.data) setQaDetail(res.data);
+			})
+			.catch(() => {})
+			.finally(() => setQaDetailLoading(false));
+	}, [initialQuestionId]);
 
 	const isAdminOrMod = ['Admin', 'Super Admin', 'Moderator'].includes(userRole);
 	const canDelete = (ownerId: string) => userId === ownerId || isAdminOrMod;
