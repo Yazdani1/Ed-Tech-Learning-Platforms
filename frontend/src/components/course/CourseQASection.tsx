@@ -37,7 +37,7 @@ interface CourseQASectionProps {
 	userRole: string;
 }
 
-type QuestionFilter = 'all' | 'needsStaffAnswer' | 'resolved';
+type QuestionFilter = 'all' | 'needsStaffAnswer' | 'unresolved' | 'resolved';
 
 const STAFF_ROLES = ['Admin', 'Super Admin', 'Moderator', 'Teacher'];
 
@@ -92,11 +92,13 @@ export default function CourseQASection({
 	const canResolve = (question: IQuestion) =>
 		isAdminOrMod || userRole === 'Teacher' || userId === question.postedBy._id;
 	const isStaffAnswer = (answer: IAnswer) => STAFF_ROLES.includes(answer.postedBy.role);
-	const questionNeedsStaffAnswer = (question: IQuestion) => !question.hasStaffAnswer;
+	const questionNeedsStaffAnswer = (question: IQuestion) =>
+		!question.isResolved && !question.hasStaffAnswer;
 	const filteredQuestions = useMemo(
 		() =>
 			questions.filter((question) => {
 				if (questionFilter === 'resolved') return question.isResolved;
+				if (questionFilter === 'unresolved') return !question.isResolved;
 				if (questionFilter === 'needsStaffAnswer') {
 					return questionNeedsStaffAnswer(question);
 				}
@@ -109,6 +111,7 @@ export default function CourseQASection({
 		() => ({
 			all: questions.length,
 			needsStaffAnswer: questions.filter(questionNeedsStaffAnswer).length,
+			unresolved: questions.filter((question) => !question.isResolved).length,
 			resolved: questions.filter((question) => question.isResolved).length,
 		}),
 		[questions],
@@ -495,7 +498,7 @@ export default function CourseQASection({
 							variant={qaDetail.question.isResolved ? 'filled' : 'outlined'}
 							sx={{ fontWeight: 700 }}
 						/>
-						{!qaDetail.question.hasStaffAnswer && (
+						{questionNeedsStaffAnswer(qaDetail.question) && (
 							<Chip
 								icon={<ErrorOutlinedIcon />}
 								label='Needs staff answer'
@@ -988,6 +991,11 @@ export default function CourseQASection({
 							count: questionFilterCounts.needsStaffAnswer,
 						},
 						{
+							key: 'unresolved' as const,
+							label: 'Not resolved yet',
+							count: questionFilterCounts.unresolved,
+						},
+						{
 							key: 'resolved' as const,
 							label: 'Already resolved',
 							count: questionFilterCounts.resolved,
@@ -1187,7 +1195,7 @@ export default function CourseQASection({
 															variant={q.isResolved ? 'filled' : 'outlined'}
 															sx={{ height: 22, fontSize: '0.68rem', fontWeight: 700 }}
 														/>
-														{!q.hasStaffAnswer && (
+														{questionNeedsStaffAnswer(q) && (
 															<Chip
 																icon={<ErrorOutlinedIcon />}
 																label='Needs staff answer'
