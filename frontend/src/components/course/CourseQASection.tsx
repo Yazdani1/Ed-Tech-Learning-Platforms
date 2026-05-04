@@ -73,7 +73,7 @@ export default function CourseQASection({
 	const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
 	const [editingAnswerBody, setEditingAnswerBody] = useState('');
 	const [answerUpdating, setAnswerUpdating] = useState(false);
-	const [questionFilter, setQuestionFilter] = useState<QuestionFilter>('all');
+	const [questionFilter, setQuestionFilter] = useState<QuestionFilter>('unresolved');
 	const [resolvingQuestionId, setResolvingQuestionId] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -92,15 +92,16 @@ export default function CourseQASection({
 	const canResolve = (question: IQuestion) =>
 		isAdminOrMod || userRole === 'Teacher' || userId === question.postedBy._id;
 	const isStaffAnswer = (answer: IAnswer) => STAFF_ROLES.includes(answer.postedBy.role);
+	const questionHasNoStaffAnswer = (question: IQuestion) => !question.hasStaffAnswer;
 	const questionNeedsStaffAnswer = (question: IQuestion) =>
-		!question.isResolved && !question.hasStaffAnswer;
+		!question.isResolved && questionHasNoStaffAnswer(question);
 	const filteredQuestions = useMemo(
 		() =>
 			questions.filter((question) => {
 				if (questionFilter === 'resolved') return question.isResolved;
 				if (questionFilter === 'unresolved') return !question.isResolved;
 				if (questionFilter === 'needsStaffAnswer') {
-					return questionNeedsStaffAnswer(question);
+					return questionHasNoStaffAnswer(question);
 				}
 				return true;
 			}),
@@ -110,7 +111,7 @@ export default function CourseQASection({
 	const questionFilterCounts = useMemo(
 		() => ({
 			all: questions.length,
-			needsStaffAnswer: questions.filter(questionNeedsStaffAnswer).length,
+			needsStaffAnswer: questions.filter(questionHasNoStaffAnswer).length,
 			unresolved: questions.filter((question) => !question.isResolved).length,
 			resolved: questions.filter((question) => question.isResolved).length,
 		}),
@@ -984,16 +985,16 @@ export default function CourseQASection({
 			{!qaLoading && questions.length > 0 && (
 				<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
 					{[
+						{
+							key: 'unresolved' as const,
+							label: 'Not resolved yet',
+							count: questionFilterCounts.unresolved,
+						},
 						{ key: 'all' as const, label: 'All questions', count: questionFilterCounts.all },
 						{
 							key: 'needsStaffAnswer' as const,
 							label: 'Not answered yet',
 							count: questionFilterCounts.needsStaffAnswer,
-						},
-						{
-							key: 'unresolved' as const,
-							label: 'Not resolved yet',
-							count: questionFilterCounts.unresolved,
 						},
 						{
 							key: 'resolved' as const,
