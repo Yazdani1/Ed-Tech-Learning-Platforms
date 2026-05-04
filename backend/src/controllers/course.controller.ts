@@ -61,6 +61,14 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		.populate('category', 'name slug')
 		.populate('courseType', 'name slug description')
 		.populate('teachers', 'name profileImage')
+		.populate({
+			path: 'sections',
+			select: 'lectures order',
+			populate: {
+				path: 'lectures',
+				select: 'title videoUrl isPreview order',
+			},
+		})
 		.sort({ createdAt: -1 });
 
 	const shouldPaginate = Boolean(page || limit);

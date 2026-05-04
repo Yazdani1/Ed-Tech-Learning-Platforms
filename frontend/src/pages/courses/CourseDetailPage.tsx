@@ -962,7 +962,7 @@ export default function CourseDetailPage() {
 											}}
 										/>
 									) : introVideoId ? (
-										/* Thumbnail with play button overlay */
+										/* Cover image with play button overlay */
 										<Box
 											sx={{
 												width: '100%',
@@ -974,7 +974,10 @@ export default function CourseDetailPage() {
 										>
 											<Box
 												component='img'
-												src={`https://img.youtube.com/vi/${introVideoId}/hqdefault.jpg`}
+												src={
+													course.coverImage ??
+													`https://img.youtube.com/vi/${introVideoId}/hqdefault.jpg`
+												}
 												alt='Course Introduction'
 												sx={{
 													width: '100%',

@@ -8,9 +8,11 @@ import {
 	Skeleton,
 	Typography,
 } from '@mui/material';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
+import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import VerifiedIcon from '@mui/icons-material/Verified';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ICourse } from '../../types/index';
 
@@ -19,6 +21,41 @@ const PLAN_COLORS: Record<string, string> = {
 	Premium: '#7c3aed',
 	Gold: '#d97706',
 	'Quiz Only': '#0891b2',
+};
+
+const getYouTubeId = (url: string) => {
+	const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+	return m ? m[1] : null;
+};
+
+const getIntroVideoUrl = (course: ICourse) => {
+	for (const section of course.sections ?? []) {
+		const lectures = Array.isArray(section.lectures) ? section.lectures : [];
+		for (const lecture of lectures) {
+			if (
+				lecture.title.toLowerCase().includes('course introduction') &&
+				lecture.videoUrl
+			) {
+				return lecture.videoUrl;
+			}
+		}
+	}
+
+	for (const section of course.sections ?? []) {
+		const lectures = Array.isArray(section.lectures) ? section.lectures : [];
+		for (const lecture of lectures) {
+			if (lecture.isPreview && lecture.videoUrl) return lecture.videoUrl;
+		}
+	}
+
+	for (const section of course.sections ?? []) {
+		const lectures = Array.isArray(section.lectures) ? section.lectures : [];
+		for (const lecture of lectures) {
+			if (lecture.videoUrl) return lecture.videoUrl;
+		}
+	}
+
+	return null;
 };
 
 interface CourseCardProps {
@@ -63,10 +100,6 @@ export function CourseCardSkeleton({ showAction = false }: { showAction?: boolea
 				<Box sx={{ flexGrow: 1, minHeight: 34 }} />
 
 				<Skeleton animation='wave' variant='text' sx={{ fontSize: '1.1rem', width: 64 }} />
-				<Box sx={{ display: 'flex', gap: 0.5, mt: 0.75, flexWrap: 'wrap' }}>
-					<Skeleton animation='wave' variant='rounded' width={64} height={22} />
-					<Skeleton animation='wave' variant='rounded' width={82} height={22} />
-				</Box>
 				{showAction && (
 					<Skeleton
 						animation='wave'
@@ -88,6 +121,7 @@ export default function CourseCard({
 }: CourseCardProps) {
 	const navigate = useNavigate();
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+	const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const teachers = course.teachers?.map((t) => t.name).join(', ') || '';
 	const priceLabel =
@@ -97,6 +131,25 @@ export default function CourseCard({
 				? `$${course.price.toFixed(2)}`
 				: 'Paid';
 	const learnPath = learningPath ?? `/student/courses/${course._id}/learn`;
+	const coursePath = `${basePath}/${course._id}${appendPath}`;
+	const introVideoUrl = getIntroVideoUrl(course);
+	const introVideoId = introVideoUrl ? getYouTubeId(introVideoUrl) : null;
+	const hasSubscriptionPlans =
+		course.includedInSubscription && course.allowedSubscriptionPlans.length > 0;
+
+	const openPreview = (element: HTMLElement) => {
+		if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+		setAnchorEl(element);
+	};
+
+	const closePreview = () => {
+		closeTimerRef.current = setTimeout(() => setAnchorEl(null), 120);
+	};
+
+	const goToCourse = () => {
+		setAnchorEl(null);
+		navigate(coursePath);
+	};
 
 	return (
 		<>
@@ -110,17 +163,18 @@ export default function CourseCard({
 					display: 'flex',
 					flexDirection: 'column',
 					cursor: 'pointer',
+					overflow: 'hidden',
 					transition: 'box-shadow 0.25s ease, transform 0.25s ease',
 					'&:hover': {
-						boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
-						transform: 'translateY(-2px)',
+						boxShadow: '0 12px 34px rgba(15,23,42,0.16)',
+						transform: 'translateY(-3px)',
 					},
 				}}
-				onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
-				onMouseLeave={() => setAnchorEl(null)}
+				onMouseEnter={(e) => openPreview(e.currentTarget)}
+				onMouseLeave={closePreview}
 			>
 				<CardActionArea
-					onClick={() => navigate(`${basePath}/${course._id}${appendPath}`)}
+					onClick={() => navigate(coursePath)}
 					sx={{
 						flexGrow: 1,
 						display: 'flex',
@@ -128,14 +182,10 @@ export default function CourseCard({
 						alignItems: 'stretch',
 					}}
 				>
-					{/* Cover image + course type badge */}
 					<Box sx={{ overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
 						<Box
 							component='img'
-							src={
-								course.coverImage ??
-								'https://placehold.co/400x200?text=No+Image'
-							}
+							src={course.coverImage ?? 'https://placehold.co/400x200?text=No+Image'}
 							alt={course.title}
 							sx={{
 								width: '100%',
@@ -161,32 +211,10 @@ export default function CourseCard({
 									backgroundSize: '250% auto',
 									color: 'white',
 									transform: 'translateZ(0)',
-									animation: 'typeShimmer 3s linear infinite, colorBlinkGlow 2s ease-in-out infinite',
-									'@keyframes typeShimmer': {
-										'0%': { backgroundPosition: '0% center' },
-										'100%': { backgroundPosition: '250% center' },
-									},
-									'@keyframes colorBlinkGlow': {
-										'0%, 100%': { 
-											transform: 'scale(1)',
-											filter: 'brightness(1)',
-											boxShadow: '0 2px 10px rgba(0,0,0,0.3)' 
-										},
-										'50%': { 
-											transform: 'scale(1.06)',
-											filter: 'brightness(1.4)',
-											boxShadow: '0 4px 18px rgba(255, 255, 255, 0.5)' 
-										},
-									},
+									boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
 								}}
 							>
-								<Box
-									sx={{
-										display: 'flex',
-										alignItems: 'center',
-										gap: 0.5,
-									}}
-								>
+								<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
 									<VerifiedIcon sx={{ fontSize: 13, color: 'white' }} />
 									<Typography
 										variant='caption'
@@ -206,7 +234,6 @@ export default function CourseCard({
 						)}
 					</Box>
 
-					{/* Card body */}
 					<Box
 						sx={{
 							p: 1.5,
@@ -215,12 +242,11 @@ export default function CourseCard({
 							flexGrow: 1,
 						}}
 					>
-						{/* Title â€” 2-line clamp */}
 						<Typography
 							variant='body2'
 							sx={{
-								fontWeight: 700,
-								fontSize: '0.925rem',
+								fontWeight: 800,
+								fontSize: '0.95rem',
 								lineHeight: 1.35,
 								mb: 0.5,
 								display: '-webkit-box',
@@ -232,7 +258,6 @@ export default function CourseCard({
 							{course.title}
 						</Typography>
 
-						{/* Teacher */}
 						{teachers && (
 							<Typography
 								variant='caption'
@@ -243,78 +268,27 @@ export default function CourseCard({
 							</Typography>
 						)}
 
-						{/* Spacer */}
 						<Box sx={{ flexGrow: 1 }} />
 
-						{/* Price */}
-						<Typography
-							variant='body2'
-							sx={{
-								fontWeight: 700,
-								fontSize: '1rem',
-								color:
-									course.pricing === 'Free' ? 'success.main' : 'text.primary',
-								mb: course.includedInSubscription ? 1 : 0,
-							}}
-						>
-							{priceLabel}
-						</Typography>
+						<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+							<Typography
+								variant='body2'
+								sx={{
+									fontWeight: 800,
+									fontSize: '1rem',
+									color: course.pricing === 'Free' ? 'success.main' : 'text.primary',
+								}}
+							>
+								{priceLabel}
+							</Typography>
+							<Chip
+								label={course.category?.name ?? 'Course'}
+								size='small'
+								variant='outlined'
+								sx={{ maxWidth: 118, fontWeight: 700 }}
+							/>
+						</Box>
 
-						{/* Subscription plan badges */}
-						{course.includedInSubscription &&
-							course.allowedSubscriptionPlans.length > 0 && (
-								<Box>
-									<Box
-										sx={{
-											display: 'flex',
-											flexWrap: 'wrap',
-											gap: 0.5,
-											alignItems: 'center',
-										}}
-									>
-										{course.allowedSubscriptionPlans.map((plan) => (
-											<Box
-												key={plan}
-												sx={{
-													display: 'inline-flex',
-													alignItems: 'center',
-													gap: 0.4,
-													px: 0.75,
-													py: 0.3,
-													borderRadius: 0.75,
-													bgcolor: PLAN_COLORS[plan] ?? '#7c3aed',
-													color: 'white',
-												}}
-											>
-												<CardMembershipIcon sx={{ fontSize: 11 }} />
-												<Typography
-													variant='caption'
-													sx={{
-														fontSize: '0.68rem',
-														fontWeight: 700,
-														lineHeight: 1,
-													}}
-												>
-													{plan}
-												</Typography>
-											</Box>
-										))}
-										<Typography
-											variant='caption'
-											sx={{
-												fontSize: '0.7rem',
-												fontWeight: 600,
-												background: 'linear-gradient(90deg, #7c3aed, #2563eb)',
-												WebkitBackgroundClip: 'text',
-												WebkitTextFillColor: 'transparent',
-												lineHeight: 1,
-											}}
-										>
-											included free
-										</Typography>
-									</Box>
-								</Box>
-							)}
 						{isEnrolled && (
 							<Button
 								fullWidth
@@ -330,7 +304,7 @@ export default function CourseCard({
 									mt: 1.25,
 									textTransform: 'none',
 									fontWeight: 700,
-									borderRadius: 2,
+									borderRadius: 1,
 								}}
 							>
 								Go to this course
@@ -340,7 +314,6 @@ export default function CourseCard({
 				</CardActionArea>
 			</Card>
 
-			{/* Hover popover preview */}
 			<Popover
 				open={Boolean(anchorEl)}
 				anchorEl={anchorEl}
@@ -349,39 +322,200 @@ export default function CourseCard({
 				transformOrigin={{ vertical: 'center', horizontal: 'left' }}
 				disableRestoreFocus
 				sx={{ pointerEvents: 'none', ml: 1 }}
+				slotProps={{
+					paper: {
+						onMouseEnter: () => {
+							if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+						},
+						onMouseLeave: closePreview,
+						sx: {
+							pointerEvents: 'auto',
+							borderRadius: 1,
+							overflow: 'hidden',
+							boxShadow: '0 22px 60px rgba(15,23,42,0.22)',
+							border: '1px solid',
+							borderColor: 'divider',
+						},
+					},
+				}}
 			>
-				<Box sx={{ p: 2.5, maxWidth: 300 }}>
-					<Typography variant='subtitle1' sx={{ fontWeight: 700, mb: 0.5 }}>
-						{course.title}
-					</Typography>
-					{course.category && (
-						<Chip label={course.category.name} size='small' sx={{ mb: 1 }} />
-					)}
-					{course.description && (
-						<Typography variant='body2' color='text.secondary' sx={{ mb: 1.5 }}>
-							{course.description.slice(0, 140)}
-							{course.description.length > 140 ? 'â€¦' : ''}
-						</Typography>
-					)}
-					{course.whatYouWillLearn?.length > 0 && (
-						<Box>
-							<Typography
-								variant='caption'
+				<Box sx={{ width: 360, maxWidth: 'calc(100vw - 32px)', bgcolor: 'background.paper' }}>
+					<Box
+						sx={{
+							position: 'relative',
+							aspectRatio: '16 / 9',
+							bgcolor: 'grey.900',
+							overflow: 'hidden',
+						}}
+					>
+						{introVideoId ? (
+							<Box
+								component='iframe'
+								src={`https://www.youtube.com/embed/${introVideoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1`}
+								title={`${course.title} intro video`}
+								allow='autoplay; encrypted-media; picture-in-picture'
+								sx={{ width: '100%', height: '100%', border: 0, display: 'block' }}
+							/>
+						) : introVideoUrl ? (
+							<Box
+								component='video'
+								src={introVideoUrl}
+								autoPlay
+								muted
+								playsInline
+								controls
+								preload='metadata'
+								sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+							/>
+						) : (
+							<Box
+								component='img'
+								src={course.coverImage ?? 'https://placehold.co/640x360?text=Course+Preview'}
+								alt={course.title}
+								sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+							/>
+						)}
+						<Box
+							sx={{
+								position: 'absolute',
+								inset: 0,
+								display: 'flex',
+								alignItems: 'flex-end',
+								p: 1.5,
+								background:
+									'linear-gradient(180deg, transparent 45%, rgba(15,23,42,0.72) 100%)',
+								pointerEvents: 'none',
+							}}
+						>
+							<Chip
+								icon={<PlayCircleIcon />}
+								label={introVideoUrl ? 'Play intro preview' : 'Course preview'}
+								size='small'
 								sx={{
-									fontWeight: 700,
-									textTransform: 'uppercase',
-									letterSpacing: 0.5,
+									color: 'white',
+									bgcolor: 'rgba(15,23,42,0.76)',
+									border: '1px solid rgba(255,255,255,0.2)',
+									'& .MuiChip-icon': { color: 'white' },
+								}}
+							/>
+						</Box>
+					</Box>
+
+					<Box sx={{ p: 2 }}>
+						<Typography
+							variant='subtitle1'
+							sx={{
+								fontWeight: 800,
+								lineHeight: 1.25,
+								mb: 1,
+								display: '-webkit-box',
+								WebkitLineClamp: 2,
+								WebkitBoxOrient: 'vertical',
+								overflow: 'hidden',
+							}}
+						>
+							{course.title}
+						</Typography>
+
+						<Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 1.25 }}>
+							{course.category && <Chip label={course.category.name} size='small' />}
+							{course.courseType && (
+								<Chip label={course.courseType.name} size='small' variant='outlined' />
+							)}
+						</Box>
+
+						{course.description && (
+							<Typography
+								variant='body2'
+								color='text.secondary'
+								sx={{
+									mb: 1.5,
+									lineHeight: 1.55,
+									display: '-webkit-box',
+									WebkitLineClamp: 3,
+									WebkitBoxOrient: 'vertical',
+									overflow: 'hidden',
 								}}
 							>
-								What you'll learn
+								{course.description}
 							</Typography>
-							{course.whatYouWillLearn.slice(0, 3).map((item, i) => (
-								<Typography key={i} variant='body2' sx={{ mt: 0.4 }}>
-									â€¢ {item}
+						)}
+
+						{course.whatYouWillLearn?.length > 0 && (
+							<Box sx={{ mb: 1.75 }}>
+								<Typography
+									variant='caption'
+									sx={{
+										fontWeight: 800,
+										textTransform: 'uppercase',
+										letterSpacing: 0.5,
+									}}
+								>
+									What you'll learn
 								</Typography>
-							))}
-						</Box>
-					)}
+								{course.whatYouWillLearn.slice(0, 3).map((item, i) => (
+									<Typography key={i} variant='body2' sx={{ mt: 0.5, lineHeight: 1.35 }}>
+										- {item}
+									</Typography>
+								))}
+							</Box>
+						)}
+
+						{hasSubscriptionPlans && (
+							<Box
+								sx={{
+									p: 1.25,
+									mb: 1.75,
+									borderRadius: 1,
+									bgcolor: 'grey.50',
+									border: '1px solid',
+									borderColor: 'divider',
+								}}
+							>
+								<Typography
+									variant='caption'
+									sx={{ display: 'block', fontWeight: 800, mb: 0.75 }}
+								>
+									Included with subscription
+								</Typography>
+								<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+									{course.allowedSubscriptionPlans.map((plan) => (
+										<Box
+											key={plan}
+											sx={{
+												display: 'inline-flex',
+												alignItems: 'center',
+												gap: 0.4,
+												px: 0.75,
+												py: 0.35,
+												borderRadius: 0.75,
+												bgcolor: PLAN_COLORS[plan] ?? '#7c3aed',
+												color: 'white',
+											}}
+										>
+											<CardMembershipIcon sx={{ fontSize: 12 }} />
+											<Typography
+												variant='caption'
+												sx={{ fontSize: '0.68rem', fontWeight: 800, lineHeight: 1 }}
+											>
+												{plan}
+											</Typography>
+										</Box>
+									))}
+								</Box>
+							</Box>
+						)}
+
+						<Button
+							fullWidth
+							variant='contained'
+							endIcon={<ArrowForwardIcon />}
+							onClick={goToCourse}
+							sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 1 }}
+						>
+							Watch now
+						</Button>
+					</Box>
 				</Box>
 			</Popover>
 		</>
