@@ -186,7 +186,17 @@ export interface IQuestion {
     role: UserRole;
   };
   upvotes: string[];
+  isResolved: boolean;
+  resolvedBy?: {
+    _id: string;
+    name: string;
+    avatar?: string;
+    role: UserRole;
+  };
+  resolvedAt?: string;
   answerCount: number;
+  staffAnswerCount: number;
+  hasStaffAnswer: boolean;
   createdAt: string;
   updatedAt: string;
 }

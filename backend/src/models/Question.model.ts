@@ -6,6 +6,9 @@ export interface IQuestion extends Document {
   description: string;
   postedBy: Types.ObjectId;
   upvotes: Types.ObjectId[];
+  isResolved: boolean;
+  resolvedBy?: Types.ObjectId;
+  resolvedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +20,9 @@ const questionSchema = new Schema<IQuestion>(
     description: { type: String, required: true },
     postedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     upvotes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    isResolved: { type: Boolean, default: false },
+    resolvedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    resolvedAt: { type: Date },
   },
   { timestamps: true },
 );

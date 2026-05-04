@@ -5,6 +5,7 @@ import {
   createQuestion,
   updateQuestion,
   deleteQuestion,
+  resolveQuestion,
   upvoteQuestion,
   createAnswer,
   updateAnswer,
@@ -17,11 +18,12 @@ const router = Router();
 
 // Questions
 router.get('/questions/course/:courseId', protect, getCourseQuestions);
-router.get('/questions/:id', protect, getQuestionWithAnswers);
 router.post('/questions/course/:courseId', protect, createQuestion);
+router.patch('/questions/:id/resolve', protect, resolveQuestion);
+router.patch('/questions/:id/upvote', protect, upvoteQuestion);
+router.get('/questions/:id', protect, getQuestionWithAnswers);
 router.put('/questions/:id', protect, updateQuestion);
 router.delete('/questions/:id', protect, deleteQuestion);
-router.patch('/questions/:id/upvote', protect, upvoteQuestion);
 
 // Answers
 router.post('/answers/question/:questionId', protect, createAnswer);

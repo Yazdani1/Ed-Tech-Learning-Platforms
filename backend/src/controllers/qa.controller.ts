@@ -9,22 +9,113 @@ import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { IUser } from '../models/User.model';
 
+const STAFF_ROLES = ['Admin', 'Super Admin', 'Moderator', 'Teacher'];
+
+const isAdminOrModerator = (role: string): boolean =>
+  role === 'Admin' || role === 'Super Admin' || role === 'Moderator';
+
+async function isAssignedTeacher(user: IUser, courseId: string): Promise<boolean> {
+  if (user.role !== 'Teacher') return false;
+
+  const [teacherProfile, course] = await Promise.all([
+    Teacher.findOne({ userId: user._id }).select('_id'),
+    Course.findById(courseId).select('teachers'),
+  ]);
+
+  if (!course) throw new AppError('Course not found', 404);
+  if (!teacherProfile) return false;
+
+  return course.teachers.some(
+    (t) => t.toString() === (teacherProfile._id as Types.ObjectId).toString(),
+  );
+}
+
+async function assertCanResolveQuestion(
+  user: IUser,
+  question: { course: Types.ObjectId; postedBy: Types.ObjectId },
+): Promise<void> {
+  if (isAdminOrModerator(user.role)) return;
+
+  if (user.role === 'Teacher' && (await isAssignedTeacher(user, question.course.toString()))) {
+    return;
+  }
+
+  const isOwner = question.postedBy.toString() === (user._id as Types.ObjectId).toString();
+  if (user.role === 'Student' && isOwner) return;
+
+  throw new AppError('Not authorized to change this question status', 403);
+}
+
+async function getQuestionAnswerStats(questionIds: Types.ObjectId[]) {
+  if (questionIds.length === 0) {
+    return new Map<string, { answerCount: number; staffAnswerCount: number }>();
+  }
+
+  const answerStats = await Answer.aggregate<{
+    _id: Types.ObjectId;
+    answerCount: number;
+    staffAnswerCount: number;
+  }>([
+    { $match: { question: { $in: questionIds } } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'postedBy',
+        foreignField: '_id',
+        as: 'postedByUser',
+      },
+    },
+    { $unwind: '$postedByUser' },
+    {
+      $group: {
+        _id: '$question',
+        answerCount: { $sum: 1 },
+        staffAnswerCount: {
+          $sum: {
+            $cond: [{ $in: ['$postedByUser.role', STAFF_ROLES] }, 1, 0],
+          },
+        },
+      },
+    },
+  ]);
+
+  return new Map(
+    answerStats.map((a) => [
+      a._id.toString(),
+      { answerCount: a.answerCount, staffAnswerCount: a.staffAnswerCount },
+    ]),
+  );
+}
+
+async function buildQuestionResponse(question: InstanceType<typeof Question>) {
+  const statsMap = await getQuestionAnswerStats([question._id as Types.ObjectId]);
+  const stats = statsMap.get((question._id as Types.ObjectId).toString()) ?? {
+    answerCount: 0,
+    staffAnswerCount: 0,
+  };
+
+  return {
+    ...(question.toObject() as object),
+    isResolved: Boolean(question.isResolved),
+    answerCount: stats.answerCount,
+    staffAnswerCount: stats.staffAnswerCount,
+    hasStaffAnswer: stats.staffAnswerCount > 0,
+  };
+}
+
 // ── Access control helper ────────────────────────────────────
 async function assertCanPost(user: IUser, courseId: string): Promise<void> {
   const role = user.role;
 
-  if (role === 'Admin' || role === 'Super Admin' || role === 'Moderator') return;
+  if (isAdminOrModerator(role)) return;
 
   const course = await Course.findById(courseId).select('teachers');
   if (!course) throw new AppError('Course not found', 404);
 
   if (role === 'Teacher') {
-    const teacherProfile = await Teacher.findOne({ userId: user._id }).select('_id');
-    if (!teacherProfile) throw new AppError('No teacher profile linked to your account', 403);
-    const isAssigned = course.teachers.some(
-      (t) => t.toString() === (teacherProfile._id as Types.ObjectId).toString(),
-    );
-    if (!isAssigned) throw new AppError('You are not assigned to this course', 403);
+    if (!(await isAssignedTeacher(user, courseId))) {
+      throw new AppError('You are not assigned to this course', 403);
+    }
     return;
   }
 
@@ -46,19 +137,23 @@ export const getCourseQuestions = asyncHandler(async (req: Request, res: Respons
     .populate('postedBy', 'name avatar role')
     .sort({ createdAt: -1 });
 
-  // Count answers per question in one aggregation query
   const questionIds = questions.map((q) => q._id as Types.ObjectId);
-  const answerCounts = await Answer.aggregate<{ _id: Types.ObjectId; count: number }>([
-    { $match: { question: { $in: questionIds } } },
-    { $group: { _id: '$question', count: { $sum: 1 } } },
-  ]);
+  const statsMap = await getQuestionAnswerStats(questionIds);
 
-  const countMap = new Map(answerCounts.map((a) => [a._id.toString(), a.count]));
+  const result = questions.map((q) => {
+    const stats = statsMap.get((q._id as Types.ObjectId).toString()) ?? {
+      answerCount: 0,
+      staffAnswerCount: 0,
+    };
 
-  const result = questions.map((q) => ({
-    ...(q.toObject() as object),
-    answerCount: countMap.get((q._id as Types.ObjectId).toString()) ?? 0,
-  }));
+    return {
+      ...(q.toObject() as object),
+      isResolved: Boolean(q.isResolved),
+      answerCount: stats.answerCount,
+      staffAnswerCount: stats.staffAnswerCount,
+      hasStaffAnswer: stats.staffAnswerCount > 0,
+    };
+  });
 
   res.status(200).json({ success: true, data: result, total: result.length });
 });
@@ -74,7 +169,7 @@ export const getQuestionWithAnswers = asyncHandler(async (req: Request, res: Res
 
   res.status(200).json({
     success: true,
-    data: { question, answers },
+    data: { question: await buildQuestionResponse(question), answers },
   });
 });
 
@@ -99,7 +194,13 @@ export const createQuestion = asyncHandler(async (req: Request, res: Response) =
   res.status(201).json({
     success: true,
     message: 'Question posted',
-    data: { ...(populated.toObject() as object), answerCount: 0 },
+    data: {
+      ...(populated.toObject() as object),
+      isResolved: Boolean(populated.isResolved),
+      answerCount: 0,
+      staffAnswerCount: 0,
+      hasStaffAnswer: false,
+    },
   });
 });
 
@@ -141,12 +242,41 @@ export const updateQuestion = asyncHandler(async (req: Request, res: Response) =
   await question.save();
 
   const populated = await question.populate('postedBy', 'name avatar role');
-  const answerCount = await Answer.countDocuments({ question: question._id });
 
   res.status(200).json({
     success: true,
     message: 'Question updated',
-    data: { ...(populated.toObject() as object), answerCount },
+    data: await buildQuestionResponse(populated),
+  });
+});
+
+export const resolveQuestion = asyncHandler(async (req: Request, res: Response) => {
+  const { isResolved } = req.body as { isResolved?: boolean };
+  const question = await Question.findById(req.params.id);
+  if (!question) throw new AppError('Question not found', 404);
+
+  if (typeof isResolved !== 'boolean') {
+    throw new AppError('isResolved must be true or false', 400);
+  }
+
+  await assertCanResolveQuestion(req.user, {
+    course: question.course,
+    postedBy: question.postedBy,
+  });
+
+  question.isResolved = isResolved;
+  question.resolvedBy = isResolved ? (req.user._id as Types.ObjectId) : undefined;
+  question.resolvedAt = isResolved ? new Date() : undefined;
+  await question.save();
+
+  const populated = await question
+    .populate('postedBy', 'name avatar role')
+    .then((q) => q.populate('resolvedBy', 'name avatar role'));
+
+  res.status(200).json({
+    success: true,
+    message: isResolved ? 'Question marked as resolved' : 'Question reopened',
+    data: await buildQuestionResponse(populated),
   });
 });
 

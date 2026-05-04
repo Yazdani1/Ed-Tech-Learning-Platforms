@@ -19,6 +19,9 @@ export const qaService = {
   upvoteQuestion: (id: string) =>
     api.patch<{ upvotes: string[] }>(`/qa/questions/${id}/upvote`),
 
+  resolveQuestion: (id: string, isResolved: boolean) =>
+    api.patch<IQuestion>(`/qa/questions/${id}/resolve`, { isResolved }),
+
   createAnswer: (questionId: string, data: { body: string }) =>
     api.post<IAnswer>(`/qa/answers/question/${questionId}`, data),
 
