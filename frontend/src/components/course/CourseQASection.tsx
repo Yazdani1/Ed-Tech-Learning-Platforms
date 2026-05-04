@@ -350,6 +350,26 @@ export default function CourseQASection({
 						mb: 3,
 					}}
 				>
+					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+						<Avatar
+							src={qaDetail.question.postedBy.avatar}
+							sx={{ width: 26, height: 26, fontSize: 12, bgcolor: 'primary.main' }}
+						>
+							{qaDetail.question.postedBy.name[0]}
+						</Avatar>
+						<Typography variant='caption' color='text.secondary'>
+							{qaDetail.question.postedBy.name}{' '}
+							{userId === qaDetail.question.postedBy._id && <YouBadge />}
+							{' · '}
+							<Chip
+								label={qaDetail.question.postedBy.role}
+								size='small'
+								sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}
+							/>
+							{' · '}
+							{formatDateTime(qaDetail.question.createdAt)}
+						</Typography>
+					</Box>
 					{editingQuestionId === qaDetail.question._id ? (
 						<Box sx={{ mb: 2 }}>
 							<TextField
@@ -382,26 +402,6 @@ export default function CourseQASection({
 							{qaDetail.question.title}
 						</Typography>
 					)}
-					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-						<Avatar
-							src={qaDetail.question.postedBy.avatar}
-							sx={{ width: 26, height: 26, fontSize: 12, bgcolor: 'primary.main' }}
-						>
-							{qaDetail.question.postedBy.name[0]}
-						</Avatar>
-						<Typography variant='caption' color='text.secondary'>
-							{qaDetail.question.postedBy.name}{' '}
-							{userId === qaDetail.question.postedBy._id && <YouBadge />}
-							{' · '}
-							<Chip
-								label={qaDetail.question.postedBy.role}
-								size='small'
-								sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}
-							/>
-							{' · '}
-							{formatDateTime(qaDetail.question.createdAt)}
-						</Typography>
-					</Box>
 					{editingQuestionId !== qaDetail.question._id && (
 						<Box
 							sx={{
@@ -566,152 +566,157 @@ export default function CourseQASection({
 					{qaDetail.answers.length !== 1 ? 's' : ''}
 				</Typography>
 
-				<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-					{qaDetail.answers.map((answer) => (
-						<Paper
-							key={answer._id}
-							variant='outlined'
-							sx={{
-								p: 2.5,
-								borderRadius: 0.5,
-								boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-							}}
-						>
-							<Box
-								sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}
-							>
-								<Avatar
-									src={answer.postedBy.avatar}
-									sx={{
-										width: 26,
-										height: 26,
-										fontSize: 12,
-										bgcolor: 'secondary.main',
-									}}
-								>
-									{answer.postedBy.name[0]}
-								</Avatar>
-								<Box sx={{ flex: 1 }}>
-									<Typography variant='caption' sx={{ fontWeight: 600 }}>
-										{answer.postedBy.name}{' '}
-										{userId === answer.postedBy._id && <YouBadge />}
-									</Typography>
-									<Typography
-										variant='caption'
-										color='text.secondary'
-										sx={{ ml: 0.75 }}
-									>
-										·{' '}
-										<Chip
-											label={answer.postedBy.role}
-											size='small'
-											sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}
-										/>
-										{' · '}
-										{formatDateTime(answer.createdAt)}
-									</Typography>
-								</Box>
-								{canEdit(answer.postedBy._id) &&
-									editingAnswerId !== answer._id && (
-									<ItemActionMenu
-										actions={[
-											{
-												label: 'Edit',
-												icon: (
-													<EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
-												),
-												onClick: () => startEditAnswer(answer),
-											},
-											{
-												label: 'Delete',
-												color: 'error',
-												icon: (
-													<DeleteOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
-												),
-												onClick: () => void handleDeleteAnswer(answer._id),
-											},
-										]}
-									/>
-								)}
-							</Box>
-							{editingAnswerId === answer._id ? (
-								<Box>
-									<RichTextEditor
-										value={editingAnswerBody}
-										onChange={setEditingAnswerBody}
-										placeholder='Update your answer...'
-										minHeight={110}
-									/>
+				{qaDetail.answers.length > 0 && (
+					<Paper
+						variant='outlined'
+						sx={{
+							mb: 3,
+							borderRadius: 0.5,
+							boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+							overflow: 'hidden',
+						}}
+					>
+						{qaDetail.answers.map((answer, index) => (
+							<Box key={answer._id}>
+								{index > 0 && <Divider />}
+								<Box sx={{ p: 2.5 }}>
 									<Box
-										sx={{
-											display: 'flex',
-											justifyContent: 'flex-end',
-											gap: 1,
-											mt: 1.5,
-										}}
+										sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}
 									>
-										<Button
-											size='small'
-											onClick={() => setEditingAnswerId(null)}
+										<Avatar
+											src={answer.postedBy.avatar}
+											sx={{
+												width: 26,
+												height: 26,
+												fontSize: 12,
+												bgcolor: 'secondary.main',
+											}}
 										>
-											Cancel
-										</Button>
-										<Button
-											size='small'
-											variant='contained'
-											onClick={() => void handleUpdateAnswer()}
-											disabled={answerUpdating || !editingAnswerBody.trim()}
-										>
-											{answerUpdating ? (
-												<CircularProgress size={16} color='inherit' />
-											) : (
-												'Update'
-											)}
-										</Button>
+											{answer.postedBy.name[0]}
+										</Avatar>
+										<Box sx={{ flex: 1 }}>
+											<Typography variant='caption' sx={{ fontWeight: 600 }}>
+												{answer.postedBy.name}{' '}
+												{userId === answer.postedBy._id && <YouBadge />}
+											</Typography>
+											<Typography
+												variant='caption'
+												color='text.secondary'
+												sx={{ ml: 0.75 }}
+											>
+												·{' '}
+												<Chip
+													label={answer.postedBy.role}
+													size='small'
+													sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}
+												/>
+												{' · '}
+												{formatDateTime(answer.createdAt)}
+											</Typography>
+										</Box>
+										{canEdit(answer.postedBy._id) &&
+											editingAnswerId !== answer._id && (
+											<ItemActionMenu
+												actions={[
+													{
+														label: 'Edit',
+														icon: (
+															<EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
+														),
+														onClick: () => startEditAnswer(answer),
+													},
+													{
+														label: 'Delete',
+														color: 'error',
+														icon: (
+															<DeleteOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
+														),
+														onClick: () => void handleDeleteAnswer(answer._id),
+													},
+												]}
+											/>
+										)}
 									</Box>
+									{editingAnswerId === answer._id ? (
+										<Box>
+											<RichTextEditor
+												value={editingAnswerBody}
+												onChange={setEditingAnswerBody}
+												placeholder='Update your answer...'
+												minHeight={110}
+											/>
+											<Box
+												sx={{
+													display: 'flex',
+													justifyContent: 'flex-end',
+													gap: 1,
+													mt: 1.5,
+												}}
+											>
+												<Button
+													size='small'
+													onClick={() => setEditingAnswerId(null)}
+												>
+													Cancel
+												</Button>
+												<Button
+													size='small'
+													variant='contained'
+													onClick={() => void handleUpdateAnswer()}
+													disabled={answerUpdating || !editingAnswerBody.trim()}
+												>
+													{answerUpdating ? (
+														<CircularProgress size={16} color='inherit' />
+													) : (
+														'Update'
+													)}
+												</Button>
+											</Box>
+										</Box>
+									) : (
+										<>
+											<Box
+												sx={{
+													fontSize: '0.875rem',
+													lineHeight: 1.7,
+													mb: 1.5,
+													'& p': { m: 0, mb: 0.5 },
+													'& ul, & ol': { pl: 2.5, my: 0.5 },
+												}}
+												dangerouslySetInnerHTML={{ __html: answer.body }}
+											/>
+											<Tooltip
+												title={
+													answer.upvotes.includes(userId)
+														? 'Remove upvote'
+														: 'Upvote this answer'
+												}
+											>
+												<Button
+													size='small'
+													startIcon={
+														answer.upvotes.includes(userId) ? (
+															<ThumbUpIcon fontSize='small' />
+														) : (
+															<ThumbUpOutlinedIcon fontSize='small' />
+														)
+													}
+													onClick={() => void handleUpvoteAnswer(answer._id)}
+													color={
+														answer.upvotes.includes(userId) ? 'primary' : 'inherit'
+													}
+													sx={{ fontWeight: 600 }}
+												>
+													{answer.upvotes.length}
+												</Button>
+											</Tooltip>
+										</>
+									)}
 								</Box>
-							) : (
-								<>
-									<Box
-										sx={{
-											fontSize: '0.875rem',
-											lineHeight: 1.7,
-											mb: 1.5,
-											'& p': { m: 0, mb: 0.5 },
-											'& ul, & ol': { pl: 2.5, my: 0.5 },
-										}}
-										dangerouslySetInnerHTML={{ __html: answer.body }}
-									/>
-									<Tooltip
-										title={
-											answer.upvotes.includes(userId)
-												? 'Remove upvote'
-												: 'Upvote this answer'
-										}
-									>
-										<Button
-											size='small'
-											startIcon={
-												answer.upvotes.includes(userId) ? (
-													<ThumbUpIcon fontSize='small' />
-												) : (
-													<ThumbUpOutlinedIcon fontSize='small' />
-												)
-											}
-											onClick={() => void handleUpvoteAnswer(answer._id)}
-											color={
-												answer.upvotes.includes(userId) ? 'primary' : 'inherit'
-											}
-											sx={{ fontWeight: 600 }}
-										>
-											{answer.upvotes.length}
-										</Button>
-									</Tooltip>
-								</>
-							)}
-						</Paper>
-					))}
-				</Box>
+							</Box>
+						))}
+					</Paper>
+				)}
 
 		</Box>
 		);
