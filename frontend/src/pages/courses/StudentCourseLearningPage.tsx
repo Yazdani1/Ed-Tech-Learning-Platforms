@@ -40,6 +40,9 @@ import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import TwitterIcon from '@mui/icons-material/Twitter';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import LanguageIcon from '@mui/icons-material/Language';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { enrollmentService } from '../../services/enrollment.service';
@@ -823,7 +826,7 @@ export default function StudentCourseLearningPage() {
 
 						{/* ── Course Overview ────────────────────────────── */}
 						{activeNav === 'course_overview' && (
-							<Box sx={{ p: { xs: 3, md: 4 }, maxWidth: 860 }}>
+							<Box sx={{ p: { xs: 3, md: 4 }, width: '100%' }}>
 								<Typography
 									variant='h4'
 									sx={{ fontWeight: 800, mb: 0.75, lineHeight: 1.25 }}
@@ -1012,167 +1015,162 @@ export default function StudentCourseLearningPage() {
 									</Typography>
 								) : (
 									<Box
-										sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+										sx={{
+											display: 'grid',
+											gridTemplateColumns: {
+												xs: '1fr',
+												sm: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))',
+												xl: 'repeat(auto-fill, minmax(340px, 1fr))',
+											},
+											gap: 3,
+											width: '100%',
+										}}
 									>
-										{course.teachers.map((teacher) => (
-											<Box
-												key={teacher._id}
-												sx={{
-													display: 'flex',
-													gap: 3,
-													p: 3,
-													border: '1px solid',
-													borderColor: 'divider',
-													borderRadius: 2,
-													alignItems: 'flex-start',
-													bgcolor: 'background.paper',
-												}}
-											>
-												{/* Avatar */}
-												<Avatar
-													src={teacher.profileImage}
-													alt={teacher.name}
-													sx={{
-														width: 72,
-														height: 72,
-														fontSize: 28,
-														bgcolor: 'primary.main',
-														flexShrink: 0,
-													}}
-												>
-													{teacher.name.charAt(0).toUpperCase()}
-												</Avatar>
+										{course.teachers.map((teacher) => {
+											const hasSocials =
+												teacher.socialLinks &&
+												Object.values(teacher.socialLinks).some(Boolean);
 
-												{/* Info */}
-												<Box sx={{ flex: 1, minWidth: 0 }}>
-													<Typography
-														variant='h6'
-														sx={{ fontWeight: 700, mb: 0.5 }}
+											return (
+												<Box key={teacher._id} sx={{ minWidth: 0 }}>
+													<Paper
+														variant='outlined'
+														sx={{
+															height: '100%',
+															borderRadius: 1,
+															overflow: 'hidden',
+															display: 'flex',
+															flexDirection: 'column',
+															bgcolor: 'background.paper',
+															transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+															'&:hover': {
+																transform: 'translateY(-4px)',
+																boxShadow: '0 18px 42px rgba(15,23,42,0.12)',
+															},
+														}}
 													>
-														{teacher.name}
-													</Typography>
-
-													{teacher.expertise?.length > 0 && (
 														<Box
 															sx={{
-																display: 'flex',
-																flexWrap: 'wrap',
-																gap: 0.75,
-																mb: 1.5,
+																height: 108,
+																background:
+																	'linear-gradient(135deg, #0f766e 0%, #2563eb 55%, #7c3aed 100%)',
+																position: 'relative',
 															}}
 														>
-															{teacher.expertise.map((exp) => (
-																<Chip
-																	key={exp}
-																	label={exp}
-																	size='small'
-																	variant='outlined'
-																	sx={{ fontSize: '0.72rem' }}
-																/>
-															))}
-														</Box>
-													)}
-
-													{teacher.bio && (
-														<Typography
-															variant='body2'
-															color='text.secondary'
-															sx={{ lineHeight: 1.7 }}
-														>
-															{teacher.bio}
-														</Typography>
-													)}
-
-													{/* Social links */}
-													{teacher.socialLinks &&
-														Object.values(teacher.socialLinks).some(
-															Boolean,
-														) && (
-															<Box
+															<Avatar
+																src={teacher.profileImage}
+																alt={teacher.name}
 																sx={{
-																	display: 'flex',
-																	gap: 1.5,
-																	mt: 1.5,
-																	flexWrap: 'wrap',
+																	width: 96,
+																	height: 96,
+																	position: 'absolute',
+																	left: '50%',
+																	bottom: -48,
+																	transform: 'translateX(-50%)',
+																	border: '4px solid white',
+																	bgcolor: 'primary.main',
+																	fontSize: 34,
+																	fontWeight: 800,
+																	boxShadow: '0 10px 28px rgba(15,23,42,0.2)',
 																}}
 															>
-																{teacher.socialLinks.website && (
-																	<Typography
-																		component='a'
-																		href={teacher.socialLinks.website}
-																		target='_blank'
-																		rel='noopener noreferrer'
-																		variant='caption'
-																		sx={{
-																			color: 'primary.main',
-																			textDecoration: 'none',
-																			'&:hover': {
-																				textDecoration: 'underline',
-																			},
-																		}}
-																	>
-																		Website
-																	</Typography>
-																)}
-																{teacher.socialLinks.linkedin && (
-																	<Typography
-																		component='a'
-																		href={teacher.socialLinks.linkedin}
-																		target='_blank'
-																		rel='noopener noreferrer'
-																		variant='caption'
-																		sx={{
-																			color: 'primary.main',
-																			textDecoration: 'none',
-																			'&:hover': {
-																				textDecoration: 'underline',
-																			},
-																		}}
-																	>
-																		LinkedIn
-																	</Typography>
-																)}
-																{teacher.socialLinks.twitter && (
-																	<Typography
-																		component='a'
-																		href={teacher.socialLinks.twitter}
-																		target='_blank'
-																		rel='noopener noreferrer'
-																		variant='caption'
-																		sx={{
-																			color: 'primary.main',
-																			textDecoration: 'none',
-																			'&:hover': {
-																				textDecoration: 'underline',
-																			},
-																		}}
-																	>
-																		Twitter
-																	</Typography>
-																)}
-																{teacher.socialLinks.youtube && (
-																	<Typography
-																		component='a'
-																		href={teacher.socialLinks.youtube}
-																		target='_blank'
-																		rel='noopener noreferrer'
-																		variant='caption'
-																		sx={{
-																			color: 'primary.main',
-																			textDecoration: 'none',
-																			'&:hover': {
-																				textDecoration: 'underline',
-																			},
-																		}}
-																	>
-																		YouTube
-																	</Typography>
-																)}
-															</Box>
-														)}
+																{teacher.name.charAt(0).toUpperCase()}
+															</Avatar>
+														</Box>
+
+														<Box
+															sx={{
+																pt: 7,
+																px: 3,
+																pb: 3,
+																flex: 1,
+																display: 'flex',
+																flexDirection: 'column',
+																alignItems: 'center',
+																textAlign: 'center',
+															}}
+														>
+															<Typography variant='h6' sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+																{teacher.name}
+															</Typography>
+
+															{teacher.expertise?.length > 0 && (
+																<Box
+																	sx={{
+																		display: 'flex',
+																		gap: 0.75,
+																		flexWrap: 'wrap',
+																		justifyContent: 'center',
+																		mt: 1.5,
+																	}}
+																>
+																	{teacher.expertise.slice(0, 4).map((exp) => (
+																		<Chip
+																			key={exp}
+																			label={exp}
+																			size='small'
+																			sx={{
+																				fontWeight: 700,
+																				bgcolor: 'rgba(37,99,235,0.08)',
+																				color: 'primary.main',
+																			}}
+																		/>
+																	))}
+																	{teacher.expertise.length > 4 && (
+																		<Chip label={`+${teacher.expertise.length - 4}`} size='small' />
+																	)}
+																</Box>
+															)}
+
+															{teacher.bio && (
+																<Typography
+																	variant='body2'
+																	color='text.secondary'
+																	sx={{
+																		mt: 2,
+																		lineHeight: 1.7,
+																		display: '-webkit-box',
+																		WebkitLineClamp: 4,
+																		WebkitBoxOrient: 'vertical',
+																		overflow: 'hidden',
+																	}}
+																>
+																	{teacher.bio}
+																</Typography>
+															)}
+
+															<Box sx={{ flexGrow: 1 }} />
+
+															{hasSocials && (
+																<Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2.5 }}>
+																	{teacher.socialLinks?.website && (
+																		<Tooltip title='Website'>
+																			<IconButton component='a' href={teacher.socialLinks.website} target='_blank' size='small' sx={{ color: '#10b981', bgcolor: 'rgba(16,185,129,0.1)' }}>
+																				<LanguageIcon fontSize='small' />
+																			</IconButton>
+																		</Tooltip>
+																	)}
+																	{teacher.socialLinks?.linkedin && (
+																		<Tooltip title='LinkedIn'>
+																			<IconButton component='a' href={teacher.socialLinks.linkedin} target='_blank' size='small' sx={{ color: '#0A66C2', bgcolor: 'rgba(10,102,194,0.1)' }}>
+																				<LinkedInIcon fontSize='small' />
+																			</IconButton>
+																		</Tooltip>
+																	)}
+																	{teacher.socialLinks?.twitter && (
+																		<Tooltip title='Twitter'>
+																			<IconButton component='a' href={teacher.socialLinks.twitter} target='_blank' size='small' sx={{ color: '#1DA1F2', bgcolor: 'rgba(29,161,242,0.1)' }}>
+																				<TwitterIcon fontSize='small' />
+																			</IconButton>
+																		</Tooltip>
+																	)}
+																</Box>
+															)}
+														</Box>
+													</Paper>
 												</Box>
-											</Box>
-										))}
+											);
+										})}
 									</Box>
 								)}
 							</Box>
