@@ -18,3 +18,18 @@ export const formatDateTime = (value?: string | Date | null) =>
 
 export const formatTime = (value?: string | Date | null) =>
 	toDateTime(value)?.toFormat('h:mm a') ?? '';
+
+export const formatLiveClassDate = (value?: string | null) => {
+	if (!value) return '';
+	const parsed = DateTime.fromISO(value);
+	return parsed.isValid ? parsed.toFormat('cccc, MMM d, yyyy') : value;
+};
+
+export const formatLiveClassTime = (value?: string | null) => {
+	if (!value) return '';
+	const parsed = DateTime.fromFormat(value, 'HH:mm');
+	if (parsed.isValid) return parsed.toFormat('h:mm a');
+
+	const isoParsed = DateTime.fromISO(value);
+	return isoParsed.isValid ? isoParsed.toFormat('h:mm a') : value;
+};

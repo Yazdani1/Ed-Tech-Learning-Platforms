@@ -34,6 +34,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import ClassIcon from '@mui/icons-material/Class';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import EventIcon from '@mui/icons-material/Event';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import AllInclusiveIcon from '@mui/icons-material/AllInclusive';
 import DevicesIcon from '@mui/icons-material/Devices';
@@ -46,7 +47,12 @@ import {
 	formatLectureDuration,
 	formatSectionDuration,
 } from '../../utils/duration';
-import { formatDate, formatDateTime } from '../../utils/dateTime';
+import {
+	formatDate,
+	formatDateTime,
+	formatLiveClassDate,
+	formatLiveClassTime,
+} from '../../utils/dateTime';
 import type {
 	ICourse,
 	ILecture,
@@ -874,7 +880,7 @@ export default function CourseDetailPage() {
 									<Box
 										sx={{
 											display: 'grid',
-											gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+											gridTemplateColumns: '1fr',
 											gap: 2.5,
 											alignItems: 'start',
 										}}
@@ -1005,7 +1011,6 @@ export default function CourseDetailPage() {
 																borderColor: 'divider',
 															}}
 														>
-															<EventIcon sx={{ fontSize: 18, color: 'primary.main', mt: 0.25 }} />
 															<Box sx={{ flex: 1, minWidth: 0 }}>
 																<Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 0.75 }}>
 																	<Typography variant='body2' sx={{ fontWeight: 800, color: '#111827' }}>
@@ -1013,7 +1018,8 @@ export default function CourseDetailPage() {
 																	</Typography>
 																	<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
 																	<Chip
-																		label={lecture.day}
+																		icon={<CalendarTodayIcon sx={{ fontSize: 14 }} />}
+																		label={formatLiveClassDate(lecture.day)}
 																		size='small'
 																		sx={{
 																			bgcolor: '#e0f2fe',
@@ -1022,7 +1028,7 @@ export default function CourseDetailPage() {
 																			borderRadius: 1,
 																		}}
 																	/>
-																		<Chip label={lecture.time} size='small' variant='outlined' />
+																		<Chip icon={<AccessTimeIcon sx={{ fontSize: 14 }} />} label={formatLiveClassTime(lecture.time)} size='small' variant='outlined' />
 																	</Box>
 																</Box>
 																{lecture.description && (

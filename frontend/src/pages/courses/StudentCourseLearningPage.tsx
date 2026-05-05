@@ -33,6 +33,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
@@ -50,7 +51,11 @@ import {
 	formatLectureDuration,
 	formatSectionDuration,
 } from '../../utils/duration';
-import { formatDateTime } from '../../utils/dateTime';
+import {
+	formatDateTime,
+	formatLiveClassDate,
+	formatLiveClassTime,
+} from '../../utils/dateTime';
 import type {
 	ICourse,
 	ILecture,
@@ -1475,7 +1480,9 @@ export default function StudentCourseLearningPage() {
 									<Box
 										sx={{
 											display: 'grid',
-											gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+											gridTemplateColumns: isTeacherOrAdmin
+												? '1fr'
+												: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
 											gap: 2.5,
 											alignItems: 'start',
 										}}
@@ -1601,7 +1608,8 @@ export default function StudentCourseLearningPage() {
 																					</Typography>
 																					<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
 																						<Chip
-																							label={lecture.day}
+																							icon={<CalendarTodayIcon sx={{ fontSize: 14 }} />}
+																							label={formatLiveClassDate(lecture.day)}
 																							size='small'
 																							sx={{
 																								bgcolor: '#e0f2fe',
@@ -1610,7 +1618,7 @@ export default function StudentCourseLearningPage() {
 																								borderRadius: 1,
 																							}}
 																						/>
-																						<Chip icon={<AccessTimeIcon sx={{ fontSize: 14 }} />} label={lecture.time} size='small' variant='outlined' />
+																						<Chip icon={<AccessTimeIcon sx={{ fontSize: 14 }} />} label={formatLiveClassTime(lecture.time)} size='small' variant='outlined' />
 																					</Box>
 																				</Box>
 																				{lecture.description && (
@@ -1635,22 +1643,24 @@ export default function StudentCourseLearningPage() {
 																				</Grid>
 																				<Grid size={{ xs: 6, sm: 3 }}>
 																					<TextField
-																						label='Day'
+																						label='Class Date'
+																						type='date'
 																						value={quickLectureForms[curriculum._id]?.day ?? ''}
 																						onChange={(e) => setQuickLectureField(curriculum._id, 'day', e.target.value)}
 																						fullWidth
 																						size='small'
-																						placeholder='Monday'
+																						slotProps={{ inputLabel: { shrink: true } }}
 																					/>
 																				</Grid>
 																				<Grid size={{ xs: 6, sm: 3 }}>
 																					<TextField
-																						label='Time'
+																						label='Class Time'
+																						type='time'
 																						value={quickLectureForms[curriculum._id]?.time ?? ''}
 																						onChange={(e) => setQuickLectureField(curriculum._id, 'time', e.target.value)}
 																						fullWidth
 																						size='small'
-																						placeholder='7:00 PM'
+																						slotProps={{ inputLabel: { shrink: true } }}
 																					/>
 																				</Grid>
 																				<Grid size={{ xs: 12 }}>
@@ -2253,22 +2263,24 @@ function CurriculumLectureFields({
 						</Grid>
 						<Grid size={{ xs: 6, sm: 3 }}>
 							<TextField
-								label='Day'
+								label='Class Date'
+								type='date'
 								value={lecture.day}
 								onChange={(e) => onChange(index, 'day', e.target.value)}
 								fullWidth
 								size='small'
-								placeholder='Monday'
+								slotProps={{ inputLabel: { shrink: true } }}
 							/>
 						</Grid>
 						<Grid size={{ xs: 6, sm: 3 }}>
 							<TextField
-								label='Time'
+								label='Class Time'
+								type='time'
 								value={lecture.time}
 								onChange={(e) => onChange(index, 'time', e.target.value)}
 								fullWidth
 								size='small'
-								placeholder='7:00 PM'
+								slotProps={{ inputLabel: { shrink: true } }}
 							/>
 						</Grid>
 						<Grid size={{ xs: 12 }}>

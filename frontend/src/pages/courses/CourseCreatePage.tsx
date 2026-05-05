@@ -28,6 +28,8 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import PreviewIcon from '@mui/icons-material/Visibility';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import EventIcon from '@mui/icons-material/Event';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
@@ -40,7 +42,12 @@ import RichTextEditor from '../../components/course/RichTextEditor';
 import CurriculumBuilder from '../../components/course/CurriculumBuilder/CurriculumBuilder';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
 import YouBadge from '../../components/common/YouBadge';
-import { formatDateTime, formatTime } from '../../utils/dateTime';
+import {
+	formatDateTime,
+	formatLiveClassDate,
+	formatLiveClassTime,
+	formatTime,
+} from '../../utils/dateTime';
 import { useAuth } from '../../context/useAuth';
 import type {
 	ICategory,
@@ -214,10 +221,10 @@ function LiveClassLectureFields({
 							<TextField label='Class Title' value={lecture.title} onChange={(e) => onChange(index, 'title', e.target.value)} fullWidth size='small' />
 						</Grid>
 						<Grid size={{ xs: 6, sm: 3 }}>
-							<TextField label='Day' value={lecture.day} onChange={(e) => onChange(index, 'day', e.target.value)} fullWidth size='small' placeholder='Monday' />
+							<TextField label='Class Date' type='date' value={lecture.day} onChange={(e) => onChange(index, 'day', e.target.value)} fullWidth size='small' slotProps={{ inputLabel: { shrink: true } }} />
 						</Grid>
 						<Grid size={{ xs: 6, sm: 3 }}>
-							<TextField label='Time' value={lecture.time} onChange={(e) => onChange(index, 'time', e.target.value)} fullWidth size='small' placeholder='7:00 PM' />
+							<TextField label='Class Time' type='time' value={lecture.time} onChange={(e) => onChange(index, 'time', e.target.value)} fullWidth size='small' slotProps={{ inputLabel: { shrink: true } }} />
 						</Grid>
 						<Grid size={{ xs: 12 }}>
 							<TextField label='Description' value={lecture.description ?? ''} onChange={(e) => onChange(index, 'description', e.target.value)} fullWidth size='small' multiline minRows={2} />
@@ -284,7 +291,8 @@ function LiveClassLectureList({
 							</Typography>
 							<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
 								<Chip
-									label={lecture.day}
+									icon={<CalendarTodayIcon sx={{ fontSize: 14 }} />}
+									label={formatLiveClassDate(lecture.day)}
 									size='small'
 									sx={{
 										bgcolor: '#e0f2fe',
@@ -293,7 +301,7 @@ function LiveClassLectureList({
 										borderRadius: 1,
 									}}
 								/>
-								<Chip label={lecture.time} size='small' variant='outlined' />
+								<Chip icon={<AccessTimeIcon sx={{ fontSize: 14 }} />} label={formatLiveClassTime(lecture.time)} size='small' variant='outlined' />
 							</Box>
 						</Box>
 						{lecture.description && (
@@ -311,10 +319,10 @@ function LiveClassLectureList({
 							<TextField label='Class Title' value={quickLecture.title} onChange={(e) => onQuickChange('title', e.target.value)} fullWidth size='small' />
 						</Grid>
 						<Grid size={{ xs: 6, sm: 3 }}>
-							<TextField label='Day' value={quickLecture.day} onChange={(e) => onQuickChange('day', e.target.value)} fullWidth size='small' placeholder='Monday' />
+							<TextField label='Class Date' type='date' value={quickLecture.day} onChange={(e) => onQuickChange('day', e.target.value)} fullWidth size='small' slotProps={{ inputLabel: { shrink: true } }} />
 						</Grid>
 						<Grid size={{ xs: 6, sm: 3 }}>
-							<TextField label='Time' value={quickLecture.time} onChange={(e) => onQuickChange('time', e.target.value)} fullWidth size='small' placeholder='7:00 PM' />
+							<TextField label='Class Time' type='time' value={quickLecture.time} onChange={(e) => onQuickChange('time', e.target.value)} fullWidth size='small' slotProps={{ inputLabel: { shrink: true } }} />
 						</Grid>
 						<Grid size={{ xs: 12 }}>
 							<TextField label='Description' value={quickLecture.description ?? ''} onChange={(e) => onQuickChange('description', e.target.value)} fullWidth size='small' multiline minRows={2} />
@@ -1484,7 +1492,7 @@ export default function CourseCreatePage() {
 								<Box
 									sx={{
 										display: 'grid',
-										gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+										gridTemplateColumns: '1fr',
 										gap: 2.5,
 										alignItems: 'start',
 									}}
