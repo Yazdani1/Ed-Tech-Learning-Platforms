@@ -17,6 +17,7 @@ export interface IUser {
   };
   purchasedCourses: string[];
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ITeacher {

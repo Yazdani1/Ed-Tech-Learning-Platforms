@@ -7,6 +7,7 @@ export interface IUser extends Document {
   password: string;
   role: UserRole;
   avatar?: string;
+  avatarPublicId?: string;
   activeSubscription?: {
     plan: SubscriptionPlan;
     startDate: Date;
@@ -28,6 +29,7 @@ const userSchema = new Schema<IUser>(
       default: 'Student',
     },
     avatar: String,
+    avatarPublicId: { type: String, select: false },
     activeSubscription: {
       plan: { type: String, enum: ['Basic', 'Premium', 'Gold', 'Quiz Only'] },
       startDate: Date,
