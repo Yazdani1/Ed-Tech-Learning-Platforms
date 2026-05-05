@@ -7,7 +7,11 @@ import {
 	Typography,
 	Link,
 	CircularProgress,
+	InputAdornment,
 } from '@mui/material';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import SchoolIcon from '@mui/icons-material/School';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/useAuth';
 import type { UserRole } from '../../types/index';
@@ -44,12 +48,31 @@ export default function LoginPage() {
 
 	return (
 		<Box component='form' onSubmit={(e) => void handleSubmit(e)}>
-			<Typography
-				variant='h5'
-				sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}
-			>
-				{t('auth.loginTitle')}
-			</Typography>
+			<Box sx={{ textAlign: 'center', mb: 3.5 }}>
+				<Box
+					sx={{
+						width: 54,
+						height: 54,
+						mx: 'auto',
+						mb: 1.5,
+						borderRadius: 1,
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						bgcolor: 'primary.50',
+						color: 'primary.main',
+					}}
+				>
+					<SchoolIcon />
+				</Box>
+				<Typography variant='h4' sx={{ fontWeight: 900, lineHeight: 1.15 }}>
+					Welcome back
+				</Typography>
+				<Typography variant='body2' color='text.secondary' sx={{ mt: 1, lineHeight: 1.7 }}>
+					Sign in to continue your courses, live classes, and learning dashboard.
+				</Typography>
+			</Box>
+
 			<TextField
 				label={t('auth.email')}
 				type='email'
@@ -57,6 +80,15 @@ export default function LoginPage() {
 				required
 				value={email}
 				onChange={(e) => setEmail(e.target.value)}
+				slotProps={{
+					input: {
+						startAdornment: (
+							<InputAdornment position='start'>
+								<EmailOutlinedIcon fontSize='small' color='action' />
+							</InputAdornment>
+						),
+					},
+				}}
 				sx={{ mb: 2 }}
 			/>
 			<TextField
@@ -66,6 +98,15 @@ export default function LoginPage() {
 				required
 				value={password}
 				onChange={(e) => setPassword(e.target.value)}
+				slotProps={{
+					input: {
+						startAdornment: (
+							<InputAdornment position='start'>
+								<LockOutlinedIcon fontSize='small' color='action' />
+							</InputAdornment>
+						),
+					},
+				}}
 				sx={{ mb: 3 }}
 			/>
 			<Button
@@ -74,17 +115,18 @@ export default function LoginPage() {
 				fullWidth
 				size='large'
 				disabled={loading}
+				sx={{ py: 1.35, fontWeight: 800, borderRadius: 1 }}
 			>
 				{loading ? (
 					<CircularProgress size={22} color='inherit' />
 				) : (
-					t('auth.login')
+					'Sign in'
 				)}
 			</Button>
-			<Typography variant='body2' sx={{ textAlign: 'center', mt: 2 }}>
+			<Typography variant='body2' color='text.secondary' sx={{ textAlign: 'center', mt: 2.5 }}>
 				{t('auth.noAccount')}{' '}
-				<Link component={RouterLink} to='/auth/register'>
-					{t('auth.register')}
+				<Link component={RouterLink} to='/auth/register' sx={{ fontWeight: 800, textDecoration: 'none' }}>
+					Create an account
 				</Link>
 			</Typography>
 		</Box>
