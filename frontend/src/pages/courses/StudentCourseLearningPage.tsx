@@ -1418,7 +1418,7 @@ export default function StudentCourseLearningPage() {
 
 						{/* Live Class */}
 						{activeNav === 'live_class' && (
-							<Box sx={{ p: 4, maxWidth: 900 }}>
+							<Box sx={{ p: 4, maxWidth: 1120 }}>
 								<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
 									<Typography variant='h5' sx={{ fontWeight: 700 }}>
 										Live Class ({studyCurricula.length})
@@ -1472,8 +1472,15 @@ export default function StudentCourseLearningPage() {
 								{studyCurricula.length === 0 ? (
 									<Typography color='text.secondary'>No live class available.</Typography>
 								) : (
-									<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-										{studyCurricula.map((curriculum) => {
+									<Box
+										sx={{
+											display: 'grid',
+											gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+											gap: 2.5,
+											alignItems: 'start',
+										}}
+									>
+										{studyCurricula.map((curriculum, ci) => {
 											const canManage =
 												user?._id === curriculum.postedBy._id ||
 												user?.role === 'Admin' ||
@@ -1481,7 +1488,15 @@ export default function StudentCourseLearningPage() {
 												user?.role === 'Moderator';
 											const isEditing = editingScId === curriculum._id;
 											return (
-												<Paper key={curriculum._id} variant='outlined' sx={{ p: 2.5, borderRadius: 0.5 }}>
+												<Paper
+													key={curriculum._id}
+													variant='outlined'
+													sx={{
+														p: 2.5,
+														borderRadius: 1,
+														boxShadow: '0 6px 18px rgba(15, 23, 42, 0.08)',
+													}}
+												>
 													<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
 														<Box sx={{ flex: 1, minWidth: 0 }}>
 															<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -1522,20 +1537,81 @@ export default function StudentCourseLearningPage() {
 																</Box>
 															) : (
 																<>
-																	<Chip label={curriculum.weekName} size='small' color='primary' variant='outlined' sx={{ mb: 1 }} />
-																	<Typography variant='h6' sx={{ fontWeight: 700, mb: 0.5 }}>
-																		{curriculum.title}
-																	</Typography>
+																	<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, mb: 2 }}>
+																		<Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', minWidth: 0 }}>
+																			<Box
+																				sx={{
+																					width: 64,
+																					minHeight: 78,
+																					borderRadius: 1,
+																					bgcolor: ci % 3 === 0 ? '#f59e0b' : ci % 3 === 1 ? '#fb7c3c' : '#0ea5e9',
+																					color: 'white',
+																					display: 'flex',
+																					flexDirection: 'column',
+																					alignItems: 'center',
+																					justifyContent: 'center',
+																					textAlign: 'center',
+																					fontWeight: 800,
+																					lineHeight: 1.15,
+																					flexShrink: 0,
+																				}}
+																			>
+																				<Typography sx={{ fontSize: '0.78rem', fontWeight: 800, lineHeight: 1.1 }}>
+																					Week
+																				</Typography>
+																				<Typography sx={{ fontSize: '1.25rem', fontWeight: 900, lineHeight: 1.1 }}>
+																					{ci + 1}
+																				</Typography>
+																			</Box>
+																			<Box sx={{ minWidth: 0 }}>
+																				<Typography variant='h6' sx={{ fontWeight: 800, color: '#111827', lineHeight: 1.25 }}>
+																					{curriculum.title || curriculum.weekName}
+																				</Typography>
+																				<Typography variant='caption' color='text.secondary'>
+																					{curriculum.weekName}
+																				</Typography>
+																			</Box>
+																		</Box>
+																		<Box
+																			sx={{
+																				display: 'flex',
+																				alignItems: 'center',
+																				gap: 0.75,
+																				px: 1.25,
+																				py: 0.65,
+																				borderRadius: 1,
+																				bgcolor: 'grey.100',
+																				color: '#111827',
+																				flexShrink: 0,
+																			}}
+																		>
+																			<EventNoteOutlinedIcon sx={{ fontSize: 17 }} />
+																			<Typography variant='caption' sx={{ fontWeight: 800 }}>
+																				{curriculum.lectures.length} Live Class
+																			</Typography>
+																		</Box>
+																	</Box>
 																	<Box sx={{ fontSize: '0.875rem', lineHeight: 1.6, mb: 2, '& p': { m: 0, mb: 0.5 }, '& ul, & ol': { pl: 2.5, my: 0.5 } }} dangerouslySetInnerHTML={{ __html: curriculum.description }} />
-																	<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+																	<Box sx={{ display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, overflow: 'hidden' }}>
 																		{curriculum.lectures.map((lecture, index) => (
-																			<Box key={lecture._id ?? index} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 0.5, bgcolor: 'grey.50' }}>
-																				<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 0.5 }}>
-																					<Chip label={lecture.day} size='small' />
-																					<Chip icon={<AccessTimeIcon sx={{ fontSize: 14 }} />} label={lecture.time} size='small' variant='outlined' />
-																					<Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
+																			<Box key={lecture._id ?? index} sx={{ p: 1.5, borderTop: index > 0 ? '1px solid' : 'none', borderColor: 'divider', bgcolor: 'grey.50' }}>
+																				<Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 0.75 }}>
+																					<Typography variant='subtitle2' sx={{ fontWeight: 800, color: '#111827' }}>
 																						{lecture.title}
 																					</Typography>
+																					<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
+																						<Chip
+																							label={lecture.day}
+																							size='small'
+																							sx={{
+																								bgcolor: '#e0f2fe',
+																								color: '#075985',
+																								fontWeight: 700,
+																								borderRadius: 1,
+																							}}
+																						/>
+																						<Chip icon={<AccessTimeIcon sx={{ fontSize: 14 }} />} label={lecture.time} size='small' variant='outlined' />
+																					</Box>
 																				</Box>
 																				{lecture.description && (
 																					<Typography variant='body2' color='text.secondary'>

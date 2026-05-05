@@ -652,7 +652,13 @@ export default function CourseDetailPage() {
 
 						{/* Course content */}
 						{(hasRecordedContent || hasStudyCurriculum) && (
-							<Box sx={{ mb: 4 }}>
+							<Box
+								sx={{
+									mb: 4,
+									width: { md: 'calc(100% + 80px)' },
+									maxWidth: { md: 'calc(100vw - 48px)' },
+								}}
+							>
 								<Box
 									sx={{
 										display: 'flex',
@@ -868,8 +874,8 @@ export default function CourseDetailPage() {
 									<Box
 										sx={{
 											display: 'grid',
-											gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-											gap: 2,
+											gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+											gap: 2.5,
 											alignItems: 'start',
 										}}
 									>

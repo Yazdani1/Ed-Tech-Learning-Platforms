@@ -1419,7 +1419,7 @@ export default function CourseCreatePage() {
 
 
 					{tab === 4 && (
-						<Box sx={{ maxWidth: 820 }}>
+						<Box sx={{ maxWidth: 1040 }}>
 							<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
 								<Box>
 									<Typography variant='h6' sx={{ fontWeight: 700 }}>
@@ -1484,8 +1484,8 @@ export default function CourseCreatePage() {
 								<Box
 									sx={{
 										display: 'grid',
-										gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
-										gap: 2,
+										gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+										gap: 2.5,
 										alignItems: 'start',
 									}}
 								>
