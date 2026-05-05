@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import {
 	Box,
 	Button,
+	Card,
+	CardContent,
 	Chip,
 	CircularProgress,
 	Dialog,
@@ -10,25 +12,18 @@ import {
 	DialogTitle,
 	Avatar,
 	FormControl,
-	IconButton,
 	InputLabel,
 	MenuItem,
-	Paper,
 	Select,
-	Table,
-	TableBody,
-	TableCell,
-	TableContainer,
-	TableHead,
-	TableRow,
 	TextField,
 	Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import toast from 'react-hot-toast';
+import ItemActionMenu from '../../components/common/ItemActionMenu';
 import { teacherService } from '../../services/teacher.service';
 import { userService } from '../../services/user.service';
 import type { ITeacher, IUser } from '../../types/index';
@@ -151,67 +146,159 @@ export default function TeachersPage() {
 					<CircularProgress />
 				</Box>
 			) : (
-				<TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
-					<Table>
-						<TableHead>
-							<TableRow>
-								<TableCell sx={{ fontWeight: 600 }}>Avatar</TableCell>
-								<TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-								<TableCell sx={{ fontWeight: 600 }}>Bio</TableCell>
-								<TableCell sx={{ fontWeight: 600 }}>Expertise</TableCell>
-								<TableCell sx={{ fontWeight: 600 }}>Linked User</TableCell>
-								<TableCell sx={{ fontWeight: 600, width: 120 }}>Actions</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{teachers.map((teacher) => {
-								const linked = teacherUsers.find((u) => u._id === teacher.userId);
-								return (
-									<TableRow key={teacher._id}>
-										<TableCell>
-											<Avatar src={teacher.profileImage} alt={teacher.name} sx={{ width: 40, height: 40 }}>
-												{teacher.name.charAt(0)}
-											</Avatar>
-										</TableCell>
-										<TableCell>{teacher.name}</TableCell>
-										<TableCell sx={{ maxWidth: 300 }}>
-											{teacher.bio.length > 100 ? `${teacher.bio.substring(0, 100)}...` : teacher.bio}
-										</TableCell>
-										<TableCell>
-											<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-												{teacher.expertise.slice(0, 2).map((exp, i) => (
-													<Chip key={i} label={exp} size='small' variant='outlined' />
-												))}
-												{teacher.expertise.length > 2 && (
-													<Chip label={`+${teacher.expertise.length - 2}`} size='small' variant='outlined' />
-												)}
-											</Box>
-										</TableCell>
-										<TableCell>
+				<Box
+					sx={{
+						display: 'grid',
+						gridTemplateColumns: {
+							xs: '1fr',
+							sm: 'repeat(2, minmax(0, 1fr))',
+							lg: 'repeat(3, minmax(0, 1fr))',
+							xl: 'repeat(4, minmax(0, 1fr))',
+						},
+						gap: 2.5,
+					}}
+				>
+					{teachers.length === 0 ? (
+						<Box
+							sx={{
+								gridColumn: '1 / -1',
+								border: '1px solid',
+								borderColor: 'divider',
+								borderRadius: 1,
+								py: 8,
+								textAlign: 'center',
+								color: 'text.secondary',
+							}}
+						>
+							No teachers yet.
+						</Box>
+					) : (
+						teachers.map((teacher) => {
+							const linked = teacherUsers.find((u) => u._id === teacher.userId);
+							const bio = teacher.bio.length > 130 ? `${teacher.bio.substring(0, 130)}...` : teacher.bio;
+
+							return (
+								<Card
+									key={teacher._id}
+									elevation={0}
+									sx={{
+										position: 'relative',
+										border: '1px solid',
+										borderColor: 'divider',
+										borderRadius: 1,
+										height: '100%',
+									}}
+								>
+									<Box sx={{ position: 'absolute', top: 10, right: 10 }}>
+										<ItemActionMenu
+											actions={[
+												{
+													label: 'Edit',
+													icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
+													onClick: () => handleOpenDialog(teacher),
+												},
+												{
+													label: 'Delete',
+													color: 'error',
+													icon: <DeleteOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
+													onClick: () => void handleDelete(teacher._id),
+												},
+											]}
+										/>
+									</Box>
+									<CardContent
+										sx={{
+											p: 2.5,
+											display: 'flex',
+											flexDirection: 'column',
+											alignItems: 'center',
+											textAlign: 'center',
+											height: '100%',
+										}}
+									>
+										<Avatar
+											src={teacher.profileImage}
+											alt={teacher.name}
+											sx={{
+												width: 96,
+												height: 96,
+												mb: 1.5,
+												fontSize: 36,
+												fontWeight: 800,
+											}}
+										>
+											{teacher.name.charAt(0)}
+										</Avatar>
+										<Typography variant='h6' sx={{ fontWeight: 800, pr: 2, pl: 2 }}>
+											{teacher.name}
+										</Typography>
+										<Typography
+											variant='body2'
+											color='text.secondary'
+											sx={{ mt: 1, minHeight: 58, lineHeight: 1.55 }}
+										>
+											{bio}
+										</Typography>
+
+										<Box
+											sx={{
+												display: 'flex',
+												flexWrap: 'wrap',
+												justifyContent: 'center',
+												gap: 0.75,
+												mt: 2,
+												minHeight: 28,
+											}}
+										>
+											{teacher.expertise.slice(0, 3).map((exp, index) => (
+												<Chip key={`${exp}-${index}`} label={exp} size='small' variant='outlined' />
+											))}
+											{teacher.expertise.length > 3 && (
+												<Chip label={`+${teacher.expertise.length - 3}`} size='small' variant='outlined' />
+											)}
+										</Box>
+
+										<Box sx={{ mt: 'auto', pt: 2.25, width: '100%' }}>
 											{linked ? (
-												<Box>
-													<Typography variant='body2' sx={{ fontWeight: 500 }}>{linked.name}</Typography>
-													<Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>{linked.email}</Typography>
-													<Typography variant='caption' color='primary.main'>{linked.role}</Typography>
+												<Box
+													sx={{
+														borderTop: '1px solid',
+														borderColor: 'divider',
+														pt: 1.5,
+													}}
+												>
+													<Typography variant='body2' sx={{ fontWeight: 700 }}>
+														{linked.name}
+													</Typography>
+													<Typography
+														variant='caption'
+														color='text.secondary'
+														sx={{ display: 'block', overflowWrap: 'anywhere' }}
+													>
+														{linked.email}
+													</Typography>
+													<Chip label={linked.role} size='small' color='primary' variant='outlined' sx={{ mt: 1 }} />
 												</Box>
 											) : (
-												<Typography variant='body2' color='text.disabled'>Not linked</Typography>
+												<Typography
+													variant='body2'
+													color='text.disabled'
+													sx={{
+														borderTop: '1px solid',
+														borderColor: 'divider',
+														pt: 1.5,
+													}}
+												>
+													Not linked
+												</Typography>
 											)}
-										</TableCell>
-										<TableCell>
-											<IconButton size='small' onClick={() => handleOpenDialog(teacher)} sx={{ mr: 1 }}>
-												<EditIcon />
-											</IconButton>
-											<IconButton size='small' color='error' onClick={() => handleDelete(teacher._id)}>
-												<DeleteIcon />
-											</IconButton>
-										</TableCell>
-									</TableRow>
-								);
-							})}
-						</TableBody>
-					</Table>
-				</TableContainer>
+										</Box>
+									</CardContent>
+								</Card>
+							);
+						})
+					)}
+				</Box>
 			)}
 
 			<Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth='md' fullWidth>
