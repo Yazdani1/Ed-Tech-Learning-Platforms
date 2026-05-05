@@ -30,6 +30,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import TuneIcon from '@mui/icons-material/Tune';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
@@ -144,6 +145,7 @@ export default function CoursesPage() {
 	const directCourses = filtered.filter((c) => c.enrollmentType !== 'subscription');
 	const subCourses = filtered.filter((c) => c.enrollmentType === 'subscription');
 	const moderatorFilterCount = Object.values(moderatorFilters).filter(Boolean).length;
+	const hasModeratorFilters = moderatorFilterCount > 0 || Boolean(search);
 	const clearModeratorFilters = () => {
 		setSearch('');
 		setModeratorFilters({
@@ -198,14 +200,24 @@ export default function CoursesPage() {
 								Filter courses
 							</Typography>
 							<Typography variant='body2' color='text.secondary'>
-								Showing published courses only. Narrow results by course details.
+								{loading
+									? 'Loading courses...'
+									: `${courses.length} published course${courses.length !== 1 ? 's' : ''}${hasModeratorFilters ? ' match your filters' : ' available'}`}
 							</Typography>
 						</Box>
-						{(moderatorFilterCount > 0 || search) && (
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+							<Chip
+								label={`${courses.length} course${courses.length !== 1 ? 's' : ''}`}
+								size='small'
+								color={hasModeratorFilters ? 'primary' : 'default'}
+								sx={{ fontWeight: 800 }}
+							/>
+						{hasModeratorFilters && (
 							<Button size='small' onClick={clearModeratorFilters}>
 								Clear filters
 							</Button>
 						)}
+						</Box>
 					</Box>
 
 					<Grid container spacing={2}>
@@ -640,18 +652,40 @@ function ModeratorCourseCard({
 						<SchoolOutlinedIcon sx={{ color: 'primary.main', fontSize: 46 }} />
 					</Box>
 				)}
-				<Chip
-					label='Published'
-					size='small'
-					sx={{
-						position: 'absolute',
-						top: 12,
-						left: 12,
-						bgcolor: '#0f766e',
-						color: 'white',
-						fontWeight: 800,
-					}}
-				/>
+				{course.courseType && (
+					<Box
+						sx={{
+							position: 'absolute',
+							top: 12,
+							left: 12,
+							px: 1.25,
+							py: 0.6,
+							borderRadius: 1,
+							background:
+								'linear-gradient(90deg, #0f766e 0%, #7c3aed 40%, #0ea5e9 70%, #0f766e 100%)',
+							backgroundSize: '250% auto',
+							color: 'white',
+							boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+						}}
+					>
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+							<VerifiedIcon sx={{ fontSize: 13, color: 'white' }} />
+							<Typography
+								variant='caption'
+								sx={{
+									fontSize: '0.65rem',
+									fontWeight: 800,
+									color: 'white',
+									letterSpacing: 0.75,
+									lineHeight: 1,
+									textTransform: 'uppercase',
+								}}
+							>
+								{course.courseType.name}
+							</Typography>
+						</Box>
+					</Box>
+				)}
 			</Box>
 
 			<Box sx={{ p: 2.5, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
