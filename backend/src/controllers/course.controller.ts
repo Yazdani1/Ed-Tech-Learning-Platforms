@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { Course } from '../models/Course.model';
 import { Section } from '../models/Section.model';
 import { Lecture } from '../models/Lecture.model';
+import { StudyCurriculum } from '../models/StudyCurriculum.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
@@ -268,6 +269,7 @@ export const deleteCourse = asyncHandler(
 			await deleteFromCloudinary(course.coverImagePublicId);
 		await Lecture.deleteMany({ section: { $in: course.sections } });
 		await Section.deleteMany({ course: course._id });
+		await StudyCurriculum.deleteMany({ course: course._id });
 		await course.deleteOne();
 
 		res.status(200).json({ success: true, message: 'Course deleted' });

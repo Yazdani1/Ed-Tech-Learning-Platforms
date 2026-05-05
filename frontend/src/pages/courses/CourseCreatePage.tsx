@@ -15,6 +15,7 @@ import {
 	CircularProgress,
 	Chip,
 	Divider,
+	Grid,
 	IconButton,
 	Paper,
 	Tooltip,
@@ -32,6 +33,7 @@ import { categoryService } from '../../services/category.service';
 import { courseTypeService } from '../../services/courseType.service';
 import { teacherService } from '../../services/teacher.service';
 import { announcementService } from '../../services/announcement.service';
+import { studyCurriculumService } from '../../services/studyCurriculum.service';
 import { studyMaterialService } from '../../services/studyMaterial.service';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import CurriculumBuilder from '../../components/course/CurriculumBuilder/CurriculumBuilder';
@@ -44,6 +46,8 @@ import type {
 	ICourseType,
 	ITeacher,
 	IAnnouncement,
+	IStudyCurriculum,
+	IStudyCurriculumLecture,
 	IStudyMaterial,
 	SubscriptionPlan,
 } from '../../types/index';
@@ -54,6 +58,20 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 	'Gold',
 	'Quiz Only',
 ];
+
+const blankLiveClassLecture = (): IStudyCurriculumLecture => ({
+	title: '',
+	description: '',
+	day: '',
+	time: '',
+});
+
+const blankLiveClassForm = () => ({
+	title: '',
+	description: '',
+	weekName: '',
+	lectures: [blankLiveClassLecture()],
+});
 
 function ArrayFieldEditor({
 	label,
@@ -163,6 +181,129 @@ function ArrayFieldEditor({
 	);
 }
 
+function LiveClassLectureFields({
+	lectures,
+	onAdd,
+	onRemove,
+	onChange,
+}: {
+	lectures: IStudyCurriculumLecture[];
+	onAdd: () => void;
+	onRemove: (index: number) => void;
+	onChange: (
+		index: number,
+		field: keyof IStudyCurriculumLecture,
+		value: string,
+	) => void;
+}) {
+	return (
+		<Box sx={{ mt: 2 }}>
+			<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+				<Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
+					Classes
+				</Typography>
+				<Button size='small' startIcon={<AddIcon />} onClick={onAdd}>
+					Add Class
+				</Button>
+			</Box>
+			{lectures.map((lecture, index) => (
+				<Paper key={lecture._id ?? index} variant='outlined' sx={{ p: 1.5, mb: 1.5, borderRadius: 0.5 }}>
+					<Grid container spacing={1.25}>
+						<Grid size={{ xs: 12, sm: 6 }}>
+							<TextField label='Class Title' value={lecture.title} onChange={(e) => onChange(index, 'title', e.target.value)} fullWidth size='small' />
+						</Grid>
+						<Grid size={{ xs: 6, sm: 3 }}>
+							<TextField label='Day' value={lecture.day} onChange={(e) => onChange(index, 'day', e.target.value)} fullWidth size='small' placeholder='Monday' />
+						</Grid>
+						<Grid size={{ xs: 6, sm: 3 }}>
+							<TextField label='Time' value={lecture.time} onChange={(e) => onChange(index, 'time', e.target.value)} fullWidth size='small' placeholder='7:00 PM' />
+						</Grid>
+						<Grid size={{ xs: 12 }}>
+							<TextField label='Description' value={lecture.description ?? ''} onChange={(e) => onChange(index, 'description', e.target.value)} fullWidth size='small' multiline minRows={2} />
+						</Grid>
+					</Grid>
+					<Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+						<Button size='small' color='error' onClick={() => onRemove(index)}>
+							Remove Class
+						</Button>
+					</Box>
+				</Paper>
+			))}
+		</Box>
+	);
+}
+
+function LiveClassLectureList({
+	liveClass,
+	quickLecture,
+	isQuickAdding,
+	onStartQuickAdd,
+	onCancelQuickAdd,
+	onQuickChange,
+	onQuickSave,
+}: {
+	liveClass: IStudyCurriculum;
+	quickLecture: IStudyCurriculumLecture;
+	isQuickAdding: boolean;
+	onStartQuickAdd: () => void;
+	onCancelQuickAdd: () => void;
+	onQuickChange: (field: keyof IStudyCurriculumLecture, value: string) => void;
+	onQuickSave: () => void;
+}) {
+	return (
+		<Box>
+			<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+				{liveClass.lectures.map((lecture, index) => (
+					<Box key={lecture._id ?? index} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 0.5, bgcolor: 'grey.50' }}>
+						<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 0.5 }}>
+							<Chip label={lecture.day} size='small' />
+							<Chip label={lecture.time} size='small' variant='outlined' />
+							<Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
+								{lecture.title}
+							</Typography>
+						</Box>
+						{lecture.description && (
+							<Typography variant='body2' color='text.secondary'>
+								{lecture.description}
+							</Typography>
+						)}
+					</Box>
+				))}
+			</Box>
+			{isQuickAdding ? (
+				<Paper variant='outlined' sx={{ p: 1.5, mt: 1.5, borderRadius: 0.5 }}>
+					<Grid container spacing={1.25}>
+						<Grid size={{ xs: 12, sm: 6 }}>
+							<TextField label='Class Title' value={quickLecture.title} onChange={(e) => onQuickChange('title', e.target.value)} fullWidth size='small' />
+						</Grid>
+						<Grid size={{ xs: 6, sm: 3 }}>
+							<TextField label='Day' value={quickLecture.day} onChange={(e) => onQuickChange('day', e.target.value)} fullWidth size='small' placeholder='Monday' />
+						</Grid>
+						<Grid size={{ xs: 6, sm: 3 }}>
+							<TextField label='Time' value={quickLecture.time} onChange={(e) => onQuickChange('time', e.target.value)} fullWidth size='small' placeholder='7:00 PM' />
+						</Grid>
+						<Grid size={{ xs: 12 }}>
+							<TextField label='Description' value={quickLecture.description ?? ''} onChange={(e) => onQuickChange('description', e.target.value)} fullWidth size='small' multiline minRows={2} />
+						</Grid>
+					</Grid>
+					<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1.5 }}>
+						<Button size='small' onClick={onCancelQuickAdd}>
+							Cancel
+						</Button>
+						<Button size='small' variant='contained' onClick={onQuickSave}>
+							Save Class
+						</Button>
+					</Box>
+				</Paper>
+			) : (
+				<Button size='small' startIcon={<AddIcon />} sx={{ mt: 1.5 }} onClick={onStartQuickAdd}>
+					Add Class
+				</Button>
+			)}
+		</Box>
+	);
+}
+
 export default function CourseCreatePage() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
@@ -187,6 +328,17 @@ export default function CourseCreatePage() {
 	const [editingAnnId, setEditingAnnId] = useState<string | null>(null);
 	const [editingAnnForm, setEditingAnnForm] = useState({ title: '', description: '' });
 	const [annUpdating, setAnnUpdating] = useState(false);
+	const [liveClasses, setLiveClasses] = useState<IStudyCurriculum[]>([]);
+	const [lcForm, setLcForm] = useState(blankLiveClassForm);
+	const [lcPosting, setLcPosting] = useState(false);
+	const [showLcForm, setShowLcForm] = useState(false);
+	const [editingLcId, setEditingLcId] = useState<string | null>(null);
+	const [editingLcForm, setEditingLcForm] = useState(blankLiveClassForm);
+	const [lcUpdating, setLcUpdating] = useState(false);
+	const [quickLectureForms, setQuickLectureForms] = useState<
+		Record<string, IStudyCurriculumLecture>
+	>({});
+	const [quickAddingLcId, setQuickAddingLcId] = useState<string | null>(null);
 	const [studyMaterials, setStudyMaterials] = useState<IStudyMaterial[]>([]);
 	const [smForm, setSmForm] = useState({
 		title: '',
@@ -368,12 +520,22 @@ export default function CourseCreatePage() {
 		'Media',
 		'Learning Content',
 		'Curriculum',
+		'Live Class',
 		'Announcements',
 		'Study Materials',
 	];
 
 	useEffect(() => {
 		if (tab === 4 && courseId) {
+			studyCurriculumService
+				.getByCourse(courseId)
+				.then((r) => setLiveClasses(r.data ?? []))
+				.catch(() => {});
+		}
+	}, [tab, courseId]);
+
+	useEffect(() => {
+		if (tab === 5 && courseId) {
 			announcementService
 				.getByCourse(courseId)
 				.then((r) => setAnnouncements(r.data ?? []))
@@ -382,7 +544,7 @@ export default function CourseCreatePage() {
 	}, [tab, courseId]);
 
 	useEffect(() => {
-		if (tab === 5 && courseId) {
+		if (tab === 6 && courseId) {
 			studyMaterialService
 				.getByCourse(courseId)
 				.then((r) => setStudyMaterials(r.data ?? []))
@@ -449,6 +611,188 @@ export default function CourseCreatePage() {
 			// handled by interceptor
 		} finally {
 			setAnnUpdating(false);
+		}
+	};
+
+	const setLiveClassLecture = (
+		setter: React.Dispatch<React.SetStateAction<ReturnType<typeof blankLiveClassForm>>>,
+		index: number,
+		field: keyof IStudyCurriculumLecture,
+		value: string,
+	) => {
+		setter((prev) => ({
+			...prev,
+			lectures: prev.lectures.map((lecture, i) =>
+				i === index ? { ...lecture, [field]: value } : lecture,
+			),
+		}));
+	};
+
+	const addLiveClassLecture = (
+		setter: React.Dispatch<React.SetStateAction<ReturnType<typeof blankLiveClassForm>>>,
+	) => {
+		setter((prev) => ({
+			...prev,
+			lectures: [...prev.lectures, blankLiveClassLecture()],
+		}));
+	};
+
+	const removeLiveClassLecture = (
+		setter: React.Dispatch<React.SetStateAction<ReturnType<typeof blankLiveClassForm>>>,
+		index: number,
+	) => {
+		setter((prev) => ({
+			...prev,
+			lectures:
+				prev.lectures.length > 1
+					? prev.lectures.filter((_lecture, i) => i !== index)
+					: [blankLiveClassLecture()],
+		}));
+	};
+
+	const validateLiveClassForm = (liveClassForm: ReturnType<typeof blankLiveClassForm>) => {
+		if (!liveClassForm.title.trim() || !liveClassForm.description.trim() || !liveClassForm.weekName.trim()) {
+			toast.error('Title, description, and week name are required');
+			return false;
+		}
+		const invalidLecture = liveClassForm.lectures.some(
+			(lecture) => !lecture.title.trim() || !lecture.day.trim() || !lecture.time.trim(),
+		);
+		if (invalidLecture) {
+			toast.error('Each class needs a title, day, and time');
+			return false;
+		}
+		return true;
+	};
+
+	const handlePostLiveClass = async () => {
+		if (!courseId) {
+			toast.error('Save the course first');
+			return;
+		}
+		if (!validateLiveClassForm(lcForm)) return;
+		setLcPosting(true);
+		try {
+			const res = await studyCurriculumService.create(courseId, lcForm);
+			if (res.data) setLiveClasses((p) => [...p, res.data!]);
+			setLcForm(blankLiveClassForm());
+			setShowLcForm(false);
+			toast.success('Live class added');
+		} catch {
+			// handled by interceptor
+		} finally {
+			setLcPosting(false);
+		}
+	};
+
+	const startEditLiveClass = (liveClass: IStudyCurriculum) => {
+		setEditingLcId(liveClass._id);
+		setEditingLcForm({
+			title: liveClass.title,
+			description: liveClass.description,
+			weekName: liveClass.weekName,
+			lectures:
+				liveClass.lectures.length > 0
+					? liveClass.lectures.map((lecture) => ({
+							_id: lecture._id,
+							title: lecture.title,
+							description: lecture.description ?? '',
+							day: lecture.day,
+							time: lecture.time,
+						}))
+					: [blankLiveClassLecture()],
+		});
+	};
+
+	const handleUpdateLiveClass = async () => {
+		if (!editingLcId || !validateLiveClassForm(editingLcForm)) return;
+		setLcUpdating(true);
+		try {
+			const res = await studyCurriculumService.update(editingLcId, editingLcForm);
+			if (res.data) {
+				setLiveClasses((p) =>
+					p.map((item) => (item._id === editingLcId ? res.data! : item)),
+				);
+			}
+			setEditingLcId(null);
+			toast.success('Live class updated');
+		} catch {
+			// handled by interceptor
+		} finally {
+			setLcUpdating(false);
+		}
+	};
+
+	const handleDeleteLiveClass = async (liveClassId: string) => {
+		if (!confirm('Delete this live class plan?')) return;
+		try {
+			await studyCurriculumService.delete(liveClassId);
+			setLiveClasses((p) => p.filter((item) => item._id !== liveClassId));
+			toast.success('Live class deleted');
+		} catch {
+			// handled by interceptor
+		}
+	};
+
+	const setQuickLectureField = (
+		liveClassId: string,
+		field: keyof IStudyCurriculumLecture,
+		value: string,
+	) => {
+		setQuickLectureForms((prev) => ({
+			...prev,
+			[liveClassId]: {
+				...(prev[liveClassId] ?? blankLiveClassLecture()),
+				[field]: value,
+			},
+		}));
+	};
+
+	const startQuickAddLecture = (liveClassId: string) => {
+		setQuickAddingLcId(liveClassId);
+		setQuickLectureForms((prev) => ({
+			...prev,
+			[liveClassId]: prev[liveClassId] ?? blankLiveClassLecture(),
+		}));
+	};
+
+	const handleQuickAddLecture = async (liveClass: IStudyCurriculum) => {
+		const lecture = quickLectureForms[liveClass._id] ?? blankLiveClassLecture();
+		if (!lecture.title.trim() || !lecture.day.trim() || !lecture.time.trim()) {
+			toast.error('Class title, day, and time are required');
+			return;
+		}
+		setQuickAddingLcId(liveClass._id);
+		try {
+			const res = await studyCurriculumService.update(liveClass._id, {
+				title: liveClass.title,
+				description: liveClass.description,
+				weekName: liveClass.weekName,
+				lectures: [
+					...liveClass.lectures,
+					{
+						title: lecture.title.trim(),
+						description: lecture.description?.trim() ?? '',
+						day: lecture.day.trim(),
+						time: lecture.time.trim(),
+					},
+				],
+			});
+			if (res.data) {
+				setLiveClasses((p) =>
+					p.map((item) => (item._id === liveClass._id ? res.data! : item)),
+				);
+			}
+			setQuickLectureForms((prev) => ({
+				...prev,
+				[liveClass._id]: blankLiveClassLecture(),
+			}));
+			setQuickAddingLcId(null);
+			toast.success('Class added');
+		} catch {
+			// handled by interceptor
+		} finally {
+			setQuickAddingLcId(null);
 		}
 	};
 
@@ -1039,12 +1383,144 @@ export default function CourseCreatePage() {
 							</Box>
 						))}
 
-					{/* Tab 4 – Announcements */}
+
 					{tab === 4 && (
+						<Box sx={{ maxWidth: 820 }}>
+							<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
+								<Box>
+									<Typography variant='h6' sx={{ fontWeight: 700 }}>
+										Live Class ({liveClasses.length})
+									</Typography>
+									<Typography variant='body2' color='text.secondary'>
+										Add weekly live class plans and class times for this course.
+									</Typography>
+								</Box>
+								<Button
+									variant='contained'
+									startIcon={<AddIcon />}
+									onClick={() => setShowLcForm((p) => !p)}
+									disabled={!courseId}
+								>
+									Add Week
+								</Button>
+							</Box>
+
+							{showLcForm && (
+								<Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 0.5 }}>
+									<Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 1.5 }}>
+										New Live Class
+									</Typography>
+									<Grid container spacing={1.5}>
+										<Grid size={{ xs: 12, sm: 5 }}>
+											<TextField label='Title' value={lcForm.title} onChange={(e) => setLcForm((p) => ({ ...p, title: e.target.value }))} fullWidth size='small' />
+										</Grid>
+										<Grid size={{ xs: 12, sm: 7 }}>
+											<TextField label='Week Name' value={lcForm.weekName} onChange={(e) => setLcForm((p) => ({ ...p, weekName: e.target.value }))} fullWidth size='small' placeholder='First week' />
+										</Grid>
+									</Grid>
+									<Box sx={{ mt: 1.5 }}>
+										<RichTextEditor value={lcForm.description} onChange={(html) => setLcForm((p) => ({ ...p, description: html }))} placeholder='Enter live class week description...' minHeight={100} />
+									</Box>
+									<LiveClassLectureFields
+										lectures={lcForm.lectures}
+										onAdd={() => addLiveClassLecture(setLcForm)}
+										onRemove={(index) => removeLiveClassLecture(setLcForm, index)}
+										onChange={(index, field, value) => setLiveClassLecture(setLcForm, index, field, value)}
+									/>
+									<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+										<Button
+											size='small'
+											onClick={() => {
+												setShowLcForm(false);
+												setLcForm(blankLiveClassForm());
+											}}
+										>
+											Cancel
+										</Button>
+										<Button size='small' variant='contained' onClick={() => void handlePostLiveClass()} disabled={lcPosting || !courseId}>
+											{lcPosting ? <CircularProgress size={16} /> : 'Add'}
+										</Button>
+									</Box>
+								</Paper>
+							)}
+
+							{liveClasses.length === 0 ? (
+								<Typography color='text.secondary'>No live class available.</Typography>
+							) : (
+								<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+									{liveClasses.map((liveClass) => {
+										const isEditing = editingLcId === liveClass._id;
+										return (
+											<Paper key={liveClass._id} variant='outlined' sx={{ p: 2.5, borderRadius: 0.5 }}>
+												{isEditing ? (
+													<Box>
+														<Grid container spacing={1.5}>
+															<Grid size={{ xs: 12, sm: 5 }}>
+																<TextField label='Title' value={editingLcForm.title} onChange={(e) => setEditingLcForm((p) => ({ ...p, title: e.target.value }))} fullWidth size='small' />
+															</Grid>
+															<Grid size={{ xs: 12, sm: 7 }}>
+																<TextField label='Week Name' value={editingLcForm.weekName} onChange={(e) => setEditingLcForm((p) => ({ ...p, weekName: e.target.value }))} fullWidth size='small' />
+															</Grid>
+														</Grid>
+														<Box sx={{ mt: 1.5 }}>
+															<RichTextEditor value={editingLcForm.description} onChange={(html) => setEditingLcForm((p) => ({ ...p, description: html }))} placeholder='Update live class week description...' minHeight={100} />
+														</Box>
+														<LiveClassLectureFields
+															lectures={editingLcForm.lectures}
+															onAdd={() => addLiveClassLecture(setEditingLcForm)}
+															onRemove={(index) => removeLiveClassLecture(setEditingLcForm, index)}
+															onChange={(index, field, value) => setLiveClassLecture(setEditingLcForm, index, field, value)}
+														/>
+														<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+															<Button size='small' onClick={() => setEditingLcId(null)}>
+																Cancel
+															</Button>
+															<Button size='small' variant='contained' onClick={() => void handleUpdateLiveClass()} disabled={lcUpdating}>
+																{lcUpdating ? <CircularProgress size={16} /> : 'Update'}
+															</Button>
+														</Box>
+													</Box>
+												) : (
+													<>
+														<Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'flex-start' }}>
+															<Box>
+																<Chip label={liveClass.weekName} size='small' color='primary' variant='outlined' sx={{ mb: 1 }} />
+																<Typography variant='subtitle1' sx={{ fontWeight: 700 }}>
+																	{liveClass.title}
+																</Typography>
+															</Box>
+															<ItemActionMenu
+																actions={[
+																	{ label: 'Edit', icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />, onClick: () => startEditLiveClass(liveClass) },
+																	{ label: 'Delete', color: 'error', icon: <DeleteIcon fontSize='small' sx={{ mr: 1 }} />, onClick: () => void handleDeleteLiveClass(liveClass._id) },
+																]}
+															/>
+														</Box>
+														<Box sx={{ fontSize: '0.875rem', lineHeight: 1.6, mb: 2, '& p': { m: 0, mb: 0.5 }, '& ul, & ol': { pl: 2.5, my: 0.5 } }} dangerouslySetInnerHTML={{ __html: liveClass.description }} />
+														<LiveClassLectureList
+															liveClass={liveClass}
+															quickLecture={quickLectureForms[liveClass._id] ?? blankLiveClassLecture()}
+															isQuickAdding={quickAddingLcId === liveClass._id}
+															onStartQuickAdd={() => startQuickAddLecture(liveClass._id)}
+															onCancelQuickAdd={() => setQuickAddingLcId(null)}
+															onQuickChange={(field, value) => setQuickLectureField(liveClass._id, field, value)}
+															onQuickSave={() => void handleQuickAddLecture(liveClass)}
+														/>
+													</>
+												)}
+											</Paper>
+										);
+									})}
+								</Box>
+							)}
+						</Box>
+					)}
+					{/* Tab 4 – Announcements */}
+					{tab === 5 && (
 						<Box sx={{ maxWidth: 720 }}>
 							<Box
 								sx={{
-									display: 'flex',
+								display: 'flex',
 									justifyContent: 'space-between',
 									alignItems: 'center',
 									mb: 3,
@@ -1265,12 +1741,12 @@ export default function CourseCreatePage() {
 						</Box>
 					)}
 
-					{/* Tab 5 – Study Materials */}
-					{tab === 5 && (
+					{/* Tab 6 - Study Materials */}
+					{tab === 6 && (
 						<Box sx={{ maxWidth: 720 }}>
 							<Box
 								sx={{
-									display: 'flex',
+								display: 'flex',
 									justifyContent: 'space-between',
 									alignItems: 'center',
 									mb: 3,
@@ -1535,3 +2011,4 @@ export default function CourseCreatePage() {
 		</Box>
 	);
 }
+

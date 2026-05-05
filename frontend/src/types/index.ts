@@ -174,6 +174,31 @@ export interface IAnnouncement {
   updatedAt: string;
 }
 
+export interface IStudyCurriculumLecture {
+  _id?: string;
+  title: string;
+  description?: string;
+  day: string;
+  time: string;
+}
+
+export interface IStudyCurriculum {
+  _id: string;
+  course: string;
+  title: string;
+  description: string;
+  weekName: string;
+  lectures: IStudyCurriculumLecture[];
+  postedBy: {
+    _id: string;
+    name: string;
+    avatar?: string;
+    role: UserRole;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface IQuestion {
   _id: string;
   course: string;

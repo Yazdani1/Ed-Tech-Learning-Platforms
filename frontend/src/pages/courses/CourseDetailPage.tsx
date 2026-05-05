@@ -39,6 +39,7 @@ import AllInclusiveIcon from '@mui/icons-material/AllInclusive';
 import DevicesIcon from '@mui/icons-material/Devices';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { courseService } from '../../services/course.service';
+import { studyCurriculumService } from '../../services/studyCurriculum.service';
 import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import PublicNavbar from '../../components/layout/PublicNavbar';
 import {
@@ -49,6 +50,7 @@ import { formatDate, formatDateTime } from '../../utils/dateTime';
 import type {
 	ICourse,
 	ILecture,
+	IStudyCurriculum,
 	ISubscriptionPlanConfig,
 } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
@@ -74,10 +76,13 @@ export default function CourseDetailPage() {
 	const [course, setCourse] = useState<ICourse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [expanded, setExpanded] = useState<string[]>([]);
+	const [liveExpanded, setLiveExpanded] = useState<string[]>([]);
 	const [isEnrolled, setIsEnrolled] = useState(false);
 	const [enrollmentDate, setEnrollmentDate] = useState<string | null>(null);
 	const [enrolling, setEnrolling] = useState(false);
 	const [subPlans, setSubPlans] = useState<ISubscriptionPlanConfig[]>([]);
+	const [studyCurricula, setStudyCurricula] = useState<IStudyCurriculum[]>([]);
+	const [contentView, setContentView] = useState<'recorded' | 'curriculum'>('recorded');
 	const [selectedOption, setSelectedOption] = useState<
 		'subscription' | 'direct'
 	>('direct');
@@ -147,6 +152,14 @@ export default function CourseDetailPage() {
 	}, [id, isStudent]);
 
 	useEffect(() => {
+		if (!id) return;
+		studyCurriculumService
+			.getByCourse(id)
+			.then((r) => setStudyCurricula(r.data ?? []))
+			.catch(() => {});
+	}, [id]);
+
+	useEffect(() => {
 		subscriptionPlanConfigService
 			.getAll()
 			.then((r) => setSubPlans(r.data ?? []));
@@ -189,6 +202,17 @@ export default function CourseDetailPage() {
 
 	const totalLectures =
 		course.sections?.reduce((acc, s) => acc + s.lectures.length, 0) ?? 0;
+	const hasRecordedContent = (course.sections?.length ?? 0) > 0;
+	const hasStudyCurriculum = studyCurricula.length > 0;
+	const showContentTabs = hasRecordedContent && hasStudyCurriculum;
+	const activeContentView =
+		hasRecordedContent && (!hasStudyCurriculum || contentView === 'recorded')
+			? 'recorded'
+			: 'curriculum';
+	const totalCurriculumClasses = studyCurricula.reduce(
+		(total, curriculum) => total + curriculum.lectures.length,
+		0,
+	);
 
 	// Find intro lecture: first lecture named "Course Introduction" OR first isPreview lecture, OR first lecture with a videoUrl
 	const introLecture = (() => {
@@ -591,6 +615,14 @@ export default function CourseDetailPage() {
 										icon: <OndemandVideoIcon fontSize='small' />,
 										text: `${totalLectures} on-demand video lectures`,
 									},
+									...(hasStudyCurriculum
+										? [
+												{
+													icon: <EventIcon fontSize='small' />,
+													text: `${studyCurricula.length} live class plan${studyCurricula.length !== 1 ? 's' : ''}`,
+												},
+											]
+										: []),
 									{
 										icon: <AllInclusiveIcon fontSize='small' />,
 										text: 'Full lifetime access',
@@ -619,7 +651,7 @@ export default function CourseDetailPage() {
 						<Divider sx={{ mb: 4 }} />
 
 						{/* Course content */}
-						{course.sections?.length > 0 && (
+						{(hasRecordedContent || hasStudyCurriculum) && (
 							<Box sx={{ mb: 4 }}>
 								<Box
 									sx={{
@@ -634,6 +666,7 @@ export default function CourseDetailPage() {
 									<Typography variant='h6' sx={{ fontWeight: 700 }}>
 										Course content
 									</Typography>
+									{activeContentView === 'recorded' && (
 									<Button
 										size='small'
 										onClick={() => {
@@ -652,16 +685,59 @@ export default function CourseDetailPage() {
 											? 'Collapse all sections'
 											: 'Expand all sections'}
 									</Button>
+									)}
+									{activeContentView === 'curriculum' && (
+										<Button
+											size='small'
+											onClick={() => {
+												const allIds = studyCurricula.map((item) => item._id);
+												if (liveExpanded.length === allIds.length) {
+													setLiveExpanded([]);
+												} else {
+													setLiveExpanded(allIds);
+												}
+											}}
+											sx={{ color: 'primary.main', fontWeight: 600 }}
+										>
+											{liveExpanded.length === studyCurricula.length && studyCurricula.length > 0
+												? 'Collapse all weeks'
+												: 'Expand all weeks'}
+										</Button>
+									)}
 								</Box>
+
+								{showContentTabs && (
+									<Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+										<Button
+											size='small'
+											variant={activeContentView === 'recorded' ? 'contained' : 'outlined'}
+											startIcon={<OndemandVideoIcon fontSize='small' />}
+											onClick={() => setContentView('recorded')}
+										>
+											Recorded Lectures
+										</Button>
+										<Button
+											size='small'
+											variant={activeContentView === 'curriculum' ? 'contained' : 'outlined'}
+											startIcon={<EventIcon fontSize='small' />}
+											onClick={() => setContentView('curriculum')}
+										>
+											Live Class
+										</Button>
+									</Box>
+								)}
 
 								<Typography
 									variant='body2'
 									color='text.secondary'
 									sx={{ mb: 2 }}
 								>
-									{course.sections.length} sections â€¢ {totalLectures} lectures
+									{activeContentView === 'recorded'
+										? `${course.sections.length} sections - ${totalLectures} lectures`
+										: `${studyCurricula.length} weeks - ${totalCurriculumClasses} classes`}
 								</Typography>
 
+								{activeContentView === 'recorded' ? (
 								<Box
 									sx={{
 										border: '1px solid',
@@ -788,6 +864,89 @@ export default function CourseDetailPage() {
 										</Accordion>
 									))}
 								</Box>
+								) : (
+									<Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+										{studyCurricula.map((curriculum, ci) => (
+											<Accordion
+												key={curriculum._id}
+												expanded={liveExpanded.includes(curriculum._id)}
+												onChange={(_event, isExpanded) => {
+													setLiveExpanded((prev) =>
+														isExpanded
+															? [...prev, curriculum._id]
+															: prev.filter((id) => id !== curriculum._id),
+													);
+												}}
+												elevation={0}
+												disableGutters
+												sx={{
+													borderBottom: ci < studyCurricula.length - 1 ? '1px solid' : 'none',
+													borderColor: 'divider',
+													'&::before': { display: 'none' },
+												}}
+											>
+												<AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ bgcolor: 'grey.50', px: 2.5, py: 1.5, minHeight: 58 }}>
+													<Box sx={{ flex: 1, minWidth: 0 }}>
+														<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+															<Chip label={curriculum.weekName} size='small' color='primary' sx={{ fontWeight: 700 }} />
+															<Typography sx={{ fontWeight: 700 }}>
+																{curriculum.title}
+															</Typography>
+														</Box>
+													</Box>
+													<Typography variant='caption' color='text.secondary' sx={{ mr: 1, alignSelf: 'center' }}>
+														{curriculum.lectures.length} class{curriculum.lectures.length !== 1 ? 'es' : ''}
+													</Typography>
+												</AccordionSummary>
+												<AccordionDetails sx={{ p: 0 }}>
+													<Box
+														sx={{ px: 2.5, py: 1.5, fontSize: '0.9rem', lineHeight: 1.7, color: 'text.secondary', '& p': { m: 0, mb: 0.5 }, '& ul, & ol': { pl: 2.5, my: 0.5 } }}
+														dangerouslySetInnerHTML={{ __html: curriculum.description }}
+													/>
+													{curriculum.lectures.map((lecture, index) => (
+														<Box
+															key={lecture._id ?? index}
+															sx={{
+																display: 'flex',
+																gap: 1.25,
+																alignItems: 'flex-start',
+																px: 2.5,
+																py: 1.5,
+																borderTop: '1px solid',
+																borderColor: 'divider',
+															}}
+														>
+															<EventIcon sx={{ fontSize: 18, color: 'primary.main', mt: 0.25 }} />
+															<Box sx={{ flex: 1, minWidth: 0 }}>
+																<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 0.5 }}>
+																	<Chip
+																		label={lecture.day}
+																		size='small'
+																		sx={{
+																			bgcolor: '#e0f2fe',
+																			color: '#075985',
+																			fontWeight: 700,
+																			borderRadius: 1,
+																		}}
+																	/>
+																	<Typography variant='body2' sx={{ fontWeight: 700 }}>
+																		{lecture.title}
+																	</Typography>
+																	<Chip label={lecture.time} size='small' variant='outlined' />
+																</Box>
+																{lecture.description && (
+																	<Typography variant='body2' color='text.secondary'>
+																		{lecture.description}
+																	</Typography>
+																)}
+															</Box>
+														</Box>
+													))}
+												</AccordionDetails>
+											</Accordion>
+										))}
+									</Box>
+								)}
 							</Box>
 						)}
 
@@ -1998,3 +2157,5 @@ export default function CourseDetailPage() {
 		</Box>
 	);
 }
+
+

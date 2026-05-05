@@ -35,6 +35,7 @@ import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
@@ -42,6 +43,7 @@ import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { enrollmentService } from '../../services/enrollment.service';
 import { announcementService } from '../../services/announcement.service';
+import { studyCurriculumService } from '../../services/studyCurriculum.service';
 import { studyMaterialService } from '../../services/studyMaterial.service';
 import { qaService } from '../../services/qa.service';
 import {
@@ -53,6 +55,8 @@ import type {
 	ICourse,
 	ILecture,
 	IAnnouncement,
+	IStudyCurriculum,
+	IStudyCurriculumLecture,
 	IStudyMaterial,
 } from '../../types/index';
 import CourseQASection from '../../components/course/CourseQASection';
@@ -65,6 +69,7 @@ import YouBadge from '../../components/common/YouBadge';
 type NavSection =
 	| 'course_overview'
 	| 'video_lectures'
+	| 'live_class'
 	| 'teacher'
 	| 'announcements'
 	| 'study_materials'
@@ -74,6 +79,20 @@ const getYouTubeId = (url: string) => {
 	const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
 	return m ? m[1] : null;
 };
+
+const blankCurriculumLecture = (): IStudyCurriculumLecture => ({
+	title: '',
+	description: '',
+	day: '',
+	time: '',
+});
+
+const blankCurriculumForm = () => ({
+	title: '',
+	description: '',
+	weekName: '',
+	lectures: [blankCurriculumLecture()],
+});
 
 const NAV_ITEMS: { key: NavSection; label: string; icon: React.ReactNode }[] = [
 	{
@@ -85,6 +104,11 @@ const NAV_ITEMS: { key: NavSection; label: string; icon: React.ReactNode }[] = [
 		key: 'video_lectures',
 		label: 'Video Lectures',
 		icon: <PlayCircleOutlinedIcon />,
+	},
+	{
+		key: 'live_class',
+		label: 'Live Class',
+		icon: <EventNoteOutlinedIcon />,
 	},
 	{ key: 'teacher', label: 'Teacher', icon: <PersonOutlinedIcon /> },
 	{
@@ -122,6 +146,18 @@ export default function StudentCourseLearningPage() {
 	const [editingAnnId, setEditingAnnId] = useState<string | null>(null);
 	const [editingAnnForm, setEditingAnnForm] = useState({ title: '', description: '' });
 	const [annUpdating, setAnnUpdating] = useState(false);
+
+	const [studyCurricula, setStudyCurricula] = useState<IStudyCurriculum[]>([]);
+	const [scPosting, setScPosting] = useState(false);
+	const [showScForm, setShowScForm] = useState(false);
+	const [scForm, setScForm] = useState(blankCurriculumForm);
+	const [editingScId, setEditingScId] = useState<string | null>(null);
+	const [editingScForm, setEditingScForm] = useState(blankCurriculumForm);
+	const [scUpdating, setScUpdating] = useState(false);
+	const [quickLectureForms, setQuickLectureForms] = useState<
+		Record<string, IStudyCurriculumLecture>
+	>({});
+	const [quickAddingScId, setQuickAddingScId] = useState<string | null>(null);
 
 	const [studyMaterials, setStudyMaterials] = useState<IStudyMaterial[]>([]);
 	const [smPosting, setSmPosting] = useState(false);
@@ -178,6 +214,15 @@ export default function StudentCourseLearningPage() {
 
 	useEffect(() => {
 		if (courseId) {
+			studyCurriculumService
+				.getByCourse(courseId)
+				.then((r) => setStudyCurricula(r.data ?? []))
+				.catch(() => {});
+		}
+	}, [courseId]);
+
+	useEffect(() => {
+		if (courseId) {
 			studyMaterialService
 				.getByCourse(courseId)
 				.then((r) => setStudyMaterials(r.data ?? []))
@@ -190,6 +235,8 @@ export default function StudentCourseLearningPage() {
 		(course?.teachers ?? []).some((t) => t.userId === user?._id);
 	const canPost =
 		user?.role === 'Super Admin' || user?.role === 'Admin' || user?.role === 'Moderator' || isTeacherAssigned;
+	const canPostLiveClass =
+		user?.role === 'Super Admin' || user?.role === 'Admin' || isTeacherAssigned;
 
 	// Students accessing the learning page are enrolled; teachers are assigned; admins can always post
 	const canPostQA =
@@ -252,6 +299,182 @@ export default function StudentCourseLearningPage() {
 			toast.success('Announcement updated');
 		} finally {
 			setAnnUpdating(false);
+		}
+	};
+
+	const setCurriculumLecture = (
+		setter: React.Dispatch<React.SetStateAction<ReturnType<typeof blankCurriculumForm>>>,
+		index: number,
+		field: keyof IStudyCurriculumLecture,
+		value: string,
+	) => {
+		setter((prev) => ({
+			...prev,
+			lectures: prev.lectures.map((lecture, i) =>
+				i === index ? { ...lecture, [field]: value } : lecture,
+			),
+		}));
+	};
+
+	const addCurriculumLecture = (
+		setter: React.Dispatch<React.SetStateAction<ReturnType<typeof blankCurriculumForm>>>,
+	) => {
+		setter((prev) => ({
+			...prev,
+			lectures: [...prev.lectures, blankCurriculumLecture()],
+		}));
+	};
+
+	const removeCurriculumLecture = (
+		setter: React.Dispatch<React.SetStateAction<ReturnType<typeof blankCurriculumForm>>>,
+		index: number,
+	) => {
+		setter((prev) => ({
+			...prev,
+			lectures:
+				prev.lectures.length > 1
+					? prev.lectures.filter((_lecture, i) => i !== index)
+					: [blankCurriculumLecture()],
+		}));
+	};
+
+	const validateCurriculumForm = (form: ReturnType<typeof blankCurriculumForm>) => {
+		if (!form.title.trim() || !form.description.trim() || !form.weekName.trim()) {
+			toast.error('Title, description, and week name are required');
+			return false;
+		}
+		const invalidLecture = form.lectures.some(
+			(lecture) => !lecture.title.trim() || !lecture.day.trim() || !lecture.time.trim(),
+		);
+		if (invalidLecture) {
+			toast.error('Each class needs a title, day, and time');
+			return false;
+		}
+		return true;
+	};
+
+	const handlePostStudyCurriculum = async () => {
+		if (!validateCurriculumForm(scForm)) return;
+		setScPosting(true);
+		try {
+			const res = await studyCurriculumService.create(courseId!, scForm);
+			if (res.data) setStudyCurricula((p) => [...p, res.data!]);
+			setScForm(blankCurriculumForm());
+			setShowScForm(false);
+			toast.success('Live class added');
+		} catch {
+			// error toast handled by interceptor
+		} finally {
+			setScPosting(false);
+		}
+	};
+
+	const startEditStudyCurriculum = (curriculum: IStudyCurriculum) => {
+		setEditingScId(curriculum._id);
+		setEditingScForm({
+			title: curriculum.title,
+			description: curriculum.description,
+			weekName: curriculum.weekName,
+			lectures:
+				curriculum.lectures.length > 0
+					? curriculum.lectures.map((lecture) => ({
+							_id: lecture._id,
+							title: lecture.title,
+							description: lecture.description ?? '',
+							day: lecture.day,
+							time: lecture.time,
+						}))
+					: [blankCurriculumLecture()],
+		});
+	};
+
+	const handleUpdateStudyCurriculum = async () => {
+		if (!editingScId || !validateCurriculumForm(editingScForm)) return;
+		setScUpdating(true);
+		try {
+			const res = await studyCurriculumService.update(editingScId, editingScForm);
+			if (res.data) {
+				setStudyCurricula((p) =>
+					p.map((curriculum) =>
+						curriculum._id === editingScId ? res.data! : curriculum,
+					),
+				);
+			}
+			setEditingScId(null);
+			toast.success('Live class updated');
+		} finally {
+			setScUpdating(false);
+		}
+	};
+
+	const handleDeleteStudyCurriculum = async (id: string) => {
+		if (!confirm('Delete this live class plan?')) return;
+		try {
+			await studyCurriculumService.delete(id);
+			setStudyCurricula((p) => p.filter((curriculum) => curriculum._id !== id));
+			toast.success('Live class plan deleted');
+		} catch {
+			// error toast handled by interceptor
+		}
+	};
+
+	const setQuickLectureField = (
+		curriculumId: string,
+		field: keyof IStudyCurriculumLecture,
+		value: string,
+	) => {
+		setQuickLectureForms((prev) => ({
+			...prev,
+			[curriculumId]: {
+				...(prev[curriculumId] ?? blankCurriculumLecture()),
+				[field]: value,
+			},
+		}));
+	};
+
+	const startQuickAddLecture = (curriculumId: string) => {
+		setQuickAddingScId(curriculumId);
+		setQuickLectureForms((prev) => ({
+			...prev,
+			[curriculumId]: prev[curriculumId] ?? blankCurriculumLecture(),
+		}));
+	};
+
+	const handleQuickAddLecture = async (curriculum: IStudyCurriculum) => {
+		const lecture = quickLectureForms[curriculum._id] ?? blankCurriculumLecture();
+		if (!lecture.title.trim() || !lecture.day.trim() || !lecture.time.trim()) {
+			toast.error('Class title, day, and time are required');
+			return;
+		}
+		setQuickAddingScId(curriculum._id);
+		try {
+			const res = await studyCurriculumService.update(curriculum._id, {
+				title: curriculum.title,
+				description: curriculum.description,
+				weekName: curriculum.weekName,
+				lectures: [
+					...curriculum.lectures,
+					{
+						title: lecture.title.trim(),
+						description: lecture.description?.trim() ?? '',
+						day: lecture.day.trim(),
+						time: lecture.time.trim(),
+					},
+				],
+			});
+			if (res.data) {
+				setStudyCurricula((p) =>
+					p.map((item) => (item._id === curriculum._id ? res.data! : item)),
+				);
+			}
+			setQuickLectureForms((prev) => ({
+				...prev,
+				[curriculum._id]: blankCurriculumLecture(),
+			}));
+			setQuickAddingScId(null);
+			toast.success('Class added');
+		} finally {
+			setQuickAddingScId(null);
 		}
 	};
 
@@ -566,7 +789,8 @@ export default function StudentCourseLearningPage() {
 												{activeLecture.description}
 											</Typography>
 										)}
-										{activeLecture.duration != null && (
+										{activeLecture.duration !== null &&
+											activeLecture.duration !== undefined && (
 											<Typography
 												variant='caption'
 												color='text.secondary'
@@ -676,6 +900,11 @@ export default function StudentCourseLearningPage() {
 										icon={<MenuBookOutlinedIcon />}
 										label='Study Materials'
 										value={String(studyMaterials.length)}
+									/>
+									<StatItem
+										icon={<EventNoteOutlinedIcon />}
+										label='Live Class'
+										value={String(studyCurricula.length)}
 									/>
 									<StatItem
 										icon={<QuestionAnswerOutlinedIcon />}
@@ -1187,6 +1416,221 @@ export default function StudentCourseLearningPage() {
 							</Box>
 						)}
 
+						{/* Live Class */}
+						{activeNav === 'live_class' && (
+							<Box sx={{ p: 4, maxWidth: 900 }}>
+								<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
+									<Typography variant='h5' sx={{ fontWeight: 700 }}>
+										Live Class ({studyCurricula.length})
+									</Typography>
+									{canPostLiveClass && (
+										<Button variant='contained' startIcon={<AddIcon />} onClick={() => setShowScForm((p) => !p)}>
+											Add Week
+										</Button>
+									)}
+								</Box>
+
+								{canPostLiveClass && showScForm && (
+									<Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 0.5 }}>
+										<Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 1.5 }}>
+											New Live Class
+										</Typography>
+										<Grid container spacing={1.5}>
+											<Grid size={{ xs: 12, sm: 5 }}>
+												<TextField label='Title' value={scForm.title} onChange={(e) => setScForm((p) => ({ ...p, title: e.target.value }))} fullWidth size='small' />
+											</Grid>
+											<Grid size={{ xs: 12, sm: 7 }}>
+												<TextField label='Week Name' value={scForm.weekName} onChange={(e) => setScForm((p) => ({ ...p, weekName: e.target.value }))} fullWidth size='small' placeholder='First week' />
+											</Grid>
+										</Grid>
+										<Box sx={{ mt: 1.5 }}>
+											<RichTextEditor value={scForm.description} onChange={(html) => setScForm((p) => ({ ...p, description: html }))} placeholder='Enter live class week description...' minHeight={100} />
+										</Box>
+										<CurriculumLectureFields
+											lectures={scForm.lectures}
+											onAdd={() => addCurriculumLecture(setScForm)}
+											onRemove={(index) => removeCurriculumLecture(setScForm, index)}
+											onChange={(index, field, value) => setCurriculumLecture(setScForm, index, field, value)}
+										/>
+										<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+											<Button
+												size='small'
+												onClick={() => {
+													setShowScForm(false);
+													setScForm(blankCurriculumForm());
+												}}
+											>
+												Cancel
+											</Button>
+											<Button size='small' variant='contained' onClick={() => void handlePostStudyCurriculum()} disabled={scPosting}>
+												{scPosting ? <CircularProgress size={16} /> : 'Add'}
+											</Button>
+										</Box>
+									</Paper>
+								)}
+
+								{studyCurricula.length === 0 ? (
+									<Typography color='text.secondary'>No live class available.</Typography>
+								) : (
+									<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+										{studyCurricula.map((curriculum) => {
+											const canManage =
+												user?._id === curriculum.postedBy._id ||
+												user?.role === 'Admin' ||
+												user?.role === 'Super Admin' ||
+												user?.role === 'Moderator';
+											const isEditing = editingScId === curriculum._id;
+											return (
+												<Paper key={curriculum._id} variant='outlined' sx={{ p: 2.5, borderRadius: 0.5 }}>
+													<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
+														<Box sx={{ flex: 1, minWidth: 0 }}>
+															<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+																<Avatar src={curriculum.postedBy.avatar} sx={{ width: 22, height: 22, fontSize: 12, bgcolor: 'primary.main' }}>
+																	{curriculum.postedBy.name[0]}
+																</Avatar>
+																<Typography variant='caption' color='text.secondary'>
+																	{curriculum.postedBy.name} {user?._id === curriculum.postedBy._id && <YouBadge />} &bull; {curriculum.postedBy.role} &bull; {formatDateTime(curriculum.createdAt)}
+																</Typography>
+															</Box>
+															{isEditing ? (
+																<Box>
+																	<Grid container spacing={1.5}>
+																		<Grid size={{ xs: 12, sm: 5 }}>
+																			<TextField label='Title' value={editingScForm.title} onChange={(e) => setEditingScForm((p) => ({ ...p, title: e.target.value }))} fullWidth size='small' />
+																		</Grid>
+																		<Grid size={{ xs: 12, sm: 7 }}>
+																			<TextField label='Week Name' value={editingScForm.weekName} onChange={(e) => setEditingScForm((p) => ({ ...p, weekName: e.target.value }))} fullWidth size='small' />
+																		</Grid>
+																	</Grid>
+																	<Box sx={{ mt: 1.5 }}>
+																		<RichTextEditor value={editingScForm.description} onChange={(html) => setEditingScForm((p) => ({ ...p, description: html }))} placeholder='Update live class week description...' minHeight={100} />
+																	</Box>
+																	<CurriculumLectureFields
+																		lectures={editingScForm.lectures}
+																		onAdd={() => addCurriculumLecture(setEditingScForm)}
+																		onRemove={(index) => removeCurriculumLecture(setEditingScForm, index)}
+																		onChange={(index, field, value) => setCurriculumLecture(setEditingScForm, index, field, value)}
+																	/>
+																	<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+																		<Button size='small' onClick={() => setEditingScId(null)}>
+																			Cancel
+																		</Button>
+																		<Button size='small' variant='contained' onClick={() => void handleUpdateStudyCurriculum()} disabled={scUpdating}>
+																			{scUpdating ? <CircularProgress size={16} /> : 'Update'}
+																		</Button>
+																	</Box>
+																</Box>
+															) : (
+																<>
+																	<Chip label={curriculum.weekName} size='small' color='primary' variant='outlined' sx={{ mb: 1 }} />
+																	<Typography variant='h6' sx={{ fontWeight: 700, mb: 0.5 }}>
+																		{curriculum.title}
+																	</Typography>
+																	<Box sx={{ fontSize: '0.875rem', lineHeight: 1.6, mb: 2, '& p': { m: 0, mb: 0.5 }, '& ul, & ol': { pl: 2.5, my: 0.5 } }} dangerouslySetInnerHTML={{ __html: curriculum.description }} />
+																	<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+																		{curriculum.lectures.map((lecture, index) => (
+																			<Box key={lecture._id ?? index} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 0.5, bgcolor: 'grey.50' }}>
+																				<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 0.5 }}>
+																					<Chip label={lecture.day} size='small' />
+																					<Chip icon={<AccessTimeIcon sx={{ fontSize: 14 }} />} label={lecture.time} size='small' variant='outlined' />
+																					<Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
+																						{lecture.title}
+																					</Typography>
+																				</Box>
+																				{lecture.description && (
+																					<Typography variant='body2' color='text.secondary'>
+																						{lecture.description}
+																					</Typography>
+																				)}
+																			</Box>
+																		))}
+																	</Box>
+																	{quickAddingScId === curriculum._id && (
+																		<Paper variant='outlined' sx={{ p: 1.5, mt: 1.5, borderRadius: 0.5 }}>
+																			<Grid container spacing={1.25}>
+																				<Grid size={{ xs: 12, sm: 6 }}>
+																					<TextField
+																						label='Class Title'
+																						value={quickLectureForms[curriculum._id]?.title ?? ''}
+																						onChange={(e) => setQuickLectureField(curriculum._id, 'title', e.target.value)}
+																						fullWidth
+																						size='small'
+																					/>
+																				</Grid>
+																				<Grid size={{ xs: 6, sm: 3 }}>
+																					<TextField
+																						label='Day'
+																						value={quickLectureForms[curriculum._id]?.day ?? ''}
+																						onChange={(e) => setQuickLectureField(curriculum._id, 'day', e.target.value)}
+																						fullWidth
+																						size='small'
+																						placeholder='Monday'
+																					/>
+																				</Grid>
+																				<Grid size={{ xs: 6, sm: 3 }}>
+																					<TextField
+																						label='Time'
+																						value={quickLectureForms[curriculum._id]?.time ?? ''}
+																						onChange={(e) => setQuickLectureField(curriculum._id, 'time', e.target.value)}
+																						fullWidth
+																						size='small'
+																						placeholder='7:00 PM'
+																					/>
+																				</Grid>
+																				<Grid size={{ xs: 12 }}>
+																					<TextField
+																						label='Description'
+																						value={quickLectureForms[curriculum._id]?.description ?? ''}
+																						onChange={(e) => setQuickLectureField(curriculum._id, 'description', e.target.value)}
+																						fullWidth
+																						size='small'
+																						multiline
+																						minRows={2}
+																					/>
+																				</Grid>
+																			</Grid>
+																			<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1.5 }}>
+																				<Button size='small' onClick={() => setQuickAddingScId(null)}>
+																					Cancel
+																				</Button>
+																				<Button size='small' variant='contained' onClick={() => void handleQuickAddLecture(curriculum)}>
+																					Save Class
+																				</Button>
+																			</Box>
+																		</Paper>
+																	)}
+																	{canManage && quickAddingScId !== curriculum._id && (
+																		<Button
+																			size='small'
+																			startIcon={<AddIcon />}
+																			sx={{ mt: 1.5 }}
+																			onClick={() => startQuickAddLecture(curriculum._id)}
+																		>
+																			Add Class
+																		</Button>
+																	)}
+																</>
+															)}
+														</Box>
+														{canManage && !isEditing && (
+															<Box sx={{ flexShrink: 0 }}>
+																<ItemActionMenu
+																	actions={[
+																		{ label: 'Edit', icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />, onClick: () => startEditStudyCurriculum(curriculum) },
+																		{ label: 'Delete', color: 'error', icon: <DeleteOutlinedIcon fontSize='small' sx={{ mr: 1 }} />, onClick: () => void handleDeleteStudyCurriculum(curriculum._id) },
+																	]}
+																/>
+															</Box>
+														)}
+													</Box>
+												</Paper>
+											);
+										})}
+									</Box>
+								)}
+							</Box>
+						)}
+
 						{/* ── Study Materials ────────────────────────────── */}
 						{activeNav === 'study_materials' && (
 							<Box sx={{ p: 4, maxWidth: 800 }}>
@@ -1625,7 +2069,8 @@ export default function StudentCourseLearningPage() {
 														>
 															{lecture.title}
 														</Typography>
-														{lecture.duration != null && (
+														{lecture.duration !== null &&
+															lecture.duration !== undefined && (
 															<Typography
 																variant='caption'
 																color='text.secondary'
@@ -1681,3 +2126,96 @@ function StatItem({
 		</Box>
 	);
 }
+
+function CurriculumLectureFields({
+	lectures,
+	onAdd,
+	onRemove,
+	onChange,
+}: {
+	lectures: IStudyCurriculumLecture[];
+	onAdd: () => void;
+	onRemove: (index: number) => void;
+	onChange: (
+		index: number,
+		field: keyof IStudyCurriculumLecture,
+		value: string,
+	) => void;
+}) {
+	return (
+		<Box sx={{ mt: 2 }}>
+			<Box
+				sx={{
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					mb: 1,
+				}}
+			>
+				<Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
+					Classes
+				</Typography>
+				<Button size='small' startIcon={<AddIcon />} onClick={onAdd}>
+					Add Class
+				</Button>
+			</Box>
+			{lectures.map((lecture, index) => (
+				<Paper
+					key={lecture._id ?? index}
+					variant='outlined'
+					sx={{ p: 1.5, mb: 1.5, borderRadius: 0.5 }}
+				>
+					<Grid container spacing={1.25}>
+						<Grid size={{ xs: 12, sm: 6 }}>
+							<TextField
+								label='Class Title'
+								value={lecture.title}
+								onChange={(e) => onChange(index, 'title', e.target.value)}
+								fullWidth
+								size='small'
+							/>
+						</Grid>
+						<Grid size={{ xs: 6, sm: 3 }}>
+							<TextField
+								label='Day'
+								value={lecture.day}
+								onChange={(e) => onChange(index, 'day', e.target.value)}
+								fullWidth
+								size='small'
+								placeholder='Monday'
+							/>
+						</Grid>
+						<Grid size={{ xs: 6, sm: 3 }}>
+							<TextField
+								label='Time'
+								value={lecture.time}
+								onChange={(e) => onChange(index, 'time', e.target.value)}
+								fullWidth
+								size='small'
+								placeholder='7:00 PM'
+							/>
+						</Grid>
+						<Grid size={{ xs: 12 }}>
+							<TextField
+								label='Description'
+								value={lecture.description ?? ''}
+								onChange={(e) => onChange(index, 'description', e.target.value)}
+								fullWidth
+								size='small'
+								multiline
+								minRows={2}
+							/>
+						</Grid>
+					</Grid>
+					<Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+						<Button size='small' color='error' onClick={() => onRemove(index)}>
+							Remove Class
+						</Button>
+					</Box>
+				</Paper>
+			))}
+		</Box>
+	);
+}
+
+
