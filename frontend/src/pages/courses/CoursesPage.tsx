@@ -31,13 +31,15 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import TuneIcon from '@mui/icons-material/Tune';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
 import { courseTypeService } from '../../services/courseType.service';
+import { teacherService } from '../../services/teacher.service';
 import CourseCard, { CourseCardSkeleton } from '../../components/ui/CourseCard';
 import BulkEditModal from '../../components/course/BulkEditModal';
-import type { ICategory, ICourse, ICourseType, CoursePricing, CourseVisibility, SubscriptionPlan } from '../../types/index';
+import type { ICategory, ICourse, ICourseType, ITeacher, CoursePricing, CourseStatus, CourseVisibility, SubscriptionPlan } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
@@ -53,17 +55,23 @@ export default function CoursesPage() {
 	const [removeTarget, setRemoveTarget] = useState<ICourse | null>(null);
 	const [removing, setRemoving] = useState(false);
 	const [bulkOpen, setBulkOpen] = useState(false);
+	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
+	const [teachers, setTeachers] = useState<ITeacher[]>([]);
 	const [moderatorFilters, setModeratorFilters] = useState<{
 		courseType: string;
 		category: string;
+		teacher: string;
+		status: '' | CourseStatus;
 		pricing: '' | CoursePricing;
 		visibility: '' | CourseVisibility;
 		subscriptionPlan: '' | SubscriptionPlan;
 	}>({
 		courseType: '',
 		category: '',
+		teacher: '',
+		status: '',
 		pricing: '',
 		visibility: '',
 		subscriptionPlan: '',
@@ -75,17 +83,19 @@ export default function CoursesPage() {
 	const isModerator = user?.role === 'Moderator';
 
 	useEffect(() => {
-		if (!isModerator) return;
-		Promise.all([categoryService.getAll(), courseTypeService.getAll()])
-			.then(([catRes, typeRes]) => {
+		if (!isAdmin || isStudent) return;
+		Promise.all([categoryService.getAll(), courseTypeService.getAll(), teacherService.getAll()])
+			.then(([catRes, typeRes, teacherRes]) => {
 				setCategories(catRes.data ?? []);
 				setCourseTypes(typeRes.data ?? []);
+				setTeachers(teacherRes.data ?? []);
 			})
 			.catch(() => {
 				setCategories([]);
 				setCourseTypes([]);
+				setTeachers([]);
 			});
-	}, [isModerator]);
+	}, [isAdmin, isStudent]);
 
 	useEffect(() => {
 		if (authLoading) return;
@@ -97,8 +107,13 @@ export default function CoursesPage() {
 		if (search) params.search = search;
 		if (isModerator) {
 			params.status = 'Published';
+		} else if (moderatorFilters.status) {
+			params.status = moderatorFilters.status;
+		}
+		if (isAdmin && !isStudent) {
 			if (moderatorFilters.courseType) params.courseType = moderatorFilters.courseType;
 			if (moderatorFilters.category) params.category = moderatorFilters.category;
+			if (moderatorFilters.teacher) params.teacher = moderatorFilters.teacher;
 			if (moderatorFilters.pricing) params.pricing = moderatorFilters.pricing;
 			if (moderatorFilters.visibility) params.visibility = moderatorFilters.visibility;
 			if (moderatorFilters.subscriptionPlan) params.subscriptionPlans = moderatorFilters.subscriptionPlan;
@@ -146,15 +161,20 @@ export default function CoursesPage() {
 	const subCourses = filtered.filter((c) => c.enrollmentType === 'subscription');
 	const moderatorFilterCount = Object.values(moderatorFilters).filter(Boolean).length;
 	const hasModeratorFilters = moderatorFilterCount > 0 || Boolean(search);
+	const activeFilterCount = moderatorFilterCount + (search ? 1 : 0);
+	const showFilters = filtersOpen;
 	const clearModeratorFilters = () => {
 		setSearch('');
 		setModeratorFilters({
 			courseType: '',
 			category: '',
+			teacher: '',
+			status: '',
 			pricing: '',
 			visibility: '',
 			subscriptionPlan: '',
 		});
+		setFiltersOpen(false);
 	};
 
 	return (
@@ -184,7 +204,7 @@ export default function CoursesPage() {
 				)}
 			</Box>
 
-			{isModerator ? (
+			{isAdmin && !isStudent ? (
 				<Paper
 					variant='outlined'
 					sx={{
@@ -202,7 +222,9 @@ export default function CoursesPage() {
 							<Typography variant='body2' color='text.secondary'>
 								{loading
 									? 'Loading courses...'
-									: `${courses.length} published course${courses.length !== 1 ? 's' : ''}${hasModeratorFilters ? ' match your filters' : ' available'}`}
+									: isModerator
+										? `${courses.length} published course${courses.length !== 1 ? 's' : ''}${hasModeratorFilters ? ' match your filters' : ' available'}`
+										: `${courses.length} course${courses.length !== 1 ? 's' : ''}${hasModeratorFilters ? ' match your filters' : ' available'}`}
 							</Typography>
 						</Box>
 						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -212,16 +234,49 @@ export default function CoursesPage() {
 								color={hasModeratorFilters ? 'primary' : 'default'}
 								sx={{ fontWeight: 800 }}
 							/>
-						{hasModeratorFilters && (
-							<Button size='small' onClick={clearModeratorFilters}>
-								Clear filters
+							{activeFilterCount > 0 && (
+								<Chip
+									label={`${activeFilterCount} filter${activeFilterCount !== 1 ? 's' : ''} active`}
+									size='small'
+									color='primary'
+									variant='outlined'
+									sx={{ fontWeight: 800 }}
+								/>
+							)}
+							{hasModeratorFilters && (
+								<Button size='small' onClick={clearModeratorFilters}>
+									Clear filters
+								</Button>
+							)}
+							<Button
+								size='small'
+								variant='outlined'
+								startIcon={<TuneIcon />}
+								endIcon={
+									<ExpandMoreIcon
+										sx={{
+											transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)',
+											transition: 'transform 0.2s ease',
+										}}
+									/>
+								}
+								onClick={() => setFiltersOpen((prev) => !prev)}
+							>
+								{showFilters ? 'Hide filters' : 'Show filters'}
 							</Button>
-						)}
 						</Box>
 					</Box>
 
+					<Box
+						sx={{
+							display: showFilters ? 'block' : 'none',
+							pt: 2,
+							borderTop: '1px solid',
+							borderColor: 'divider',
+						}}
+					>
 					<Grid container spacing={2}>
-						<Grid size={{ xs: 12, md: 4 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
 							<TextField
 								placeholder='Search courses...'
 								value={search}
@@ -239,7 +294,7 @@ export default function CoursesPage() {
 								}}
 							/>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6, md: 4 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Course Type</InputLabel>
 								<Select
@@ -261,7 +316,7 @@ export default function CoursesPage() {
 								</Select>
 							</FormControl>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6, md: 4 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Category</InputLabel>
 								<Select
@@ -283,7 +338,50 @@ export default function CoursesPage() {
 								</Select>
 							</FormControl>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6, md: 4 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+							<FormControl size='small' fullWidth>
+								<InputLabel>Teacher</InputLabel>
+								<Select
+									label='Teacher'
+									value={moderatorFilters.teacher}
+									onChange={(e) =>
+										setModeratorFilters((prev) => ({
+											...prev,
+											teacher: e.target.value,
+										}))
+									}
+								>
+									<MenuItem value=''>All teachers</MenuItem>
+									{teachers.map((teacher) => (
+										<MenuItem key={teacher._id} value={teacher._id}>
+											{teacher.name}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						</Grid>
+						{!isModerator && (
+							<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+								<FormControl size='small' fullWidth>
+									<InputLabel>Status</InputLabel>
+									<Select
+										label='Status'
+										value={moderatorFilters.status}
+										onChange={(e) =>
+											setModeratorFilters((prev) => ({
+												...prev,
+												status: e.target.value as '' | CourseStatus,
+											}))
+										}
+									>
+										<MenuItem value=''>All statuses</MenuItem>
+										<MenuItem value='Published'>Published</MenuItem>
+										<MenuItem value='Draft'>Draft</MenuItem>
+									</Select>
+								</FormControl>
+							</Grid>
+						)}
+						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Pricing</InputLabel>
 								<Select
@@ -302,7 +400,7 @@ export default function CoursesPage() {
 								</Select>
 							</FormControl>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6, md: 4 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Visibility</InputLabel>
 								<Select
@@ -321,7 +419,7 @@ export default function CoursesPage() {
 								</Select>
 							</FormControl>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6, md: 4 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Subscription Plan</InputLabel>
 								<Select
@@ -344,6 +442,7 @@ export default function CoursesPage() {
 							</FormControl>
 						</Grid>
 					</Grid>
+					</Box>
 				</Paper>
 			) : (
 				<TextField
@@ -494,7 +593,16 @@ export default function CoursesPage() {
 					onClose={() => setBulkOpen(false)}
 					onSuccess={() => {
 						// Re-fetch courses after bulk update
-						const load = courseService.getAll(search ? { search } : {});
+						const params: Record<string, string> = {};
+						if (search) params.search = search;
+						if (moderatorFilters.status) params.status = moderatorFilters.status;
+						if (moderatorFilters.courseType) params.courseType = moderatorFilters.courseType;
+						if (moderatorFilters.category) params.category = moderatorFilters.category;
+						if (moderatorFilters.teacher) params.teacher = moderatorFilters.teacher;
+						if (moderatorFilters.pricing) params.pricing = moderatorFilters.pricing;
+						if (moderatorFilters.visibility) params.visibility = moderatorFilters.visibility;
+						if (moderatorFilters.subscriptionPlan) params.subscriptionPlans = moderatorFilters.subscriptionPlan;
+						const load = courseService.getAll(params);
 						load.then((res) => {
 							const data = res.data;
 							const valid = Array.isArray(data)

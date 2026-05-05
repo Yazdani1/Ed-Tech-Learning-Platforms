@@ -10,11 +10,12 @@ import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 import type { CourseStatus, SubscriptionPlan } from '../types/index';
 
 export const getCourses = asyncHandler(async (req: Request, res: Response) => {
-	const { category, courseType, status, pricing, visibility, subscriptionPlans, search } = req.query as Record<string, string>;
+	const { category, courseType, teacher, status, pricing, visibility, subscriptionPlans, search } = req.query as Record<string, string>;
 
 	const filter: Record<string, unknown> = {};
 	if (category) filter.category = category;
 	if (courseType) filter.courseType = courseType;
+	if (teacher) filter.teachers = teacher;
 	if (status) filter.status = status;
 	if (pricing) filter.pricing = pricing;
 	if (visibility) filter.visibility = visibility;
