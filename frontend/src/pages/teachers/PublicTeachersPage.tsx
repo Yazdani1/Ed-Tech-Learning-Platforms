@@ -57,8 +57,9 @@ function TeacherProfileCard({ teacher }: { teacher: ITeacher }) {
 						width: 96,
 						height: 96,
 						position: 'absolute',
-						left: 24,
+						left: '50%',
 						bottom: -48,
+						transform: 'translateX(-50%)',
 						border: '4px solid white',
 						bgcolor: 'primary.main',
 						fontSize: 34,
@@ -70,13 +71,24 @@ function TeacherProfileCard({ teacher }: { teacher: ITeacher }) {
 				</Avatar>
 			</Box>
 
-			<Box sx={{ pt: 7, px: 3, pb: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+			<Box
+				sx={{
+					pt: 7,
+					px: 3,
+					pb: 3,
+					flex: 1,
+					display: 'flex',
+					flexDirection: 'column',
+					alignItems: 'center',
+					textAlign: 'center',
+				}}
+			>
 				<Typography variant='h6' sx={{ fontWeight: 800, lineHeight: 1.2 }}>
 					{teacher.name}
 				</Typography>
 
 				{teacher.expertise?.length > 0 && (
-					<Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mt: 1.5 }}>
+					<Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', justifyContent: 'center', mt: 1.5 }}>
 						{teacher.expertise.slice(0, 4).map((item) => (
 							<Chip
 								key={item}
@@ -115,7 +127,7 @@ function TeacherProfileCard({ teacher }: { teacher: ITeacher }) {
 				<Box sx={{ flexGrow: 1 }} />
 
 				{hasSocials && (
-					<Stack direction='row' spacing={1} sx={{ mt: 2.5 }}>
+					<Stack direction='row' spacing={1} sx={{ mt: 2.5, justifyContent: 'center' }}>
 						{teacher.socialLinks?.twitter && (
 							<Tooltip title='Twitter'>
 								<IconButton component='a' href={teacher.socialLinks.twitter} target='_blank' size='small' sx={{ color: '#1DA1F2', bgcolor: 'rgba(29,161,242,0.1)' }}>

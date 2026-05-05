@@ -34,74 +34,121 @@ function TeacherMarqueeCard({
 				onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
 				onMouseLeave={() => setAnchorEl(null)}
 				sx={{
-					width: 200,
-					height: 200,
+					width: 230,
+					minHeight: 292,
 					flexShrink: 0,
-					borderRadius: 6,
+					borderRadius: 1,
 					overflow: 'hidden',
-					position: 'relative',
+					display: 'flex',
+					flexDirection: 'column',
+					bgcolor: 'background.paper',
+					border: '1px solid',
+					borderColor: 'divider',
 					transform: `translateY(${staggeredOffset}px)`,
 					transition:
 						'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease',
-					boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+					boxShadow: '0 10px 30px rgba(15,23,42,0.08)',
 					'&:hover': {
-						transform: `translateY(${staggeredOffset - 15}px) scale(1.15)`,
-						boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+						transform: `translateY(${staggeredOffset - 12}px) scale(1.04)`,
+						boxShadow: '0 20px 48px rgba(15,23,42,0.18)',
 						zIndex: 10,
-						'& .teacher-overlay': { opacity: 1 },
 					},
 				}}
 			>
 				<Box
-					component='img'
-					src={teacher.profileImage || 'https://placehold.co/400x400?text=Teacher'}
-					alt={teacher.name}
-					sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-				/>
-				<Box
-					className='teacher-overlay'
 					sx={{
-						position: 'absolute',
-						inset: 0,
-						background: 'rgba(15, 23, 42, 0.85)',
-						backdropFilter: 'blur(4px)',
-						opacity: 0,
-						transition: 'opacity 0.3s ease',
-						display: 'flex',
-						flexDirection: 'column',
-						p: 2,
-						color: 'white',
+						height: 92,
+						background:
+							'linear-gradient(135deg, #0f766e 0%, #2563eb 55%, #7c3aed 100%)',
+						position: 'relative',
+						flexShrink: 0,
 					}}
 				>
-					<Typography variant='h6' sx={{ fontWeight: 800, lineHeight: 1.1, mb: 0.5 }}>
+					<Avatar
+						src={teacher.profileImage}
+						alt={teacher.name}
+						sx={{
+							width: 88,
+							height: 88,
+							position: 'absolute',
+							left: '50%',
+							bottom: -44,
+							transform: 'translateX(-50%)',
+							border: '4px solid white',
+							bgcolor: 'primary.main',
+							fontSize: 32,
+							fontWeight: 800,
+							boxShadow: '0 10px 26px rgba(15,23,42,0.22)',
+						}}
+					>
+						{teacher.name.charAt(0).toUpperCase()}
+					</Avatar>
+				</Box>
+
+				<Box
+					sx={{
+						pt: 6.5,
+						px: 2,
+						pb: 2,
+						flex: 1,
+						display: 'flex',
+						flexDirection: 'column',
+						alignItems: 'center',
+						textAlign: 'center',
+					}}
+				>
+					<Typography
+						variant='subtitle1'
+						sx={{
+							fontWeight: 800,
+							lineHeight: 1.2,
+							mb: 1,
+							display: '-webkit-box',
+							WebkitLineClamp: 2,
+							WebkitBoxOrient: 'vertical',
+							overflow: 'hidden',
+						}}
+					>
 						{teacher.name}
 					</Typography>
-					<Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-						{teacher.expertise?.length > 0 && (
-							<Typography
-								variant='caption'
-								sx={{ color: '#a78bfa', fontWeight: 700, display: 'block', mb: 1 }}
-							>
-								{teacher.expertise[0]}
-								{teacher.expertise.length > 1 && ` +${teacher.expertise.length - 1}`}
-							</Typography>
-						)}
-						{teacher.bio && (
-							<Typography
-								variant='caption'
-								sx={{
-									color: 'rgba(255,255,255,0.8)',
-									display: '-webkit-box',
-									WebkitLineClamp: 3,
-									WebkitBoxOrient: 'vertical',
-									overflow: 'hidden',
-									lineHeight: 1.4,
-								}}
-							>
-								{teacher.bio}
-							</Typography>
-						)}
-					</Box>
+
+					{teacher.expertise?.length > 0 && (
+						<Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', justifyContent: 'center', mb: 1.25 }}>
+							{teacher.expertise.slice(0, 2).map((item) => (
+								<Chip
+									key={item}
+									label={item}
+									size='small'
+									sx={{
+										height: 24,
+										fontSize: '0.68rem',
+										fontWeight: 700,
+										bgcolor: 'rgba(37,99,235,0.08)',
+										color: 'primary.main',
+									}}
+								/>
+							))}
+							{teacher.expertise.length > 2 && (
+								<Chip label={`+${teacher.expertise.length - 2}`} size='small' sx={{ height: 24, fontSize: '0.68rem' }} />
+							)}
+						</Box>
+					)}
+
+					{teacher.bio && (
+						<Typography
+							variant='body2'
+							color='text.secondary'
+							sx={{
+								lineHeight: 1.55,
+								display: '-webkit-box',
+								WebkitLineClamp: 3,
+								WebkitBoxOrient: 'vertical',
+								overflow: 'hidden',
+							}}
+						>
+							{teacher.bio}
+						</Typography>
+					)}
 				</Box>
 			</Card>
 
@@ -117,18 +164,18 @@ function TeacherMarqueeCard({
 					paper: {
 						sx: {
 							width: 380,
-							borderRadius: 3,
+							borderRadius: 1,
 							overflow: 'hidden',
-							boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+							boxShadow: '0 20px 60px rgba(15,23,42,0.2)',
 						},
 					},
 				}}
 			>
 				<Box
 					sx={{
-						height: 160,
+						height: 132,
 						background:
-							'linear-gradient(135deg, #0f172a 0%, #7c3aed 60%, #0ea5e9 100%)',
+							'linear-gradient(135deg, #0f766e 0%, #2563eb 55%, #7c3aed 100%)',
 						position: 'relative',
 					}}
 				>
@@ -136,22 +183,28 @@ function TeacherMarqueeCard({
 						src={teacher.profileImage}
 						alt={teacher.name}
 						sx={{
-							width: 90,
-							height: 90,
+							width: 96,
+							height: 96,
 							position: 'absolute',
-							bottom: -45,
-							left: 24,
+							bottom: -48,
+							left: '50%',
+							transform: 'translateX(-50%)',
 							border: '4px solid white',
-							boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+							bgcolor: 'primary.main',
+							fontSize: 34,
+							fontWeight: 800,
+							boxShadow: '0 10px 28px rgba(15,23,42,0.24)',
 						}}
-					/>
+					>
+						{teacher.name.charAt(0).toUpperCase()}
+					</Avatar>
 				</Box>
-				<Box sx={{ pt: 7, px: 3, pb: 3 }}>
+				<Box sx={{ pt: 7, px: 3, pb: 3, textAlign: 'center' }}>
 					<Typography variant='h6' sx={{ fontWeight: 800, mb: 0.25, lineHeight: 1.2 }}>
 						{teacher.name}
 					</Typography>
 					{teacher.expertise?.length > 0 && (
-						<Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2, mt: 1 }}>
+						<Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', justifyContent: 'center', mb: 2, mt: 1 }}>
 							{teacher.expertise.map((exp) => (
 								<Chip
 									key={exp}
@@ -160,8 +213,8 @@ function TeacherMarqueeCard({
 									sx={{
 										fontSize: '0.68rem',
 										fontWeight: 700,
-										bgcolor: 'rgba(124,58,237,0.1)',
-										color: '#7c3aed',
+										bgcolor: 'rgba(37,99,235,0.08)',
+										color: 'primary.main',
 									}}
 								/>
 							))}
@@ -170,30 +223,30 @@ function TeacherMarqueeCard({
 					{teacher.bio && (
 						<>
 							<Divider sx={{ mb: 2 }} />
-							<Typography variant='body2' color='text.secondary' sx={{ lineHeight: 1.7 }}>
+							<Typography variant='body2' color='text.secondary' sx={{ lineHeight: 1.7, textAlign: 'left' }}>
 								{teacher.bio}
 							</Typography>
 						</>
 					)}
 					{hasSocials && (
-						<Box sx={{ display: 'flex', gap: 1, mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+						<Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
 							{teacher.socialLinks?.twitter && (
 								<Tooltip title='Twitter'>
-									<IconButton size='small' component='a' href={teacher.socialLinks.twitter} target='_blank' sx={{ color: '#1DA1F2' }}>
+									<IconButton size='small' component='a' href={teacher.socialLinks.twitter} target='_blank' sx={{ color: '#1DA1F2', bgcolor: 'rgba(29,161,242,0.1)' }}>
 										<TwitterIcon fontSize='small' />
 									</IconButton>
 								</Tooltip>
 							)}
 							{teacher.socialLinks?.linkedin && (
 								<Tooltip title='LinkedIn'>
-									<IconButton size='small' component='a' href={teacher.socialLinks.linkedin} target='_blank' sx={{ color: '#0A66C2' }}>
+									<IconButton size='small' component='a' href={teacher.socialLinks.linkedin} target='_blank' sx={{ color: '#0A66C2', bgcolor: 'rgba(10,102,194,0.1)' }}>
 										<LinkedInIcon fontSize='small' />
 									</IconButton>
 								</Tooltip>
 							)}
 							{teacher.socialLinks?.website && (
 								<Tooltip title='Website'>
-									<IconButton size='small' component='a' href={teacher.socialLinks.website} target='_blank' sx={{ color: '#10b981' }}>
+									<IconButton size='small' component='a' href={teacher.socialLinks.website} target='_blank' sx={{ color: '#10b981', bgcolor: 'rgba(16,185,129,0.1)' }}>
 										<LanguageIcon fontSize='small' />
 									</IconButton>
 								</Tooltip>
