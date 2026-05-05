@@ -12,7 +12,5 @@ export const authService = {
 
   getMe: () => api.get<IUser>('/auth/me'),
 
-  updateMe: (data: FormData) => api.put<IUser>('/auth/me', data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  updateMe: (data: FormData) => api.put<IUser>('/auth/me', data),
 };

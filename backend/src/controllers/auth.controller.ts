@@ -92,7 +92,7 @@ export const updateMe = asyncHandler(async (req: Request, res: Response) => {
   if (newPassword?.trim()) {
     if (!currentPassword) throw new AppError('Current password is required', 400);
     const match = await bcrypt.compare(currentPassword, user.password);
-    if (!match) throw new AppError('Current password is incorrect', 401);
+    if (!match) throw new AppError('Current password is incorrect', 400);
     if (newPassword.trim().length < 6) {
       throw new AppError('New password must be at least 6 characters', 400);
     }

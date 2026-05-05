@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
 	Avatar,
 	Box,
@@ -128,6 +129,7 @@ export default function ProfilePage() {
 	});
 	const [avatarFile, setAvatarFile] = useState<File | null>(null);
 	const [avatarPreview, setAvatarPreview] = useState<string>('');
+	const [formError, setFormError] = useState('');
 
 	const sub = user?.activeSubscription;
 	const isStudent = user?.role === 'Student';
@@ -148,6 +150,7 @@ export default function ProfilePage() {
 		}));
 		setAvatarPreview(user.avatar ?? '');
 		setAvatarFile(null);
+		setFormError('');
 	}, [user]);
 
 	useEffect(() => {
@@ -202,33 +205,42 @@ export default function ProfilePage() {
 	};
 
 	const handleSave = async () => {
+		if (!user) return;
+		setFormError('');
 		if (!form.name.trim() || !form.email.trim()) {
-			toast.error('Name and email are required');
+			setFormError('Name and email are required.');
 			return;
 		}
 		if (form.newPassword || form.confirmPassword || form.currentPassword) {
 			if (!form.currentPassword) {
-				toast.error('Current password is required to change password');
+				setFormError('Current password is required to change password.');
 				return;
 			}
 			if (form.newPassword.length < 6) {
-				toast.error('New password must be at least 6 characters');
+				setFormError('New password must be at least 6 characters.');
 				return;
 			}
 			if (form.newPassword !== form.confirmPassword) {
-				toast.error('New passwords do not match');
+				setFormError('New passwords do not match.');
 				return;
 			}
 		}
 
 		const fd = new FormData();
-		fd.append('name', form.name.trim());
-		fd.append('email', form.email.trim());
+		const nextName = form.name.trim();
+		const nextEmail = form.email.trim().toLowerCase();
+		if (nextName !== user.name) fd.append('name', nextName);
+		if (nextEmail !== user.email.toLowerCase()) fd.append('email', nextEmail);
 		if (avatarFile) fd.append('avatar', avatarFile);
 		if (form.removeAvatar) fd.append('removeAvatar', 'true');
 		if (form.newPassword) {
 			fd.append('currentPassword', form.currentPassword);
 			fd.append('newPassword', form.newPassword);
+		}
+
+		if ([...fd.keys()].length === 0) {
+			setFormError('Make at least one change before saving.');
+			return;
 		}
 
 		setSaving(true);
@@ -237,6 +249,11 @@ export default function ProfilePage() {
 			await refreshUser();
 			toast.success('Profile updated');
 			setEditOpen(false);
+		} catch (error) {
+			const message = axios.isAxiosError(error)
+				? (error.response?.data as { message?: string } | undefined)?.message
+				: undefined;
+			setFormError(message ?? 'Failed to update profile. Please try again.');
 		} finally {
 			setSaving(false);
 		}
@@ -516,6 +533,23 @@ export default function ProfilePage() {
 					</Box>
 
 					<Grid container spacing={2}>
+						{formError && (
+							<Grid size={{ xs: 12 }}>
+								<Paper
+									variant='outlined'
+									sx={{
+										p: 1.5,
+										borderRadius: 1,
+										borderColor: 'error.main',
+										bgcolor: 'rgba(211,47,47,0.04)',
+									}}
+								>
+									<Typography variant='body2' color='error' sx={{ fontWeight: 700 }}>
+										{formError}
+									</Typography>
+								</Paper>
+							</Grid>
+						)}
 						<Grid size={{ xs: 12 }}>
 							<TextField label='Name' fullWidth required value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
 						</Grid>

@@ -16,6 +16,7 @@ import {
 import { Outlet } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
 import SchoolIcon from '@mui/icons-material/School';
+import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -131,15 +132,40 @@ export default function TeacherLayout() {
 							{open && <ListItemText primary='My Courses' />}
 						</ListItemButton>
 					</Tooltip>
+					<Tooltip title={open ? '' : 'Profile'} placement='right'>
+						<ListItemButton
+							onClick={() => navigate('/teacher/profile')}
+							selected={location.pathname === '/teacher/profile'}
+							sx={{
+								mx: 1,
+								borderRadius: 2,
+								mb: 0.5,
+								minHeight: 44,
+								justifyContent: open ? 'initial' : 'center',
+								px: open ? 2 : 1.5,
+							}}
+						>
+							<ListItemIcon
+								sx={{
+									minWidth: 0,
+									mr: open ? 2 : 0,
+									color: location.pathname === '/teacher/profile' ? 'primary.main' : 'inherit',
+								}}
+							>
+								<PersonIcon />
+							</ListItemIcon>
+							{open && <ListItemText primary='Profile' />}
+						</ListItemButton>
+					</Tooltip>
 				</List>
 
 				<Divider />
 
 				{/* User + Logout */}
 				<Box sx={{ p: open ? 2 : 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-					<Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
-						{user?.name?.[0]?.toUpperCase()}
-					</Avatar>
+				<Avatar src={user?.avatar} sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
+					{user?.name?.[0]?.toUpperCase()}
+				</Avatar>
 					{open && (
 						<Box sx={{ flex: 1, overflow: 'hidden' }}>
 							<Typography variant='body2' sx={{ fontWeight: 600 }} noWrap>
