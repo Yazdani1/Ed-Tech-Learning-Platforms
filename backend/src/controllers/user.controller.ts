@@ -41,6 +41,55 @@ export const updateUserRole = asyncHandler(async (req: Request, res: Response) =
   res.status(200).json({ success: true, message: 'Role updated', data: user });
 });
 
+export const updateUser = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, password, role } = req.body as {
+    name?: string;
+    email?: string;
+    password?: string;
+    role?: UserRole;
+  };
+  const validRoles: UserRole[] = ['Super Admin', 'Admin', 'Moderator', 'Teacher', 'Student'];
+  const updates: Partial<{
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+  }> = {};
+
+  if (name !== undefined) {
+    if (!name.trim()) throw new AppError('Name is required', 400);
+    updates.name = name.trim();
+  }
+
+  if (email !== undefined) {
+    if (!email.trim()) throw new AppError('Email is required', 400);
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await User.findOne({
+      email: normalizedEmail,
+      _id: { $ne: req.params.id },
+    });
+    if (existing) throw new AppError('Email is already in use', 400);
+    updates.email = normalizedEmail;
+  }
+
+  if (role !== undefined) {
+    if (!validRoles.includes(role)) throw new AppError('Invalid role', 400);
+    updates.role = role;
+  }
+
+  if (password !== undefined && password.trim()) {
+    updates.password = await bcrypt.hash(password, 12);
+  }
+
+  const user = await User.findByIdAndUpdate(req.params.id, updates, {
+    new: true,
+    runValidators: true,
+  }).select('-password');
+  if (!user) throw new AppError('User not found', 404);
+
+  res.status(200).json({ success: true, message: 'User updated', data: user });
+});
+
 export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findByIdAndDelete(req.params.id);
   if (!user) throw new AppError('User not found', 404);
