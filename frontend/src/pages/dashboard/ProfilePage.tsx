@@ -230,7 +230,9 @@ export default function ProfilePage() {
 		const nextName = form.name.trim();
 		const nextEmail = form.email.trim().toLowerCase();
 		if (nextName !== user.name) fd.append('name', nextName);
-		if (nextEmail !== user.email.toLowerCase()) fd.append('email', nextEmail);
+		if (user.role === 'Student' && nextEmail !== user.email.toLowerCase()) {
+			fd.append('email', nextEmail);
+		}
 		if (avatarFile) fd.append('avatar', avatarFile);
 		if (form.removeAvatar) fd.append('removeAvatar', 'true');
 		if (form.newPassword) {
@@ -554,7 +556,20 @@ export default function ProfilePage() {
 							<TextField label='Name' fullWidth required value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
 						</Grid>
 						<Grid size={{ xs: 12 }}>
-							<TextField label='Email' type='email' fullWidth required value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} />
+							<TextField
+								label='Email'
+								type='email'
+								fullWidth
+								required
+								value={form.email}
+								disabled={user.role !== 'Student'}
+								helperText={
+									user.role === 'Student'
+										? 'Students can update their own email address.'
+										: 'Email changes for this role are managed by an administrator.'
+								}
+								onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+							/>
 						</Grid>
 						<Grid size={{ xs: 12 }}>
 							<Divider sx={{ my: 1 }} />

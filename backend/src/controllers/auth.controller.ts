@@ -79,6 +79,9 @@ export const updateMe = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (email !== undefined) {
+    if (user.role !== 'Student') {
+      throw new AppError('Only students can update their email from profile', 403);
+    }
     if (!email.trim()) throw new AppError('Email is required', 400);
     const normalizedEmail = email.trim().toLowerCase();
     const existing = await User.findOne({
