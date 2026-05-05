@@ -27,6 +27,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import PreviewIcon from '@mui/icons-material/Visibility';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import EventIcon from '@mui/icons-material/Event';
 import toast from 'react-hot-toast';
 import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
@@ -252,15 +253,48 @@ function LiveClassLectureList({
 }) {
 	return (
 		<Box>
-			<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+			<Box
+				sx={{
+					display: 'flex',
+					alignItems: 'center',
+					gap: 1,
+					mb: 1.25,
+					color: 'text.primary',
+				}}
+			>
+				<EventIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+				<Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
+					{liveClass.lectures.length} class{liveClass.lectures.length !== 1 ? 'es' : ''}
+				</Typography>
+			</Box>
+			<Box sx={{ display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, overflow: 'hidden' }}>
 				{liveClass.lectures.map((lecture, index) => (
-					<Box key={lecture._id ?? index} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 0.5, bgcolor: 'grey.50' }}>
-						<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 0.5 }}>
-							<Chip label={lecture.day} size='small' />
-							<Chip label={lecture.time} size='small' variant='outlined' />
-							<Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
+					<Box
+						key={lecture._id ?? index}
+						sx={{
+							p: 1.5,
+							borderTop: index > 0 ? '1px solid' : 'none',
+							borderColor: 'divider',
+							bgcolor: 'grey.50',
+						}}
+					>
+						<Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 0.75 }}>
+							<Typography variant='subtitle2' sx={{ fontWeight: 800, color: '#111827' }}>
 								{lecture.title}
 							</Typography>
+							<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
+								<Chip
+									label={lecture.day}
+									size='small'
+									sx={{
+										bgcolor: '#e0f2fe',
+										color: '#075985',
+										fontWeight: 700,
+										borderRadius: 1,
+									}}
+								/>
+								<Chip label={lecture.time} size='small' variant='outlined' />
+							</Box>
 						</Box>
 						{lecture.description && (
 							<Typography variant='body2' color='text.secondary'>
@@ -1447,11 +1481,26 @@ export default function CourseCreatePage() {
 							{liveClasses.length === 0 ? (
 								<Typography color='text.secondary'>No live class available.</Typography>
 							) : (
-								<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+								<Box
+									sx={{
+										display: 'grid',
+										gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+										gap: 2,
+										alignItems: 'start',
+									}}
+								>
 									{liveClasses.map((liveClass) => {
 										const isEditing = editingLcId === liveClass._id;
 										return (
-											<Paper key={liveClass._id} variant='outlined' sx={{ p: 2.5, borderRadius: 0.5 }}>
+											<Paper
+												key={liveClass._id}
+												variant='outlined'
+												sx={{
+													p: 2.5,
+													borderRadius: 1,
+													boxShadow: '0 6px 18px rgba(15, 23, 42, 0.08)',
+												}}
+											>
 												{isEditing ? (
 													<Box>
 														<Grid container spacing={1.5}>
@@ -1482,19 +1531,68 @@ export default function CourseCreatePage() {
 													</Box>
 												) : (
 													<>
-														<Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'flex-start' }}>
-															<Box>
-																<Chip label={liveClass.weekName} size='small' color='primary' variant='outlined' sx={{ mb: 1 }} />
-																<Typography variant='subtitle1' sx={{ fontWeight: 700 }}>
-																	{liveClass.title}
-																</Typography>
+														<Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'flex-start', mb: 2 }}>
+															<Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+																<Box
+																	sx={{
+																		width: 64,
+																		minHeight: 78,
+																		borderRadius: 1,
+																		bgcolor: '#f59e0b',
+																		color: 'white',
+																		display: 'flex',
+																		flexDirection: 'column',
+																		alignItems: 'center',
+																		justifyContent: 'center',
+																		textAlign: 'center',
+																		fontSize: '0.8rem',
+																		fontWeight: 800,
+																		lineHeight: 1.15,
+																		flexShrink: 0,
+																	}}
+																>
+																	<Typography sx={{ fontSize: '0.78rem', fontWeight: 800, lineHeight: 1.1 }}>
+																		Week
+																	</Typography>
+																	<Typography sx={{ fontSize: '1.25rem', fontWeight: 900, lineHeight: 1.1 }}>
+																		{liveClasses.findIndex((item) => item._id === liveClass._id) + 1}
+																	</Typography>
+																</Box>
+																<Box>
+																	<Typography variant='subtitle1' sx={{ fontWeight: 800, color: '#111827' }}>
+																		{liveClass.title || liveClass.weekName}
+																	</Typography>
+																	<Typography variant='caption' color='text.secondary'>
+																		{liveClass.weekName}
+																	</Typography>
+																</Box>
 															</Box>
+															<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+																<Box
+																	sx={{
+																		display: 'flex',
+																		alignItems: 'center',
+																		gap: 0.75,
+																		px: 1.25,
+																		py: 0.65,
+																		borderRadius: 1,
+																		bgcolor: 'grey.100',
+																		color: '#111827',
+																		flexShrink: 0,
+																	}}
+																>
+																	<EventIcon sx={{ fontSize: 17 }} />
+																	<Typography variant='caption' sx={{ fontWeight: 800 }}>
+																		{liveClass.lectures.length} Live Class
+																	</Typography>
+																</Box>
 															<ItemActionMenu
 																actions={[
 																	{ label: 'Edit', icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />, onClick: () => startEditLiveClass(liveClass) },
 																	{ label: 'Delete', color: 'error', icon: <DeleteIcon fontSize='small' sx={{ mr: 1 }} />, onClick: () => void handleDeleteLiveClass(liveClass._id) },
 																]}
 															/>
+															</Box>
 														</Box>
 														<Box sx={{ fontSize: '0.875rem', lineHeight: 1.6, mb: 2, '& p': { m: 0, mb: 0.5 }, '& ul, & ol': { pl: 2.5, my: 0.5 } }} dangerouslySetInnerHTML={{ __html: liveClass.description }} />
 														<LiveClassLectureList

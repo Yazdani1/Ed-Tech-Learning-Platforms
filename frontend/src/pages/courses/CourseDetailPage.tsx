@@ -865,7 +865,14 @@ export default function CourseDetailPage() {
 									))}
 								</Box>
 								) : (
-									<Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+									<Box
+										sx={{
+											display: 'grid',
+											gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+											gap: 2,
+											alignItems: 'start',
+										}}
+									>
 										{studyCurricula.map((curriculum, ci) => (
 											<Accordion
 												key={curriculum._id}
@@ -880,29 +887,105 @@ export default function CourseDetailPage() {
 												elevation={0}
 												disableGutters
 												sx={{
-													borderBottom: ci < studyCurricula.length - 1 ? '1px solid' : 'none',
+													border: '1px solid',
 													borderColor: 'divider',
+													borderRadius: '8px !important',
+													overflow: 'hidden',
+													bgcolor: 'background.paper',
+													boxShadow: '0 6px 18px rgba(15, 23, 42, 0.08)',
 													'&::before': { display: 'none' },
 												}}
 											>
-												<AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ bgcolor: 'grey.50', px: 2.5, py: 1.5, minHeight: 58 }}>
+												<AccordionSummary
+													expandIcon={<ExpandMoreIcon />}
+													sx={{
+														bgcolor: 'background.paper',
+														px: 2.5,
+														py: 1.5,
+														minHeight: 92,
+														'& .MuiAccordionSummary-content': {
+															alignItems: 'center',
+															gap: 1.5,
+															minWidth: 0,
+														},
+													}}
+												>
 													<Box sx={{ flex: 1, minWidth: 0 }}>
-														<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-															<Chip label={curriculum.weekName} size='small' color='primary' sx={{ fontWeight: 700 }} />
-															<Typography sx={{ fontWeight: 700 }}>
-																{curriculum.title}
+														<Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+															<Box
+																sx={{
+																	width: 64,
+																	minHeight: 78,
+																	borderRadius: 1,
+																	bgcolor: ci % 3 === 0 ? '#f59e0b' : ci % 3 === 1 ? '#fb7c3c' : '#0ea5e9',
+																	color: 'white',
+																	display: 'flex',
+																	flexDirection: 'column',
+																	alignItems: 'center',
+																	justifyContent: 'center',
+																	textAlign: 'center',
+																	fontSize: '0.8rem',
+																	fontWeight: 800,
+																	lineHeight: 1.15,
+																	flexShrink: 0,
+																}}
+															>
+																<Typography sx={{ fontSize: '0.78rem', fontWeight: 800, lineHeight: 1.1 }}>
+																	Week
+																</Typography>
+																<Typography sx={{ fontSize: '1.25rem', fontWeight: 900, lineHeight: 1.1 }}>
+																	{ci + 1}
+																</Typography>
+															</Box>
+															<Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#111827' }}>
+																{curriculum.title || curriculum.weekName}
 															</Typography>
 														</Box>
 													</Box>
-													<Typography variant='caption' color='text.secondary' sx={{ mr: 1, alignSelf: 'center' }}>
-														{curriculum.lectures.length} class{curriculum.lectures.length !== 1 ? 'es' : ''}
-													</Typography>
+													<Box
+														sx={{
+															display: { xs: 'none', sm: 'flex' },
+															alignItems: 'center',
+															gap: 0.75,
+															mr: 1,
+															px: 1.25,
+															py: 0.65,
+															borderRadius: 1,
+															bgcolor: 'grey.100',
+															color: '#111827',
+															flexShrink: 0,
+														}}
+													>
+														<EventIcon sx={{ fontSize: 17 }} />
+														<Typography variant='caption' sx={{ fontWeight: 800 }}>
+															{curriculum.lectures.length} Live Class
+														</Typography>
+													</Box>
 												</AccordionSummary>
 												<AccordionDetails sx={{ p: 0 }}>
 													<Box
 														sx={{ px: 2.5, py: 1.5, fontSize: '0.9rem', lineHeight: 1.7, color: 'text.secondary', '& p': { m: 0, mb: 0.5 }, '& ul, & ol': { pl: 2.5, my: 0.5 } }}
 														dangerouslySetInnerHTML={{ __html: curriculum.description }}
 													/>
+													<Box
+														sx={{
+															display: 'flex',
+															alignItems: 'center',
+															gap: 2.5,
+															px: 2.5,
+															py: 1.25,
+															borderTop: '1px solid',
+															borderColor: 'divider',
+															bgcolor: 'background.paper',
+														}}
+													>
+														<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+															<EventIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+															<Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
+																{curriculum.lectures.length} Live Class
+															</Typography>
+														</Box>
+													</Box>
 													{curriculum.lectures.map((lecture, index) => (
 														<Box
 															key={lecture._id ?? index}
@@ -918,7 +1001,11 @@ export default function CourseDetailPage() {
 														>
 															<EventIcon sx={{ fontSize: 18, color: 'primary.main', mt: 0.25 }} />
 															<Box sx={{ flex: 1, minWidth: 0 }}>
-																<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 0.5 }}>
+																<Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 0.75 }}>
+																	<Typography variant='body2' sx={{ fontWeight: 800, color: '#111827' }}>
+																		{lecture.title}
+																	</Typography>
+																	<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
 																	<Chip
 																		label={lecture.day}
 																		size='small'
@@ -929,10 +1016,8 @@ export default function CourseDetailPage() {
 																			borderRadius: 1,
 																		}}
 																	/>
-																	<Typography variant='body2' sx={{ fontWeight: 700 }}>
-																		{lecture.title}
-																	</Typography>
-																	<Chip label={lecture.time} size='small' variant='outlined' />
+																		<Chip label={lecture.time} size='small' variant='outlined' />
+																	</Box>
 																</Box>
 																{lecture.description && (
 																	<Typography variant='body2' color='text.secondary'>
