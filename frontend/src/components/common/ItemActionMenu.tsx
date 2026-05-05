@@ -20,6 +20,7 @@ export default function ItemActionMenu({ actions }: { actions: ItemAction[] }) {
 		<>
 			<IconButton
 				size='small'
+				aria-label='Open item actions'
 				onClick={(event) => {
 					event.stopPropagation();
 					setAnchorEl(event.currentTarget);
@@ -34,6 +35,21 @@ export default function ItemActionMenu({ actions }: { actions: ItemAction[] }) {
 				anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
 				transformOrigin={{ vertical: 'top', horizontal: 'right' }}
 				onClick={(event) => event.stopPropagation()}
+				slotProps={{
+					paper: {
+						elevation: 2,
+						sx: {
+							minWidth: 168,
+							borderRadius: 1,
+							border: '1px solid',
+							borderColor: 'divider',
+							mt: 0.5,
+						},
+					},
+					list: {
+						sx: { py: 0.75 },
+					},
+				}}
 			>
 				{actions.map((action) => (
 					<MenuItem
@@ -42,7 +58,17 @@ export default function ItemActionMenu({ actions }: { actions: ItemAction[] }) {
 							close();
 							action.onClick();
 						}}
-						sx={{ color: action.color === 'error' ? 'error.main' : 'inherit' }}
+						sx={{
+							minHeight: 44,
+							px: 1.75,
+							gap: 1,
+							fontSize: '0.875rem',
+							fontWeight: 650,
+							color: action.color === 'error' ? 'error.main' : 'inherit',
+							'& .MuiSvgIcon-root': {
+								fontSize: 18,
+							},
+						}}
 					>
 						{action.icon}
 						{action.label}
