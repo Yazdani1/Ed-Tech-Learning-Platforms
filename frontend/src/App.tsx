@@ -27,6 +27,7 @@ const TeacherCoursesPage = lazy(() => import('./pages/courses/TeacherCoursesPage
 const PricingPage = lazy(() => import('./pages/pricing/PricingPage'));
 const HomePage = lazy(() => import('./pages/HomePage'));
 const CourseBrowsePage = lazy(() => import('./pages/courses/CourseBrowsePage'));
+const FreeCoursesPage = lazy(() => import('./pages/courses/FreeCoursesPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const PublicTeachersPage = lazy(() => import('./pages/teachers/PublicTeachersPage'));
 
@@ -92,6 +93,7 @@ export default function App() {
 			{/* Public routes */}
 			<Route path='/pricing' element={<PricingPage />} />
 			<Route path='/courses' element={<CourseBrowsePage />} />
+			<Route path='/free-courses' element={<FreeCoursesPage />} />
 			<Route path='/courses/:id' element={<CourseDetailPage />} />
 			<Route path='/teachers' element={<PublicTeachersPage />} />
 

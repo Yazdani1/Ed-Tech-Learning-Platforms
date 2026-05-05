@@ -10,9 +10,10 @@ import {
 	Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import type { ICategory, ICourseType, SubscriptionPlan } from '../../types/index';
+import type { ICategory, ICourseType, CoursePricing, SubscriptionPlan } from '../../types/index';
 
 const PLANS: SubscriptionPlan[] = ['Basic', 'Premium', 'Gold', 'Quiz Only'];
+const PRICING: CoursePricing[] = ['Free', 'Paid'];
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
 	return (
@@ -37,6 +38,8 @@ interface Props {
 	categories: ICategory[];
 	selectedCategories: string[];
 	onToggleCategory: (id: string) => void;
+	selectedPricing: CoursePricing[];
+	onTogglePricing: (pricing: CoursePricing) => void;
 	selectedPlans: SubscriptionPlan[];
 	onTogglePlan: (plan: SubscriptionPlan) => void;
 	activeFilterCount: number;
@@ -52,6 +55,8 @@ export default function CourseFilterSidebar({
 	categories,
 	selectedCategories,
 	onToggleCategory,
+	selectedPricing,
+	onTogglePricing,
 	selectedPlans,
 	onTogglePlan,
 	activeFilterCount,
@@ -170,6 +175,28 @@ export default function CourseFilterSidebar({
 						</Section>
 					</Box>
 				)}
+
+				{/* Pricing */}
+				<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+					<Section label='Pricing'>
+						<FormGroup>
+							{PRICING.map((pricing) => (
+								<FormControlLabel
+									key={pricing}
+									control={
+										<Checkbox
+											size='small'
+											checked={selectedPricing.includes(pricing)}
+											onChange={() => onTogglePricing(pricing)}
+										/>
+									}
+									label={<Typography variant='body2'>{pricing}</Typography>}
+									sx={{ mr: 0 }}
+								/>
+							))}
+						</FormGroup>
+					</Section>
+				</Box>
 
 				{/* Subscription */}
 				<Box sx={{ p: 2, flexShrink: 0 }}>

@@ -18,6 +18,7 @@ import { encodeParam, decodeParam } from '../../utils/urlParams';
 
 const prefetchPublicRoutes = () => {
 	void import('../../pages/courses/CourseBrowsePage');
+	void import('../../pages/courses/FreeCoursesPage');
 	void import('../../pages/pricing/PricingPage');
 	void import('../../pages/teachers/PublicTeachersPage');
 };
@@ -134,6 +135,16 @@ export default function PublicNavbar() {
             sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
           >
             All Courses
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/free-courses"
+            color="inherit"
+            onMouseEnter={prefetchPublicRoutes}
+            onFocus={prefetchPublicRoutes}
+            sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
+          >
+            Free Courses
           </Button>
           <Button
             component={RouterLink}

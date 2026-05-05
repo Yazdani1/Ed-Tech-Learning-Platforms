@@ -21,6 +21,7 @@ import type {
 	ICourse,
 	ICategory,
 	ICourseType,
+	CoursePricing,
 	SubscriptionPlan,
 } from '../../types/index';
 
@@ -38,6 +39,9 @@ export default function CourseBrowsePage() {
 	const urlCategories = decodeParam(searchParams.get('categories') ?? '')
 		.split(',')
 		.filter(Boolean);
+	const urlPricing = decodeParam(searchParams.get('pricing') ?? '')
+		.split(',')
+		.filter((value): value is CoursePricing => value === 'Free' || value === 'Paid');
 	const urlPlans = decodeParam(searchParams.get('subscriptionPlans') ?? '')
 		.split(',')
 		.filter(Boolean) as SubscriptionPlan[];
@@ -94,6 +98,7 @@ export default function CourseBrowsePage() {
 			params.courseTypes = urlCourseTypes.join(',');
 		}
 		if (urlCategories.length > 0) params.categories = urlCategories.join(',');
+		if (urlPricing.length > 0) params.pricing = urlPricing.join(',');
 		if (urlPlans.length > 0) params.subscriptionPlans = urlPlans.join(',');
 
 		courseService
@@ -148,6 +153,13 @@ export default function CourseBrowsePage() {
 		updateParams({ categories: next.join(',') || null });
 	};
 
+	const togglePricing = (pricing: CoursePricing) => {
+		const next = urlPricing.includes(pricing)
+			? urlPricing.filter((x) => x !== pricing)
+			: [...urlPricing, pricing];
+		updateParams({ pricing: next.join(',') || null });
+	};
+
 	const togglePlan = (plan: SubscriptionPlan) => {
 		const next = urlPlans.includes(plan)
 			? urlPlans.filter((x) => x !== plan)
@@ -161,7 +173,7 @@ export default function CourseBrowsePage() {
 	};
 
 	const activeFilterCount =
-		urlCourseTypes.length + urlCategories.length + urlPlans.length;
+		urlCourseTypes.length + urlCategories.length + urlPricing.length + urlPlans.length;
 	const hasActiveFilter = urlSearch || activeFilterCount > 0;
 
 	return (
@@ -215,6 +227,8 @@ export default function CourseBrowsePage() {
 							categories={categories}
 							selectedCategories={urlCategories}
 							onToggleCategory={toggleCategory}
+							selectedPricing={urlPricing}
+							onTogglePricing={togglePricing}
 							selectedPlans={urlPlans}
 							onTogglePlan={togglePlan}
 							activeFilterCount={activeFilterCount}

@@ -29,7 +29,7 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const browseCourses = asyncHandler(async (req: Request, res: Response) => {
-	const { search, courseTypes, categories, subscriptionPlans, page, limit } = req.query as Record<string, string>;
+	const { search, courseTypes, categories, subscriptionPlans, pricing, page, limit } = req.query as Record<string, string>;
 
 	// Security: hard-coded — public users only ever see Published + Public courses
 	const filter: Record<string, unknown> = {
@@ -48,6 +48,11 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 	if (categories) {
 		const ids = categories.split(',').map((s) => s.trim()).filter((s) => Types.ObjectId.isValid(s)).map((s) => new Types.ObjectId(s));
 		if (ids.length > 0) filter.category = { $in: ids };
+	}
+
+	if (pricing) {
+		const values = pricing.split(',').map((s) => s.trim()).filter((s) => ['Free', 'Paid'].includes(s));
+		if (values.length > 0) filter.pricing = { $in: values };
 	}
 
 	if (subscriptionPlans) {
