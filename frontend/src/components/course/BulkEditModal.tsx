@@ -75,6 +75,11 @@ type FormState = {
 	endDate: string;
 };
 
+type DiscountFormState = {
+	discountPercent: string;
+	discountEndsAt: string;
+};
+
 const defaultForm = (): FormState => ({
 	courseType: '',
 	category: '',
@@ -87,6 +92,11 @@ const defaultForm = (): FormState => ({
 	teacherIds: [],
 	startDate: '',
 	endDate: '',
+});
+
+const defaultDiscountForm = (): DiscountFormState => ({
+	discountPercent: '',
+	discountEndsAt: '',
 });
 
 interface BulkEditModalProps {
@@ -119,6 +129,9 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 	const [form, setForm] = useState<FormState>(defaultForm);
 	const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
 		setForm((p) => ({ ...p, [k]: v }));
+	const [discountForm, setDiscountForm] = useState<DiscountFormState>(defaultDiscountForm);
+	const setDiscount = <K extends keyof DiscountFormState>(k: K, v: DiscountFormState[K]) =>
+		setDiscountForm((p) => ({ ...p, [k]: v }));
 
 	// ── Announcement ─────────────────────────────────────────────
 	const [ann, setAnn] = useState({ title: '', description: '' });
@@ -151,6 +164,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 		setSelectedIds(new Set());
 		setTab(0);
 		setForm(defaultForm());
+		setDiscountForm(defaultDiscountForm());
 		setAnn({ title: '', description: '' });
 		setSubscriptionEdited(false);
 		onClose();
@@ -190,6 +204,35 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 	const handleSubmit = async () => {
 		if (selectedIds.size === 0) { toast.error('Select at least one course'); return; }
 
+		if (tab === 1) {
+			const discountPercent = Number(discountForm.discountPercent);
+			if (!Number.isFinite(discountPercent) || discountPercent <= 0 || discountPercent >= 100) {
+				toast.error('Discount percentage must be between 1 and 99');
+				return;
+			}
+			if (!discountForm.discountEndsAt || new Date(discountForm.discountEndsAt) <= new Date()) {
+				toast.error('Discount end date and time must be in the future');
+				return;
+			}
+
+			setSubmitting(true);
+			try {
+				await courseService.bulkDiscount({
+					courseIds: Array.from(selectedIds),
+					discountPercent,
+					discountEndsAt: new Date(discountForm.discountEndsAt).toISOString(),
+				});
+				toast.success(`Discount applied to ${selectedIds.size} course${selectedIds.size !== 1 ? 's' : ''}`);
+				onSuccess();
+				handleClose();
+			} catch {
+				// handled by interceptor
+			} finally {
+				setSubmitting(false);
+			}
+			return;
+		}
+
 		// Build updates — only include fields the user actually filled
 		const updates: Parameters<typeof courseService.bulkUpdate>[0]['updates'] = {};
 
@@ -222,7 +265,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 			toast.error('Fill in at least one field to update');
 			return;
 		}
-		if (tab === 1 && !hasAnn) {
+		if (tab === 2 && !hasAnn) {
 			toast.error('Announcement title and description are required');
 			return;
 		}
@@ -491,6 +534,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 						sx={{ borderBottom: '1px solid', borderColor: 'divider', px: 2, flexShrink: 0 }}
 					>
 						<Tab label='Update Fields' sx={{ fontWeight: 600, fontSize: '0.85rem' }} />
+						<Tab label='Discount Campaign' sx={{ fontWeight: 600, fontSize: '0.85rem' }} />
 						<Tab label='Post Announcement' sx={{ fontWeight: 600, fontSize: '0.85rem' }} />
 					</Tabs>
 
@@ -727,6 +771,64 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 											</Field>
 										</Box>
 									</Box>
+								</Box>
+							</Paper>
+						) : tab === 1 ? (
+							<Paper variant='outlined' sx={{ borderRadius: 0.5, overflow: 'hidden' }}>
+								<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+									<Typography variant='subtitle1' sx={{ fontWeight: 800, mb: 0.5 }}>
+										Set discount for selected courses
+									</Typography>
+									<Typography variant='body2' color='text.secondary'>
+										The discount price is calculated from each course list price. When the timer ends, courses return to their regular list price.
+									</Typography>
+								</Box>
+								<Box sx={{ p: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+									<Field label='Discount Percentage'>
+										<TextField
+											size='small'
+											type='number'
+											fullWidth
+											value={discountForm.discountPercent}
+											onChange={(e) => setDiscount('discountPercent', e.target.value)}
+											placeholder='Example: 50'
+											slotProps={{
+												htmlInput: { min: 1, max: 99 },
+												input: {
+													endAdornment: <InputAdornment position='end'>%</InputAdornment>,
+												},
+											}}
+											helperText='Applied to each selected course list price'
+										/>
+									</Field>
+									<Field label='Discount Ends At'>
+										<TextField
+											size='small'
+											type='datetime-local'
+											fullWidth
+											value={discountForm.discountEndsAt}
+											onChange={(e) => setDiscount('discountEndsAt', e.target.value)}
+											slotProps={{
+												inputLabel: { shrink: true },
+												htmlInput: { min: new Date().toISOString().slice(0, 16) },
+											}}
+											helperText='Home page banner countdown uses this date and time'
+										/>
+									</Field>
+								</Box>
+								<Box sx={{ px: 2, pb: 2 }}>
+									<Paper
+										variant='outlined'
+										sx={{ p: 1.5, borderRadius: 1, bgcolor: '#f0fdf4', borderColor: '#bbf7d0' }}
+									>
+										<Typography variant='body2' sx={{ fontWeight: 800, color: '#166534' }}>
+											{selectedCount} selected course{selectedCount !== 1 ? 's' : ''}{' '}
+											{discountForm.discountPercent ? `will get ${discountForm.discountPercent}% off` : 'ready for discount'}
+										</Typography>
+										<Typography variant='caption' color='text.secondary'>
+											Example: list price ৳5000 at 50% becomes ৳2500. List price ৳4000 becomes ৳2000.
+										</Typography>
+									</Paper>
 								</Box>
 							</Paper>
 						) : (

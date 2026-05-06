@@ -95,6 +95,8 @@ export interface ICourse {
   price?: number;
   listPrice?: number;
   discountPrice?: number;
+  discountPercent?: number;
+  discountEndsAt?: string;
   includedInSubscription: boolean;
   allowedSubscriptionPlans: SubscriptionPlan[];
   status: CourseStatus;
@@ -213,6 +215,14 @@ export interface IEnrollmentStats {
   lifetimeEarned: number;
   thisMonthCount: number;
   thisMonthEarned: number;
+}
+
+export interface IActiveCourseDiscount {
+  courseCount: number;
+  discountPercent: number;
+  discountEndsAt: string;
+  maxListPrice?: number;
+  minDiscountPrice?: number;
 }
 
 export interface ICourseStudentEnrollment {

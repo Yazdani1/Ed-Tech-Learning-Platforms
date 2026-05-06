@@ -7,7 +7,9 @@ import {
 	updateCourseStatus,
 	deleteCourse,
 	bulkUpdateCourses,
+	bulkApplyCourseDiscount,
 	browseCourses,
+	getActiveDiscountSummary,
 } from '../controllers/course.controller';
 import {
 	addSection,
@@ -27,7 +29,9 @@ const adminRoles = ['Super Admin', 'Admin'] as const;
 
 router.get('/', getCourses);
 router.get('/browse', browseCourses);
+router.get('/discounts/active', getActiveDiscountSummary);
 router.patch('/bulk', protect, authorize(...adminRoles), bulkUpdateCourses);
+router.patch('/bulk/discount', protect, authorize(...adminRoles), bulkApplyCourseDiscount);
 router.get('/:id', getCourseById);
 
 router.post(

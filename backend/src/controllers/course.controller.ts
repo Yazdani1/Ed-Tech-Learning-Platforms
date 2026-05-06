@@ -22,7 +22,38 @@ const normalizeCoursePrices = (pricing: string, listPrice?: number, discountPric
 	return { listPrice: safeListPrice, discountPrice: finalPrice, price: finalPrice };
 };
 
+const expireExpiredCourseDiscounts = async () => {
+	const now = new Date();
+	const expiredCourses = await Course.find({
+		pricing: 'Paid',
+		discountEndsAt: { $lte: now },
+		discountPercent: { $gt: 0 },
+	}).select('price listPrice');
+
+	if (expiredCourses.length === 0) return;
+
+	await Course.bulkWrite(
+		expiredCourses.map((course) => {
+			const listPrice = course.listPrice ?? course.price ?? 0;
+			return {
+				updateOne: {
+					filter: { _id: course._id },
+					update: {
+						$set: {
+							price: listPrice,
+							discountPrice: listPrice,
+							discountPercent: 0,
+						},
+						$unset: { discountEndsAt: '' },
+					},
+				},
+			};
+		}),
+	);
+};
+
 export const getCourses = asyncHandler(async (req: Request, res: Response) => {
+	await expireExpiredCourseDiscounts();
 	const { category, courseType, teacher, status, pricing, visibility, subscriptionPlans, search, enrollmentFilter, earningFilter } = req.query as Record<string, string>;
 
 	const filter: Record<string, unknown> = {};
@@ -201,6 +232,7 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const browseCourses = asyncHandler(async (req: Request, res: Response) => {
+	await expireExpiredCourseDiscounts();
 	const { search, courseTypes, categories, subscriptionPlans, pricing, page, limit } = req.query as Record<string, string>;
 
 	// Security: hard-coded — public users only ever see Published + Public courses
@@ -282,6 +314,7 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 
 export const getCourseById = asyncHandler(
 	async (req: Request, res: Response) => {
+		await expireExpiredCourseDiscounts();
 		const course = await Course.findById(req.params.id)
 			.populate('category', 'name slug')
 			.populate('courseType', 'name slug description')
@@ -292,6 +325,54 @@ export const getCourseById = asyncHandler(
 		res.status(200).json({ success: true, data: course });
 	},
 );
+
+export const getActiveDiscountSummary = asyncHandler(async (_req: Request, res: Response) => {
+	await expireExpiredCourseDiscounts();
+	const now = new Date();
+	const groups = await Course.aggregate<{
+		_id: null;
+		courseCount: number;
+		discountPercent: number;
+		discountEndsAt: Date;
+		maxListPrice: number;
+		minDiscountPrice: number;
+	}>([
+		{
+			$match: {
+				status: 'Published',
+				visibility: 'Public',
+				pricing: 'Paid',
+				discountPercent: { $gt: 0 },
+				discountEndsAt: { $gt: now },
+			},
+		},
+		{
+			$group: {
+				_id: null,
+				courseCount: { $sum: 1 },
+				discountPercent: { $max: '$discountPercent' },
+				discountEndsAt: { $min: '$discountEndsAt' },
+				maxListPrice: { $max: '$listPrice' },
+				minDiscountPrice: { $min: '$discountPrice' },
+			},
+		},
+		{ $limit: 1 },
+	]);
+
+	const active = groups[0];
+	res.status(200).json({
+		success: true,
+		data: active
+			? {
+					courseCount: active.courseCount,
+					discountPercent: active.discountPercent,
+					discountEndsAt: active.discountEndsAt,
+					maxListPrice: active.maxListPrice,
+					minDiscountPrice: active.minDiscountPrice,
+				}
+			: null,
+	});
+});
 
 export const createCourse = asyncHandler(
 	async (req: Request, res: Response) => {
@@ -597,3 +678,70 @@ export const bulkUpdateCourses = asyncHandler(
 		});
 	},
 );
+
+export const bulkApplyCourseDiscount = asyncHandler(async (req: Request, res: Response) => {
+	const body = req.body as {
+		courseIds: string[];
+		discountPercent: number;
+		discountEndsAt: string;
+	};
+	const { courseIds, discountPercent, discountEndsAt } = body;
+
+	if (!Array.isArray(courseIds) || courseIds.length === 0)
+		throw new AppError('courseIds must be a non-empty array', 400);
+
+	const invalidId = courseIds.find((id) => !Types.ObjectId.isValid(id));
+	if (invalidId) throw new AppError(`Invalid course ID: ${invalidId}`, 400);
+
+	const percent = Number(discountPercent);
+	if (!Number.isFinite(percent) || percent <= 0 || percent >= 100)
+		throw new AppError('Discount percentage must be between 1 and 99', 400);
+
+	const endsAt = new Date(discountEndsAt);
+	if (Number.isNaN(endsAt.getTime()) || endsAt <= new Date())
+		throw new AppError('Discount end date and time must be in the future', 400);
+
+	const objectIds = courseIds.map((id) => new Types.ObjectId(id));
+	const courses = await Course.find({ _id: { $in: objectIds } }).select(
+		'price listPrice pricing',
+	);
+
+	if (courses.length !== courseIds.length)
+		throw new AppError('One or more courses were not found', 404);
+
+	const writes = courses.map((course) => {
+		const listPrice = Math.max(course.listPrice ?? course.price ?? 0, 0);
+		if (listPrice <= 0) {
+			throw new AppError('All selected courses must have a positive list price', 400);
+		}
+		const discountPrice = Math.round(listPrice * (1 - percent / 100) * 100) / 100;
+		return {
+			updateOne: {
+				filter: { _id: course._id },
+				update: {
+					$set: {
+						pricing: 'Paid' as const,
+						listPrice,
+						discountPrice,
+						price: discountPrice,
+						discountPercent: percent,
+						discountEndsAt: endsAt,
+					},
+				},
+			},
+		};
+	});
+
+	if (writes.length > 0) await Course.bulkWrite(writes);
+
+	res.status(200).json({
+		success: true,
+		message: `Discount applied to ${writes.length} course${writes.length !== 1 ? 's' : ''}`,
+		updatedCount: writes.length,
+		data: {
+			courseCount: writes.length,
+			discountPercent: percent,
+			discountEndsAt: endsAt,
+		},
+	});
+});

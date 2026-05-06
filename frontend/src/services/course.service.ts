@@ -1,5 +1,5 @@
 import api from './api';
-import type { ICourse, ISection, ILecture } from '../types/index';
+import type { ICourse, ISection, ILecture, IActiveCourseDiscount } from '../types/index';
 
 export const courseService = {
 	getAll: (params?: Record<string, string>) =>
@@ -7,6 +7,8 @@ export const courseService = {
 
 	browse: (params?: Record<string, string>) =>
 		api.get<ICourse[]>('/courses/browse', { params }),
+
+	getActiveDiscount: () => api.get<IActiveCourseDiscount | null>('/courses/discounts/active'),
 
 	getById: (id: string) => api.get<ICourse>(`/courses/${id}`),
 
@@ -37,6 +39,12 @@ export const courseService = {
 		};
 		announcement?: { title: string; description: string };
 	}) => api.patch('/courses/bulk', payload),
+
+	bulkDiscount: (payload: {
+		courseIds: string[];
+		discountPercent: number;
+		discountEndsAt: string;
+	}) => api.patch('/courses/bulk/discount', payload),
 
 	// Enrollment
 	getEnrolled: () => api.get<ICourse[]>('/enrollments'),

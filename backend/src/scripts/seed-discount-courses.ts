@@ -14,6 +14,7 @@ import type { SubscriptionPlan } from '../types/index';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const TOTAL_COURSES = 50;
+const DEFAULT_CAMPAIGN_DAYS = 7;
 
 const courseTitles = [
 	'JavaScript Mastery Bootcamp',
@@ -149,6 +150,7 @@ function priceForIndex(index: number) {
 async function run() {
 	await connectDB();
 	const { category, courseType, teacher, createdBy } = await ensureSeedBasics();
+	const discountEndsAt = new Date(Date.now() + DEFAULT_CAMPAIGN_DAYS * 24 * 60 * 60 * 1000);
 
 	const existingCourses = await Course.find().sort({ createdAt: 1 });
 	const targetCount = Math.max(TOTAL_COURSES, existingCourses.length);
@@ -172,6 +174,8 @@ async function run() {
 			price: discountPrice,
 			listPrice,
 			discountPrice,
+			discountPercent,
+			discountEndsAt,
 			includedInSubscription: index % 3 === 0,
 			allowedSubscriptionPlans: index % 3 === 0 ? (['Premium', 'Gold'] as SubscriptionPlan[]) : [],
 			status: 'Published' as const,

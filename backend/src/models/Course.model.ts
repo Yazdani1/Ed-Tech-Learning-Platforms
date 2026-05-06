@@ -17,6 +17,8 @@ export interface ICourse extends Document {
   price?: number;
   listPrice?: number;
   discountPrice?: number;
+  discountPercent?: number;
+  discountEndsAt?: Date;
   includedInSubscription: boolean;
   allowedSubscriptionPlans: SubscriptionPlan[];
   status: CourseStatus;
@@ -47,6 +49,8 @@ const courseSchema = new Schema<ICourse>(
     price: { type: Number, min: 0 },
     listPrice: { type: Number, min: 0 },
     discountPrice: { type: Number, min: 0 },
+    discountPercent: { type: Number, min: 0, max: 100 },
+    discountEndsAt: { type: Date },
     includedInSubscription: { type: Boolean, default: false },
     allowedSubscriptionPlans: [{ type: String, enum: ['Basic', 'Premium', 'Gold', 'Quiz Only'] }],
     status: { type: String, enum: ['Draft', 'Published'], default: 'Draft' },
