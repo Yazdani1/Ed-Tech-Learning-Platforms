@@ -45,6 +45,7 @@ import { useAuth } from '../../context/useAuth';
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 const COURSE_CARD_SKELETONS = Array.from({ length: 8 });
 const SUBSCRIPTION_PLANS: SubscriptionPlan[] = ['Basic', 'Premium', 'Gold', 'Quiz Only'];
+const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
 export default function CoursesPage() {
 	const { user, isLoading: authLoading } = useAuth();
@@ -915,6 +916,8 @@ function AdminCourseCard({
 				? `$${course.price.toFixed(2)}`
 				: 'Paid';
 	const isPublished = course.status === 'Published';
+	const monthlyEarned = course.enrollmentStats?.thisMonthEarned ?? 0;
+	const monthlyEnrollments = course.enrollmentStats?.thisMonthCount ?? 0;
 
 	return (
 		<Paper
@@ -1058,7 +1061,9 @@ function AdminCourseCard({
 								'&:hover': { bgcolor: 'action.hover' },
 							}}
 						>
-							<Typography sx={{ fontWeight: 900, lineHeight: 1 }}>$0.00</Typography>
+							<Typography sx={{ fontWeight: 900, lineHeight: 1 }}>
+								{formatCurrency(monthlyEarned)}
+							</Typography>
 							<Typography variant='caption' color='text.secondary'>Earned this month</Typography>
 						</Box>
 						<Box
@@ -1073,7 +1078,9 @@ function AdminCourseCard({
 								'&:hover': { bgcolor: 'action.hover' },
 							}}
 						>
-							<Typography sx={{ fontWeight: 900, lineHeight: 1 }}>0</Typography>
+							<Typography sx={{ fontWeight: 900, lineHeight: 1 }}>
+								{monthlyEnrollments}
+							</Typography>
 							<Typography variant='caption' color='text.secondary'>Enrollments this month</Typography>
 						</Box>
 					</Box>

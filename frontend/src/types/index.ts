@@ -91,6 +91,12 @@ export interface ICourse {
   sections: ISection[];
   createdAt: string;
   enrollmentType?: EnrollmentType;
+  enrollmentStats?: {
+    totalEnrollments: number;
+    lifetimeEarned: number;
+    thisMonthCount: number;
+    thisMonthEarned: number;
+  };
 }
 
 export interface ISubscription {
@@ -140,6 +146,7 @@ export interface IEnrollmentStats {
   free: number;
   paid: number;
   subscription: number;
+  lifetimeEarned: number;
   thisMonthCount: number;
   thisMonthEarned: number;
 }

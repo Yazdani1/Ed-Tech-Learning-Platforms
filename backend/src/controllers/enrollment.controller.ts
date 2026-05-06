@@ -140,7 +140,7 @@ export const getCourseEnrollmentStats = asyncHandler(
 		const now = new Date();
 		const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-		const [total, free, paid, subscription, thisMonth] = await Promise.all([
+		const [total, free, paid, subscription, paidEnrollments, thisMonth] = await Promise.all([
 			Enrollment.countDocuments({ course: courseId }),
 			Enrollment.countDocuments({ course: courseId, enrollmentType: 'free' }),
 			Enrollment.countDocuments({ course: courseId, enrollmentType: 'paid' }),
@@ -150,11 +150,20 @@ export const getCourseEnrollmentStats = asyncHandler(
 			}),
 			Enrollment.find({
 				course: courseId,
+				enrollmentType: 'paid',
+			}).populate('course', 'price pricing'),
+			Enrollment.find({
+				course: courseId,
 				createdAt: { $gte: startOfMonth },
 			}).populate('course', 'price pricing'),
 		]);
 
 		const thisMonthCount = thisMonth.length;
+		const lifetimeEarned = paidEnrollments.reduce((sum, e) => {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const course = e.course as any;
+			return sum + (course?.price ?? 0);
+		}, 0);
 		const thisMonthEarned = thisMonth.reduce((sum, e) => {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const course = e.course as any;
@@ -171,6 +180,7 @@ export const getCourseEnrollmentStats = asyncHandler(
 				free,
 				paid,
 				subscription,
+				lifetimeEarned,
 				thisMonthCount,
 				thisMonthEarned,
 			},

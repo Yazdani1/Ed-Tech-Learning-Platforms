@@ -329,12 +329,12 @@ export default function AdminEnrollmentsPage() {
 							mb: 3,
 						}}
 					>
-						<StatPill label='Total enrolled' value={stats.total} />
+						<StatPill label='Total students' value={stats.total} />
 						<StatPill label='Free' value={stats.free} />
 						<StatPill label='Paid' value={stats.paid} />
 						<StatPill label='Subscription' value={stats.subscription} />
 						<StatPill label='This month' value={stats.thisMonthCount} />
-						<StatPill label='Earned / month' value={`$${stats.thisMonthEarned.toFixed(2)}`} />
+						<StatPill label='Lifetime earned' value={`$${stats.lifetimeEarned.toFixed(2)}`} />
 					</Box>
 				)}
 

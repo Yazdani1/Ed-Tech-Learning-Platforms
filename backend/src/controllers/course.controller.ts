@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { Course } from '../models/Course.model';
+import { Enrollment } from '../models/Enrollment.model';
 import { Section } from '../models/Section.model';
 import { Lecture } from '../models/Lecture.model';
 import { StudyCurriculum } from '../models/StudyCurriculum.model';
@@ -34,7 +35,63 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 		.populate('teachers', 'name profileImage')
 		.sort({ createdAt: -1 });
 
-	res.status(200).json({ success: true, data: courses, total: courses.length });
+	const now = new Date();
+	const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+	const courseIds = courses.map((course) => course._id);
+	const enrollmentStats = courseIds.length > 0
+		? await Enrollment.aggregate<{
+			_id: Types.ObjectId;
+			totalEnrollments: number;
+			paidEnrollments: number;
+			thisMonthCount: number;
+			thisMonthPaidEnrollments: number;
+		}>([
+			{ $match: { course: { $in: courseIds } } },
+			{
+				$group: {
+					_id: '$course',
+					totalEnrollments: { $sum: 1 },
+					paidEnrollments: {
+						$sum: { $cond: [{ $eq: ['$enrollmentType', 'paid'] }, 1, 0] },
+					},
+					thisMonthCount: {
+						$sum: { $cond: [{ $gte: ['$createdAt', startOfMonth] }, 1, 0] },
+					},
+					thisMonthPaidEnrollments: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $eq: ['$enrollmentType', 'paid'] },
+										{ $gte: ['$createdAt', startOfMonth] },
+									],
+								},
+								1,
+								0,
+							],
+						},
+					},
+				},
+			},
+		])
+		: [];
+	const statsByCourseId = new Map(enrollmentStats.map((stat) => [String(stat._id), stat]));
+	const coursesWithStats = courses.map((course) => {
+		const courseObject = course.toObject();
+		const stat = statsByCourseId.get(String(course._id));
+		const price = course.price ?? 0;
+		return {
+			...courseObject,
+			enrollmentStats: {
+				totalEnrollments: stat?.totalEnrollments ?? 0,
+				lifetimeEarned: (stat?.paidEnrollments ?? 0) * price,
+				thisMonthCount: stat?.thisMonthCount ?? 0,
+				thisMonthEarned: (stat?.thisMonthPaidEnrollments ?? 0) * price,
+			},
+		};
+	});
+
+	res.status(200).json({ success: true, data: coursesWithStats, total: coursesWithStats.length });
 });
 
 export const browseCourses = asyncHandler(async (req: Request, res: Response) => {
