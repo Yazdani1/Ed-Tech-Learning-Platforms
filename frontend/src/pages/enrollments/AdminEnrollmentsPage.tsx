@@ -51,12 +51,12 @@ function StatPill({ label, value }: { label: string; value: string | number }) {
 		<Box
 			sx={{
 				px: 2,
-				py: 1,
-				borderRadius: 2,
+				py: 1.25,
+				borderRadius: 1,
 				border: '1px solid',
 				borderColor: 'divider',
-				textAlign: 'center',
-				minWidth: 90,
+				bgcolor: 'background.paper',
+				minWidth: 128,
 			}}
 		>
 			<Typography variant='h6' sx={{ fontWeight: 700, lineHeight: 1.1 }}>
@@ -134,46 +134,81 @@ export default function AdminEnrollmentsPage() {
 	);
 
 	return (
-		<Box sx={{ display: 'flex', gap: 0, height: '100%', minHeight: 0 }}>
+		<Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
 			{/* ── Sidebar ── */}
 			<Paper
 				elevation={0}
 				sx={{
-					width: 200,
 					flexShrink: 0,
-					borderRight: '1px solid',
+					borderBottom: '1px solid',
 					borderColor: 'divider',
 					borderRadius: 0,
 					display: 'flex',
-					flexDirection: 'column',
-					pt: 1,
+					alignItems: 'center',
+					justifyContent: 'flex-start',
+					gap: 2,
+					px: 2.5,
+					py: 1.25,
 				}}
 			>
 				{/* Back */}
 				<Tooltip title='Back to courses'>
 					<ListItemButton
 						onClick={() => navigate('/admin/courses')}
-						sx={{ mb: 1, borderRadius: 2, mx: 1 }}
+						sx={{
+							borderRadius: 1,
+							flexGrow: 0,
+							width: 'auto',
+							px: 1.25,
+							py: 0.75,
+						}}
 					>
 						<ListItemIcon sx={{ minWidth: 32 }}>
 							<ArrowBackIosNewIcon fontSize='small' />
 						</ListItemIcon>
-						<ListItemText primary={<Typography variant='body2' sx={{ fontWeight: 600 }}>Courses</Typography>} />
+						<ListItemText primary={<Typography variant='body2' sx={{ fontWeight: 800 }}>Back to Courses</Typography>} />
 					</ListItemButton>
 				</Tooltip>
+			</Paper>
 
-				<Typography
-					variant='caption'
-					sx={{ px: 2, mb: 0.5, color: 'text.secondary', fontWeight: 700, letterSpacing: 0.5 }}
+			<Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
+				<Paper
+					elevation={0}
+					sx={{
+						width: 200,
+						flexShrink: 0,
+						borderRight: '1px solid',
+						borderColor: 'divider',
+						borderRadius: 0,
+						display: 'flex',
+						flexDirection: 'column',
+						pt: 1.5,
+					}}
 				>
-					VIEW
-				</Typography>
 
-				<List disablePadding sx={{ px: 1 }}>
+				<List
+					disablePadding
+					sx={{
+						display: 'flex',
+						flexDirection: 'column',
+						gap: 0.5,
+						px: 1,
+					}}
+				>
 					<ListItemButton
 						selected={view === 'students'}
 						onClick={() => handleViewChange('students')}
-						sx={{ borderRadius: 2, mb: 0.5 }}
+						sx={{
+							borderRadius: 1,
+							width: '100%',
+							py: 0.75,
+							'&.Mui-selected': {
+								bgcolor: 'primary.main',
+								color: 'primary.contrastText',
+								'& .MuiListItemIcon-root': { color: 'inherit' },
+							},
+							'&.Mui-selected:hover': { bgcolor: 'primary.dark' },
+						}}
 					>
 						<ListItemIcon sx={{ minWidth: 36 }}>
 							<PeopleAltOutlinedIcon fontSize='small' />
@@ -184,7 +219,17 @@ export default function AdminEnrollmentsPage() {
 					<ListItemButton
 						selected={view === 'revenue'}
 						onClick={() => handleViewChange('revenue')}
-						sx={{ borderRadius: 2 }}
+						sx={{
+							borderRadius: 1,
+							width: '100%',
+							py: 0.75,
+							'&.Mui-selected': {
+								bgcolor: 'primary.main',
+								color: 'primary.contrastText',
+								'& .MuiListItemIcon-root': { color: 'inherit' },
+							},
+							'&.Mui-selected:hover': { bgcolor: 'primary.dark' },
+						}}
 					>
 						<ListItemIcon sx={{ minWidth: 36 }}>
 							<MonetizationOnOutlinedIcon fontSize='small' />
@@ -195,14 +240,27 @@ export default function AdminEnrollmentsPage() {
 			</Paper>
 
 			{/* ── Main content ── */}
-			<Box sx={{ flex: 1, minWidth: 0, px: 3, py: 2, overflowY: 'auto' }}>
+			<Box sx={{ flex: 1, minWidth: 0, px: { xs: 2, md: 3 }, py: 2.5, overflowY: 'auto' }}>
 				{/* Course header */}
-				<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+				<Paper
+					elevation={0}
+					sx={{
+						display: 'flex',
+						alignItems: 'center',
+						gap: 2,
+						mb: 2,
+						p: 2,
+						border: '1px solid',
+						borderColor: 'divider',
+						borderRadius: 1,
+						bgcolor: 'background.paper',
+					}}
+				>
 					<Box
 						sx={{
-							width: 56,
-							height: 40,
-							borderRadius: 1.5,
+							width: 88,
+							height: 58,
+							borderRadius: 1,
 							overflow: 'hidden',
 							flexShrink: 0,
 							bgcolor: 'grey.200',
@@ -219,28 +277,58 @@ export default function AdminEnrollmentsPage() {
 								sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
 							/>
 						) : (
-							<SchoolOutlinedIcon sx={{ color: 'grey.400', fontSize: 20 }} />
+							<SchoolOutlinedIcon sx={{ color: 'grey.400', fontSize: 24 }} />
 						)}
 					</Box>
-					<Box>
-						<Typography variant='h5' sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography
+							variant='h5'
+							sx={{
+								fontWeight: 900,
+								lineHeight: 1.2,
+								display: '-webkit-box',
+								WebkitLineClamp: 2,
+								WebkitBoxOrient: 'vertical',
+								overflow: 'hidden',
+							}}
+						>
 							{course?.title ?? '—'}
 						</Typography>
-						<Typography variant='caption' color='text.secondary'>
-							{course?.pricing === 'Free'
-								? 'Free course'
-								: course?.price != null
-									? `$${course.price.toFixed(2)}`
-									: 'Paid course'}
-							{' · '}
-							{course?.status}
-						</Typography>
+						<Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mt: 1 }}>
+							<Chip
+								label={
+									course?.pricing === 'Free'
+										? 'Free course'
+										: course?.price != null
+											? `$${course.price.toFixed(2)}`
+											: 'Paid course'
+								}
+								size='small'
+								variant='outlined'
+								sx={{ fontWeight: 700 }}
+							/>
+							{course?.status && (
+								<Chip
+									label={course.status}
+									size='small'
+									color={course.status === 'Published' ? 'success' : 'default'}
+									sx={{ fontWeight: 700 }}
+								/>
+							)}
+						</Box>
 					</Box>
-				</Box>
+				</Paper>
 
 				{/* Stats strip */}
 				{stats && (
-					<Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 3 }}>
+					<Box
+						sx={{
+							display: 'grid',
+							gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)', lg: 'repeat(6, 1fr)' },
+							gap: 1,
+							mb: 3,
+						}}
+					>
 						<StatPill label='Total enrolled' value={stats.total} />
 						<StatPill label='Free' value={stats.free} />
 						<StatPill label='Paid' value={stats.paid} />
@@ -417,6 +505,7 @@ export default function AdminEnrollmentsPage() {
 						</Paper>
 					</>
 				)}
+			</Box>
 			</Box>
 		</Box>
 	);
