@@ -95,8 +95,23 @@ export default function AppModal({
 						{onSave && (
 							<Button
 								variant='contained'
+								color='success'
 								onClick={onSave}
 								disabled={saving || saveDisabled}
+								sx={{
+									px: 2.75,
+									minWidth: 104,
+									borderRadius: 0.5,
+									fontWeight: 800,
+									textTransform: 'none',
+									boxShadow: '0 10px 22px rgba(22, 163, 74, 0.24)',
+									'&:hover': {
+										boxShadow: '0 12px 28px rgba(22, 163, 74, 0.32)',
+									},
+									'&.Mui-disabled': {
+										boxShadow: 'none',
+									},
+								}}
 							>
 								{saving ? <CircularProgress size={18} color='inherit' /> : saveText}
 							</Button>
