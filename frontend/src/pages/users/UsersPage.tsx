@@ -2,18 +2,13 @@ import { useEffect, useState } from 'react';
 import {
 	Box,
 	Button,
+	Card,
+	CardContent,
 	Chip,
 	CircularProgress,
 	FormControl,
 	MenuItem,
-	Paper,
 	Select,
-	Table,
-	TableBody,
-	TableCell,
-	TableContainer,
-	TableHead,
-	TableRow,
 	TextField,
 	Typography,
 } from '@mui/material';
@@ -38,6 +33,14 @@ const USER_ROLES: IUser['role'][] = [
 ];
 
 const DEFAULT_FORM = { name: '', email: '', password: '', role: 'Student' as IUser['role'] };
+
+const roleChipColor: Partial<Record<IUser['role'], 'primary' | 'secondary' | 'success' | 'warning' | 'info'>> = {
+	'Super Admin': 'secondary',
+	Admin: 'primary',
+	Moderator: 'warning',
+	Teacher: 'info',
+	Student: 'success',
+};
 
 export default function UsersPage() {
 	const { user: currentUser } = useAuth();
@@ -152,58 +155,143 @@ export default function UsersPage() {
 					<CircularProgress />
 				</Box>
 			) : (
-				<TableContainer
-					component={Paper}
-					elevation={0}
-					sx={{ border: '1px solid', borderColor: 'divider' }}
+				<Box
+					sx={{
+						display: 'grid',
+						gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+						gap: 2.5,
+					}}
 				>
-					<Table>
-						<TableHead>
-							<TableRow>
-								<TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-								<TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-								<TableCell sx={{ fontWeight: 600 }}>Role</TableCell>
-								<TableCell sx={{ fontWeight: 600 }}>Joined</TableCell>
-								<TableCell sx={{ fontWeight: 600, width: 120 }}>
-									Actions
-								</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{users.map((user) => (
-								<TableRow key={user._id}>
-									<TableCell>{user.name}</TableCell>
-									<TableCell>{user.email}</TableCell>
-									<TableCell>
-										<Chip label={user.role} size='small' variant='outlined' />
-									</TableCell>
-									<TableCell>
-										{formatDateTime(user.createdAt)}
-									</TableCell>
-									<TableCell>
-										<ItemActionMenu
-											actions={[
-												{
-													label: 'Edit',
-													icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
-													onClick: () => openEditDialog(user),
-												},
-												...(isSuperAdmin
-													? [{
-															label: 'Delete',
-															icon: <DeleteOutlineIcon fontSize='small' sx={{ mr: 1 }} />,
-															color: 'error' as const,
-															onClick: () => void handleDelete(user._id),
-														}]
-													: []),
-											]}
-										/>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</TableContainer>
+					{users.length === 0 ? (
+						<Box
+							sx={{
+								gridColumn: '1 / -1',
+								border: '1px solid',
+								borderColor: 'divider',
+								borderRadius: 1,
+								py: 8,
+								textAlign: 'center',
+								color: 'text.secondary',
+								bgcolor: 'background.paper',
+							}}
+						>
+							No users yet.
+						</Box>
+					) : (
+						users.map((user) => (
+							<Card
+								key={user._id}
+								elevation={0}
+								sx={{
+									border: '1px solid',
+									borderColor: 'divider',
+									borderRadius: 1,
+									height: '100%',
+									transition: 'border-color 160ms ease, box-shadow 160ms ease',
+									'&:hover': {
+										borderColor: 'primary.light',
+										boxShadow: '0 10px 24px rgba(15, 23, 42, 0.06)',
+									},
+								}}
+							>
+								<CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+									<Box
+										sx={{
+											display: 'grid',
+											gridTemplateColumns: {
+												xs: 'minmax(0, 1fr) auto',
+												sm: 'minmax(0, 1.25fr) minmax(120px, 0.55fr) minmax(130px, 0.65fr) auto',
+											},
+											alignItems: 'center',
+											columnGap: 2,
+											rowGap: 1.5,
+										}}
+									>
+										<Box sx={{ minWidth: 0 }}>
+											<Typography
+												variant='subtitle1'
+												sx={{
+													fontWeight: 800,
+													lineHeight: 1.25,
+													overflow: 'hidden',
+													textOverflow: 'ellipsis',
+													whiteSpace: 'nowrap',
+												}}
+											>
+												<Box component='span' sx={{ color: 'text.secondary', fontWeight: 700 }}>
+													Name:{' '}
+												</Box>
+												{user.name}
+											</Typography>
+											<Typography
+												variant='body2'
+												color='text.secondary'
+												sx={{ overflowWrap: 'anywhere', mt: 0.35 }}
+											>
+												<Box component='span' sx={{ fontWeight: 700 }}>
+													Email:{' '}
+												</Box>
+												{user.email}
+											</Typography>
+										</Box>
+
+										<Box sx={{ minWidth: 0, gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
+											<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+												<Typography variant='body2' color='text.secondary' sx={{ fontWeight: 700 }}>
+													Role:
+												</Typography>
+												<Chip
+													label={user.role}
+													size='small'
+													color={roleChipColor[user.role] ?? 'primary'}
+													variant='outlined'
+													sx={{ fontWeight: 700 }}
+												/>
+											</Box>
+										</Box>
+
+										<Box sx={{ minWidth: 0, gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
+											<Typography
+												variant='body2'
+												sx={{
+													fontWeight: 650,
+													overflow: 'hidden',
+													textOverflow: 'ellipsis',
+													whiteSpace: 'nowrap',
+												}}
+											>
+												<Box component='span' sx={{ color: 'text.secondary', fontWeight: 700 }}>
+													Joined:{' '}
+												</Box>
+												{formatDateTime(user.createdAt)}
+											</Typography>
+										</Box>
+
+										<Box sx={{ justifySelf: 'end', gridColumn: { xs: '2', sm: 'auto' }, gridRow: { xs: '1', sm: 'auto' } }}>
+											<ItemActionMenu
+												actions={[
+													{
+														label: 'Edit',
+														icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
+														onClick: () => openEditDialog(user),
+													},
+													...(isSuperAdmin
+														? [{
+																label: 'Delete',
+																icon: <DeleteOutlineIcon fontSize='small' sx={{ mr: 1 }} />,
+																color: 'error' as const,
+																onClick: () => void handleDelete(user._id),
+															}]
+														: []),
+												]}
+											/>
+										</Box>
+									</Box>
+								</CardContent>
+							</Card>
+						))
+					)}
+				</Box>
 			)}
 
 			<AppModal
