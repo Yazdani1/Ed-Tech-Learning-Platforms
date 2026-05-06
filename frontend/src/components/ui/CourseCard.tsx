@@ -279,7 +279,11 @@ export default function CourseCard({
 										</Typography>
 										{priceInfo.hasDiscount && (
 											<>
-												<Typography variant='caption' color='text.secondary' sx={{ textDecoration: 'line-through', fontWeight: 700 }}>
+												<Typography
+													variant='body2'
+													color='text.secondary'
+													sx={{ textDecoration: 'line-through', fontWeight: 800, fontSize: '0.9rem' }}
+												>
 													{formatBdt(priceInfo.listPrice)}
 												</Typography>
 												<Chip
