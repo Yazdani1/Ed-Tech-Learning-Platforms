@@ -29,6 +29,7 @@ type AppModalProps = {
 	contentSx?: object;
 	titleSx?: object;
 	closeButtonSx?: object;
+	cancelButtonSx?: object;
 	actionsLeft?: ReactNode;
 };
 
@@ -50,6 +51,7 @@ export default function AppModal({
 	contentSx,
 	titleSx,
 	closeButtonSx,
+	cancelButtonSx,
 	actionsLeft,
 }: AppModalProps) {
 	return (
@@ -89,7 +91,7 @@ export default function AppModal({
 				<DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
 					<Box>{actionsLeft}</Box>
 					<Box sx={{ display: 'flex', gap: 1 }}>
-						<Button onClick={onClose} disabled={saving}>
+						<Button onClick={onClose} disabled={saving} sx={cancelButtonSx}>
 							{cancelText}
 						</Button>
 						{onSave && (

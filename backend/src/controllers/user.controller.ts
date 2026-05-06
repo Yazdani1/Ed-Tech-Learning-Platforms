@@ -21,8 +21,13 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
   res.status(201).json({ success: true, message: 'User created', data: { _id: user._id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt } });
 });
 
-export const getUsers = asyncHandler(async (_req: Request, res: Response) => {
+export const getUsers = asyncHandler(async (req: Request, res: Response) => {
   const users = await User.find().select('-password').sort({ createdAt: -1 });
+  if (req.user.role !== 'Super Admin') {
+    res.status(200).json({ success: true, data: users, total: users.length });
+    return;
+  }
+
   const enrollmentCounts = await Enrollment.aggregate<{
     _id: { student: string; enrollmentType: 'free' | 'paid' | 'subscription' };
     count: number;

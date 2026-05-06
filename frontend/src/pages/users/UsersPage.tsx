@@ -338,12 +338,14 @@ export default function UsersPage() {
 
 										<Box sx={{ justifySelf: 'end', gridColumn: { xs: '2', sm: 'auto' }, gridRow: { xs: '1', sm: 'auto' } }}>
 											<ItemActionMenu
-													actions={[
-													{
-														label: 'View Details',
-														icon: <VisibilityOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
-														onClick: () => openDetailsDialog(user),
-													},
+												actions={[
+													...(isSuperAdmin
+														? [{
+																label: 'View Details',
+																icon: <VisibilityOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
+																onClick: () => openDetailsDialog(user),
+															}]
+														: []),
 													{
 														label: 'Edit',
 														icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
@@ -421,6 +423,13 @@ export default function UsersPage() {
 				title='User Details'
 				maxWidth='md'
 				cancelText='Close'
+				cancelButtonSx={{
+					color: 'error.main',
+					fontWeight: 800,
+					'&:hover': {
+						bgcolor: 'rgba(211, 47, 47, 0.08)',
+					},
+				}}
 			>
 				{detailsUser && (
 					<Box>
