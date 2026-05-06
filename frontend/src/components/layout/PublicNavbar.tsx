@@ -15,6 +15,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../../context/useAuth';
 import { encodeParam, decodeParam } from '../../utils/urlParams';
+import PublicDiscountBanner from './PublicDiscountBanner';
 
 const prefetchPublicRoutes = () => {
 	void import('../../pages/courses/CourseBrowsePage');
@@ -69,6 +70,8 @@ export default function PublicNavbar() {
     : '/admin/dashboard';
 
   return (
+    <>
+    <PublicDiscountBanner />
     <AppBar
       position="sticky"
       elevation={0}
@@ -207,5 +210,6 @@ export default function PublicNavbar() {
         </Box>
       </Toolbar>
     </AppBar>
+    </>
   );
 }
