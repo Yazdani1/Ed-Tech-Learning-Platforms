@@ -29,6 +29,7 @@ import { enrollmentService } from '../../services/enrollment.service';
 import { courseService } from '../../services/course.service';
 import type { IEnrollment, IEnrollmentStats, EnrollmentType, ICourse } from '../../types/index';
 import { formatDateTime } from '../../utils/dateTime';
+import { formatBdt, getCoursePriceInfo } from '../../utils/pricing';
 
 type SidebarView = 'students' | 'revenue';
 type FilterTab = 'all' | EnrollmentType;
@@ -129,9 +130,10 @@ export default function AdminEnrollmentsPage() {
 
 	const paidEnrollments = enrollments.filter((e) => e.enrollmentType === 'paid');
 	const totalRevenue = paidEnrollments.reduce(
-		(sum, e) => sum + (e.course?.price ?? 0),
+		(sum, e) => sum + (e.paidPrice || e.course?.price || 0),
 		0,
 	);
+	const coursePriceInfo = course ? getCoursePriceInfo(course) : null;
 
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
@@ -299,8 +301,10 @@ export default function AdminEnrollmentsPage() {
 								label={
 									course?.pricing === 'Free'
 										? 'Free course'
-										: course?.price != null
-											? `$${course.price.toFixed(2)}`
+										: coursePriceInfo
+											? coursePriceInfo.hasDiscount
+												? `${formatBdt(coursePriceInfo.discountPrice)} (${coursePriceInfo.discountPercent}% off)`
+												: formatBdt(coursePriceInfo.discountPrice)
 											: 'Paid course'
 								}
 								size='small'
@@ -334,7 +338,7 @@ export default function AdminEnrollmentsPage() {
 						<StatPill label='Paid' value={stats.paid} />
 						<StatPill label='Subscription' value={stats.subscription} />
 						<StatPill label='This month' value={stats.thisMonthCount} />
-						<StatPill label='Lifetime earned' value={`$${stats.lifetimeEarned.toFixed(2)}`} />
+						<StatPill label='Lifetime earned' value={formatBdt(stats.lifetimeEarned)} />
 					</Box>
 				)}
 
@@ -437,7 +441,7 @@ export default function AdminEnrollmentsPage() {
 								Revenue
 							</Typography>
 							<Typography variant='body2' sx={{ fontWeight: 700, color: '#10b981' }}>
-								Total: ${totalRevenue.toFixed(2)}
+								Total: {formatBdt(totalRevenue)}
 							</Typography>
 						</Box>
 						<Paper
@@ -455,6 +459,8 @@ export default function AdminEnrollmentsPage() {
 											<TableRow>
 												<TableCell sx={{ fontWeight: 700 }}>Student</TableCell>
 												<TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+												<TableCell sx={{ fontWeight: 700 }}>List Price</TableCell>
+												<TableCell sx={{ fontWeight: 700 }}>Discount</TableCell>
 												<TableCell sx={{ fontWeight: 700 }}>Amount Paid</TableCell>
 												<TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
 												<TableCell sx={{ fontWeight: 700 }}>Enrollment ID</TableCell>
@@ -480,7 +486,19 @@ export default function AdminEnrollmentsPage() {
 													</TableCell>
 													<TableCell>
 														<Typography variant='body2' sx={{ fontWeight: 700, color: '#10b981' }}>
-															${e.course?.price?.toFixed(2) ?? '0.00'}
+															{formatBdt(e.listPrice || e.course?.listPrice || e.course?.price || 0)}
+														</Typography>
+													</TableCell>
+													<TableCell>
+														<Typography variant='body2' color='text.secondary'>
+															{e.discountAmount > 0
+																? `${formatBdt(e.discountAmount)} (${Math.round(e.discountPercent)}%)`
+																: '-'}
+														</Typography>
+													</TableCell>
+													<TableCell>
+														<Typography variant='body2' sx={{ fontWeight: 700, color: '#10b981' }}>
+															{formatBdt(e.paidPrice || e.course?.discountPrice || e.course?.price || 0)}
 														</Typography>
 													</TableCell>
 													<TableCell>

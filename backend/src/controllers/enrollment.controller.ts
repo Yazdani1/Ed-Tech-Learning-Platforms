@@ -7,6 +7,33 @@ import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { EnrollmentType } from '../models/Enrollment.model';
 
+const money = (value: number) => Math.round(value * 100) / 100;
+
+const getCourseOrderSnapshot = (course: {
+	pricing: string;
+	price?: number;
+	listPrice?: number;
+	discountPrice?: number;
+}) => {
+	if (course.pricing !== 'Paid') {
+		return {
+			listPrice: 0,
+			paidPrice: 0,
+			discountAmount: 0,
+			discountPercent: 0,
+			currency: 'BDT',
+		};
+	}
+
+	const listPrice = money(Math.max(course.listPrice ?? course.price ?? 0, 0));
+	const paidPrice = money(Math.max(course.discountPrice ?? course.price ?? listPrice, 0));
+	const discountAmount = money(Math.max(listPrice - paidPrice, 0));
+	const discountPercent =
+		listPrice > 0 ? money(Math.min((discountAmount / listPrice) * 100, 100)) : 0;
+
+	return { listPrice, paidPrice, discountAmount, discountPercent, currency: 'BDT' };
+};
+
 export const enroll = asyncHandler(async (req: Request, res: Response) => {
 	const courseId = String(req.params.courseId);
 	const studentId = String(req.user._id);
@@ -25,24 +52,40 @@ export const enroll = asyncHandler(async (req: Request, res: Response) => {
 	// Auto-detect enrollment type
 	let enrollmentType: EnrollmentType = 'free';
 	if (course.pricing === 'Paid') {
-		const student = await User.findById(studentId).select('activeSubscription');
-		const sub = student?.activeSubscription;
-		if (
-			sub &&
-			course.includedInSubscription &&
-			course.allowedSubscriptionPlans.includes(sub.plan) &&
-			new Date(sub.endDate) > new Date()
-		) {
-			enrollmentType = 'subscription';
-		} else {
+		const requestedType = String(req.body?.enrollmentType ?? '');
+		if (requestedType === 'paid') {
 			enrollmentType = 'paid';
+		} else {
+			const student = await User.findById(studentId).select('activeSubscription');
+			const sub = student?.activeSubscription;
+			if (
+				sub &&
+				course.includedInSubscription &&
+				course.allowedSubscriptionPlans.includes(sub.plan) &&
+				new Date(sub.endDate) > new Date()
+			) {
+				enrollmentType = 'subscription';
+			} else {
+				enrollmentType = 'paid';
+			}
 		}
 	}
+
+	const orderSnapshot = enrollmentType === 'paid'
+		? getCourseOrderSnapshot(course)
+		: {
+				listPrice: 0,
+				paidPrice: 0,
+				discountAmount: 0,
+				discountPercent: 0,
+				currency: 'BDT',
+			};
 
 	await Enrollment.create({
 		student: new Types.ObjectId(studentId),
 		course: new Types.ObjectId(courseId),
 		enrollmentType,
+		...orderSnapshot,
 	});
 
 	res.status(201).json({ success: true, message: 'Enrolled successfully' });
@@ -117,7 +160,7 @@ export const getCourseEnrollments = asyncHandler(
 
 		const enrollments = await Enrollment.find(filter)
 			.populate('student', 'name email avatar')
-			.populate('course', 'title price pricing')
+			.populate('course', 'title price listPrice discountPrice pricing')
 			.sort({ createdAt: -1 });
 
 		res
@@ -217,13 +260,13 @@ export const getCourseEnrollmentStats = asyncHandler(
 		const lifetimeEarned = paidEnrollments.reduce((sum, e) => {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const course = e.course as any;
-			return sum + (course?.price ?? 0);
+			return sum + (e.paidPrice || course?.price || 0);
 		}, 0);
 		const thisMonthEarned = thisMonth.reduce((sum, e) => {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const course = e.course as any;
-			if (e.enrollmentType === 'paid' && course?.price) {
-				return sum + course.price;
+			if (e.enrollmentType === 'paid') {
+				return sum + (e.paidPrice || course?.price || 0);
 			}
 			return sum;
 		}, 0);

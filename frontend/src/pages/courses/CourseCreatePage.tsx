@@ -414,6 +414,8 @@ export default function CourseCreatePage() {
 		visibility: 'Private',
 		pricing: 'Free',
 		price: '',
+		listPrice: '',
+		discountPrice: '',
 		includedInSubscription: false,
 		allowedSubscriptionPlans: [] as SubscriptionPlan[],
 		whatYouWillLearn: [] as string[],
@@ -487,6 +489,13 @@ export default function CourseCreatePage() {
 	const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
 		setForm((p) => ({ ...p, [key]: value }));
 
+	const listPriceValue = Number(form.listPrice);
+	const discountPriceValue = Number(form.discountPrice);
+	const discountPercent =
+		listPriceValue > 0 && discountPriceValue >= 0 && discountPriceValue < listPriceValue
+			? Math.round(((listPriceValue - discountPriceValue) / listPriceValue) * 100)
+			: 0;
+
 	const buildFormData = () => {
 		const fd = new FormData();
 		fd.append('title', form.title);
@@ -498,7 +507,11 @@ export default function CourseCreatePage() {
 		fd.append('description', form.description);
 		fd.append('visibility', form.visibility);
 		fd.append('pricing', form.pricing);
-		if (form.price) fd.append('price', form.price);
+		if (form.pricing === 'Paid') {
+			if (form.listPrice) fd.append('listPrice', form.listPrice);
+			if (form.discountPrice) fd.append('discountPrice', form.discountPrice);
+			if (form.discountPrice) fd.append('price', form.discountPrice);
+		}
 		fd.append('includedInSubscription', String(form.includedInSubscription));
 		fd.append('teachers', JSON.stringify(form.selectedTeachers));
 		fd.append(
@@ -962,6 +975,8 @@ export default function CourseCreatePage() {
 					visibility: data.visibility || 'Private',
 					pricing: data.pricing || 'Free',
 					price: data.price?.toString() || '',
+					listPrice: (data.listPrice ?? data.price)?.toString() || '',
+					discountPrice: (data.discountPrice ?? data.price)?.toString() || '',
 					includedInSubscription: data.includedInSubscription ?? false,
 					allowedSubscriptionPlans: data.allowedSubscriptionPlans ?? [],
 					whatYouWillLearn: data.whatYouWillLearn ?? [],
@@ -1283,13 +1298,40 @@ export default function CourseCreatePage() {
 									<MenuItem value='Paid'>Paid</MenuItem>
 								</TextField>
 								{form.pricing === 'Paid' && (
-									<TextField
-										label='Price (BDT)'
-										type='number'
-										value={form.price}
-										onChange={(e) => set('price', e.target.value)}
-										sx={{ flex: 1 }}
-									/>
+									<>
+										<TextField
+											label='List Price (BDT)'
+											type='number'
+											value={form.listPrice}
+											onChange={(e) => {
+												set('listPrice', e.target.value);
+												if (!form.discountPrice) set('discountPrice', e.target.value);
+											}}
+											sx={{ flex: 1 }}
+										/>
+										<TextField
+											label='Discount Price (BDT)'
+											type='number'
+											value={form.discountPrice}
+											onChange={(e) => {
+												set('discountPrice', e.target.value);
+												set('price', e.target.value);
+											}}
+											helperText={
+												discountPercent > 0
+													? `${discountPercent}% discount`
+													: 'Final buying price'
+											}
+											sx={{ flex: 1 }}
+										/>
+										{discountPercent > 0 && (
+											<Chip
+												label={`${discountPercent}% off`}
+												color='success'
+												sx={{ alignSelf: 'flex-start', mt: 1, fontWeight: 900, fontSize: '0.82rem' }}
+											/>
+										)}
+									</>
 								)}
 							</Box>
 

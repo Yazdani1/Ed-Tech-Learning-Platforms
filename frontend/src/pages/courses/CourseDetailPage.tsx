@@ -49,6 +49,7 @@ import {
 	formatLiveClassDate,
 	formatLiveClassTime,
 } from '../../utils/dateTime';
+import { formatBdt, getCoursePriceInfo } from '../../utils/pricing';
 import type {
 	ICourse,
 	ILecture,
@@ -117,6 +118,7 @@ export default function CourseDetailPage() {
 	const planCountMap = Object.fromEntries(
 		subPlans.map((p) => [p.plan, p.courseCount]),
 	) as Partial<Record<string, number>>;
+	const priceInfo = course ? getCoursePriceInfo(course) : null;
 
 	useEffect(() => {
 		if (!id || authLoading) return;
@@ -171,7 +173,12 @@ export default function CourseDetailPage() {
 		if (!id) return;
 		setEnrolling(true);
 		try {
-			await courseService.enroll(id);
+			await courseService.enroll(
+				id,
+				course?.pricing === 'Paid' && selectedOption === 'direct'
+					? 'paid'
+					: undefined,
+			);
 			setIsEnrolled(true);
 			toast.success('Enrolled successfully!');
 		} finally {
@@ -343,7 +350,9 @@ export default function CourseDetailPage() {
 								<Chip
 									label={
 										course.pricing === 'Paid'
-											? `BDT ${course.price ?? ''}`
+											? priceInfo?.hasDiscount
+												? `${formatBdt(priceInfo.discountPrice)} (${priceInfo.discountPercent}% off)`
+												: formatBdt(priceInfo?.discountPrice ?? course.price)
 											: 'Free'
 									}
 									size='small'
@@ -1923,18 +1932,39 @@ export default function CourseDetailPage() {
 																? 'Enroll for free'
 																: 'Buy this course'}
 														</Typography>
-														<Typography
-															variant='h5'
-															sx={{
-																fontWeight: 800,
-																lineHeight: 1.2,
-																mt: 0.25,
-															}}
-														>
-															{course.pricing === 'Free'
-																? 'Free'
-																: `à§³${course.price?.toLocaleString() ?? ''}`}
-														</Typography>
+														{course.pricing === 'Free' || !priceInfo ? (
+															<Typography
+																variant='h5'
+																sx={{ fontWeight: 800, lineHeight: 1.2, mt: 0.25 }}
+															>
+																Free
+															</Typography>
+														) : (
+															<Box sx={{ mt: 0.25 }}>
+																<Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
+																	<Typography variant='h5' sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+																		{formatBdt(priceInfo.discountPrice)}
+																	</Typography>
+																	{priceInfo.hasDiscount && (
+																		<Chip
+																			label={`${priceInfo.discountPercent}% off`}
+																			size='small'
+																			color='success'
+																			sx={{ height: 24, fontSize: '0.75rem', fontWeight: 800 }}
+																		/>
+																	)}
+																</Box>
+																{priceInfo.hasDiscount && (
+																	<Typography variant='body2' color='text.secondary' sx={{ mt: 0.5 }}>
+																		List price{' '}
+																		<Box component='span' sx={{ textDecoration: 'line-through', fontWeight: 700 }}>
+																			{formatBdt(priceInfo.listPrice)}
+																		</Box>{' '}
+																		You save {formatBdt(priceInfo.discountAmount)}
+																	</Typography>
+																)}
+															</Box>
+														)}
 													</Box>
 												</Box>
 
@@ -2006,6 +2036,8 @@ export default function CourseDetailPage() {
 																		/>
 																	) : course.pricing === 'Free' ? (
 																		'Enroll Now â€” Free'
+																	) : priceInfo?.hasDiscount ? (
+																		`Buy Now - ${formatBdt(priceInfo.discountPrice)}`
 																	) : (
 																		'Buy Now'
 																	)}

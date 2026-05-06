@@ -15,6 +15,8 @@ export interface ICourse extends Document {
   visibility: CourseVisibility;
   pricing: CoursePricing;
   price?: number;
+  listPrice?: number;
+  discountPrice?: number;
   includedInSubscription: boolean;
   allowedSubscriptionPlans: SubscriptionPlan[];
   status: CourseStatus;
@@ -43,6 +45,8 @@ const courseSchema = new Schema<ICourse>(
     visibility: { type: String, enum: ['Public', 'Private'], default: 'Private' },
     pricing: { type: String, enum: ['Free', 'Paid'], default: 'Free' },
     price: { type: Number, min: 0 },
+    listPrice: { type: Number, min: 0 },
+    discountPrice: { type: Number, min: 0 },
     includedInSubscription: { type: Boolean, default: false },
     allowedSubscriptionPlans: [{ type: String, enum: ['Basic', 'Premium', 'Gold', 'Quiz Only'] }],
     status: { type: String, enum: ['Draft', 'Published'], default: 'Draft' },

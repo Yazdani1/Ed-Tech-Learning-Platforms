@@ -44,7 +44,8 @@ export const courseService = {
 		api.get<{ isEnrolled: boolean; enrolledAt?: string }>(
 			`/enrollments/${id}/check`,
 		),
-	enroll: (id: string) => api.post(`/enrollments/${id}`),
+	enroll: (id: string, enrollmentType?: 'paid' | 'subscription') =>
+		api.post(`/enrollments/${id}`, enrollmentType ? { enrollmentType } : undefined),
 	unenroll: (id: string) => api.delete(`/enrollments/${id}`),
 
 	// Sections

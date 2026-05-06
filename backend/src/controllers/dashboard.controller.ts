@@ -97,7 +97,7 @@ export const getDashboardSummary = asyncHandler(
 
 		const courseRevenue = paidEnrollments.reduce((sum, enrollment) => {
 			const course = enrollment.course as unknown as { price?: number };
-			return sum + (course?.price ?? 0);
+			return sum + (enrollment.paidPrice || course?.price || 0);
 		}, 0);
 
 		const subscriptionRevenue = subscriptions.reduce(
@@ -109,7 +109,7 @@ export const getDashboardSummary = asyncHandler(
 			.filter((enrollment) => new Date(enrollment.createdAt) >= monthStart)
 			.reduce((sum, enrollment) => {
 				const course = enrollment.course as unknown as { price?: number };
-				return sum + (course?.price ?? 0);
+				return sum + (enrollment.paidPrice || course?.price || 0);
 			}, 0);
 
 		const thisMonthSubscriptionRevenue = subscriptions
@@ -138,7 +138,7 @@ export const getDashboardSummary = asyncHandler(
 			if (!bucket) return;
 			const course = enrollment.course as unknown as { price?: number };
 			bucket.enrollments += 1;
-			bucket.courseRevenue += course?.price ?? 0;
+			bucket.courseRevenue += enrollment.paidPrice || course?.price || 0;
 		});
 
 		subscriptions.forEach((subscription) => {
@@ -151,7 +151,7 @@ export const getDashboardSummary = asyncHandler(
 
 		const courseIds = topCourseAgg.map((item) => item._id);
 		const topCourses = await Course.find({ _id: { $in: courseIds } })
-			.select('title coverImage pricing price status')
+			.select('title coverImage pricing price listPrice discountPrice status')
 			.lean();
 		const topCourseMap = new Map(topCourses.map((course) => [String(course._id), course]));
 

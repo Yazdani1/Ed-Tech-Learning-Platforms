@@ -93,6 +93,8 @@ export interface ICourse {
   visibility: CourseVisibility;
   pricing: CoursePricing;
   price?: number;
+  listPrice?: number;
+  discountPrice?: number;
   includedInSubscription: boolean;
   allowedSubscriptionPlans: SubscriptionPlan[];
   status: CourseStatus;
@@ -176,7 +178,7 @@ export interface IDashboardSummary {
     totalRevenue: number;
   }>;
   topCourses: Array<{
-    course: Pick<ICourse, '_id' | 'title' | 'coverImage' | 'pricing' | 'price' | 'status'> | null;
+    course: Pick<ICourse, '_id' | 'title' | 'coverImage' | 'pricing' | 'price' | 'listPrice' | 'discountPrice' | 'status'> | null;
     enrollments: number;
   }>;
   recentEnrollments: Array<{
@@ -192,8 +194,13 @@ export interface IDashboardSummary {
 export interface IEnrollment {
   _id: string;
   student: Pick<IUser, '_id' | 'name' | 'email' | 'avatar'>;
-  course: Pick<ICourse, '_id' | 'title' | 'price' | 'pricing'>;
+  course: Pick<ICourse, '_id' | 'title' | 'price' | 'listPrice' | 'discountPrice' | 'pricing'>;
   enrollmentType: EnrollmentType;
+  listPrice: number;
+  paidPrice: number;
+  discountAmount: number;
+  discountPercent: number;
+  currency: string;
   createdAt: string;
   updatedAt: string;
 }

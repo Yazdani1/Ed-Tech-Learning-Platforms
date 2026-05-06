@@ -10,6 +10,18 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 import type { CourseStatus, SubscriptionPlan } from '../types/index';
 
+const normalizeCoursePrices = (pricing: string, listPrice?: number, discountPrice?: number) => {
+	if (pricing !== 'Paid') {
+		return { listPrice: 0, discountPrice: 0, price: 0 };
+	}
+
+	const safeListPrice = Math.max(Number(listPrice ?? discountPrice ?? 0), 0);
+	const safeDiscountPrice = Math.max(Number(discountPrice ?? safeListPrice), 0);
+	const finalPrice = Math.min(safeDiscountPrice, safeListPrice);
+
+	return { listPrice: safeListPrice, discountPrice: finalPrice, price: finalPrice };
+};
+
 export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 	const { category, courseType, teacher, status, pricing, visibility, subscriptionPlans, search, enrollmentFilter, earningFilter } = req.query as Record<string, string>;
 
@@ -44,10 +56,13 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 			_id: Types.ObjectId;
 			totalEnrollments: number;
 			paidEnrollments: number;
+			lifetimeEarned: number;
 			thisMonthCount: number;
 			thisMonthPaidEnrollments: number;
+			thisMonthEarned: number;
 			previousMonthCount: number;
 			previousMonthPaidEnrollments: number;
+			previousMonthEarned: number;
 		}>([
 			{ $match: { course: { $in: courseIds } } },
 			{
@@ -56,6 +71,15 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 					totalEnrollments: { $sum: 1 },
 					paidEnrollments: {
 						$sum: { $cond: [{ $eq: ['$enrollmentType', 'paid'] }, 1, 0] },
+					},
+					lifetimeEarned: {
+						$sum: {
+							$cond: [
+								{ $eq: ['$enrollmentType', 'paid'] },
+								{ $ifNull: ['$paidPrice', 0] },
+								0,
+							],
+						},
 					},
 					thisMonthCount: {
 						$sum: { $cond: [{ $gte: ['$createdAt', startOfMonth] }, 1, 0] },
@@ -70,6 +94,20 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 									],
 								},
 								1,
+								0,
+							],
+						},
+					},
+					thisMonthEarned: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $eq: ['$enrollmentType', 'paid'] },
+										{ $gte: ['$createdAt', startOfMonth] },
+									],
+								},
+								{ $ifNull: ['$paidPrice', 0] },
 								0,
 							],
 						},
@@ -103,6 +141,21 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 							],
 						},
 					},
+					previousMonthEarned: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $eq: ['$enrollmentType', 'paid'] },
+										{ $gte: ['$createdAt', startOfPreviousMonth] },
+										{ $lt: ['$createdAt', startOfMonth] },
+									],
+								},
+								{ $ifNull: ['$paidPrice', 0] },
+								0,
+							],
+						},
+					},
 				},
 			},
 		])
@@ -111,16 +164,16 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 	const coursesWithStats = courses.map((course) => {
 		const courseObject = course.toObject();
 		const stat = statsByCourseId.get(String(course._id));
-		const price = course.price ?? 0;
+		const fallbackPrice = course.price ?? 0;
 		return {
 			...courseObject,
 			enrollmentStats: {
 				totalEnrollments: stat?.totalEnrollments ?? 0,
-				lifetimeEarned: (stat?.paidEnrollments ?? 0) * price,
+				lifetimeEarned: stat?.lifetimeEarned || (stat?.paidEnrollments ?? 0) * fallbackPrice,
 				thisMonthCount: stat?.thisMonthCount ?? 0,
-				thisMonthEarned: (stat?.thisMonthPaidEnrollments ?? 0) * price,
+				thisMonthEarned: stat?.thisMonthEarned || (stat?.thisMonthPaidEnrollments ?? 0) * fallbackPrice,
 				previousMonthCount: stat?.previousMonthCount ?? 0,
-				previousMonthEarned: (stat?.previousMonthPaidEnrollments ?? 0) * price,
+				previousMonthEarned: stat?.previousMonthEarned || (stat?.previousMonthPaidEnrollments ?? 0) * fallbackPrice,
 			},
 		};
 	});
@@ -253,6 +306,8 @@ export const createCourse = asyncHandler(
 			visibility?: string;
 			pricing?: string;
 			price?: string;
+			listPrice?: string;
+			discountPrice?: string;
 			includedInSubscription?: string;
 			allowedSubscriptionPlans?: string;
 		};
@@ -272,6 +327,13 @@ export const createCourse = asyncHandler(
 			coverImagePublicId = result.publicId;
 		}
 
+		const pricing = (body.pricing ?? 'Free') as 'Free' | 'Paid';
+		const prices = normalizeCoursePrices(
+			pricing,
+			body.listPrice ? Number(body.listPrice) : body.price ? Number(body.price) : undefined,
+			body.discountPrice ? Number(body.discountPrice) : body.price ? Number(body.price) : undefined,
+		);
+
 		const course = await Course.create({
 			title: body.title,
 			subtitle: body.subtitle,
@@ -285,8 +347,8 @@ export const createCourse = asyncHandler(
 					)
 				: [],
 			visibility: (body.visibility ?? 'Private') as 'Public' | 'Private',
-			pricing: (body.pricing ?? 'Free') as 'Free' | 'Paid',
-			price: body.price ? Number(body.price) : undefined,
+			pricing,
+			...prices,
 			includedInSubscription: body.includedInSubscription === 'true',
 			allowedSubscriptionPlans: body.allowedSubscriptionPlans
 				? (JSON.parse(body.allowedSubscriptionPlans) as SubscriptionPlan[])
@@ -336,7 +398,27 @@ export const updateCourse = asyncHandler(
 			course.visibility = body.visibility as 'Public' | 'Private';
 		if (body.pricing !== undefined)
 			course.pricing = body.pricing as 'Free' | 'Paid';
-		if (body.price !== undefined) course.price = Number(body.price);
+		if (
+			body.pricing !== undefined ||
+			body.price !== undefined ||
+			body.listPrice !== undefined ||
+			body.discountPrice !== undefined
+		) {
+			const prices = normalizeCoursePrices(
+				course.pricing,
+				body.listPrice !== undefined
+					? Number(body.listPrice)
+					: course.listPrice ?? course.price,
+				body.discountPrice !== undefined
+					? Number(body.discountPrice)
+					: body.price !== undefined
+						? Number(body.price)
+						: course.discountPrice ?? course.price,
+			);
+			course.listPrice = prices.listPrice;
+			course.discountPrice = prices.discountPrice;
+			course.price = prices.price;
+		}
 		if (body.includedInSubscription !== undefined)
 			course.includedInSubscription = body.includedInSubscription === 'true';
 		if (body.teachers)

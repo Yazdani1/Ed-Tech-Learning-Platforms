@@ -45,7 +45,7 @@ export const getPerformanceOverview = asyncHandler(async (req: Request, res: Res
   const totalRevenue = allEnrollments
     .filter((e) => e.enrollmentType === 'paid')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .reduce((sum, e) => sum + ((e.course as any)?.price ?? 0), 0);
+    .reduce((sum, e) => sum + (e.paidPrice || (e.course as any)?.price || 0), 0);
 
   // This-month stats
   const thisMonthList = allEnrollments.filter((e) => new Date(e.createdAt) >= startOfMonth);
@@ -53,7 +53,7 @@ export const getPerformanceOverview = asyncHandler(async (req: Request, res: Res
   const thisMonthRevenue = thisMonthList
     .filter((e) => e.enrollmentType === 'paid')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .reduce((sum, e) => sum + ((e.course as any)?.price ?? 0), 0);
+    .reduce((sum, e) => sum + (e.paidPrice || (e.course as any)?.price || 0), 0);
 
   // Chart: filter by date range
   const inRange = allEnrollments.filter((e) => new Date(e.createdAt) >= start);
@@ -89,7 +89,7 @@ export const getPerformanceOverview = asyncHandler(async (req: Request, res: Res
       bucket.enrollments++;
       if (e.enrollmentType === 'paid') {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        bucket.revenue += (e.course as any)?.price ?? 0;
+        bucket.revenue += e.paidPrice || (e.course as any)?.price || 0;
       }
     }
   });
@@ -122,7 +122,7 @@ export const getPerformanceOverview = asyncHandler(async (req: Request, res: Res
 
 export const getPerformanceCourses = asyncHandler(async (_req: Request, res: Response) => {
   const courses = await Course.find()
-    .select('title coverImage pricing price status')
+    .select('title coverImage pricing price listPrice discountPrice status')
     .sort({ createdAt: -1 });
 
   res.json({ success: true, data: courses });

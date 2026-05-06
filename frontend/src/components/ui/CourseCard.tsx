@@ -15,6 +15,7 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ICourse } from '../../types/index';
+import { formatBdt, getCoursePriceInfo } from '../../utils/pricing';
 
 const PLAN_COLORS: Record<string, string> = {
 	Basic: '#2563eb',
@@ -124,12 +125,7 @@ export default function CourseCard({
 	const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const teachers = course.teachers?.map((t) => t.name).join(', ') || '';
-	const priceLabel =
-		course.pricing === 'Free'
-			? 'Free'
-			: course.price !== null && course.price !== undefined
-				? `$${course.price.toFixed(2)}`
-				: 'Paid';
+	const priceInfo = getCoursePriceInfo(course);
 	const learnPath = learningPath ?? `/student/courses/${course._id}/learn`;
 	const coursePath = `${basePath}/${course._id}${appendPath}`;
 	const introVideoUrl = getIntroVideoUrl(course);
@@ -270,17 +266,33 @@ export default function CourseCard({
 
 						<Box sx={{ flexGrow: 1 }} />
 
-						<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-							<Typography
-								variant='body2'
-								sx={{
-									fontWeight: 800,
-									fontSize: '1rem',
-									color: course.pricing === 'Free' ? 'success.main' : 'text.primary',
-								}}
-							>
-								{priceLabel}
-							</Typography>
+						<Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 1 }}>
+							<Box sx={{ minWidth: 0 }}>
+								{priceInfo.isFree ? (
+									<Typography variant='body2' sx={{ fontWeight: 800, fontSize: '1rem', color: 'success.main' }}>
+										Free
+									</Typography>
+								) : (
+									<Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75, flexWrap: 'wrap' }}>
+										<Typography variant='body2' sx={{ fontWeight: 900, fontSize: '1rem', color: 'text.primary' }}>
+											{formatBdt(priceInfo.discountPrice)}
+										</Typography>
+										{priceInfo.hasDiscount && (
+											<>
+												<Typography variant='caption' color='text.secondary' sx={{ textDecoration: 'line-through', fontWeight: 700 }}>
+													{formatBdt(priceInfo.listPrice)}
+												</Typography>
+												<Chip
+													label={`${priceInfo.discountPercent}% off`}
+													size='small'
+													color='success'
+													sx={{ height: 24, fontSize: '0.75rem', fontWeight: 800 }}
+												/>
+											</>
+										)}
+									</Box>
+								)}
+							</Box>
 							<Chip
 								label={course.category?.name ?? 'Course'}
 								size='small'
