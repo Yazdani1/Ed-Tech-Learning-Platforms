@@ -72,6 +72,12 @@ const formatCurrency = (amount: number) =>
 		minimumFractionDigits: 2,
 	}).format(amount);
 
+const getSubscriptionStatus = (user: IUser) => {
+	const endDate = user.activeSubscription?.endDate;
+	if (!endDate) return 'Inactive';
+	return new Date(endDate) > new Date() ? 'Active' : 'Expired';
+};
+
 function DetailItem({ label, value }: { label: string; value: ReactNode }) {
 	return (
 		<Box
@@ -436,6 +442,7 @@ export default function UsersPage() {
 						{(() => {
 							const enrollmentSummary = getEnrollmentSummary(detailsUser);
 							const spendingSummary = getSpendingSummary(detailsUser);
+							const subscriptionStatus = getSubscriptionStatus(detailsUser);
 
 							return (
 								<>
@@ -503,6 +510,23 @@ export default function UsersPage() {
 										<DetailItem
 											label='Subscription Plan'
 											value={detailsUser.activeSubscription?.plan ?? 'No active subscription'}
+										/>
+										<DetailItem
+											label='Subscription Status'
+											value={
+												<Chip
+													label={subscriptionStatus}
+													size='small'
+													color={
+														subscriptionStatus === 'Active'
+															? 'success'
+															: subscriptionStatus === 'Expired'
+																? 'warning'
+																: 'default'
+													}
+													sx={{ fontWeight: 800 }}
+												/>
+											}
 										/>
 										<DetailItem
 											label='Subscription Start'
