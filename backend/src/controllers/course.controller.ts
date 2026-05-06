@@ -299,6 +299,7 @@ export const bulkUpdateCourses = asyncHandler(
 				category?: string;
 				startDate?: string | null;
 				endDate?: string | null;
+				status?: string;
 				visibility?: string;
 				pricing?: string;
 				price?: number | null;
@@ -342,6 +343,11 @@ export const bulkUpdateCourses = asyncHandler(
 				$set.startDate = updates.startDate ? new Date(updates.startDate) : null;
 			if ('endDate' in updates)
 				$set.endDate = updates.endDate ? new Date(updates.endDate) : null;
+			if ('status' in updates) {
+				if (!['Draft', 'Published'].includes(updates.status!))
+					throw new AppError('Status must be Draft or Published', 400);
+				$set.status = updates.status;
+			}
 			if ('visibility' in updates) {
 				if (!['Public', 'Private'].includes(updates.visibility!))
 					throw new AppError('Visibility must be Public or Private', 400);

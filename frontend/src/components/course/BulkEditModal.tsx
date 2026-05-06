@@ -39,6 +39,9 @@ import { teacherService } from '../../services/teacher.service';
 import type { ICourse, ICategory, ICourseType, ITeacher, SubscriptionPlan } from '../../types/index';
 
 const PLANS: SubscriptionPlan[] = ['Basic', 'Premium', 'Gold', 'Quiz Only'];
+const STATUS_OPTIONS = ['Published', 'Draft'] as const;
+const VISIBILITY_OPTIONS = ['Public', 'Private'] as const;
+const PRICING_OPTIONS = ['Free', 'Paid'] as const;
 
 // A labelled field block inside the card
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -65,6 +68,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 type FormState = {
 	courseType: string;
 	category: string;
+	status: '' | 'Published' | 'Draft';
 	visibility: '' | 'Public' | 'Private';
 	pricing: '' | 'Free' | 'Paid';
 	price: string;
@@ -78,6 +82,7 @@ type FormState = {
 const defaultForm = (): FormState => ({
 	courseType: '',
 	category: '',
+	status: '',
 	visibility: '',
 	pricing: '',
 	price: '',
@@ -194,6 +199,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 
 		if (form.courseType !== '') updates.courseType = form.courseType || null;
 		if (form.category !== '') updates.category = form.category;
+		if (form.status !== '') updates.status = form.status;
 		if (form.visibility !== '') updates.visibility = form.visibility;
 		if (form.pricing !== '') {
 			updates.pricing = form.pricing;
@@ -295,49 +301,43 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 							}}
 						/>
 
-						{/* Status */}
-						<Box>
-							<Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Status</Typography>
-							<Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-								{(['All', 'Published', 'Draft'] as const).map((s) => (
-									<Chip key={s} label={s} size='small'
-										variant={statusFilter === s ? 'filled' : 'outlined'}
-										color={statusFilter === s ? 'primary' : 'default'}
-										onClick={() => setStatusFilter(s)} sx={{ cursor: 'pointer' }} />
-								))}
-							</Box>
-						</Box>
-
-						{/* Visibility */}
-						<Box>
-							<Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Visibility</Typography>
-							<Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-								{(['All', 'Public', 'Private'] as const).map((v) => (
-									<Chip key={v} label={v} size='small'
-										variant={visibilityFilter === v ? 'filled' : 'outlined'}
-										color={visibilityFilter === v ? 'primary' : 'default'}
-										onClick={() => setVisibilityFilter(v)} sx={{ cursor: 'pointer' }} />
-								))}
-							</Box>
-						</Box>
-
-						{/* Pricing */}
-						<Box>
-							<Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Pricing</Typography>
-							<Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-								{(['All', 'Free', 'Paid'] as const).map((p) => (
-									<Chip key={p} label={p} size='small'
-										variant={pricingFilter === p ? 'filled' : 'outlined'}
-										color={pricingFilter === p ? 'primary' : 'default'}
-										onClick={() => setPricingFilter(p)} sx={{ cursor: 'pointer' }} />
-								))}
-							</Box>
-						</Box>
-
-						{/* Category + Course Type selects */}
-						<Box sx={{ display: 'flex', gap: 1 }}>
+						{/* Selection filters */}
+						<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
 							<TextField
-								select size='small' sx={{ flex: 1 }}
+								select size='small'
+								value={statusFilter}
+								onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+								label='Status'
+							>
+								<MenuItem value='All'>All</MenuItem>
+								{STATUS_OPTIONS.map((status) => (
+									<MenuItem key={status} value={status}>{status}</MenuItem>
+								))}
+							</TextField>
+							<TextField
+								select size='small'
+								value={visibilityFilter}
+								onChange={(e) => setVisibilityFilter(e.target.value as typeof visibilityFilter)}
+								label='Visibility'
+							>
+								<MenuItem value='All'>All</MenuItem>
+								{VISIBILITY_OPTIONS.map((visibility) => (
+									<MenuItem key={visibility} value={visibility}>{visibility}</MenuItem>
+								))}
+							</TextField>
+							<TextField
+								select size='small'
+								value={pricingFilter}
+								onChange={(e) => setPricingFilter(e.target.value as typeof pricingFilter)}
+								label='Pricing'
+							>
+								<MenuItem value='All'>All</MenuItem>
+								{PRICING_OPTIONS.map((pricing) => (
+									<MenuItem key={pricing} value={pricing}>{pricing}</MenuItem>
+								))}
+							</TextField>
+							<TextField
+								select size='small'
 								value={categoryFilter}
 								onChange={(e) => setCategoryFilter(e.target.value)}
 								label='Category'
@@ -348,7 +348,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 								))}
 							</TextField>
 							<TextField
-								select size='small' sx={{ flex: 1 }}
+								select size='small'
 								value={courseTypeFilter}
 								onChange={(e) => setCourseTypeFilter(e.target.value)}
 								label='Course Type'
@@ -545,10 +545,26 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 									</Box>
 								</Box>
 
-								{/* Visibility + Pricing */}
+								{/* Status + Visibility + Pricing */}
 								<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-									<Box sx={{ display: 'flex', gap: 2 }}>
-										<Box sx={{ flex: 1 }}>
+									<Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+										<Box sx={{ flex: '1 1 180px' }}>
+											<Field label='Status'>
+												<TextField
+													select
+													size='small'
+													fullWidth
+													value={form.status}
+													onChange={(e) => set('status', e.target.value as FormState['status'])}
+												>
+													<MenuItem value=''>— No change —</MenuItem>
+													{STATUS_OPTIONS.map((status) => (
+														<MenuItem key={status} value={status}>{status}</MenuItem>
+													))}
+												</TextField>
+											</Field>
+										</Box>
+										<Box sx={{ flex: '1 1 180px' }}>
 											<Field label='Visibility'>
 												<TextField
 													select
@@ -558,12 +574,13 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 													onChange={(e) => set('visibility', e.target.value as FormState['visibility'])}
 												>
 													<MenuItem value=''>— No change —</MenuItem>
-													<MenuItem value='Public'>Public</MenuItem>
-													<MenuItem value='Private'>Private</MenuItem>
+													{VISIBILITY_OPTIONS.map((visibility) => (
+														<MenuItem key={visibility} value={visibility}>{visibility}</MenuItem>
+													))}
 												</TextField>
 											</Field>
 										</Box>
-										<Box sx={{ flex: 1 }}>
+										<Box sx={{ flex: '1 1 180px' }}>
 											<Field label='Pricing'>
 												<TextField
 													select
@@ -573,13 +590,14 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 													onChange={(e) => set('pricing', e.target.value as FormState['pricing'])}
 												>
 													<MenuItem value=''>— No change —</MenuItem>
-													<MenuItem value='Free'>Free</MenuItem>
-													<MenuItem value='Paid'>Paid</MenuItem>
+													{PRICING_OPTIONS.map((pricing) => (
+														<MenuItem key={pricing} value={pricing}>{pricing}</MenuItem>
+													))}
 												</TextField>
 											</Field>
 										</Box>
 										{form.pricing === 'Paid' && (
-											<Box sx={{ flex: 1 }}>
+											<Box sx={{ flex: '1 1 180px' }}>
 												<Field label='Price (BDT)'>
 													<TextField
 														size='small'

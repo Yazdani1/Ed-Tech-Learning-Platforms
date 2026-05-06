@@ -27,6 +27,7 @@ export const courseService = {
 			category?: string;
 			startDate?: string | null;
 			endDate?: string | null;
+			status?: string;
 			visibility?: string;
 			pricing?: string;
 			price?: number | null;
