@@ -26,11 +26,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import toast from 'react-hot-toast';
 import AppModal from '../../components/common/AppModal';
+import AppPagination from '../../components/common/AppPagination';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
 import { useAuth } from '../../context/useAuth';
 import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { userService } from '../../services/user.service';
-import type { IUser } from '../../types/index';
+import type { IPaginationMeta, IUser } from '../../types/index';
 import { formatDateTime } from '../../utils/dateTime';
 
 const USER_ROLES: IUser['role'][] = [
@@ -42,6 +43,7 @@ const USER_ROLES: IUser['role'][] = [
 ];
 
 const DEFAULT_FORM = { name: '', email: '', password: '', role: 'Student' as IUser['role'] };
+const USERS_PAGE_SIZE = 10;
 type SubscriptionStatusFilter = '' | 'active' | 'expired' | 'inactive';
 type EnrollmentFilter = '' | 'has_total' | 'none_total' | 'has_free' | 'none_free' | 'has_paid' | 'none_paid' | 'has_subscription' | 'none_subscription';
 type SpendingFilter = '' | 'has_total' | 'none_total' | 'has_paid_course' | 'none_paid_course' | 'has_subscription' | 'none_subscription';
@@ -168,6 +170,8 @@ export default function UsersPage() {
 	const [form, setForm] = useState(DEFAULT_FORM);
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [filters, setFilters] = useState(DEFAULT_FILTERS);
+	const [page, setPage] = useState(1);
+	const [pagination, setPagination] = useState<IPaginationMeta | null>(null);
 	const [totalUsers, setTotalUsers] = useState(0);
 	const [resultCount, setResultCount] = useState(0);
 	const [saving, setSaving] = useState(false);
@@ -175,10 +179,13 @@ export default function UsersPage() {
 
 	useEffect(() => {
 		loadUsers();
-	}, [filters, isSuperAdmin]);
+	}, [filters, isSuperAdmin, page]);
 
 	const loadUsers = () => {
-		const params: Record<string, string> = {};
+		const params: Record<string, string> = {
+			page: String(page),
+			limit: String(USERS_PAGE_SIZE),
+		};
 		if (filters.search.trim()) params.search = filters.search.trim();
 		if (filters.role) params.role = filters.role;
 		if (isSuperAdmin) {
@@ -198,9 +205,28 @@ export default function UsersPage() {
 		userService
 			.getAll(params)
 			.then((res) => {
-				setUsers(res.data ?? []);
-				setResultCount(res.total ?? res.data?.length ?? 0);
-				setTotalUsers(res.totalUsers ?? res.total ?? res.data?.length ?? 0);
+				const data = res.data ?? [];
+				const total = res.total ?? data.length;
+				const fallbackPagination =
+					total > USERS_PAGE_SIZE
+						? {
+								page,
+								limit: USERS_PAGE_SIZE,
+								total,
+								totalPages: Math.max(Math.ceil(total / USERS_PAGE_SIZE), 1),
+								hasNextPage: page < Math.ceil(total / USERS_PAGE_SIZE),
+								hasPrevPage: page > 1,
+							}
+						: null;
+				const nextPagination = res.pagination ?? fallbackPagination;
+
+				setUsers(res.pagination ? data : data.slice((page - 1) * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE));
+				setResultCount(total);
+				setTotalUsers(res.totalUsers ?? total);
+				setPagination(nextPagination);
+				if (nextPagination?.page && nextPagination.page !== page) {
+					setPage(nextPagination.page);
+				}
 			})
 			.finally(() => setLoading(false));
 	};
@@ -212,8 +238,14 @@ export default function UsersPage() {
 	const hasFilters = activeFilterCount > 0;
 
 	const clearFilters = () => {
+		setPage(1);
 		setFilters(DEFAULT_FILTERS);
 		setFiltersOpen(false);
+	};
+
+	const updateFilters = (patch: Partial<typeof DEFAULT_FILTERS>) => {
+		setPage(1);
+		setFilters((prev) => ({ ...prev, ...patch }));
 	};
 
 	const openCreateDialog = () => {
@@ -388,7 +420,7 @@ export default function UsersPage() {
 							<TextField
 								placeholder='Search name or email...'
 								value={filters.search}
-								onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+								onChange={(e) => updateFilters({ search: e.target.value })}
 								size='small'
 								fullWidth
 								slotProps={{
@@ -408,7 +440,7 @@ export default function UsersPage() {
 								<Select
 									label='Role'
 									value={filters.role}
-									onChange={(e) => setFilters((prev) => ({ ...prev, role: e.target.value as '' | IUser['role'] }))}
+									onChange={(e) => updateFilters({ role: e.target.value as '' | IUser['role'] })}
 								>
 									<MenuItem value=''>All roles</MenuItem>
 									{USER_ROLES.map((role) => (
@@ -428,7 +460,7 @@ export default function UsersPage() {
 										<Select
 											label='Subscription Plan'
 											value={filters.subscriptionPlan}
-											onChange={(e) => setFilters((prev) => ({ ...prev, subscriptionPlan: e.target.value }))}
+											onChange={(e) => updateFilters({ subscriptionPlan: e.target.value })}
 										>
 											<MenuItem value=''>All plans</MenuItem>
 											{SUBSCRIPTION_PLANS.map((plan) => (
@@ -445,7 +477,7 @@ export default function UsersPage() {
 										<Select
 											label='Subscription Status'
 											value={filters.subscriptionStatus}
-											onChange={(e) => setFilters((prev) => ({ ...prev, subscriptionStatus: e.target.value as SubscriptionStatusFilter }))}
+											onChange={(e) => updateFilters({ subscriptionStatus: e.target.value as SubscriptionStatusFilter })}
 										>
 											<MenuItem value=''>All statuses</MenuItem>
 											<MenuItem value='active'>Active</MenuItem>
@@ -460,7 +492,7 @@ export default function UsersPage() {
 										<Select
 											label='Enrollment Activity'
 											value={filters.enrollmentFilter}
-											onChange={(e) => setFilters((prev) => ({ ...prev, enrollmentFilter: e.target.value as EnrollmentFilter }))}
+											onChange={(e) => updateFilters({ enrollmentFilter: e.target.value as EnrollmentFilter })}
 										>
 											{ENROLLMENT_FILTERS.map((option) => (
 												<MenuItem key={option.value || 'all'} value={option.value}>
@@ -476,7 +508,7 @@ export default function UsersPage() {
 										<Select
 											label='Spending Activity'
 											value={filters.spendingFilter}
-											onChange={(e) => setFilters((prev) => ({ ...prev, spendingFilter: e.target.value as SpendingFilter }))}
+											onChange={(e) => updateFilters({ spendingFilter: e.target.value as SpendingFilter })}
 										>
 											{SPENDING_FILTERS.map((option) => (
 												<MenuItem key={option.value || 'all'} value={option.value}>
@@ -493,7 +525,7 @@ export default function UsersPage() {
 										size='small'
 										fullWidth
 										value={filters.minTotalSpent}
-										onChange={(e) => setFilters((prev) => ({ ...prev, minTotalSpent: e.target.value }))}
+										onChange={(e) => updateFilters({ minTotalSpent: e.target.value })}
 									/>
 								</Grid>
 								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
@@ -503,7 +535,7 @@ export default function UsersPage() {
 										size='small'
 										fullWidth
 										value={filters.maxTotalSpent}
-										onChange={(e) => setFilters((prev) => ({ ...prev, maxTotalSpent: e.target.value }))}
+										onChange={(e) => updateFilters({ maxTotalSpent: e.target.value })}
 									/>
 								</Grid>
 								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
@@ -513,7 +545,7 @@ export default function UsersPage() {
 										size='small'
 										fullWidth
 										value={filters.minPaidCourseSpend}
-										onChange={(e) => setFilters((prev) => ({ ...prev, minPaidCourseSpend: e.target.value }))}
+										onChange={(e) => updateFilters({ minPaidCourseSpend: e.target.value })}
 									/>
 								</Grid>
 								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
@@ -523,7 +555,7 @@ export default function UsersPage() {
 										size='small'
 										fullWidth
 										value={filters.maxPaidCourseSpend}
-										onChange={(e) => setFilters((prev) => ({ ...prev, maxPaidCourseSpend: e.target.value }))}
+										onChange={(e) => updateFilters({ maxPaidCourseSpend: e.target.value })}
 									/>
 								</Grid>
 								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
@@ -533,7 +565,7 @@ export default function UsersPage() {
 										size='small'
 										fullWidth
 										value={filters.minSubscriptionSpend}
-										onChange={(e) => setFilters((prev) => ({ ...prev, minSubscriptionSpend: e.target.value }))}
+										onChange={(e) => updateFilters({ minSubscriptionSpend: e.target.value })}
 									/>
 								</Grid>
 								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
@@ -543,7 +575,7 @@ export default function UsersPage() {
 										size='small'
 										fullWidth
 										value={filters.maxSubscriptionSpend}
-										onChange={(e) => setFilters((prev) => ({ ...prev, maxSubscriptionSpend: e.target.value }))}
+										onChange={(e) => updateFilters({ maxSubscriptionSpend: e.target.value })}
 									/>
 								</Grid>
 							</>
@@ -701,6 +733,23 @@ export default function UsersPage() {
 						))
 					)}
 				</Box>
+			)}
+
+			{pagination && (
+				<AppPagination
+					page={pagination.page}
+					totalPages={pagination.totalPages}
+					totalItems={pagination.total}
+					pageSize={pagination.limit}
+					disabled={loading}
+					boundaryCount={1}
+					middleCount={3}
+					align='center'
+					onChange={(nextPage) => {
+						setPage(nextPage);
+						window.scrollTo({ top: 0, behavior: 'smooth' });
+					}}
+				/>
 			)}
 
 			<AppModal

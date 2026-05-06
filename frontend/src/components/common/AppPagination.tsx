@@ -9,6 +9,7 @@ interface AppPaginationProps {
 	disabled?: boolean;
 	boundaryCount?: number;
 	middleCount?: number;
+	align?: 'space-between' | 'center';
 }
 
 export default function AppPagination({
@@ -20,6 +21,7 @@ export default function AppPagination({
 	disabled = false,
 	boundaryCount = 1,
 	middleCount = 3,
+	align = 'space-between',
 }: AppPaginationProps) {
 	if (totalPages <= 1) return null;
 
@@ -78,14 +80,18 @@ export default function AppPagination({
 			sx={{
 				display: 'flex',
 				alignItems: 'center',
-				justifyContent: 'space-between',
+				justifyContent: align === 'center' ? 'center' : 'space-between',
 				gap: 2,
 				flexWrap: 'wrap',
 				mt: 4,
 			}}
 		>
 			{totalItems && pageSize ? (
-				<Typography variant='body2' color='text.secondary'>
+				<Typography
+					variant='body2'
+					color='text.secondary'
+					sx={align === 'center' ? { width: '100%', textAlign: 'center' } : undefined}
+				>
 					Showing {start}-{end} of {totalItems}
 				</Typography>
 			) : (
