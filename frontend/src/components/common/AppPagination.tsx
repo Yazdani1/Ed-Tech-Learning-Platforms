@@ -74,36 +74,98 @@ export default function AppPagination({
 	};
 
 	const pageItems = getPageItems();
+	const isCentered = align === 'center';
+	const itemSx = {
+		minWidth: 36,
+		height: 36,
+		borderRadius: 1,
+		fontWeight: 800,
+		fontSize: '0.875rem',
+		border: '1px solid',
+		borderColor: 'divider',
+		bgcolor: 'background.paper',
+		color: 'text.secondary',
+		transition: 'background-color 160ms ease, border-color 160ms ease, color 160ms ease',
+		'&:hover': {
+			bgcolor: 'action.hover',
+			borderColor: 'primary.light',
+			color: 'primary.main',
+		},
+		'&.Mui-selected': {
+			bgcolor: 'primary.main',
+			borderColor: 'primary.main',
+			color: 'primary.contrastText',
+			boxShadow: '0 8px 18px rgba(21, 101, 192, 0.22)',
+			'&:hover': {
+				bgcolor: 'primary.dark',
+				borderColor: 'primary.dark',
+			},
+		},
+		'&.Mui-disabled': {
+			bgcolor: 'grey.50',
+			borderColor: 'divider',
+			color: 'text.disabled',
+			opacity: 1,
+		},
+	};
 
 	return (
 		<Box
 			sx={{
 				display: 'flex',
 				alignItems: 'center',
-				justifyContent: align === 'center' ? 'center' : 'space-between',
-				gap: 2,
+				justifyContent: isCentered ? 'center' : 'space-between',
+				gap: isCentered ? 1.5 : 2,
 				flexWrap: 'wrap',
 				mt: 4,
+				px: isCentered ? 1.5 : 0,
+				py: isCentered ? 1.5 : 0,
+				borderTop: isCentered ? '1px solid' : 'none',
+				borderColor: 'divider',
 			}}
 		>
 			{totalItems && pageSize ? (
 				<Typography
 					variant='body2'
 					color='text.secondary'
-					sx={align === 'center' ? { width: '100%', textAlign: 'center' } : undefined}
+					sx={
+						isCentered
+							? {
+									width: '100%',
+									textAlign: 'center',
+									fontWeight: 750,
+									letterSpacing: 0,
+								}
+							: { fontWeight: 650 }
+					}
 				>
 					Showing {start}-{end} of {totalItems}
 				</Typography>
 			) : (
 				<Box />
 			)}
-			<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+			<Box
+				sx={{
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					gap: 0.75,
+					p: 0.5,
+					border: '1px solid',
+					borderColor: 'divider',
+					borderRadius: 1,
+					bgcolor: 'background.paper',
+					boxShadow: '0 10px 28px rgba(15, 23, 42, 0.06)',
+					maxWidth: '100%',
+					overflowX: 'auto',
+				}}
+			>
 				<PaginationItem
 					type='previous'
 					shape='rounded'
 					disabled={disabled || page <= 1}
 					onClick={() => onChange(page - 1)}
-					sx={{ fontWeight: 700, borderRadius: 1 }}
+					sx={itemSx}
 				/>
 				{pageItems.map((item) =>
 					typeof item === 'number' ? (
@@ -116,7 +178,7 @@ export default function AppPagination({
 							selected={item === page}
 							disabled={disabled}
 							onClick={() => onChange(item)}
-							sx={{ fontWeight: 700, borderRadius: 1 }}
+							sx={itemSx}
 						/>
 					) : (
 						<PaginationItem
@@ -124,7 +186,12 @@ export default function AppPagination({
 							type={item}
 							shape='rounded'
 							disabled
-							sx={{ fontWeight: 700, borderRadius: 1 }}
+							sx={{
+								...itemSx,
+								borderColor: 'transparent',
+								bgcolor: 'transparent',
+								minWidth: 28,
+							}}
 						/>
 					),
 				)}
@@ -133,7 +200,7 @@ export default function AppPagination({
 					shape='rounded'
 					disabled={disabled || page >= totalPages}
 					onClick={() => onChange(page + 1)}
-					sx={{ fontWeight: 700, borderRadius: 1 }}
+					sx={itemSx}
 				/>
 			</Box>
 		</Box>

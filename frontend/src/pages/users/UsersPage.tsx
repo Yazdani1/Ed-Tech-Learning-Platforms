@@ -6,7 +6,6 @@ import {
 	Card,
 	CardContent,
 	Chip,
-	CircularProgress,
 	FormControl,
 	Grid,
 	InputAdornment,
@@ -14,6 +13,7 @@ import {
 	MenuItem,
 	Paper,
 	Select,
+	Skeleton,
 	TextField,
 	Typography,
 } from '@mui/material';
@@ -44,6 +44,7 @@ const USER_ROLES: IUser['role'][] = [
 
 const DEFAULT_FORM = { name: '', email: '', password: '', role: 'Student' as IUser['role'] };
 const USERS_PAGE_SIZE = 10;
+const USER_CARD_SKELETONS = Array.from({ length: USERS_PAGE_SIZE });
 type SubscriptionStatusFilter = '' | 'active' | 'expired' | 'inactive';
 type EnrollmentFilter = '' | 'has_total' | 'none_total' | 'has_free' | 'none_free' | 'has_paid' | 'none_paid' | 'has_subscription' | 'none_subscription';
 type SpendingFilter = '' | 'has_total' | 'none_total' | 'has_paid_course' | 'none_paid_course' | 'has_subscription' | 'none_subscription';
@@ -156,6 +157,55 @@ function DetailItem({ label, value }: { label: string; value: ReactNode }) {
 				{value}
 			</Box>
 		</Box>
+	);
+}
+
+function UserCardSkeleton() {
+	return (
+		<Card
+			elevation={0}
+			sx={{
+				border: '1px solid',
+				borderColor: 'divider',
+				borderRadius: 1,
+				height: '100%',
+			}}
+		>
+			<CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+				<Box
+					sx={{
+						display: 'grid',
+						gridTemplateColumns: {
+							xs: 'minmax(0, 1fr) auto',
+							sm: 'minmax(0, 1.25fr) minmax(120px, 0.55fr) minmax(130px, 0.65fr) auto',
+						},
+						alignItems: 'center',
+						columnGap: 2,
+						rowGap: 1.5,
+					}}
+				>
+					<Box sx={{ minWidth: 0 }}>
+						<Skeleton animation='wave' variant='text' sx={{ fontSize: '1.1rem', width: '78%' }} />
+						<Skeleton animation='wave' variant='text' sx={{ fontSize: '0.875rem', width: '92%', mt: 0.35 }} />
+					</Box>
+
+					<Box sx={{ minWidth: 0, gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+							<Skeleton animation='wave' variant='text' sx={{ fontSize: '0.875rem', width: 34 }} />
+							<Skeleton animation='wave' variant='rounded' width={82} height={24} sx={{ borderRadius: 1 }} />
+						</Box>
+					</Box>
+
+					<Box sx={{ minWidth: 0, gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
+						<Skeleton animation='wave' variant='text' sx={{ fontSize: '0.9rem', width: '88%' }} />
+					</Box>
+
+					<Box sx={{ justifySelf: 'end', gridColumn: { xs: '2', sm: 'auto' }, gridRow: { xs: '1', sm: 'auto' } }}>
+						<Skeleton animation='wave' variant='rounded' width={34} height={34} sx={{ borderRadius: 1 }} />
+					</Box>
+				</Box>
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -585,8 +635,16 @@ export default function UsersPage() {
 			</Paper>
 
 			{loading ? (
-				<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-					<CircularProgress />
+				<Box
+					sx={{
+						display: 'grid',
+						gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+						gap: 2.5,
+					}}
+				>
+					{USER_CARD_SKELETONS.map((_, index) => (
+						<UserCardSkeleton key={index} />
+					))}
 				</Box>
 			) : (
 				<Box
