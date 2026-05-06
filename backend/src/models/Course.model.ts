@@ -18,6 +18,7 @@ export interface ICourse extends Document {
   includedInSubscription: boolean;
   allowedSubscriptionPlans: SubscriptionPlan[];
   status: CourseStatus;
+  publishedAt?: Date;
   whatYouWillLearn: string[];
   whatYouWillGet: string[];
   requirements: string[];
@@ -45,6 +46,7 @@ const courseSchema = new Schema<ICourse>(
     includedInSubscription: { type: Boolean, default: false },
     allowedSubscriptionPlans: [{ type: String, enum: ['Basic', 'Premium', 'Gold', 'Quiz Only'] }],
     status: { type: String, enum: ['Draft', 'Published'], default: 'Draft' },
+    publishedAt: { type: Date },
     whatYouWillLearn: [String],
     whatYouWillGet: [String],
     requirements: [String],

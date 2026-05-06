@@ -369,7 +369,10 @@ export const updateCourseStatus = asyncHandler(
 
 		const course = await Course.findByIdAndUpdate(
 			req.params.id,
-			{ status },
+			{
+				status,
+				publishedAt: status === 'Published' ? new Date() : null,
+			},
 			{ new: true },
 		);
 		if (!course) throw new AppError('Course not found', 404);
@@ -457,6 +460,7 @@ export const bulkUpdateCourses = asyncHandler(
 				if (!['Draft', 'Published'].includes(updates.status!))
 					throw new AppError('Status must be Draft or Published', 400);
 				$set.status = updates.status;
+				$set.publishedAt = updates.status === 'Published' ? new Date() : null;
 			}
 			if ('visibility' in updates) {
 				if (!['Public', 'Private'].includes(updates.visibility!))

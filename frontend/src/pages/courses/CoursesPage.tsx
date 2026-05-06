@@ -41,6 +41,7 @@ import CourseCard, { CourseCardSkeleton } from '../../components/ui/CourseCard';
 import BulkEditModal from '../../components/course/BulkEditModal';
 import type { ICategory, ICourse, ICourseType, ITeacher, CoursePricing, CourseStatus, CourseVisibility, SubscriptionPlan } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
+import { formatDate } from '../../utils/dateTime';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 const COURSE_CARD_SKELETONS = Array.from({ length: 8 });
@@ -991,6 +992,10 @@ function AdminCourseCard({
 	const isPublished = course.status === 'Published';
 	const monthlyEarned = course.enrollmentStats?.thisMonthEarned ?? 0;
 	const monthlyEnrollments = course.enrollmentStats?.thisMonthCount ?? 0;
+	const publishedDate = course.publishedAt ?? course.updatedAt;
+	const publishedDateLabel = publishedDate
+		? formatDate(publishedDate)
+		: 'date unavailable';
 
 	return (
 		<Paper
@@ -1107,7 +1112,7 @@ function AdminCourseCard({
 							)}
 						</Box>
 						<Chip
-							label={isPublished ? 'Published' : 'Draft'}
+							label={isPublished ? `Published • ${publishedDateLabel}` : 'Draft'}
 							size='small'
 							color={isPublished ? 'success' : 'default'}
 							sx={{ fontWeight: 800, flexShrink: 0 }}

@@ -85,11 +85,13 @@ export interface ICourse {
   includedInSubscription: boolean;
   allowedSubscriptionPlans: SubscriptionPlan[];
   status: CourseStatus;
+  publishedAt?: string;
   whatYouWillLearn: string[];
   whatYouWillGet: string[];
   requirements: string[];
   sections: ISection[];
   createdAt: string;
+  updatedAt?: string;
   enrollmentType?: EnrollmentType;
   enrollmentStats?: {
     totalEnrollments: number;

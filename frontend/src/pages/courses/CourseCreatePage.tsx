@@ -21,6 +21,7 @@ import {
 	Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import CloseIcon from '@mui/icons-material/Close';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -359,6 +360,7 @@ export default function CourseCreatePage() {
 	const [courseStatus, setCourseStatus] = useState<'Draft' | 'Published'>(
 		'Draft',
 	);
+	const [publishedAt, setPublishedAt] = useState<string | null>(null);
 	const [loadingCourse, setLoadingCourse] = useState(false);
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
@@ -536,8 +538,9 @@ export default function CourseCreatePage() {
 		}
 
 		if (status) {
-			await courseService.updateStatus(savedId, status);
+			const statusRes = await courseService.updateStatus(savedId, status);
 			setCourseStatus(status);
+			setPublishedAt(status === 'Published' ? (statusRes.data?.publishedAt ?? statusRes.data?.updatedAt ?? null) : null);
 		}
 
 		setLastSaved(formatTime(new Date()));
@@ -922,6 +925,7 @@ export default function CourseCreatePage() {
 				if (!data) return;
 				setCourseId(data._id);
 				setCourseStatus(data.status ?? 'Draft');
+				setPublishedAt(data.status === 'Published' ? (data.publishedAt ?? data.updatedAt ?? null) : null);
 				const toInputDate = (iso?: string) =>
 					iso ? iso.slice(0, 10) : '';
 				setForm({
@@ -974,6 +978,15 @@ export default function CourseCreatePage() {
 
 	return (
 		<Box>
+			<Button
+				variant='text'
+				size='small'
+				startIcon={<ArrowBackIosNewIcon fontSize='small' />}
+				onClick={() => navigate('/admin/courses')}
+				sx={{ fontWeight: 800, px: 0.5, mb: 1.5 }}
+			>
+				Back to Courses
+			</Button>
 			<Box
 				sx={{
 					display: 'flex',
@@ -987,18 +1000,22 @@ export default function CourseCreatePage() {
 						{isEdit ? form.title || 'Untitled Course' : 'Create Course'}
 					</Typography>
 					{courseId && (
-						<Typography
-							variant='caption'
-							sx={{
-								color:
-									courseStatus === 'Published'
-										? 'success.main'
-										: 'text.secondary',
-								fontWeight: 600,
-							}}
-						>
-							{courseStatus === 'Published' ? 'Published' : 'Draft'}
-						</Typography>
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', mt: 0.75 }}>
+							<Chip
+								label={courseStatus === 'Published' ? 'Published' : 'Draft'}
+								size='small'
+								color={courseStatus === 'Published' ? 'success' : 'default'}
+								sx={{ fontWeight: 800 }}
+							/>
+							{courseStatus === 'Published' && publishedAt && (
+								<Chip
+									label={`Published on ${formatDateTime(publishedAt)}`}
+									size='small'
+									variant='outlined'
+									sx={{ fontWeight: 700 }}
+								/>
+							)}
+						</Box>
 					)}
 				</Box>
 				<Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
