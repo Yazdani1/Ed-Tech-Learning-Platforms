@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import {
+	Avatar,
 	Box,
 	Button,
 	Card,
@@ -15,6 +16,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import toast from 'react-hot-toast';
 import AppModal from '../../components/common/AppModal';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
@@ -42,6 +44,64 @@ const roleChipColor: Partial<Record<IUser['role'], 'primary' | 'secondary' | 'su
 	Student: 'success',
 };
 
+const getInitials = (name: string) =>
+	name
+		.trim()
+		.split(/\s+/)
+		.slice(0, 2)
+		.map((part) => part.charAt(0).toUpperCase())
+		.join('') || 'U';
+
+const getEnrollmentSummary = (user: IUser) => ({
+	free: user.enrollmentSummary?.free ?? 0,
+	paid: user.enrollmentSummary?.paid ?? user.purchasedCourses?.length ?? 0,
+	subscription: user.enrollmentSummary?.subscription ?? 0,
+	total: user.enrollmentSummary?.total ?? user.purchasedCourses?.length ?? 0,
+});
+
+const getSpendingSummary = (user: IUser) => ({
+	paidCourses: user.spendingSummary?.paidCourses ?? 0,
+	subscriptions: user.spendingSummary?.subscriptions ?? 0,
+	total: user.spendingSummary?.total ?? 0,
+});
+
+const formatCurrency = (amount: number) =>
+	new Intl.NumberFormat('en-US', {
+		style: 'currency',
+		currency: 'USD',
+		minimumFractionDigits: 2,
+	}).format(amount);
+
+function DetailItem({ label, value }: { label: string; value: ReactNode }) {
+	return (
+		<Box
+			sx={{
+				border: '1px solid',
+				borderColor: 'divider',
+				borderRadius: 1,
+				px: 1.5,
+				py: 1.25,
+				minWidth: 0,
+			}}
+		>
+			<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 750 }}>
+				{label}
+			</Typography>
+			<Box
+				sx={{
+					mt: 0.5,
+					fontSize: '0.925rem',
+					fontWeight: 650,
+					color: 'text.primary',
+					overflowWrap: 'anywhere',
+				}}
+			>
+				{value}
+			</Box>
+		</Box>
+	);
+}
+
 export default function UsersPage() {
 	const { user: currentUser } = useAuth();
 	const { confirm } = useConfirmModal();
@@ -49,6 +109,7 @@ export default function UsersPage() {
 	const [loading, setLoading] = useState(true);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingUser, setEditingUser] = useState<IUser | null>(null);
+	const [detailsUser, setDetailsUser] = useState<IUser | null>(null);
 	const [form, setForm] = useState(DEFAULT_FORM);
 	const [saving, setSaving] = useState(false);
 	const isSuperAdmin = currentUser?.role === 'Super Admin';
@@ -79,6 +140,14 @@ export default function UsersPage() {
 			role: selectedUser.role,
 		});
 		setDialogOpen(true);
+	};
+
+	const openDetailsDialog = (selectedUser: IUser) => {
+		setDetailsUser(selectedUser);
+	};
+
+	const closeDetailsDialog = () => {
+		setDetailsUser(null);
 	};
 
 	const closeDialog = () => {
@@ -269,7 +338,12 @@ export default function UsersPage() {
 
 										<Box sx={{ justifySelf: 'end', gridColumn: { xs: '2', sm: 'auto' }, gridRow: { xs: '1', sm: 'auto' } }}>
 											<ItemActionMenu
-												actions={[
+													actions={[
+													{
+														label: 'View Details',
+														icon: <VisibilityOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
+														onClick: () => openDetailsDialog(user),
+													},
 													{
 														label: 'Edit',
 														icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
@@ -339,6 +413,115 @@ export default function UsersPage() {
 							</Select>
 						</FormControl>
 					</Box>
+			</AppModal>
+
+			<AppModal
+				open={Boolean(detailsUser)}
+				onClose={closeDetailsDialog}
+				title='User Details'
+				maxWidth='md'
+				cancelText='Close'
+			>
+				{detailsUser && (
+					<Box>
+						{(() => {
+							const enrollmentSummary = getEnrollmentSummary(detailsUser);
+							const spendingSummary = getSpendingSummary(detailsUser);
+
+							return (
+								<>
+									<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+										<Avatar
+											src={detailsUser.avatar}
+											alt={detailsUser.name}
+											sx={{
+												width: 104,
+												height: 104,
+												fontSize: 34,
+												fontWeight: 900,
+												bgcolor: 'primary.main',
+												mb: 1.5,
+												boxShadow: '0 14px 32px rgba(21, 101, 192, 0.2)',
+											}}
+										>
+											{getInitials(detailsUser.name)}
+										</Avatar>
+										<Typography variant='h5' sx={{ fontWeight: 900, textAlign: 'center' }}>
+											{detailsUser.name}
+										</Typography>
+										<Chip
+											label={detailsUser.role}
+											color={roleChipColor[detailsUser.role] ?? 'primary'}
+											variant='outlined'
+											sx={{
+												mt: 1.5,
+												height: 30,
+												fontSize: '0.875rem',
+												fontWeight: 850,
+											}}
+										/>
+									</Box>
+
+									<Box
+										sx={{
+											display: 'grid',
+											gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+											gap: 1.5,
+										}}
+									>
+										<DetailItem label='User ID' value={detailsUser._id} />
+										<DetailItem label='Name' value={detailsUser.name} />
+										<DetailItem label='Email' value={detailsUser.email} />
+										<DetailItem
+											label='Role'
+											value={
+												<Chip
+													label={detailsUser.role}
+													size='small'
+													color={roleChipColor[detailsUser.role] ?? 'primary'}
+													variant='outlined'
+													sx={{ fontWeight: 800 }}
+												/>
+											}
+										/>
+										<DetailItem label='Total Enrolled Courses' value={enrollmentSummary.total} />
+										<DetailItem label='Free Courses Enrolled' value={enrollmentSummary.free} />
+										<DetailItem label='Paid Courses Purchased' value={enrollmentSummary.paid} />
+										<DetailItem label='Subscription Courses Enrolled' value={enrollmentSummary.subscription} />
+										<DetailItem label='Total Amount Spent' value={formatCurrency(spendingSummary.total)} />
+										<DetailItem label='Paid Course Spend' value={formatCurrency(spendingSummary.paidCourses)} />
+										<DetailItem label='Subscription Spend' value={formatCurrency(spendingSummary.subscriptions)} />
+										<DetailItem
+											label='Subscription Plan'
+											value={detailsUser.activeSubscription?.plan ?? 'No active subscription'}
+										/>
+										<DetailItem
+											label='Subscription Start'
+											value={
+												detailsUser.activeSubscription?.startDate
+													? formatDateTime(detailsUser.activeSubscription.startDate)
+													: 'Not available'
+											}
+										/>
+										<DetailItem
+											label='Subscription End'
+											value={
+												detailsUser.activeSubscription?.endDate
+													? formatDateTime(detailsUser.activeSubscription.endDate)
+													: 'Not available'
+											}
+										/>
+										<DetailItem label='Created At' value={formatDateTime(detailsUser.createdAt)} />
+										<DetailItem
+											label='Updated At'
+											value={detailsUser.updatedAt ? formatDateTime(detailsUser.updatedAt) : 'Not available'}
+										/>
+									</Box>
+								</>
+							);
+						})()}
+					</Box>
+				)}
 			</AppModal>
 		</Box>
 	);

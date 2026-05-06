@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User.model';
+import { Enrollment } from '../models/Enrollment.model';
+import { Subscription } from '../models/Subscription.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { UserRole } from '../types/index';
@@ -21,7 +23,105 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
 
 export const getUsers = asyncHandler(async (_req: Request, res: Response) => {
   const users = await User.find().select('-password').sort({ createdAt: -1 });
-  res.status(200).json({ success: true, data: users, total: users.length });
+  const enrollmentCounts = await Enrollment.aggregate<{
+    _id: { student: string; enrollmentType: 'free' | 'paid' | 'subscription' };
+    count: number;
+  }>([
+    {
+      $group: {
+        _id: { student: '$student', enrollmentType: '$enrollmentType' },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+  const paidCourseSpend = await Enrollment.aggregate<{
+    _id: string;
+    amount: number;
+  }>([
+    { $match: { enrollmentType: 'paid' } },
+    {
+      $lookup: {
+        from: 'courses',
+        localField: 'course',
+        foreignField: '_id',
+        as: 'course',
+      },
+    },
+    { $unwind: '$course' },
+    {
+      $group: {
+        _id: '$student',
+        amount: { $sum: { $ifNull: ['$course.price', 0] } },
+      },
+    },
+  ]);
+  const subscriptionSpend = await Subscription.aggregate<{
+    _id: string;
+    amount: number;
+  }>([
+    {
+      $lookup: {
+        from: 'subscriptionplanconfigs',
+        localField: 'plan',
+        foreignField: 'plan',
+        as: 'planConfig',
+      },
+    },
+    {
+      $unwind: {
+        path: '$planConfig',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $group: {
+        _id: '$user',
+        amount: { $sum: { $ifNull: ['$planConfig.price', 0] } },
+      },
+    },
+  ]);
+
+  const countsByUser = enrollmentCounts.reduce<Record<string, { free: number; paid: number; subscription: number; total: number }>>(
+    (acc, item) => {
+      const userId = String(item._id.student);
+      const current = acc[userId] ?? { free: 0, paid: 0, subscription: 0, total: 0 };
+      current[item._id.enrollmentType] = item.count;
+      current.total += item.count;
+      acc[userId] = current;
+      return acc;
+    },
+    {},
+  );
+  const paidCourseSpendByUser = paidCourseSpend.reduce<Record<string, number>>((acc, item) => {
+    acc[String(item._id)] = item.amount;
+    return acc;
+  }, {});
+  const subscriptionSpendByUser = subscriptionSpend.reduce<Record<string, number>>((acc, item) => {
+    acc[String(item._id)] = item.amount;
+    return acc;
+  }, {});
+
+  const usersWithEnrollmentSummary = users.map((user) => {
+    const userObject = user.toObject();
+    const paidCourseAmount = paidCourseSpendByUser[String(user._id)] ?? 0;
+    const subscriptionAmount = subscriptionSpendByUser[String(user._id)] ?? 0;
+    return {
+      ...userObject,
+      enrollmentSummary: countsByUser[String(user._id)] ?? {
+        free: 0,
+        paid: 0,
+        subscription: 0,
+        total: 0,
+      },
+      spendingSummary: {
+        paidCourses: paidCourseAmount,
+        subscriptions: subscriptionAmount,
+        total: paidCourseAmount + subscriptionAmount,
+      },
+    };
+  });
+
+  res.status(200).json({ success: true, data: usersWithEnrollmentSummary, total: users.length });
 });
 
 export const getUserById = asyncHandler(async (req: Request, res: Response) => {

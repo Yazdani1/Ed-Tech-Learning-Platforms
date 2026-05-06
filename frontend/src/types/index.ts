@@ -15,6 +15,17 @@ export interface IUser {
     startDate: string;
     endDate: string;
   };
+  enrollmentSummary?: {
+    free: number;
+    paid: number;
+    subscription: number;
+    total: number;
+  };
+  spendingSummary?: {
+    paidCourses: number;
+    subscriptions: number;
+    total: number;
+  };
   purchasedCourses: string[];
   createdAt: string;
   updatedAt?: string;
