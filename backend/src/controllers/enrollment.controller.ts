@@ -126,6 +126,61 @@ export const getCourseEnrollments = asyncHandler(
 	},
 );
 
+export const getCourseEnrolledStudents = asyncHandler(
+	async (req: Request, res: Response) => {
+		const courseId = String(req.params.courseId);
+		const includeEmail = req.user.role !== 'Teacher';
+
+		const enrollments = await Enrollment.find({ course: courseId })
+			.populate('student', includeEmail ? 'name email avatar' : 'name avatar')
+			.sort({ createdAt: -1 });
+
+		res.status(200).json({
+			success: true,
+			data: enrollments.map((enrollment) => ({
+				_id: enrollment._id,
+				student: enrollment.student,
+				enrollmentType: enrollment.enrollmentType,
+				createdAt: enrollment.createdAt,
+				updatedAt: enrollment.updatedAt,
+			})),
+			total: enrollments.length,
+		});
+	},
+);
+
+export const exportCourseEnrolledStudents = asyncHandler(
+	async (req: Request, res: Response) => {
+		const courseId = String(req.params.courseId);
+		const enrollments = await Enrollment.find({ course: courseId })
+			.populate('student', 'name email')
+			.sort({ createdAt: -1 });
+
+		const escapeCsv = (value: unknown) => {
+			const text = String(value ?? '');
+			return `"${text.replace(/"/g, '""')}"`;
+		};
+
+		const rows = [
+			['Student Name', 'Email Address'].map(escapeCsv).join(','),
+			...enrollments.map((enrollment) => {
+				const student = enrollment.student as unknown as {
+					name?: string;
+					email?: string;
+				};
+				return [student?.name, student?.email].map(escapeCsv).join(',');
+			}),
+		];
+
+		res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+		res.setHeader(
+			'Content-Disposition',
+			`attachment; filename="course-${courseId}-students.csv"`,
+		);
+		res.status(200).send(rows.join('\n'));
+	},
+);
+
 export const getCourseEnrollmentCount = asyncHandler(
 	async (req: Request, res: Response) => {
 		const courseId = String(req.params.courseId);

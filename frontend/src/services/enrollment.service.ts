@@ -1,5 +1,5 @@
 import api from './api';
-import type { IEnrollment, IEnrollmentStats, EnrollmentType } from '../types/index';
+import type { IEnrollment, IEnrollmentStats, EnrollmentType, ICourseStudentEnrollment } from '../types/index';
 
 export const enrollmentService = {
   getCourseEnrollments: (courseId: string, type?: EnrollmentType | 'all') =>
@@ -12,4 +12,10 @@ export const enrollmentService = {
 
   getCourseCount: (courseId: string) =>
     api.get<{ count: number }>(`/enrollments/course/${courseId}/count`),
+
+  getCourseStudents: (courseId: string) =>
+    api.get<ICourseStudentEnrollment[]>(`/enrollments/course/${courseId}/students`),
+
+  exportCourseStudents: (courseId: string) =>
+    api.getBlob(`/enrollments/course/${courseId}/students/export`),
 };

@@ -5,6 +5,8 @@ import {
   getMyEnrollments,
   checkEnrollment,
   getCourseEnrollments,
+  getCourseEnrolledStudents,
+  exportCourseEnrolledStudents,
   getCourseEnrollmentStats,
   getCourseEnrollmentCount,
 } from '../controllers/enrollment.controller';
@@ -13,10 +15,14 @@ import { protect, authorize } from '../middleware/auth.middleware';
 const router = Router();
 
 const adminOnly = authorize('Super Admin', 'Admin');
+const staffOnly = authorize('Super Admin', 'Admin', 'Moderator', 'Teacher');
+const exportRoles = authorize('Super Admin', 'Admin', 'Moderator');
 
 // Admin routes — course-specific
 router.get('/admin/course/:courseId', protect, adminOnly, getCourseEnrollments);
 router.get('/admin/course/:courseId/stats', protect, adminOnly, getCourseEnrollmentStats);
+router.get('/course/:courseId/students', protect, staffOnly, getCourseEnrolledStudents);
+router.get('/course/:courseId/students/export', protect, exportRoles, exportCourseEnrolledStudents);
 
 // Any authenticated user — public enrollment count for a course
 router.get('/course/:courseId/count', protect, getCourseEnrollmentCount);

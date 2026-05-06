@@ -34,6 +34,9 @@ const api = {
   get: <T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> =>
     axiosInstance.get<ApiResponse<T>>(url, config).then((r) => r.data),
 
+  getBlob: (url: string, config?: AxiosRequestConfig): Promise<Blob> =>
+    axiosInstance.get(url, { ...config, responseType: 'blob' }).then((r) => r.data as Blob),
+
   post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> =>
     axiosInstance.post<ApiResponse<T>>(url, data, config).then((r) => r.data),
 

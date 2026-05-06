@@ -17,6 +17,12 @@ import {
 	ListItemIcon,
 	ListItemText,
 	Paper,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
 	TextField,
 	Tooltip,
 	Typography,
@@ -40,6 +46,7 @@ import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import LanguageIcon from '@mui/icons-material/Language';
@@ -66,6 +73,7 @@ import type {
 	IStudyCurriculum,
 	IStudyCurriculumLecture,
 	IStudyMaterial,
+	ICourseStudentEnrollment,
 } from '../../types/index';
 import CourseQASection from '../../components/course/CourseQASection';
 import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar';
@@ -82,6 +90,7 @@ type NavSection =
 	| 'teacher'
 	| 'announcements'
 	| 'study_materials'
+	| 'students'
 	| 'qa';
 
 const getYouTubeId = (url: string) => {
@@ -130,6 +139,7 @@ const NAV_ITEMS: { key: NavSection; label: string; icon: React.ReactNode }[] = [
 		label: 'Study Materials',
 		icon: <MenuBookOutlinedIcon />,
 	},
+	{ key: 'students', label: 'Students', icon: <PeopleOutlinedIcon /> },
 	{ key: 'qa', label: 'Q & A', icon: <QuestionAnswerOutlinedIcon /> },
 ];
 
@@ -147,6 +157,9 @@ export default function StudentCourseLearningPage() {
 	);
 	const [activeLecture, setActiveLecture] = useState<ILecture | null>(null);
 	const [enrolledCount, setEnrolledCount] = useState<number | null>(null);
+	const [courseStudents, setCourseStudents] = useState<ICourseStudentEnrollment[]>([]);
+	const [studentsLoading, setStudentsLoading] = useState(false);
+	const [studentsExporting, setStudentsExporting] = useState(false);
 	const [qaCount, setQaCount] = useState<number>(0);
 
 	const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
@@ -239,6 +252,16 @@ export default function StudentCourseLearningPage() {
 				.catch(() => {});
 		}
 	}, [courseId]);
+
+	useEffect(() => {
+		if (!courseId || !user || user.role === 'Student') return;
+		setStudentsLoading(true);
+		enrollmentService
+			.getCourseStudents(courseId)
+			.then((r) => setCourseStudents(r.data ?? []))
+			.catch(() => {})
+			.finally(() => setStudentsLoading(false));
+	}, [courseId, user?._id, user?.role]);
 
 	const isTeacherAssigned =
 		user?.role === 'Teacher' &&
@@ -574,6 +597,28 @@ export default function StudentCourseLearningPage() {
 		}
 	};
 
+	const handleExportStudents = async () => {
+		if (!courseId) return;
+		setStudentsExporting(true);
+		try {
+			const blob = await enrollmentService.exportCourseStudents(courseId);
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			const baseName = `${course?.title ?? 'course'}-students`
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '-')
+				.replace(/^-|-$/g, '');
+			link.download = `${baseName}.csv`;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(url);
+		} finally {
+			setStudentsExporting(false);
+		}
+	};
+
 	const videoId = activeLecture?.videoUrl
 		? getYouTubeId(activeLecture.videoUrl)
 		: null;
@@ -617,6 +662,9 @@ export default function StudentCourseLearningPage() {
 
 	const isAdminRole = user?.role === 'Admin' || user?.role === 'Super Admin' || user?.role === 'Moderator';
 	const isTeacherOrAdmin = user?.role === 'Teacher' || isAdminRole;
+	const canSeeStudentList = Boolean(user && user.role !== 'Student');
+	const canExportStudentList = isAdminRole;
+	const visibleNavItems = NAV_ITEMS.filter((item) => item.key !== 'students' || canSeeStudentList);
 
 	return (
 		<Box
@@ -701,7 +749,7 @@ export default function StudentCourseLearningPage() {
 						}}
 					>
 						<List disablePadding>
-							{NAV_ITEMS.map((item) => {
+							{visibleNavItems.map((item) => {
 								const active = activeNav === item.key;
 								return (
 									<ListItemButton
@@ -2025,6 +2073,108 @@ export default function StudentCourseLearningPage() {
 						)}
 
 					{/* ── Q & A ──────────────────────────────────────── */}
+					{activeNav === 'students' && canSeeStudentList && (
+						<Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 980 }}>
+							<Box
+								sx={{
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: { xs: 'flex-start', sm: 'center' },
+									gap: 2,
+									mb: 3,
+									flexDirection: { xs: 'column', sm: 'row' },
+								}}
+							>
+								<Box>
+									<Typography variant='h5' sx={{ fontWeight: 700 }}>
+										Enrolled Students ({courseStudents.length})
+									</Typography>
+									<Typography variant='body2' color='text.secondary'>
+										Students currently enrolled in this course.
+									</Typography>
+								</Box>
+								{canExportStudentList && (
+									<Button
+										variant='contained'
+										startIcon={
+											studentsExporting ? (
+												<CircularProgress size={16} color='inherit' />
+											) : (
+												<DownloadOutlinedIcon />
+											)
+										}
+										onClick={() => void handleExportStudents()}
+										disabled={studentsExporting || courseStudents.length === 0}
+									>
+										Export CSV
+									</Button>
+								)}
+							</Box>
+
+							<Paper
+								elevation={0}
+								sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+							>
+								{studentsLoading ? (
+									<Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+										<CircularProgress size={28} />
+									</Box>
+								) : courseStudents.length === 0 ? (
+									<Box sx={{ py: 6, textAlign: 'center' }}>
+										<Typography color='text.secondary'>
+											No students enrolled in this course yet.
+										</Typography>
+									</Box>
+								) : (
+									<TableContainer>
+										<Table size='small'>
+											<TableHead>
+												<TableRow>
+													<TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
+													{user?.role !== 'Teacher' && (
+														<TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+													)}
+													<TableCell sx={{ fontWeight: 700 }}>Enroll Date</TableCell>
+												</TableRow>
+											</TableHead>
+											<TableBody>
+												{courseStudents.map((enrollment) => (
+													<TableRow key={enrollment._id} hover>
+														<TableCell>
+															<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+																<Avatar
+																	src={enrollment.student.avatar}
+																	sx={{ width: 32, height: 32, fontSize: 13 }}
+																>
+																	{enrollment.student.name?.[0]}
+																</Avatar>
+																<Typography variant='body2' sx={{ fontWeight: 600 }}>
+																	{enrollment.student.name}
+																</Typography>
+															</Box>
+														</TableCell>
+														{user?.role !== 'Teacher' && (
+															<TableCell>
+																<Typography variant='body2' color='text.secondary'>
+																	{enrollment.student.email ?? '-'}
+																</Typography>
+															</TableCell>
+														)}
+														<TableCell>
+															<Typography variant='body2' color='text.secondary'>
+																{formatDateTime(enrollment.createdAt)}
+															</Typography>
+														</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+									</TableContainer>
+								)}
+							</Paper>
+						</Box>
+					)}
+
 					{activeNav === 'qa' && (
 						<Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 860 }}>
 							<CourseQASection

@@ -166,6 +166,14 @@ export interface IEnrollmentStats {
   thisMonthEarned: number;
 }
 
+export interface ICourseStudentEnrollment {
+  _id: string;
+  student: Pick<IUser, '_id' | 'name' | 'avatar'> & Partial<Pick<IUser, 'email'>>;
+  enrollmentType: EnrollmentType;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface IStudyMaterial {
   _id: string;
   course: string;
