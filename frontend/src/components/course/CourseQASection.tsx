@@ -29,6 +29,7 @@ import RichTextEditor from './RichTextEditor';
 import ItemActionMenu from '../common/ItemActionMenu';
 import { formatDateTime } from '../../utils/dateTime';
 import YouBadge from '../common/YouBadge';
+import { useConfirmModal } from '../../context/ConfirmModalContext';
 
 interface CourseQASectionProps {
 	courseId: string;
@@ -49,6 +50,7 @@ export default function CourseQASection({
 	userRole,
 	initialQuestionId,
 }: CourseQASectionProps) {
+	const { confirm } = useConfirmModal();
 	const [questions, setQuestions] = useState<IQuestion[]>([]);
 	const [qaLoading, setQaLoading] = useState(true);
 	const [qaDetail, setQaDetail] = useState<{
@@ -181,7 +183,13 @@ export default function CourseQASection({
 	};
 
 	const handleDeleteQuestion = async (id: string) => {
-		if (!confirm('Delete this question and all its answers?')) return;
+		const confirmed = await confirm({
+			title: 'Delete Question',
+			message: 'Delete this question and all its answers?',
+			confirmText: 'Delete Question',
+			cancelText: 'Keep Question',
+		});
+		if (!confirmed) return;
 		try {
 			await qaService.deleteQuestion(id);
 			setQuestions((p) => p.filter((q) => q._id !== id));
@@ -326,7 +334,13 @@ export default function CourseQASection({
 	};
 
 	const handleDeleteAnswer = async (answerId: string) => {
-		if (!confirm('Delete this answer?')) return;
+		const confirmed = await confirm({
+			title: 'Delete Answer',
+			message: 'Delete this answer?',
+			confirmText: 'Delete Answer',
+			cancelText: 'Keep Answer',
+		});
+		if (!confirmed) return;
 		const answer = qaDetail?.answers.find((a) => a._id === answerId);
 		const answerIsFromStaff = answer ? isStaffAnswer(answer) : false;
 		try {

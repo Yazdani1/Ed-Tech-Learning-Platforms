@@ -6,11 +6,6 @@ import {
 	Box,
 	Button,
 	Chip,
-	CircularProgress,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
 	Divider,
 	Grid,
 	Paper,
@@ -31,7 +26,9 @@ import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import toast from 'react-hot-toast';
+import AppModal from '../../components/common/AppModal';
 import { useAuth } from '../../context/useAuth';
+import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { authService } from '../../services/auth.service';
 import { courseService } from '../../services/course.service';
 import { subscriptionService } from '../../services/subscription.service';
@@ -111,14 +108,13 @@ function StatCard({
 
 export default function ProfilePage() {
 	const { user, refreshUser } = useAuth();
+	const { confirm } = useConfirmModal();
 	const navigate = useNavigate();
 	const [planConfig, setPlanConfig] = useState<ISubscriptionPlanConfig | null>(null);
 	const [enrolledCourses, setEnrolledCourses] = useState<ICourse[]>([]);
 	const [teacherCourses, setTeacherCourses] = useState<ICourse[]>([]);
 	const [editOpen, setEditOpen] = useState(false);
-	const [cancelOpen, setCancelOpen] = useState(false);
 	const [saving, setSaving] = useState(false);
-	const [cancelling, setCancelling] = useState(false);
 	const [form, setForm] = useState({
 		name: '',
 		email: '',
@@ -262,16 +258,23 @@ export default function ProfilePage() {
 	};
 
 	const handleCancel = async () => {
-		setCancelling(true);
+		const confirmed = await confirm({
+			title: 'Cancel Subscription',
+			message: (
+				<>
+					Are you sure you want to cancel your <strong>{sub?.plan}</strong> subscription?
+				</>
+			),
+			confirmText: 'Cancel Subscription',
+			cancelText: 'Keep Subscription',
+		});
+		if (!confirmed) return;
 		try {
 			await subscriptionService.cancelMy();
 			await refreshUser();
 			toast.success('Subscription cancelled');
-			setCancelOpen(false);
 		} catch {
 			toast.error('Failed to cancel subscription');
-		} finally {
-			setCancelling(false);
 		}
 	};
 
@@ -462,7 +465,7 @@ export default function ProfilePage() {
 									</Box>
 									<Stack direction='row' spacing={1.5} sx={{ flexWrap: 'wrap' }}>
 										<Button variant='outlined' onClick={() => navigate('/pricing')}>Change Plan</Button>
-										<Button variant='outlined' color='error' onClick={() => setCancelOpen(true)}>Cancel Subscription</Button>
+										<Button variant='outlined' color='error' onClick={() => void handleCancel()}>Cancel Subscription</Button>
 									</Stack>
 								</>
 							) : (
@@ -502,9 +505,15 @@ export default function ProfilePage() {
 				</Grid>
 			</Grid>
 
-			<Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth='sm' fullWidth>
-				<DialogTitle sx={{ fontWeight: 900 }}>Edit Profile</DialogTitle>
-				<DialogContent dividers>
+			<AppModal
+				open={editOpen}
+				onClose={() => setEditOpen(false)}
+				title='Edit Profile'
+				onSave={() => void handleSave()}
+				saveText='Save Changes'
+				saving={saving}
+				maxWidth='sm'
+			>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
 						<Avatar src={form.removeAvatar ? '' : avatarPreview} sx={{ width: 86, height: 86, bgcolor: roleColor, fontSize: 32, fontWeight: 900 }}>
 							{form.name[0]?.toUpperCase()}
@@ -590,29 +599,7 @@ export default function ProfilePage() {
 							<TextField label='Confirm new password' type='password' fullWidth value={form.confirmPassword} onChange={(e) => setForm((p) => ({ ...p, confirmPassword: e.target.value }))} />
 						</Grid>
 					</Grid>
-				</DialogContent>
-				<DialogActions sx={{ px: 3, py: 2 }}>
-					<Button onClick={() => setEditOpen(false)} disabled={saving}>Cancel</Button>
-					<Button variant='contained' disabled={saving} onClick={() => void handleSave()}>
-						{saving ? <CircularProgress size={18} color='inherit' /> : 'Save Changes'}
-					</Button>
-				</DialogActions>
-			</Dialog>
-
-			<Dialog open={cancelOpen} onClose={() => setCancelOpen(false)} maxWidth='xs' fullWidth>
-				<DialogTitle>Cancel Subscription</DialogTitle>
-				<DialogContent>
-					<Typography>
-						Are you sure you want to cancel your <strong>{sub?.plan}</strong> subscription?
-					</Typography>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setCancelOpen(false)} disabled={cancelling}>Keep It</Button>
-					<Button variant='contained' color='error' disabled={cancelling} onClick={() => void handleCancel()}>
-						{cancelling ? <CircularProgress size={18} color='inherit' /> : 'Cancel Subscription'}
-					</Button>
-				</DialogActions>
-			</Dialog>
+			</AppModal>
 		</Box>
 	);
 }

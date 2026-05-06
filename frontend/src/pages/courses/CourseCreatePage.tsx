@@ -43,6 +43,7 @@ import RichTextEditor from '../../components/course/RichTextEditor';
 import CurriculumBuilder from '../../components/course/CurriculumBuilder/CurriculumBuilder';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
 import YouBadge from '../../components/common/YouBadge';
+import { useConfirmModal } from '../../context/ConfirmModalContext';
 import {
 	formatDateTime,
 	formatLiveClassDate,
@@ -351,6 +352,7 @@ export default function CourseCreatePage() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const { user } = useAuth();
+	const { confirm } = useConfirmModal();
 	const isEdit = Boolean(id);
 	const [tab, setTab] = useState(0);
 	const [courseId, setCourseId] = useState(id ?? '');
@@ -621,7 +623,13 @@ export default function CourseCreatePage() {
 	};
 
 	const handleDeleteAnnouncement = async (annId: string) => {
-		if (!confirm('Delete this announcement?')) return;
+		const confirmed = await confirm({
+			title: 'Delete Announcement',
+			message: 'Delete this announcement?',
+			confirmText: 'Delete',
+			cancelText: 'Keep',
+		});
+		if (!confirmed) return;
 		try {
 			await announcementService.delete(annId);
 			setAnnouncements((p) => p.filter((a) => a._id !== annId));
@@ -769,7 +777,13 @@ export default function CourseCreatePage() {
 	};
 
 	const handleDeleteLiveClass = async (liveClassId: string) => {
-		if (!confirm('Delete this live class plan?')) return;
+		const confirmed = await confirm({
+			title: 'Delete Live Class',
+			message: 'Delete this live class plan?',
+			confirmText: 'Delete',
+			cancelText: 'Keep',
+		});
+		if (!confirmed) return;
 		try {
 			await studyCurriculumService.delete(liveClassId);
 			setLiveClasses((p) => p.filter((item) => item._id !== liveClassId));
@@ -869,7 +883,13 @@ export default function CourseCreatePage() {
 	};
 
 	const handleDeleteStudyMaterial = async (smId: string) => {
-		if (!confirm('Delete this study material?')) return;
+		const confirmed = await confirm({
+			title: 'Delete Study Material',
+			message: 'Delete this study material?',
+			confirmText: 'Delete',
+			cancelText: 'Keep',
+		});
+		if (!confirmed) return;
 		try {
 			await studyMaterialService.delete(smId);
 			setStudyMaterials((p) => p.filter((m) => m._id !== smId));

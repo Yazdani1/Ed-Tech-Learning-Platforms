@@ -6,10 +6,6 @@ import {
 	CardContent,
 	Chip,
 	CircularProgress,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
 	Avatar,
 	FormControl,
 	InputLabel,
@@ -23,7 +19,9 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import toast from 'react-hot-toast';
+import AppModal from '../../components/common/AppModal';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
+import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { teacherService } from '../../services/teacher.service';
 import { userService } from '../../services/user.service';
 import type { ITeacher, IUser } from '../../types/index';
@@ -38,6 +36,7 @@ const EMPTY_FORM = {
 };
 
 export default function TeachersPage() {
+	const { confirm } = useConfirmModal();
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
 	const [teacherUsers, setTeacherUsers] = useState<IUser[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -120,7 +119,13 @@ export default function TeachersPage() {
 	};
 
 	const handleDelete = async (id: string) => {
-		if (!confirm('Are you sure you want to delete this teacher?')) return;
+		const confirmed = await confirm({
+			title: 'Delete Teacher',
+			message: 'Are you sure you want to delete this teacher?',
+			confirmText: 'Delete Teacher',
+			cancelText: 'Keep Teacher',
+		});
+		if (!confirmed) return;
 		try {
 			await teacherService.delete(id);
 			toast.success('Teacher deleted');
@@ -301,9 +306,14 @@ export default function TeachersPage() {
 				</Box>
 			)}
 
-			<Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth='md' fullWidth>
-				<DialogTitle>{editingTeacher ? 'Edit Teacher' : 'Add Teacher'}</DialogTitle>
-				<DialogContent>
+			<AppModal
+				open={dialogOpen}
+				onClose={handleCloseDialog}
+				title={editingTeacher ? 'Edit Teacher' : 'Add Teacher'}
+				onSave={() => void handleSave()}
+				saving={saving}
+				maxWidth='md'
+			>
 					<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
 						<TextField
 							label='Name'
@@ -384,14 +394,7 @@ export default function TeachersPage() {
 							</Typography>
 						)}
 					</Box>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={handleCloseDialog}>Cancel</Button>
-					<Button variant='contained' onClick={() => void handleSave()} disabled={saving}>
-						{saving ? <CircularProgress size={18} /> : 'Save'}
-					</Button>
-				</DialogActions>
-			</Dialog>
+			</AppModal>
 		</Box>
 	);
 }

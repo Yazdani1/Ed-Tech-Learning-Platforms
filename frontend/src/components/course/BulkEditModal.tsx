@@ -5,10 +5,6 @@ import {
 	Checkbox,
 	Chip,
 	CircularProgress,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
 	Divider,
 	FormControlLabel,
 	FormGroup,
@@ -25,12 +21,12 @@ import {
 	Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import CloseIcon from '@mui/icons-material/Close';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import IndeterminateCheckBoxIcon from '@mui/icons-material/IndeterminateCheckBox';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import toast from 'react-hot-toast';
+import AppModal from '../common/AppModal';
 import RichTextEditor from './RichTextEditor';
 import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
@@ -253,23 +249,26 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 	const selectedCount = selectedIds.size;
 
 	return (
-		<Dialog open={open} onClose={handleClose} maxWidth='xl' fullWidth slotProps={{ paper: { sx: { height: '90vh' } } }}>
-			{/* ── Header ────────────────────────────────────────────── */}
-			<DialogTitle sx={{ pb: 1 }}>
-				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-					<Box>
-						<Typography variant='h6' sx={{ fontWeight: 700 }}>Bulk Edit Courses</Typography>
-						<Typography variant='caption' color='text.secondary'>
-							Select courses on the left, then fill in the fields you want to update
-						</Typography>
-					</Box>
-					<IconButton onClick={handleClose} size='small'><CloseIcon /></IconButton>
+		<AppModal
+			open={open}
+			onClose={handleClose}
+			title={
+				<Box>
+					<Typography variant='h6' sx={{ fontWeight: 700 }}>Bulk Edit Courses</Typography>
+					<Typography variant='caption' color='text.secondary'>
+						Select courses on the left, then fill in the fields you want to update
+					</Typography>
 				</Box>
-			</DialogTitle>
-
+			}
+			maxWidth='xl'
+			hideActions
+			contentDividers={false}
+			contentSx={{ p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+			paperSx={{ height: '90vh' }}
+		>
 			<Divider />
 
-			<DialogContent sx={{ p: 0, display: 'flex', overflow: 'hidden' }}>
+			<Box sx={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
 
 				{/* ── LEFT: course selector ─────────────────────────── */}
 				<Box
@@ -758,12 +757,12 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 						)}
 					</Box>
 				</Box>
-			</DialogContent>
+			</Box>
 
 			<Divider />
 
 			{/* ── Footer ─────────────────────────────────────────────── */}
-			<DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
+			<Box sx={{ px: 3, py: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 				<Box>
 					{selectedCount > 0 ? (
 						<Tooltip title='Click a course to deselect'>
@@ -792,7 +791,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 							: `Apply to ${selectedCount || '…'} course${selectedCount !== 1 ? 's' : ''}`}
 					</Button>
 				</Box>
-			</DialogActions>
-		</Dialog>
+			</Box>
+		</AppModal>
 	);
 }

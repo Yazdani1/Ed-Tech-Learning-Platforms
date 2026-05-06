@@ -11,12 +11,8 @@ import {
 	Chip,
 	CircularProgress,
 	Container,
-	Dialog,
-	DialogContent,
-	DialogTitle,
 	Divider,
 	Grid,
-	IconButton,
 	List,
 	ListItemButton,
 	ListItemText,
@@ -29,7 +25,6 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import PlayCircleOutlinedIcon from '@mui/icons-material/PlayCircleOutlined';
 import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
 import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
 import SchoolIcon from '@mui/icons-material/School';
 import ClassIcon from '@mui/icons-material/Class';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -43,6 +38,7 @@ import { courseService } from '../../services/course.service';
 import { studyCurriculumService } from '../../services/studyCurriculum.service';
 import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import PublicNavbar from '../../components/layout/PublicNavbar';
+import AppModal from '../../components/common/AppModal';
 import {
 	formatLectureDuration,
 	formatSectionDuration,
@@ -2078,32 +2074,28 @@ export default function CourseDetailPage() {
 			</Container>
 
 			{/* â”€â”€ Free Preview Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-			<Dialog
+			<AppModal
 				open={Boolean(previewLecture)}
 				onClose={() => setPreviewLecture(null)}
 				maxWidth='md'
-				fullWidth
-				slotProps={{
-					paper: { sx: { borderRadius: 3, overflow: 'hidden', bgcolor: '#0f0f0f' } },
+				hideActions
+				contentDividers={false}
+				paperSx={{ borderRadius: 3, overflow: 'hidden', bgcolor: '#0f0f0f' }}
+				titleSx={{ bgcolor: '#1a1a1a', color: 'white', py: 1.5, px: 2.5, pr: 6 }}
+				closeButtonSx={{ color: 'grey.400', '&:hover': { color: 'white' } }}
+				contentSx={{
+					p: 0,
+					display: 'flex',
+					flexDirection: { xs: 'column', md: 'row' },
+					minHeight: 420,
 				}}
-			>
-				<DialogTitle
-					sx={{
-						bgcolor: '#1a1a1a',
-						color: 'white',
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'space-between',
-						py: 1.5,
-						px: 2.5,
-					}}
-				>
+				title={
 					<Box>
 						<Typography
 							variant='caption'
 							sx={{ color: 'grey.400', display: 'block', mb: 0.25 }}
 						>
-							Free Preview â€” {course.title}
+							Free Preview - {course.title}
 						</Typography>
 						<Typography
 							sx={{
@@ -2116,22 +2108,8 @@ export default function CourseDetailPage() {
 							{previewLecture?.title}
 						</Typography>
 					</Box>
-					<IconButton
-						onClick={() => setPreviewLecture(null)}
-						sx={{ color: 'grey.400', '&:hover': { color: 'white' } }}
-					>
-						<CloseIcon />
-					</IconButton>
-				</DialogTitle>
-
-				<DialogContent
-					sx={{
-						p: 0,
-						display: 'flex',
-						flexDirection: { xs: 'column', md: 'row' },
-						minHeight: 420,
-					}}
-				>
+				}
+			>
 					{/* Video player */}
 					<Box
 						sx={{
@@ -2249,8 +2227,7 @@ export default function CourseDetailPage() {
 							</List>
 						</Box>
 					)}
-				</DialogContent>
-			</Dialog>
+			</AppModal>
 		</Box>
 	);
 }

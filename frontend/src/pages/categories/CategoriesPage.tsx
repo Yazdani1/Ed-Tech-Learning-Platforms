@@ -5,10 +5,6 @@ import {
 	Card,
 	Chip,
 	CircularProgress,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
 	IconButton,
 	Menu,
 	MenuItem,
@@ -26,6 +22,8 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import toast from 'react-hot-toast';
+import AppModal from '../../components/common/AppModal';
+import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { categoryService } from '../../services/category.service';
 import { courseTypeService } from '../../services/courseType.service';
 import type { ICategory, ICourseType } from '../../types/index';
@@ -42,6 +40,7 @@ interface DialogState {
 const EMPTY_FORM = { name: '', description: '' };
 
 export default function CategoriesPage() {
+	const { confirm } = useConfirmModal();
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -150,9 +149,12 @@ export default function CategoriesPage() {
 	const handleDelete = async () => {
 		if (!menuTarget) return;
 		const labels = getLabels(menuTarget.kind);
-		const confirmed = confirm(
-			`Are you sure you want to delete this ${labels.singular.toLowerCase()}?`,
-		);
+		const confirmed = await confirm({
+			title: `Delete ${labels.singular}`,
+			message: `Are you sure you want to delete this ${labels.singular.toLowerCase()}?`,
+			confirmText: `Delete ${labels.singular}`,
+			cancelText: `Keep ${labels.singular}`,
+		});
 		if (!confirmed) {
 			closeMenu();
 			return;
@@ -333,11 +335,14 @@ export default function CategoriesPage() {
 				</MenuItem>
 			</Menu>
 
-			<Dialog open={dialog.open} onClose={closeDialog} maxWidth='sm' fullWidth>
-				<DialogTitle>
-					{dialog.item ? 'Edit' : 'Add'} {activeLabels.singular}
-				</DialogTitle>
-				<DialogContent>
+			<AppModal
+				open={dialog.open}
+				onClose={closeDialog}
+				title={`${dialog.item ? 'Edit' : 'Add'} ${activeLabels.singular}`}
+				onSave={() => void handleSave()}
+				saving={saving}
+				maxWidth='sm'
+			>
 					<TextField
 						label='Name'
 						value={form.name}
@@ -359,14 +364,7 @@ export default function CategoriesPage() {
 						rows={3}
 						sx={{ mt: 2 }}
 					/>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={closeDialog}>Cancel</Button>
-					<Button variant='contained' onClick={() => void handleSave()} disabled={saving}>
-						{saving ? <CircularProgress size={18} /> : 'Save'}
-					</Button>
-				</DialogActions>
-			</Dialog>
+			</AppModal>
 		</Box>
 	);
 }

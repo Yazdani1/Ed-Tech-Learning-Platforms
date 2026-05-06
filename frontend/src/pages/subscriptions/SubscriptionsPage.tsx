@@ -7,10 +7,6 @@ import {
 	CardContent,
 	Chip,
 	CircularProgress,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
 	Divider,
 	Grid,
 	IconButton,
@@ -33,6 +29,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import toast from 'react-hot-toast';
+import AppModal from '../../components/common/AppModal';
+import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { subscriptionService } from '../../services/subscription.service';
 import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import { userService } from '../../services/user.service';
@@ -54,6 +52,7 @@ const PLAN_COLORS: Record<SubscriptionPlan, string> = {
 };
 
 export default function SubscriptionsPage() {
+	const { confirm } = useConfirmModal();
 	const [activeTab, setActiveTab] = useState(0);
 
 	// --- Plan Config state ---
@@ -153,7 +152,13 @@ export default function SubscriptionsPage() {
 	};
 
 	const handleDeletePlan = async (id: string) => {
-		if (!confirm('Delete this plan card?')) return;
+		const confirmed = await confirm({
+			title: 'Delete Plan Card',
+			message: 'Delete this plan card?',
+			confirmText: 'Delete Plan',
+			cancelText: 'Keep Plan',
+		});
+		if (!confirmed) return;
 		try {
 			await subscriptionPlanConfigService.delete(id);
 			toast.success('Plan card deleted');
@@ -200,7 +205,13 @@ export default function SubscriptionsPage() {
 	};
 
 	const handleCancel = async (id: string) => {
-		if (!confirm('Cancel this subscription?')) return;
+		const confirmed = await confirm({
+			title: 'Cancel Subscription',
+			message: 'Cancel this subscription?',
+			confirmText: 'Cancel Subscription',
+			cancelText: 'Keep Subscription',
+		});
+		if (!confirmed) return;
 		try {
 			await subscriptionService.cancel(id);
 			toast.success('Subscription cancelled');
@@ -421,9 +432,14 @@ export default function SubscriptionsPage() {
 			)}
 
 			{/* ── Plan Config Dialog ────────────────────────────────── */}
-			<Dialog open={planDialogOpen} onClose={() => setPlanDialogOpen(false)} maxWidth='sm' fullWidth>
-				<DialogTitle>Subscription Plan Card</DialogTitle>
-				<DialogContent>
+			<AppModal
+				open={planDialogOpen}
+				onClose={() => setPlanDialogOpen(false)}
+				title='Subscription Plan Card'
+				onSave={() => void handleSavePlan()}
+				saving={planSaving}
+				maxWidth='sm'
+			>
 					<TextField
 						label='Plan'
 						select
@@ -502,24 +518,18 @@ export default function SubscriptionsPage() {
 					<Button size='small' startIcon={<AddIcon />} onClick={addFeature} sx={{ mt: 0.5 }}>
 						Add Feature
 					</Button>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setPlanDialogOpen(false)}>Cancel</Button>
-					<Button variant='contained' onClick={() => void handleSavePlan()} disabled={planSaving}>
-						{planSaving ? <CircularProgress size={18} /> : 'Save'}
-					</Button>
-				</DialogActions>
-			</Dialog>
+			</AppModal>
 
 			{/* ── Assign Subscription Dialog ───────────────────────── */}
-			<Dialog
+			<AppModal
 				open={assignDialogOpen}
 				onClose={() => setAssignDialogOpen(false)}
+				title='Assign Subscription'
+				onSave={() => void handleAssign()}
+				saveText='Assign'
+				saving={assignSaving}
 				maxWidth='sm'
-				fullWidth
 			>
-				<DialogTitle>Assign Subscription</DialogTitle>
-				<DialogContent>
 					<TextField
 						label='User'
 						select
@@ -560,14 +570,7 @@ export default function SubscriptionsPage() {
 						slotProps={{ inputLabel: { shrink: true } }}
 						required
 					/>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setAssignDialogOpen(false)}>Cancel</Button>
-					<Button variant='contained' onClick={() => void handleAssign()} disabled={assignSaving}>
-						{assignSaving ? <CircularProgress size={18} /> : 'Assign'}
-					</Button>
-				</DialogActions>
-			</Dialog>
+			</AppModal>
 		</Box>
 	);
 }

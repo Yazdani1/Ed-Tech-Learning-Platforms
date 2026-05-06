@@ -6,6 +6,7 @@ import AdminLayout from './components/layout/AdminLayout/AdminLayout';
 import StudentLayout from './components/layout/StudentLayout/StudentLayout';
 import TeacherLayout from './components/layout/TeacherLayout/TeacherLayout';
 import LoadingSpinner from './components/common/LoadingSpinner';
+import { ConfirmModalProvider } from './context/ConfirmModalContext';
 
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
@@ -35,8 +36,9 @@ const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
 export default function App() {
 	return (
-		<Suspense fallback={<LoadingSpinner />}>
-			<Routes>
+		<ConfirmModalProvider>
+			<Suspense fallback={<LoadingSpinner />}>
+				<Routes>
 				<Route path='/' element={<HomePage />} />
 
 			{/* Auth */}
@@ -99,7 +101,8 @@ export default function App() {
 			<Route path='/teachers' element={<PublicTeachersPage />} />
 
 			<Route path='*' element={<NotFoundPage />} />
-			</Routes>
-		</Suspense>
+				</Routes>
+			</Suspense>
+		</ConfirmModalProvider>
 	);
 }

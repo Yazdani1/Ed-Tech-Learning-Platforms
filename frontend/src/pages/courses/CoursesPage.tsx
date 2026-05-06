@@ -5,10 +5,6 @@ import {
 	Button,
 	Chip,
 	CircularProgress,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
 	Divider,
 	FormControl,
 	Grid,
@@ -41,6 +37,7 @@ import CourseCard, { CourseCardSkeleton } from '../../components/ui/CourseCard';
 import BulkEditModal from '../../components/course/BulkEditModal';
 import type { ICategory, ICourse, ICourseType, ITeacher, CoursePricing, CourseStatus, CourseVisibility, SubscriptionPlan } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
+import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { formatDate } from '../../utils/dateTime';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
@@ -71,12 +68,11 @@ const EARNING_ACTIVITY_FILTERS: { label: string; value: ActivityFilter }[] = [
 
 export default function CoursesPage() {
 	const { user, isLoading: authLoading } = useAuth();
+	const { confirm } = useConfirmModal();
 	const navigate = useNavigate();
 	const [courses, setCourses] = useState<ICourse[]>([]);
 	const [search, setSearch] = useState('');
 	const [loading, setLoading] = useState(true);
-	const [removeTarget, setRemoveTarget] = useState<ICourse | null>(null);
-	const [removing, setRemoving] = useState(false);
 	const [bulkOpen, setBulkOpen] = useState(false);
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [categories, setCategories] = useState<ICategory[]>([]);
@@ -166,18 +162,24 @@ export default function CoursesPage() {
 		return () => { abortRef.current?.abort(); };
 	}, [search, isStudent, isModerator, authLoading, moderatorFilters]);
 
-	const handleConfirmRemove = async () => {
-		if (!removeTarget) return;
-		setRemoving(true);
+	const handleConfirmRemove = async (course: ICourse) => {
+		const confirmed = await confirm({
+			title: 'Remove Course',
+			message: (
+				<>
+					Are you sure you want to remove <strong>&quot;{course.title}&quot;</strong> from your courses?
+				</>
+			),
+			confirmText: 'Remove',
+			cancelText: 'Keep It',
+		});
+		if (!confirmed) return;
 		try {
-			await courseService.unenroll(removeTarget._id);
-			setCourses((prev) => prev.filter((c) => c._id !== removeTarget._id));
-			toast.success(`Removed from "${removeTarget.title}"`);
+			await courseService.unenroll(course._id);
+			setCourses((prev) => prev.filter((c) => c._id !== course._id));
+			toast.success(`Removed from "${course.title}"`);
 		} catch {
 			toast.error('Failed to remove course');
-		} finally {
-			setRemoving(false);
-			setRemoveTarget(null);
 		}
 	};
 
@@ -572,7 +574,7 @@ export default function CoursesPage() {
 									<Grid key={course._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
 										<CourseCardWithRemove
 											course={course}
-											onRemove={() => setRemoveTarget(course)}
+											onRemove={() => void handleConfirmRemove(course)}
 										/>
 									</Grid>
 								))}
@@ -600,7 +602,7 @@ export default function CoursesPage() {
 									<Grid key={course._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
 										<CourseCardWithRemove
 											course={course}
-											onRemove={() => setRemoveTarget(course)}
+											onRemove={() => void handleConfirmRemove(course)}
 											subscriptionBadge
 										/>
 									</Grid>
@@ -688,30 +690,6 @@ export default function CoursesPage() {
 					}}
 				/>
 			)}
-
-			{/* Remove confirmation dialog */}
-			<Dialog open={Boolean(removeTarget)} onClose={() => setRemoveTarget(null)} maxWidth='xs' fullWidth>
-				<DialogTitle>Remove Course</DialogTitle>
-				<DialogContent>
-					<Typography>
-						Are you sure you want to remove{' '}
-						<strong>&quot;{removeTarget?.title}&quot;</strong> from your courses?
-					</Typography>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setRemoveTarget(null)} disabled={removing}>
-						Keep It
-					</Button>
-					<Button
-						variant='contained'
-						color='error'
-						disabled={removing}
-						onClick={() => void handleConfirmRemove()}
-					>
-						{removing ? <CircularProgress size={18} color='inherit' /> : 'Remove'}
-					</Button>
-				</DialogActions>
-			</Dialog>
 		</Box>
 	);
 }

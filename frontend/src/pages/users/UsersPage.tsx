@@ -4,10 +4,6 @@ import {
 	Button,
 	Chip,
 	CircularProgress,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
 	FormControl,
 	MenuItem,
 	Paper,
@@ -25,8 +21,10 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import toast from 'react-hot-toast';
+import AppModal from '../../components/common/AppModal';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
 import { useAuth } from '../../context/useAuth';
+import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { userService } from '../../services/user.service';
 import type { IUser } from '../../types/index';
 import { formatDateTime } from '../../utils/dateTime';
@@ -43,6 +41,7 @@ const DEFAULT_FORM = { name: '', email: '', password: '', role: 'Student' as IUs
 
 export default function UsersPage() {
 	const { user: currentUser } = useAuth();
+	const { confirm } = useConfirmModal();
 	const [users, setUsers] = useState<IUser[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -121,7 +120,13 @@ export default function UsersPage() {
 	};
 
 	const handleDelete = async (id: string) => {
-		if (!confirm('Are you sure you want to delete this user?')) return;
+		const confirmed = await confirm({
+			title: 'Delete User',
+			message: 'Are you sure you want to delete this user?',
+			confirmText: 'Delete User',
+			cancelText: 'Keep User',
+		});
+		if (!confirmed) return;
 		try {
 			await userService.delete(id);
 			toast.success('User deleted');
@@ -201,9 +206,15 @@ export default function UsersPage() {
 				</TableContainer>
 			)}
 
-			<Dialog open={dialogOpen} onClose={closeDialog} maxWidth='sm' fullWidth>
-				<DialogTitle>{editingUser ? 'Edit User' : 'Create User'}</DialogTitle>
-				<DialogContent>
+			<AppModal
+				open={dialogOpen}
+				onClose={closeDialog}
+				title={editingUser ? 'Edit User' : 'Create User'}
+				onSave={() => void handleSave()}
+				saveText={editingUser ? 'Save' : 'Create'}
+				saving={saving}
+				maxWidth='sm'
+			>
 					<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
 						<TextField
 							label='Name'
@@ -240,14 +251,7 @@ export default function UsersPage() {
 							</Select>
 						</FormControl>
 					</Box>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={closeDialog}>Cancel</Button>
-					<Button variant='contained' onClick={() => void handleSave()} disabled={saving}>
-						{saving ? <CircularProgress size={18} /> : editingUser ? 'Save' : 'Create'}
-					</Button>
-				</DialogActions>
-			</Dialog>
+			</AppModal>
 		</Box>
 	);
 }
