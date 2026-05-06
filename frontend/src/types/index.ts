@@ -147,6 +147,48 @@ export interface IPerformanceData {
   breakdown: { free: number; paid: number; subscription: number };
 }
 
+export interface IDashboardSummary {
+  totals: {
+    users: number;
+    students: number;
+    teachers: number;
+    courses: number;
+    publishedCourses: number;
+    draftCourses: number;
+    categories: number;
+    enrollments: number;
+    thisMonthEnrollments: number;
+    activeSubscriptions: number;
+    openQuestions: number;
+    totalRevenue: number;
+    thisMonthRevenue: number;
+    courseRevenue: number;
+    subscriptionRevenue: number;
+  };
+  roleCounts: Array<{ label: UserRole; value: number }>;
+  courseStatusCounts: Array<{ label: CourseStatus; value: number }>;
+  coursePricingCounts: Array<{ label: CoursePricing; value: number }>;
+  revenueTimeline: Array<{
+    date: string;
+    enrollments: number;
+    courseRevenue: number;
+    subscriptionRevenue: number;
+    totalRevenue: number;
+  }>;
+  topCourses: Array<{
+    course: Pick<ICourse, '_id' | 'title' | 'coverImage' | 'pricing' | 'price' | 'status'> | null;
+    enrollments: number;
+  }>;
+  recentEnrollments: Array<{
+    _id: string;
+    student: Pick<IUser, '_id' | 'name' | 'email'>;
+    course: Pick<ICourse, '_id' | 'title'>;
+    enrollmentType: EnrollmentType;
+    createdAt: string;
+  }>;
+  recentUsers: Array<Pick<IUser, '_id' | 'name' | 'email' | 'role' | 'createdAt'>>;
+}
+
 export interface IEnrollment {
   _id: string;
   student: Pick<IUser, '_id' | 'name' | 'email' | 'avatar'>;
