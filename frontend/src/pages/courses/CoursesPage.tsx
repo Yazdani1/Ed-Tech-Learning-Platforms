@@ -46,6 +46,27 @@ const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 const COURSE_CARD_SKELETONS = Array.from({ length: 8 });
 const SUBSCRIPTION_PLANS: SubscriptionPlan[] = ['Basic', 'Premium', 'Gold', 'Quiz Only'];
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
+type ActivityFilter = '' | 'has_lifetime' | 'none_lifetime' | 'has_this_month' | 'none_this_month' | 'has_previous_month' | 'none_previous_month';
+
+const ENROLLMENT_ACTIVITY_FILTERS: { label: string; value: ActivityFilter }[] = [
+	{ label: 'All enrollments', value: '' },
+	{ label: 'Has students ever', value: 'has_lifetime' },
+	{ label: 'No students ever', value: 'none_lifetime' },
+	{ label: 'Enrolled this month', value: 'has_this_month' },
+	{ label: 'No enrollments this month', value: 'none_this_month' },
+	{ label: 'Enrolled previous month', value: 'has_previous_month' },
+	{ label: 'No enrollments previous month', value: 'none_previous_month' },
+];
+
+const EARNING_ACTIVITY_FILTERS: { label: string; value: ActivityFilter }[] = [
+	{ label: 'All earnings', value: '' },
+	{ label: 'Earned ever', value: 'has_lifetime' },
+	{ label: 'No earnings ever', value: 'none_lifetime' },
+	{ label: 'Earned this month', value: 'has_this_month' },
+	{ label: 'No earnings this month', value: 'none_this_month' },
+	{ label: 'Earned previous month', value: 'has_previous_month' },
+	{ label: 'No earnings previous month', value: 'none_previous_month' },
+];
 
 export default function CoursesPage() {
 	const { user, isLoading: authLoading } = useAuth();
@@ -68,6 +89,8 @@ export default function CoursesPage() {
 		pricing: '' | CoursePricing;
 		visibility: '' | CourseVisibility;
 		subscriptionPlan: '' | SubscriptionPlan;
+		enrollmentActivity: ActivityFilter;
+		earningActivity: ActivityFilter;
 	}>({
 		courseType: '',
 		category: '',
@@ -76,6 +99,8 @@ export default function CoursesPage() {
 		pricing: '',
 		visibility: '',
 		subscriptionPlan: '',
+		enrollmentActivity: '',
+		earningActivity: '',
 	});
 	const abortRef = useRef<AbortController | null>(null);
 
@@ -118,6 +143,8 @@ export default function CoursesPage() {
 			if (moderatorFilters.pricing) params.pricing = moderatorFilters.pricing;
 			if (moderatorFilters.visibility) params.visibility = moderatorFilters.visibility;
 			if (moderatorFilters.subscriptionPlan) params.subscriptionPlans = moderatorFilters.subscriptionPlan;
+			if (moderatorFilters.enrollmentActivity) params.enrollmentFilter = moderatorFilters.enrollmentActivity;
+			if (moderatorFilters.earningActivity) params.earningFilter = moderatorFilters.earningActivity;
 		}
 
 		const load = isStudent
@@ -174,6 +201,8 @@ export default function CoursesPage() {
 			pricing: '',
 			visibility: '',
 			subscriptionPlan: '',
+			enrollmentActivity: '',
+			earningActivity: '',
 		});
 		setFiltersOpen(false);
 	};
@@ -277,7 +306,7 @@ export default function CoursesPage() {
 						}}
 					>
 					<Grid container spacing={2}>
-						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
 							<TextField
 								placeholder='Search courses...'
 								value={search}
@@ -295,7 +324,7 @@ export default function CoursesPage() {
 								}}
 							/>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Course Type</InputLabel>
 								<Select
@@ -317,7 +346,7 @@ export default function CoursesPage() {
 								</Select>
 							</FormControl>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Category</InputLabel>
 								<Select
@@ -339,7 +368,7 @@ export default function CoursesPage() {
 								</Select>
 							</FormControl>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Teacher</InputLabel>
 								<Select
@@ -362,7 +391,7 @@ export default function CoursesPage() {
 							</FormControl>
 						</Grid>
 						{!isModerator && (
-							<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+							<Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
 								<FormControl size='small' fullWidth>
 									<InputLabel>Status</InputLabel>
 									<Select
@@ -382,7 +411,7 @@ export default function CoursesPage() {
 								</FormControl>
 							</Grid>
 						)}
-						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Pricing</InputLabel>
 								<Select
@@ -401,7 +430,7 @@ export default function CoursesPage() {
 								</Select>
 							</FormControl>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Visibility</InputLabel>
 								<Select
@@ -420,7 +449,7 @@ export default function CoursesPage() {
 								</Select>
 							</FormControl>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+						<Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
 							<FormControl size='small' fullWidth>
 								<InputLabel>Subscription Plan</InputLabel>
 								<Select
@@ -437,6 +466,48 @@ export default function CoursesPage() {
 									{SUBSCRIPTION_PLANS.map((plan) => (
 										<MenuItem key={plan} value={plan}>
 											{plan}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						</Grid>
+						<Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
+							<FormControl size='small' fullWidth>
+								<InputLabel>Enrollment Activity</InputLabel>
+								<Select
+									label='Enrollment Activity'
+									value={moderatorFilters.enrollmentActivity}
+									onChange={(e) =>
+										setModeratorFilters((prev) => ({
+											...prev,
+											enrollmentActivity: e.target.value as ActivityFilter,
+										}))
+									}
+								>
+									{ENROLLMENT_ACTIVITY_FILTERS.map((option) => (
+										<MenuItem key={option.value || 'all'} value={option.value}>
+											{option.label}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						</Grid>
+						<Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
+							<FormControl size='small' fullWidth>
+								<InputLabel>Earning Activity</InputLabel>
+								<Select
+									label='Earning Activity'
+									value={moderatorFilters.earningActivity}
+									onChange={(e) =>
+										setModeratorFilters((prev) => ({
+											...prev,
+											earningActivity: e.target.value as ActivityFilter,
+										}))
+									}
+								>
+									{EARNING_ACTIVITY_FILTERS.map((option) => (
+										<MenuItem key={option.value || 'all'} value={option.value}>
+											{option.label}
 										</MenuItem>
 									))}
 								</Select>
@@ -603,6 +674,8 @@ export default function CoursesPage() {
 						if (moderatorFilters.pricing) params.pricing = moderatorFilters.pricing;
 						if (moderatorFilters.visibility) params.visibility = moderatorFilters.visibility;
 						if (moderatorFilters.subscriptionPlan) params.subscriptionPlans = moderatorFilters.subscriptionPlan;
+						if (moderatorFilters.enrollmentActivity) params.enrollmentFilter = moderatorFilters.enrollmentActivity;
+						if (moderatorFilters.earningActivity) params.earningFilter = moderatorFilters.earningActivity;
 						const load = courseService.getAll(params);
 						load.then((res) => {
 							const data = res.data;

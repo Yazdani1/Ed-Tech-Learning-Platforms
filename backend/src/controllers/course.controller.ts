@@ -11,7 +11,7 @@ import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 import type { CourseStatus, SubscriptionPlan } from '../types/index';
 
 export const getCourses = asyncHandler(async (req: Request, res: Response) => {
-	const { category, courseType, teacher, status, pricing, visibility, subscriptionPlans, search } = req.query as Record<string, string>;
+	const { category, courseType, teacher, status, pricing, visibility, subscriptionPlans, search, enrollmentFilter, earningFilter } = req.query as Record<string, string>;
 
 	const filter: Record<string, unknown> = {};
 	if (category) filter.category = category;
@@ -37,6 +37,7 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 
 	const now = new Date();
 	const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+	const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 	const courseIds = courses.map((course) => course._id);
 	const enrollmentStats = courseIds.length > 0
 		? await Enrollment.aggregate<{
@@ -45,6 +46,8 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 			paidEnrollments: number;
 			thisMonthCount: number;
 			thisMonthPaidEnrollments: number;
+			previousMonthCount: number;
+			previousMonthPaidEnrollments: number;
 		}>([
 			{ $match: { course: { $in: courseIds } } },
 			{
@@ -71,6 +74,35 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 							],
 						},
 					},
+					previousMonthCount: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $gte: ['$createdAt', startOfPreviousMonth] },
+										{ $lt: ['$createdAt', startOfMonth] },
+									],
+								},
+								1,
+								0,
+							],
+						},
+					},
+					previousMonthPaidEnrollments: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $eq: ['$enrollmentType', 'paid'] },
+										{ $gte: ['$createdAt', startOfPreviousMonth] },
+										{ $lt: ['$createdAt', startOfMonth] },
+									],
+								},
+								1,
+								0,
+							],
+						},
+					},
 				},
 			},
 		])
@@ -87,11 +119,32 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 				lifetimeEarned: (stat?.paidEnrollments ?? 0) * price,
 				thisMonthCount: stat?.thisMonthCount ?? 0,
 				thisMonthEarned: (stat?.thisMonthPaidEnrollments ?? 0) * price,
+				previousMonthCount: stat?.previousMonthCount ?? 0,
+				previousMonthEarned: (stat?.previousMonthPaidEnrollments ?? 0) * price,
 			},
 		};
 	});
+	const filteredCourses = coursesWithStats.filter((course) => {
+		const stats = course.enrollmentStats;
 
-	res.status(200).json({ success: true, data: coursesWithStats, total: coursesWithStats.length });
+		if (enrollmentFilter === 'has_lifetime' && stats.totalEnrollments === 0) return false;
+		if (enrollmentFilter === 'none_lifetime' && stats.totalEnrollments > 0) return false;
+		if (enrollmentFilter === 'has_this_month' && stats.thisMonthCount === 0) return false;
+		if (enrollmentFilter === 'none_this_month' && stats.thisMonthCount > 0) return false;
+		if (enrollmentFilter === 'has_previous_month' && stats.previousMonthCount === 0) return false;
+		if (enrollmentFilter === 'none_previous_month' && stats.previousMonthCount > 0) return false;
+
+		if (earningFilter === 'has_lifetime' && stats.lifetimeEarned <= 0) return false;
+		if (earningFilter === 'none_lifetime' && stats.lifetimeEarned > 0) return false;
+		if (earningFilter === 'has_this_month' && stats.thisMonthEarned <= 0) return false;
+		if (earningFilter === 'none_this_month' && stats.thisMonthEarned > 0) return false;
+		if (earningFilter === 'has_previous_month' && stats.previousMonthEarned <= 0) return false;
+		if (earningFilter === 'none_previous_month' && stats.previousMonthEarned > 0) return false;
+
+		return true;
+	});
+
+	res.status(200).json({ success: true, data: filteredCourses, total: filteredCourses.length });
 });
 
 export const browseCourses = asyncHandler(async (req: Request, res: Response) => {

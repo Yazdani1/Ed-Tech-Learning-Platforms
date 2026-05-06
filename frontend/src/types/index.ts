@@ -96,6 +96,8 @@ export interface ICourse {
     lifetimeEarned: number;
     thisMonthCount: number;
     thisMonthEarned: number;
+    previousMonthCount: number;
+    previousMonthEarned: number;
   };
 }
 
