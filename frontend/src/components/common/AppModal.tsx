@@ -55,10 +55,21 @@ export default function AppModal({
 	return (
 		<Dialog
 			open={open}
-			onClose={onClose}
+			onClose={(_, reason) => {
+				if (reason === 'backdropClick') return;
+				onClose();
+			}}
 			maxWidth={maxWidth}
 			fullWidth={fullWidth}
-			slotProps={{ paper: { sx: { borderRadius: 1, ...paperSx } } }}
+			slotProps={{
+				paper: {
+					sx: {
+						borderRadius: 1,
+						boxShadow: '0 24px 80px rgba(15, 23, 42, 0.28)',
+						...paperSx,
+					},
+				},
+			}}
 		>
 			<DialogTitle sx={{ pr: 6, fontWeight: 900, ...titleSx }}>
 				{title}

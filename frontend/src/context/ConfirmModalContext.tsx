@@ -65,17 +65,20 @@ export function ConfirmModalProvider({ children }: { children: ReactNode }) {
 			{children}
 			<Dialog
 				open={Boolean(pending)}
-				onClose={() => resolvePending(false)}
+				onClose={(_, reason) => {
+					if (reason === 'backdropClick') return;
+					resolvePending(false);
+				}}
 				maxWidth={pending?.maxWidth ?? 'xs'}
 				fullWidth
 				slotProps={{ paper: { sx: { borderRadius: 1 } } }}
 			>
-				<DialogTitle sx={{ pl: 6, pr: 2, fontWeight: 900 }}>
+				<DialogTitle sx={{ pr: 6, fontWeight: 900 }}>
 					<IconButton
 						aria-label='Close confirmation'
 						onClick={() => resolvePending(false)}
 						size='small'
-						sx={{ position: 'absolute', top: 12, left: 12 }}
+						sx={{ position: 'absolute', top: 12, right: 12 }}
 					>
 						<CloseIcon fontSize='small' />
 					</IconButton>
