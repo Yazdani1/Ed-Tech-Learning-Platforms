@@ -8,7 +8,11 @@ import {
 	Chip,
 	CircularProgress,
 	FormControl,
+	Grid,
+	InputAdornment,
+	InputLabel,
 	MenuItem,
+	Paper,
 	Select,
 	TextField,
 	Typography,
@@ -17,6 +21,9 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import TuneIcon from '@mui/icons-material/Tune';
+import SearchIcon from '@mui/icons-material/Search';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import toast from 'react-hot-toast';
 import AppModal from '../../components/common/AppModal';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
@@ -35,6 +42,48 @@ const USER_ROLES: IUser['role'][] = [
 ];
 
 const DEFAULT_FORM = { name: '', email: '', password: '', role: 'Student' as IUser['role'] };
+type SubscriptionStatusFilter = '' | 'active' | 'expired' | 'inactive';
+type EnrollmentFilter = '' | 'has_total' | 'none_total' | 'has_free' | 'none_free' | 'has_paid' | 'none_paid' | 'has_subscription' | 'none_subscription';
+type SpendingFilter = '' | 'has_total' | 'none_total' | 'has_paid_course' | 'none_paid_course' | 'has_subscription' | 'none_subscription';
+
+const SUBSCRIPTION_PLANS = ['Basic', 'Premium', 'Gold', 'Quiz Only'] as const;
+
+const ENROLLMENT_FILTERS: { label: string; value: EnrollmentFilter }[] = [
+	{ label: 'All enrollment activity', value: '' },
+	{ label: 'Has any enrollment', value: 'has_total' },
+	{ label: 'No enrollments', value: 'none_total' },
+	{ label: 'Has free courses', value: 'has_free' },
+	{ label: 'No free courses', value: 'none_free' },
+	{ label: 'Has paid purchases', value: 'has_paid' },
+	{ label: 'No paid purchases', value: 'none_paid' },
+	{ label: 'Has subscription courses', value: 'has_subscription' },
+	{ label: 'No subscription courses', value: 'none_subscription' },
+];
+
+const SPENDING_FILTERS: { label: string; value: SpendingFilter }[] = [
+	{ label: 'All spending activity', value: '' },
+	{ label: 'Has any spend', value: 'has_total' },
+	{ label: 'No spend', value: 'none_total' },
+	{ label: 'Spent on paid courses', value: 'has_paid_course' },
+	{ label: 'No paid course spend', value: 'none_paid_course' },
+	{ label: 'Spent on subscriptions', value: 'has_subscription' },
+	{ label: 'No subscription spend', value: 'none_subscription' },
+];
+
+const DEFAULT_FILTERS = {
+	search: '',
+	role: '' as '' | IUser['role'],
+	subscriptionPlan: '',
+	subscriptionStatus: '' as SubscriptionStatusFilter,
+	enrollmentFilter: '' as EnrollmentFilter,
+	spendingFilter: '' as SpendingFilter,
+	minTotalSpent: '',
+	maxTotalSpent: '',
+	minPaidCourseSpend: '',
+	maxPaidCourseSpend: '',
+	minSubscriptionSpend: '',
+	maxSubscriptionSpend: '',
+};
 
 const roleChipColor: Partial<Record<IUser['role'], 'primary' | 'secondary' | 'success' | 'warning' | 'info'>> = {
 	'Super Admin': 'secondary',
@@ -117,18 +166,54 @@ export default function UsersPage() {
 	const [editingUser, setEditingUser] = useState<IUser | null>(null);
 	const [detailsUser, setDetailsUser] = useState<IUser | null>(null);
 	const [form, setForm] = useState(DEFAULT_FORM);
+	const [filtersOpen, setFiltersOpen] = useState(false);
+	const [filters, setFilters] = useState(DEFAULT_FILTERS);
+	const [totalUsers, setTotalUsers] = useState(0);
+	const [resultCount, setResultCount] = useState(0);
 	const [saving, setSaving] = useState(false);
 	const isSuperAdmin = currentUser?.role === 'Super Admin';
 
 	useEffect(() => {
 		loadUsers();
-	}, []);
+	}, [filters, isSuperAdmin]);
 
 	const loadUsers = () => {
+		const params: Record<string, string> = {};
+		if (filters.search.trim()) params.search = filters.search.trim();
+		if (filters.role) params.role = filters.role;
+		if (isSuperAdmin) {
+			if (filters.subscriptionPlan) params.subscriptionPlan = filters.subscriptionPlan;
+			if (filters.subscriptionStatus) params.subscriptionStatus = filters.subscriptionStatus;
+			if (filters.enrollmentFilter) params.enrollmentFilter = filters.enrollmentFilter;
+			if (filters.spendingFilter) params.spendingFilter = filters.spendingFilter;
+			if (filters.minTotalSpent) params.minTotalSpent = filters.minTotalSpent;
+			if (filters.maxTotalSpent) params.maxTotalSpent = filters.maxTotalSpent;
+			if (filters.minPaidCourseSpend) params.minPaidCourseSpend = filters.minPaidCourseSpend;
+			if (filters.maxPaidCourseSpend) params.maxPaidCourseSpend = filters.maxPaidCourseSpend;
+			if (filters.minSubscriptionSpend) params.minSubscriptionSpend = filters.minSubscriptionSpend;
+			if (filters.maxSubscriptionSpend) params.maxSubscriptionSpend = filters.maxSubscriptionSpend;
+		}
+
+		setLoading(true);
 		userService
-			.getAll()
-			.then((res) => setUsers(res.data ?? []))
+			.getAll(params)
+			.then((res) => {
+				setUsers(res.data ?? []);
+				setResultCount(res.total ?? res.data?.length ?? 0);
+				setTotalUsers(res.totalUsers ?? res.total ?? res.data?.length ?? 0);
+			})
 			.finally(() => setLoading(false));
+	};
+
+	const activeFilterCount = Object.entries(filters).filter(([key, value]) => {
+		if (!isSuperAdmin && !['search', 'role'].includes(key)) return false;
+		return Boolean(value);
+	}).length;
+	const hasFilters = activeFilterCount > 0;
+
+	const clearFilters = () => {
+		setFilters(DEFAULT_FILTERS);
+		setFiltersOpen(false);
 	};
 
 	const openCreateDialog = () => {
@@ -224,6 +309,248 @@ export default function UsersPage() {
 					Create User
 				</Button>
 			</Box>
+
+			<Paper
+				variant='outlined'
+				sx={{
+					p: 2,
+					borderRadius: 1,
+					mb: 3,
+					bgcolor: 'background.paper',
+				}}
+			>
+				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: filtersOpen ? 2 : 0 }}>
+					<Box>
+						<Typography variant='subtitle1' sx={{ fontWeight: 900 }}>
+							Filter users
+						</Typography>
+						<Typography variant='body2' color='text.secondary'>
+							{loading
+								? 'Loading users...'
+								: `${resultCount} of ${totalUsers} user${totalUsers !== 1 ? 's' : ''}${hasFilters ? ' match your filters' : ' available'}`}
+						</Typography>
+					</Box>
+					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+						<Chip
+							label={`${totalUsers} total`}
+							size='small'
+							sx={{ fontWeight: 800 }}
+						/>
+						<Chip
+							label={`${resultCount} result${resultCount !== 1 ? 's' : ''}`}
+							size='small'
+							color={hasFilters ? 'primary' : 'default'}
+							sx={{ fontWeight: 800 }}
+						/>
+						{activeFilterCount > 0 && (
+							<Chip
+								label={`${activeFilterCount} filter${activeFilterCount !== 1 ? 's' : ''} active`}
+								size='small'
+								color='primary'
+								variant='outlined'
+								sx={{ fontWeight: 800 }}
+							/>
+						)}
+						{hasFilters && (
+							<Button size='small' onClick={clearFilters}>
+								Clear filters
+							</Button>
+						)}
+						<Button
+							size='small'
+							variant='outlined'
+							startIcon={<TuneIcon />}
+							endIcon={
+								<ExpandMoreIcon
+									sx={{
+										transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+										transition: 'transform 0.2s ease',
+									}}
+								/>
+							}
+							onClick={() => setFiltersOpen((prev) => !prev)}
+						>
+							{filtersOpen ? 'Hide filters' : 'Show filters'}
+						</Button>
+					</Box>
+				</Box>
+
+				<Box
+					sx={{
+						display: filtersOpen ? 'block' : 'none',
+						pt: 2,
+						borderTop: '1px solid',
+						borderColor: 'divider',
+					}}
+				>
+					<Grid container spacing={2}>
+						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+							<TextField
+								placeholder='Search name or email...'
+								value={filters.search}
+								onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+								size='small'
+								fullWidth
+								slotProps={{
+									input: {
+										startAdornment: (
+											<InputAdornment position='start'>
+												<SearchIcon fontSize='small' />
+											</InputAdornment>
+										),
+									},
+								}}
+							/>
+						</Grid>
+						<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+							<FormControl size='small' fullWidth>
+								<InputLabel>Role</InputLabel>
+								<Select
+									label='Role'
+									value={filters.role}
+									onChange={(e) => setFilters((prev) => ({ ...prev, role: e.target.value as '' | IUser['role'] }))}
+								>
+									<MenuItem value=''>All roles</MenuItem>
+									{USER_ROLES.map((role) => (
+										<MenuItem key={role} value={role}>
+											{role}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						</Grid>
+
+						{isSuperAdmin && (
+							<>
+								<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+									<FormControl size='small' fullWidth>
+										<InputLabel>Subscription Plan</InputLabel>
+										<Select
+											label='Subscription Plan'
+											value={filters.subscriptionPlan}
+											onChange={(e) => setFilters((prev) => ({ ...prev, subscriptionPlan: e.target.value }))}
+										>
+											<MenuItem value=''>All plans</MenuItem>
+											{SUBSCRIPTION_PLANS.map((plan) => (
+												<MenuItem key={plan} value={plan}>
+													{plan}
+												</MenuItem>
+											))}
+										</Select>
+									</FormControl>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+									<FormControl size='small' fullWidth>
+										<InputLabel>Subscription Status</InputLabel>
+										<Select
+											label='Subscription Status'
+											value={filters.subscriptionStatus}
+											onChange={(e) => setFilters((prev) => ({ ...prev, subscriptionStatus: e.target.value as SubscriptionStatusFilter }))}
+										>
+											<MenuItem value=''>All statuses</MenuItem>
+											<MenuItem value='active'>Active</MenuItem>
+											<MenuItem value='expired'>Expired</MenuItem>
+											<MenuItem value='inactive'>Inactive</MenuItem>
+										</Select>
+									</FormControl>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+									<FormControl size='small' fullWidth>
+										<InputLabel>Enrollment Activity</InputLabel>
+										<Select
+											label='Enrollment Activity'
+											value={filters.enrollmentFilter}
+											onChange={(e) => setFilters((prev) => ({ ...prev, enrollmentFilter: e.target.value as EnrollmentFilter }))}
+										>
+											{ENROLLMENT_FILTERS.map((option) => (
+												<MenuItem key={option.value || 'all'} value={option.value}>
+													{option.label}
+												</MenuItem>
+											))}
+										</Select>
+									</FormControl>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+									<FormControl size='small' fullWidth>
+										<InputLabel>Spending Activity</InputLabel>
+										<Select
+											label='Spending Activity'
+											value={filters.spendingFilter}
+											onChange={(e) => setFilters((prev) => ({ ...prev, spendingFilter: e.target.value as SpendingFilter }))}
+										>
+											{SPENDING_FILTERS.map((option) => (
+												<MenuItem key={option.value || 'all'} value={option.value}>
+													{option.label}
+												</MenuItem>
+											))}
+										</Select>
+									</FormControl>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+									<TextField
+										label='Min total spend'
+										type='number'
+										size='small'
+										fullWidth
+										value={filters.minTotalSpent}
+										onChange={(e) => setFilters((prev) => ({ ...prev, minTotalSpent: e.target.value }))}
+									/>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+									<TextField
+										label='Max total spend'
+										type='number'
+										size='small'
+										fullWidth
+										value={filters.maxTotalSpent}
+										onChange={(e) => setFilters((prev) => ({ ...prev, maxTotalSpent: e.target.value }))}
+									/>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+									<TextField
+										label='Min paid spend'
+										type='number'
+										size='small'
+										fullWidth
+										value={filters.minPaidCourseSpend}
+										onChange={(e) => setFilters((prev) => ({ ...prev, minPaidCourseSpend: e.target.value }))}
+									/>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+									<TextField
+										label='Max paid spend'
+										type='number'
+										size='small'
+										fullWidth
+										value={filters.maxPaidCourseSpend}
+										onChange={(e) => setFilters((prev) => ({ ...prev, maxPaidCourseSpend: e.target.value }))}
+									/>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+									<TextField
+										label='Min sub spend'
+										type='number'
+										size='small'
+										fullWidth
+										value={filters.minSubscriptionSpend}
+										onChange={(e) => setFilters((prev) => ({ ...prev, minSubscriptionSpend: e.target.value }))}
+									/>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+									<TextField
+										label='Max sub spend'
+										type='number'
+										size='small'
+										fullWidth
+										value={filters.maxSubscriptionSpend}
+										onChange={(e) => setFilters((prev) => ({ ...prev, maxSubscriptionSpend: e.target.value }))}
+									/>
+								</Grid>
+							</>
+						)}
+					</Grid>
+				</Box>
+			</Paper>
 
 			{loading ? (
 				<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>

@@ -280,6 +280,7 @@ export interface ApiResponse<T = unknown> {
   message?: string;
   data?: T;
   total?: number;
+  totalUsers?: number;
   pagination?: IPaginationMeta;
 }
 

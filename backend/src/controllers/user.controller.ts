@@ -22,9 +22,42 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getUsers = asyncHandler(async (req: Request, res: Response) => {
-  const users = await User.find().select('-password').sort({ createdAt: -1 });
+  const {
+    search,
+    role,
+    subscriptionPlan,
+    subscriptionStatus,
+    enrollmentFilter,
+    spendingFilter,
+    minTotalSpent,
+    maxTotalSpent,
+    minPaidCourseSpend,
+    maxPaidCourseSpend,
+    minSubscriptionSpend,
+    maxSubscriptionSpend,
+  } = req.query as Record<string, string>;
+
+  const validRoles: UserRole[] = ['Super Admin', 'Admin', 'Moderator', 'Teacher', 'Student'];
+  const userFilter: Record<string, unknown> = {};
+  if (search?.trim()) {
+    userFilter.$or = [
+      { name: { $regex: search.trim(), $options: 'i' } },
+      { email: { $regex: search.trim(), $options: 'i' } },
+    ];
+  }
+  if (role && validRoles.includes(role as UserRole)) {
+    userFilter.role = role;
+  }
+
+  const totalUsers = await User.countDocuments();
+  const users = await User.find(userFilter).select('-password').sort({ createdAt: -1 });
   if (req.user.role !== 'Super Admin') {
-    res.status(200).json({ success: true, data: users, total: users.length });
+    res.status(200).json({
+      success: true,
+      data: users,
+      total: users.length,
+      totalUsers,
+    });
     return;
   }
 
@@ -106,6 +139,14 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
     return acc;
   }, {});
 
+  const numberFilterMatches = (value: number, min?: string, max?: string) => {
+    const minValue = min !== undefined && min !== '' ? Number(min) : null;
+    const maxValue = max !== undefined && max !== '' ? Number(max) : null;
+    if (minValue !== null && Number.isFinite(minValue) && value < minValue) return false;
+    if (maxValue !== null && Number.isFinite(maxValue) && value > maxValue) return false;
+    return true;
+  };
+
   const usersWithEnrollmentSummary = users.map((user) => {
     const userObject = user.toObject();
     const paidCourseAmount = paidCourseSpendByUser[String(user._id)] ?? 0;
@@ -126,7 +167,47 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
     };
   });
 
-  res.status(200).json({ success: true, data: usersWithEnrollmentSummary, total: users.length });
+  const now = new Date();
+  const filteredUsers = usersWithEnrollmentSummary.filter((user) => {
+    const enrollment = user.enrollmentSummary;
+    const spending = user.spendingSummary;
+    const activeSubscription = user.activeSubscription;
+
+    if (subscriptionPlan && activeSubscription?.plan !== subscriptionPlan) return false;
+
+    if (subscriptionStatus === 'active' && (!activeSubscription?.endDate || new Date(activeSubscription.endDate) <= now)) return false;
+    if (subscriptionStatus === 'expired' && (!activeSubscription?.endDate || new Date(activeSubscription.endDate) > now)) return false;
+    if (subscriptionStatus === 'inactive' && activeSubscription?.endDate) return false;
+
+    if (enrollmentFilter === 'has_total' && enrollment.total === 0) return false;
+    if (enrollmentFilter === 'none_total' && enrollment.total > 0) return false;
+    if (enrollmentFilter === 'has_free' && enrollment.free === 0) return false;
+    if (enrollmentFilter === 'none_free' && enrollment.free > 0) return false;
+    if (enrollmentFilter === 'has_paid' && enrollment.paid === 0) return false;
+    if (enrollmentFilter === 'none_paid' && enrollment.paid > 0) return false;
+    if (enrollmentFilter === 'has_subscription' && enrollment.subscription === 0) return false;
+    if (enrollmentFilter === 'none_subscription' && enrollment.subscription > 0) return false;
+
+    if (spendingFilter === 'has_total' && spending.total <= 0) return false;
+    if (spendingFilter === 'none_total' && spending.total > 0) return false;
+    if (spendingFilter === 'has_paid_course' && spending.paidCourses <= 0) return false;
+    if (spendingFilter === 'none_paid_course' && spending.paidCourses > 0) return false;
+    if (spendingFilter === 'has_subscription' && spending.subscriptions <= 0) return false;
+    if (spendingFilter === 'none_subscription' && spending.subscriptions > 0) return false;
+
+    if (!numberFilterMatches(spending.total, minTotalSpent, maxTotalSpent)) return false;
+    if (!numberFilterMatches(spending.paidCourses, minPaidCourseSpend, maxPaidCourseSpend)) return false;
+    if (!numberFilterMatches(spending.subscriptions, minSubscriptionSpend, maxSubscriptionSpend)) return false;
+
+    return true;
+  });
+
+  res.status(200).json({
+    success: true,
+    data: filteredUsers,
+    total: filteredUsers.length,
+    totalUsers,
+  });
 });
 
 export const getUserById = asyncHandler(async (req: Request, res: Response) => {
