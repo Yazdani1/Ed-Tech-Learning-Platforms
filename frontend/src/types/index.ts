@@ -485,8 +485,13 @@ export interface IPublicQuizSection {
   banks: IQuizBank[];
 }
 
+export type IPublicCourse = Pick<
+  ICourse,
+  '_id' | 'title' | 'subtitle' | 'coverImage' | 'pricing' | 'price' | 'listPrice' | 'discountPrice' | 'discountPercent' | 'includedInSubscription'
+>;
+
 export interface IPublicCourseQuizTree {
-  course: Pick<ICourse, '_id' | 'title' | 'subtitle' | 'coverImage'>;
+  course: IPublicCourse;
   sections: IPublicQuizSection[];
   lockedBankCount: number;
   lockedQuestionCount: number;

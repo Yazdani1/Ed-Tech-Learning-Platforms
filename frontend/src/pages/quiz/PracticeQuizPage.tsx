@@ -14,7 +14,6 @@ import {
   LinearProgress,
   List,
   ListItemButton,
-  ListItemText,
   Pagination,
   Paper,
   Stack,
@@ -36,10 +35,10 @@ import toast from 'react-hot-toast';
 import { quizBankService } from '../../services/quizBank.service';
 import type {
   IPublicQuizSection,
+  IPublicCourse,
   IQuizBank,
   IQuizAttempt,
   IQuizQuestion,
-  ICourse,
 } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
 import PublicNavbar from '../../components/layout/PublicNavbar';
@@ -77,9 +76,7 @@ export default function PracticeQuizPage() {
   const isLoggedIn = Boolean(user);
 
   // ── Course list ──────────────────────────────────────────────────────────
-  const [courses, setCourses] = useState<
-    Pick<ICourse, '_id' | 'title' | 'subtitle' | 'coverImage'>[]
-  >([]);
+  const [courses, setCourses] = useState<IPublicCourse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -308,7 +305,7 @@ export default function PracticeQuizPage() {
         {/* ── Column 1: Course list ─────────────────────────────────── */}
         <Box
           sx={{
-            width: 270,
+            width: 320,
             flexShrink: 0,
             borderRight: '1px solid',
             borderColor: 'divider',
@@ -396,30 +393,62 @@ export default function PracticeQuizPage() {
                     >
                       {!course.coverImage && initials}
                     </Avatar>
-                    <ListItemText
-                      primary={course.title}
-                      secondary={course.subtitle}
-                      slotProps={{
-                        primary: {
-                          sx: {
-                            fontWeight: isSelected ? 700 : 500,
-                            fontSize: '0.82rem',
-                            lineHeight: 1.35,
-                            color: isSelected ? 'primary.main' : 'text.primary',
-                          },
-                        },
-                        secondary: {
-                          sx: {
-                            fontSize: '0.72rem',
-                            mt: 0.25,
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontWeight: isSelected ? 700 : 500,
+                          fontSize: '0.82rem',
+                          lineHeight: 1.35,
+                          color: isSelected ? 'primary.main' : 'text.primary',
+                        }}
+                      >
+                        {course.title}
+                      </Typography>
+                      {course.subtitle && (
+                        <Typography
+                          variant='caption'
+                          color='text.secondary'
+                          sx={{
                             display: '-webkit-box',
-                            WebkitLineClamp: 2,
+                            WebkitLineClamp: 1,
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
-                          },
-                        },
-                      }}
-                    />
+                            mt: 0.2,
+                            fontSize: '0.71rem',
+                          }}
+                        >
+                          {course.subtitle}
+                        </Typography>
+                      )}
+                      {/* Price row */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
+                        {course.pricing === 'Free' ? (
+                          <Chip label='Free' size='small' color='success' sx={{ fontSize: '0.62rem', height: 16 }} />
+                        ) : (
+                          <>
+                            <Typography variant='caption' sx={{ fontWeight: 800, color: 'text.primary', fontSize: '0.78rem' }}>
+                              ${course.discountPrice ?? course.price ?? course.listPrice ?? 0}
+                            </Typography>
+                            {course.discountPrice != null && (course.listPrice ?? course.price) != null && (
+                              <Typography variant='caption' sx={{ textDecoration: 'line-through', color: 'text.disabled', fontSize: '0.7rem' }}>
+                                ${course.listPrice ?? course.price}
+                              </Typography>
+                            )}
+                            {(course.discountPercent ?? 0) > 0 && (
+                              <Chip
+                                label={`-${course.discountPercent}%`}
+                                size='small'
+                                color='error'
+                                sx={{ fontSize: '0.6rem', height: 16 }}
+                              />
+                            )}
+                          </>
+                        )}
+                        {course.includedInSubscription && (
+                          <Chip label='Sub' size='small' color='info' variant='outlined' sx={{ fontSize: '0.6rem', height: 16 }} />
+                        )}
+                      </Box>
+                    </Box>
                   </ListItemButton>
                 );
               })}
@@ -633,7 +662,7 @@ export default function PracticeQuizPage() {
         {/* ── Column 3: Section / bank tree (right) ─────────────────── */}
         <Box
           sx={{
-            width: 310,
+            width: 380,
             flexShrink: 0,
             borderLeft: '1px solid',
             borderColor: 'divider',
@@ -880,7 +909,7 @@ export default function PracticeQuizPage() {
           )}
 
           {/* Buy card — shown when there are locked banks */}
-          {selectedCourseId && !treeLoading && lockedBankCount > 0 && (
+          {selectedCourseId && !treeLoading && lockedBankCount > 0 && selectedCourse && (
             <>
               <Divider />
               <Box
@@ -901,11 +930,41 @@ export default function PracticeQuizPage() {
                 <Typography
                   variant='caption'
                   color='text.secondary'
-                  sx={{ display: 'block', mb: 1.5, lineHeight: 1.4 }}
+                  sx={{ display: 'block', mb: 1.25, lineHeight: 1.4 }}
                 >
                   {lockedQuestionCount} question{lockedQuestionCount !== 1 ? 's' : ''} available
                   with full course access
                 </Typography>
+
+                {/* Price display */}
+                {selectedCourse.pricing === 'Free' ? (
+                  <Chip label='Free' color='success' size='small' sx={{ mb: 1.25 }} />
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 0.75, mb: 1.25, flexWrap: 'wrap' }}>
+                    <Typography variant='h6' sx={{ fontWeight: 800, color: 'warning.dark', lineHeight: 1 }}>
+                      ${selectedCourse.discountPrice ?? selectedCourse.price ?? selectedCourse.listPrice ?? 0}
+                    </Typography>
+                    {selectedCourse.discountPrice != null && (selectedCourse.listPrice ?? selectedCourse.price) != null && (
+                      <Typography variant='body2' sx={{ textDecoration: 'line-through', color: 'text.disabled' }}>
+                        ${selectedCourse.listPrice ?? selectedCourse.price}
+                      </Typography>
+                    )}
+                    {(selectedCourse.discountPercent ?? 0) > 0 && (
+                      <Chip
+                        label={`-${selectedCourse.discountPercent}%`}
+                        size='small'
+                        color='error'
+                        sx={{ fontSize: '0.65rem', height: 18 }}
+                      />
+                    )}
+                  </Box>
+                )}
+                {selectedCourse.includedInSubscription && (
+                  <Typography variant='caption' color='info.main' sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
+                    Also included in subscription
+                  </Typography>
+                )}
+
                 <Button
                   variant='contained'
                   color='warning'

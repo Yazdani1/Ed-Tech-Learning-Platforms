@@ -1,5 +1,5 @@
 import api from './api';
-import type { IQuizBank, IQuizAttempt, IPublicCourseQuizTree, ICourse } from '../types/index';
+import type { IQuizBank, IQuizAttempt, IPublicCourseQuizTree, IPublicCourse } from '../types/index';
 
 export const quizBankService = {
   getByCourse: (courseId: string) =>
@@ -59,9 +59,7 @@ export const quizBankService = {
 
   // Public (no auth required)
   getPublicCourses: () =>
-    api.get<Pick<ICourse, '_id' | 'title' | 'subtitle' | 'coverImage'>[]>(
-      '/quiz-bank/public/courses',
-    ),
+    api.get<IPublicCourse[]>('/quiz-bank/public/courses'),
 
   getPublicCourseTree: (courseId: string) =>
     api.get<IPublicCourseQuizTree>(`/quiz-bank/public/course/${courseId}`),

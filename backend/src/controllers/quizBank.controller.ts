@@ -310,7 +310,7 @@ export const getPublicCoursesWithQuizzes = asyncHandler(
 
     const courses = await Course.find(
       { _id: { $in: courseIds } },
-      'title subtitle coverImage',
+      'title subtitle coverImage pricing price listPrice discountPrice discountPercent includedInSubscription',
     );
 
     res.status(200).json({ success: true, data: courses });
@@ -321,7 +321,10 @@ export const getPublicCourseQuizBanks = asyncHandler(
   async (req: Request, res: Response) => {
     const { courseId } = req.params;
 
-    const course = await Course.findById(courseId, 'title subtitle coverImage');
+    const course = await Course.findById(
+      courseId,
+      'title subtitle coverImage pricing price listPrice discountPrice discountPercent includedInSubscription',
+    );
     if (!course) throw new AppError('Course not found', 404);
 
     const sections = await QuizSection.find({ course: courseId }).sort({
