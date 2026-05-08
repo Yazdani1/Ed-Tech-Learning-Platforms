@@ -6,8 +6,13 @@ export const subscriptionPlanConfigService = {
 
   upsert: (data: {
     plan: SubscriptionPlan;
-    price: number;
-    duration: number;
+    price?: number;
+    duration?: number;
+    billingOptions: Array<{
+      label: string;
+      duration: number;
+      price: number;
+    }>;
     features: string[];
     badge?: string;
     color?: string;

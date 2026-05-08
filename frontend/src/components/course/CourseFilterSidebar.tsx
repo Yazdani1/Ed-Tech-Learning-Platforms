@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
 	Box,
 	Checkbox,
@@ -10,9 +11,9 @@ import {
 	Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import type { ICategory, ICourseType, CoursePricing, SubscriptionPlan } from '../../types/index';
 
-const PLANS: SubscriptionPlan[] = ['Basic', 'Premium', 'Gold', 'Quiz Only'];
 const PRICING: CoursePricing[] = ['Free', 'Paid'];
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -62,6 +63,15 @@ export default function CourseFilterSidebar({
 	activeFilterCount,
 	onClearAll,
 }: Props) {
+	const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+
+	useEffect(() => {
+		subscriptionPlanConfigService
+			.getAll()
+			.then((res) => setSubscriptionPlans((res.data ?? []).map((plan) => plan.plan)))
+			.catch(() => setSubscriptionPlans([]));
+	}, []);
+
 	return (
 		<Box>
 			{/* The Paper itself scrolls independently — sections stay visible without scrolling the whole page */}
@@ -206,7 +216,7 @@ export default function CourseFilterSidebar({
 						</Typography>
 						<Box sx={{ maxHeight: 200, overflowY: 'auto', pr: 0.5 }}>
 							<FormGroup>
-								{PLANS.map((plan) => (
+								{subscriptionPlans.map((plan) => (
 									<FormControlLabel
 										key={plan}
 										control={

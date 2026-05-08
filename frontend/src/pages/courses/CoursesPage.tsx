@@ -33,6 +33,7 @@ import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
 import { courseTypeService } from '../../services/courseType.service';
 import { teacherService } from '../../services/teacher.service';
+import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import CourseCard, { CourseCardSkeleton } from '../../components/ui/CourseCard';
 import BulkEditModal from '../../components/course/BulkEditModal';
 import type { ICategory, ICourse, ICourseType, ITeacher, CoursePricing, CourseStatus, CourseVisibility, SubscriptionPlan } from '../../types/index';
@@ -42,7 +43,6 @@ import { formatDate } from '../../utils/dateTime';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 const COURSE_CARD_SKELETONS = Array.from({ length: 8 });
-const SUBSCRIPTION_PLANS: SubscriptionPlan[] = ['Basic', 'Premium', 'Gold', 'Quiz Only'];
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 type ActivityFilter = '' | 'has_lifetime' | 'none_lifetime' | 'has_this_month' | 'none_this_month' | 'has_previous_month' | 'none_previous_month';
 
@@ -78,6 +78,7 @@ export default function CoursesPage() {
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
+	const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
 	const [moderatorFilters, setModeratorFilters] = useState<{
 		courseType: string;
 		category: string;
@@ -107,16 +108,18 @@ export default function CoursesPage() {
 
 	useEffect(() => {
 		if (!isAdmin || isStudent) return;
-		Promise.all([categoryService.getAll(), courseTypeService.getAll(), teacherService.getAll()])
-			.then(([catRes, typeRes, teacherRes]) => {
+		Promise.all([categoryService.getAll(), courseTypeService.getAll(), teacherService.getAll(), subscriptionPlanConfigService.getAll()])
+			.then(([catRes, typeRes, teacherRes, planRes]) => {
 				setCategories(catRes.data ?? []);
 				setCourseTypes(typeRes.data ?? []);
 				setTeachers(teacherRes.data ?? []);
+				setSubscriptionPlans((planRes.data ?? []).map((plan) => plan.plan));
 			})
 			.catch(() => {
 				setCategories([]);
 				setCourseTypes([]);
 				setTeachers([]);
+				setSubscriptionPlans([]);
 			});
 	}, [isAdmin, isStudent]);
 
@@ -466,7 +469,7 @@ export default function CoursesPage() {
 									}
 								>
 									<MenuItem value=''>All plans</MenuItem>
-									{SUBSCRIPTION_PLANS.map((plan) => (
+									{subscriptionPlans.map((plan) => (
 										<MenuItem key={plan} value={plan}>
 											{plan}
 										</MenuItem>

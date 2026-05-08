@@ -10,6 +10,8 @@ export interface IUser extends Document {
   avatarPublicId?: string;
   activeSubscription?: {
     plan: SubscriptionPlan;
+    billingDuration?: number;
+    billingLabel?: string;
     startDate: Date;
     endDate: Date;
   };
@@ -31,7 +33,9 @@ const userSchema = new Schema<IUser>(
     avatar: String,
     avatarPublicId: { type: String, select: false },
     activeSubscription: {
-      plan: { type: String, enum: ['Basic', 'Premium', 'Gold', 'Quiz Only'] },
+      plan: { type: String, trim: true },
+      billingDuration: { type: Number, min: 1 },
+      billingLabel: { type: String },
       startDate: Date,
       endDate: Date,
     },

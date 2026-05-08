@@ -31,6 +31,7 @@ import ItemActionMenu from '../../components/common/ItemActionMenu';
 import { useAuth } from '../../context/useAuth';
 import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { userService } from '../../services/user.service';
+import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import type { IPaginationMeta, IUser } from '../../types/index';
 import { formatDateTime } from '../../utils/dateTime';
 
@@ -48,8 +49,6 @@ const USER_CARD_SKELETONS = Array.from({ length: USERS_PAGE_SIZE });
 type SubscriptionStatusFilter = '' | 'active' | 'expired' | 'inactive';
 type EnrollmentFilter = '' | 'has_total' | 'none_total' | 'has_free' | 'none_free' | 'has_paid' | 'none_paid' | 'has_subscription' | 'none_subscription';
 type SpendingFilter = '' | 'has_total' | 'none_total' | 'has_paid_course' | 'none_paid_course' | 'has_subscription' | 'none_subscription';
-
-const SUBSCRIPTION_PLANS = ['Basic', 'Premium', 'Gold', 'Quiz Only'] as const;
 
 const ENROLLMENT_FILTERS: { label: string; value: EnrollmentFilter }[] = [
 	{ label: 'All enrollment activity', value: '' },
@@ -225,7 +224,16 @@ export default function UsersPage() {
 	const [totalUsers, setTotalUsers] = useState(0);
 	const [resultCount, setResultCount] = useState(0);
 	const [saving, setSaving] = useState(false);
+	const [subscriptionPlans, setSubscriptionPlans] = useState<string[]>([]);
 	const isSuperAdmin = currentUser?.role === 'Super Admin';
+
+	useEffect(() => {
+		if (!isSuperAdmin) return;
+		subscriptionPlanConfigService
+			.getAll()
+			.then((res) => setSubscriptionPlans((res.data ?? []).map((plan) => plan.plan)))
+			.catch(() => setSubscriptionPlans([]));
+	}, [isSuperAdmin]);
 
 	useEffect(() => {
 		loadUsers();
@@ -513,7 +521,7 @@ export default function UsersPage() {
 											onChange={(e) => updateFilters({ subscriptionPlan: e.target.value })}
 										>
 											<MenuItem value=''>All plans</MenuItem>
-											{SUBSCRIPTION_PLANS.map((plan) => (
+											{subscriptionPlans.map((plan) => (
 												<MenuItem key={plan} value={plan}>
 													{plan}
 												</MenuItem>

@@ -1,5 +1,5 @@
 export type UserRole = 'Super Admin' | 'Admin' | 'Moderator' | 'Teacher' | 'Student';
-export type SubscriptionPlan = 'Basic' | 'Premium' | 'Gold' | 'Quiz Only';
+export type SubscriptionPlan = string;
 export type CourseVisibility = 'Public' | 'Private';
 export type CoursePricing = 'Free' | 'Paid';
 export type CourseStatus = 'Draft' | 'Published';
@@ -12,6 +12,8 @@ export interface IUser {
   avatar?: string;
   activeSubscription?: {
     plan: SubscriptionPlan;
+    billingDuration?: number;
+    billingLabel?: string;
     startDate: string;
     endDate: string;
   };
@@ -122,6 +124,9 @@ export interface ISubscription {
   _id: string;
   user: Pick<IUser, '_id' | 'name' | 'email'>;
   plan: SubscriptionPlan;
+  billingDuration?: number;
+  billingLabel?: string;
+  pricePaid?: number;
   status: 'Active' | 'Expired' | 'Cancelled';
   startDate: string;
   endDate: string;
@@ -133,6 +138,11 @@ export interface ISubscriptionPlanConfig {
   plan: SubscriptionPlan;
   price: number;
   duration: number;
+  billingOptions: Array<{
+    label: string;
+    duration: number;
+    price: number;
+  }>;
   features: string[];
   badge?: string;
   color?: string;

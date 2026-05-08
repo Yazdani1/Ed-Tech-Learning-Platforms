@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed:discount-courses": "ts-node src/scripts/seed-discount-courses.ts",
+    "seed:subscriptions": "ts-node src/scripts/seed-subscriptions.ts",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
   },

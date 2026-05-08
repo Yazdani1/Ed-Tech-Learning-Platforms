@@ -6,6 +6,31 @@ import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { SubscriptionPlan } from '../types/index';
 
+const normalizeBillingOptions = (
+  billingOptions: Array<{ label?: string; duration?: number; price?: number }> | undefined,
+  fallbackPrice?: number,
+  fallbackDuration?: number,
+) => {
+  const normalized = (billingOptions ?? [])
+    .map((option) => ({
+      label: String(option.label ?? '').trim(),
+      duration: Number(option.duration),
+      price: Number(option.price),
+    }))
+    .filter((option) => option.label && option.duration > 0 && option.price >= 0);
+
+  if (normalized.length > 0) return normalized;
+  if (fallbackPrice !== undefined && fallbackDuration) {
+    const duration = Number(fallbackDuration);
+    return [{
+      label: duration === 1 ? 'Monthly' : `${duration} months`,
+      duration,
+      price: Number(fallbackPrice),
+    }];
+  }
+  return [];
+};
+
 export const getAllPlanConfigs = asyncHandler(async (_req: Request, res: Response) => {
   const [configs, countAgg] = await Promise.all([
     SubscriptionPlanConfig.find({ isActive: true }).sort({ price: 1 }),
@@ -21,6 +46,9 @@ export const getAllPlanConfigs = asyncHandler(async (_req: Request, res: Respons
 
   const data = configs.map((c) => ({
     ...c.toObject(),
+    billingOptions: c.billingOptions?.length
+      ? c.billingOptions
+      : normalizeBillingOptions(undefined, c.price, c.duration),
     courseCount: countMap[c.plan] ?? 0,
   }));
 
@@ -28,25 +56,31 @@ export const getAllPlanConfigs = asyncHandler(async (_req: Request, res: Respons
 });
 
 export const upsertPlanConfig = asyncHandler(async (req: Request, res: Response) => {
-  const { plan, price, duration, features, badge, color } = req.body as {
+  const { plan, price, duration, billingOptions, features, badge, color } = req.body as {
     plan: SubscriptionPlan;
-    price: number;
-    duration: number;
+    price?: number;
+    duration?: number;
+    billingOptions?: Array<{ label?: string; duration?: number; price?: number }>;
     features: string[];
     badge?: string;
     color?: string;
   };
 
-  if (!plan || price === undefined || !duration) {
-    throw new AppError('plan, price, and duration are required', 400);
+  const planName = String(plan ?? '').trim();
+  const normalizedBillingOptions = normalizeBillingOptions(billingOptions, price, duration);
+
+  if (!planName || normalizedBillingOptions.length === 0) {
+    throw new AppError('plan and at least one billing option are required', 400);
   }
 
+  const primaryOption = normalizedBillingOptions[0];
   const config = await SubscriptionPlanConfig.findOneAndUpdate(
-    { plan },
+    { plan: planName },
     {
-      plan,
-      price,
-      duration,
+      plan: planName,
+      price: primaryOption.price,
+      duration: primaryOption.duration,
+      billingOptions: normalizedBillingOptions,
       features: features ?? [],
       badge,
       color,

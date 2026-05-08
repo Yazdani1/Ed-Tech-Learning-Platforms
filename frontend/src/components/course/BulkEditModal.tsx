@@ -32,9 +32,9 @@ import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
 import { courseTypeService } from '../../services/courseType.service';
 import { teacherService } from '../../services/teacher.service';
+import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import type { ICourse, ICategory, ICourseType, ITeacher, SubscriptionPlan } from '../../types/index';
 
-const PLANS: SubscriptionPlan[] = ['Basic', 'Premium', 'Gold', 'Quiz Only'];
 const STATUS_OPTIONS = ['Published', 'Draft'] as const;
 const VISIBILITY_OPTIONS = ['Public', 'Private'] as const;
 const PRICING_OPTIONS = ['Free', 'Paid'] as const;
@@ -120,6 +120,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
+	const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
 	const [refLoading, setRefLoading] = useState(false);
 
 	// ── Tab ──────────────────────────────────────────────────────
@@ -145,11 +146,12 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 	useEffect(() => {
 		if (!open) return;
 		setRefLoading(true);
-		Promise.all([categoryService.getAll(), courseTypeService.getAll(), teacherService.getAll()])
-			.then(([cats, cts, tchs]) => {
+		Promise.all([categoryService.getAll(), courseTypeService.getAll(), teacherService.getAll(), subscriptionPlanConfigService.getAll()])
+			.then(([cats, cts, tchs, plans]) => {
 				setCategories(cats.data ?? []);
 				setCourseTypes(cts.data ?? []);
 				setTeachers(tchs.data ?? []);
+				setSubscriptionPlans((plans.data ?? []).map((plan) => plan.plan));
 			})
 			.finally(() => setRefLoading(false));
 	}, [open]);
@@ -675,7 +677,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 											<Box sx={{ mt: 0.5 }}>
 												<FormLabel sx={{ fontSize: '0.78rem', fontWeight: 600 }}>Allowed plans</FormLabel>
 												<FormGroup row sx={{ mt: 0.5 }}>
-													{PLANS.map((plan) => (
+													{subscriptionPlans.map((plan) => (
 														<FormControlLabel
 															key={plan}
 															control={

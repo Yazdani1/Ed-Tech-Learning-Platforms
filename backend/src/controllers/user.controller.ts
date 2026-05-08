@@ -153,7 +153,7 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
       {
         $group: {
           _id: '$user',
-          amount: { $sum: { $ifNull: ['$planConfig.price', 0] } },
+          amount: { $sum: { $ifNull: ['$pricePaid', { $ifNull: ['$planConfig.price', 0] }] } },
         },
       },
     ]);
@@ -275,7 +275,7 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
           {
             $group: {
               _id: '$user',
-              amount: { $sum: { $ifNull: ['$planConfig.price', 0] } },
+              amount: { $sum: { $ifNull: ['$pricePaid', { $ifNull: ['$planConfig.price', 0] }] } },
             },
           },
         ],

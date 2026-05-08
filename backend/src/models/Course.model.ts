@@ -52,7 +52,7 @@ const courseSchema = new Schema<ICourse>(
     discountPercent: { type: Number, min: 0, max: 100 },
     discountEndsAt: { type: Date },
     includedInSubscription: { type: Boolean, default: false },
-    allowedSubscriptionPlans: [{ type: String, enum: ['Basic', 'Premium', 'Gold', 'Quiz Only'] }],
+    allowedSubscriptionPlans: [{ type: String, trim: true }],
     status: { type: String, enum: ['Draft', 'Published'], default: 'Draft' },
     publishedAt: { type: Date },
     whatYouWillLearn: [String],

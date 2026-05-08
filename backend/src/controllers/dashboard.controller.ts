@@ -101,7 +101,7 @@ export const getDashboardSummary = asyncHandler(
 		}, 0);
 
 		const subscriptionRevenue = subscriptions.reduce(
-			(sum, subscription) => sum + (planPrices.get(subscription.plan) ?? 0),
+			(sum, subscription) => sum + (subscription.pricePaid ?? planPrices.get(subscription.plan) ?? 0),
 			0,
 		);
 

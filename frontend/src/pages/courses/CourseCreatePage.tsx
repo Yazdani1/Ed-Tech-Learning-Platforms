@@ -36,6 +36,7 @@ import { courseService } from '../../services/course.service';
 import { categoryService } from '../../services/category.service';
 import { courseTypeService } from '../../services/courseType.service';
 import { teacherService } from '../../services/teacher.service';
+import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import { announcementService } from '../../services/announcement.service';
 import { studyCurriculumService } from '../../services/studyCurriculum.service';
 import { studyMaterialService } from '../../services/studyMaterial.service';
@@ -61,13 +62,6 @@ import type {
 	IStudyMaterial,
 	SubscriptionPlan,
 } from '../../types/index';
-
-const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
-	'Basic',
-	'Premium',
-	'Gold',
-	'Quiz Only',
-];
 
 const blankLiveClassLecture = (): IStudyCurriculumLecture => ({
 	title: '',
@@ -367,6 +361,7 @@ export default function CourseCreatePage() {
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
+	const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
 	const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
 	const [annForm, setAnnForm] = useState({ title: '', description: '' });
 	const [annPosting, setAnnPosting] = useState(false);
@@ -428,12 +423,14 @@ export default function CourseCreatePage() {
 			categoryService.getAll(),
 			courseTypeService.getAll(),
 			teacherService.getAll(),
-		]).then(([catRes, ctRes, tchRes]) => {
+			subscriptionPlanConfigService.getAll(),
+		]).then(([catRes, ctRes, tchRes, planRes]) => {
 			const cats = catRes.data ?? [];
 			const types = ctRes.data ?? [];
 			setCategories(cats);
 			setCourseTypes(types);
 			setTeachers(tchRes.data ?? []);
+			setSubscriptionPlans((planRes.data ?? []).map((plan) => plan.plan));
 
 			// Auto-create draft for new courses
 			if (!id && !autoCreating.current) {
@@ -1351,7 +1348,7 @@ export default function CourseCreatePage() {
 									<Box sx={{ mt: 1 }}>
 										<FormLabel>Allowed Subscription Plans</FormLabel>
 										<FormGroup row>
-											{SUBSCRIPTION_PLANS.map((plan) => (
+											{subscriptionPlans.map((plan) => (
 												<FormControlLabel
 													key={plan}
 													control={

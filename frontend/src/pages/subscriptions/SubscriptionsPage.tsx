@@ -34,59 +34,49 @@ import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { subscriptionService } from '../../services/subscription.service';
 import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import { userService } from '../../services/user.service';
-import type {
-	ISubscription,
-	ISubscriptionPlanConfig,
-	IUser,
-	SubscriptionPlan,
-} from '../../types/index';
+import type { ISubscription, ISubscriptionPlanConfig, IUser } from '../../types/index';
 import { formatDate } from '../../utils/dateTime';
 
-const SUBSCRIPTION_PLANS: SubscriptionPlan[] = ['Basic', 'Premium', 'Gold', 'Quiz Only'];
-
-const PLAN_COLORS: Record<SubscriptionPlan, string> = {
+const PLAN_COLORS: Record<string, string> = {
 	Basic: '#0284c7',
 	Premium: '#7c3aed',
 	Gold: '#d97706',
 	'Quiz Only': '#059669',
 };
 
+const getBillingOptions = (plan: ISubscriptionPlanConfig) =>
+	plan.billingOptions?.length
+		? plan.billingOptions
+		: [{ label: plan.duration === 1 ? 'Monthly' : `${plan.duration} months`, duration: plan.duration, price: plan.price }];
+
+const blankBillingOption = () => ({ label: '', duration: '1', price: '' });
+
 export default function SubscriptionsPage() {
 	const { confirm } = useConfirmModal();
 	const [activeTab, setActiveTab] = useState(0);
-
-	// --- Plan Config state ---
 	const [planConfigs, setPlanConfigs] = useState<ISubscriptionPlanConfig[]>([]);
 	const [planLoading, setPlanLoading] = useState(true);
 	const [planDialogOpen, setPlanDialogOpen] = useState(false);
-	const [planForm, setPlanForm] = useState<{
-		plan: SubscriptionPlan;
-		price: string;
-		duration: string;
-		badge: string;
-		color: string;
-		features: string[];
-	}>({
-		plan: 'Basic',
-		price: '',
-		duration: '1',
+	const [planSaving, setPlanSaving] = useState(false);
+	const [planForm, setPlanForm] = useState({
+		plan: '',
+		billingOptions: [{ label: 'Monthly', duration: '1', price: '' }],
 		badge: '',
 		color: '',
 		features: [''],
 	});
-	const [planSaving, setPlanSaving] = useState(false);
 
-	// --- Active Subscriptions state ---
 	const [subscriptions, setSubscriptions] = useState<ISubscription[]>([]);
 	const [users, setUsers] = useState<IUser[]>([]);
 	const [subsLoading, setSubsLoading] = useState(true);
 	const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+	const [assignSaving, setAssignSaving] = useState(false);
 	const [assignForm, setAssignForm] = useState({
 		userId: '',
-		plan: 'Basic' as SubscriptionPlan,
+		plan: '',
+		billingDuration: '',
 		endDate: '',
 	});
-	const [assignSaving, setAssignSaving] = useState(false);
 
 	useEffect(() => {
 		loadPlanConfigs();
@@ -109,43 +99,59 @@ export default function SubscriptionsPage() {
 		]).finally(() => setSubsLoading(false));
 	};
 
-	// --- Plan Config handlers ---
 	const handleOpenPlanDialog = (existing?: ISubscriptionPlanConfig) => {
 		if (existing) {
 			setPlanForm({
 				plan: existing.plan,
-				price: String(existing.price),
-				duration: String(existing.duration),
+				billingOptions: getBillingOptions(existing).map((option) => ({
+					label: option.label,
+					duration: String(option.duration),
+					price: String(option.price),
+				})),
 				badge: existing.badge ?? '',
 				color: existing.color ?? '',
 				features: existing.features.length ? existing.features : [''],
 			});
 		} else {
-			setPlanForm({ plan: 'Basic', price: '', duration: '1', badge: '', color: '', features: [''] });
+			setPlanForm({
+				plan: '',
+				billingOptions: [{ label: 'Monthly', duration: '1', price: '' }],
+				badge: '',
+				color: '',
+				features: [''],
+			});
 		}
 		setPlanDialogOpen(true);
 	};
 
 	const handleSavePlan = async () => {
-		if (!planForm.plan || !planForm.price || !planForm.duration) {
-			toast.error('Plan, price, and duration are required');
+		const billingOptions = planForm.billingOptions
+			.map((option) => ({
+				label: option.label.trim(),
+				duration: Number(option.duration),
+				price: Number(option.price),
+			}))
+			.filter((option) => option.label && option.duration > 0 && option.price >= 0);
+
+		if (!planForm.plan.trim() || billingOptions.length === 0) {
+			toast.error('Plan name and at least one billing option are required');
 			return;
 		}
+
 		setPlanSaving(true);
 		try {
 			await subscriptionPlanConfigService.upsert({
-				plan: planForm.plan,
-				price: Number(planForm.price),
-				duration: Number(planForm.duration),
+				plan: planForm.plan.trim(),
+				billingOptions,
 				features: planForm.features.filter((f) => f.trim()),
 				badge: planForm.badge || undefined,
 				color: planForm.color || undefined,
 			});
-			toast.success('Plan card saved');
+			toast.success('Plan saved');
 			loadPlanConfigs();
 			setPlanDialogOpen(false);
 		} catch {
-			toast.error('Failed to save plan card');
+			toast.error('Failed to save plan');
 		} finally {
 			setPlanSaving(false);
 		}
@@ -153,47 +159,76 @@ export default function SubscriptionsPage() {
 
 	const handleDeletePlan = async (id: string) => {
 		const confirmed = await confirm({
-			title: 'Delete Plan Card',
-			message: 'Delete this plan card?',
+			title: 'Delete Plan',
+			message: 'Delete this subscription plan?',
 			confirmText: 'Delete Plan',
 			cancelText: 'Keep Plan',
 		});
 		if (!confirmed) return;
 		try {
 			await subscriptionPlanConfigService.delete(id);
-			toast.success('Plan card deleted');
+			toast.success('Plan deleted');
 			loadPlanConfigs();
 		} catch {
-			toast.error('Failed to delete plan card');
+			toast.error('Failed to delete plan');
 		}
 	};
 
-	const handleFeatureChange = (index: number, value: string) => {
+	const handleBillingOptionChange = (index: number, field: 'label' | 'duration' | 'price', value: string) => {
+		setPlanForm((p) => {
+			const updated = [...p.billingOptions];
+			updated[index] = { ...updated[index], [field]: value };
+			return { ...p, billingOptions: updated };
+		});
+	};
+
+	const addBillingOption = () =>
+		setPlanForm((p) => ({ ...p, billingOptions: [...p.billingOptions, blankBillingOption()] }));
+	const removeBillingOption = (index: number) =>
+		setPlanForm((p) => ({ ...p, billingOptions: p.billingOptions.filter((_, idx) => idx !== index) }));
+	const handleFeatureChange = (index: number, value: string) =>
 		setPlanForm((p) => {
 			const updated = [...p.features];
 			updated[index] = value;
 			return { ...p, features: updated };
 		});
-	};
-
 	const addFeature = () => setPlanForm((p) => ({ ...p, features: [...p.features, ''] }));
 	const removeFeature = (i: number) =>
 		setPlanForm((p) => ({ ...p, features: p.features.filter((_, idx) => idx !== i) }));
 
-	// --- Subscription assign handlers ---
 	const handleOpenAssignDialog = () => {
-		setAssignForm({ userId: '', plan: 'Basic', endDate: '' });
+		const firstPlan = planConfigs[0];
+		const firstOption = firstPlan ? getBillingOptions(firstPlan)[0] : null;
+		setAssignForm({
+			userId: '',
+			plan: firstPlan?.plan ?? '',
+			billingDuration: firstOption ? String(firstOption.duration) : '',
+			endDate: '',
+		});
 		setAssignDialogOpen(true);
 	};
 
+	const handleAssignPlanChange = (planName: string) => {
+		const plan = planConfigs.find((config) => config.plan === planName);
+		const firstOption = plan ? getBillingOptions(plan)[0] : null;
+		setAssignForm((p) => ({
+			...p,
+			plan: planName,
+			billingDuration: firstOption ? String(firstOption.duration) : '',
+		}));
+	};
+
 	const handleAssign = async () => {
-		if (!assignForm.userId || !assignForm.plan || !assignForm.endDate) {
+		if (!assignForm.userId || !assignForm.plan || !assignForm.billingDuration || !assignForm.endDate) {
 			toast.error('All fields are required');
 			return;
 		}
 		setAssignSaving(true);
 		try {
-			await subscriptionService.assign(assignForm);
+			await subscriptionService.assign({
+				...assignForm,
+				billingDuration: Number(assignForm.billingDuration),
+			});
 			toast.success('Subscription assigned');
 			loadSubscriptions();
 			setAssignDialogOpen(false);
@@ -227,7 +262,8 @@ export default function SubscriptionsPage() {
 		return 'warning';
 	};
 
-	const configuredPlans = new Set(planConfigs.map((c) => c.plan));
+	const selectedAssignPlan = planConfigs.find((plan) => plan.plan === assignForm.plan);
+	const selectedAssignOptions = selectedAssignPlan ? getBillingOptions(selectedAssignPlan) : [];
 
 	return (
 		<Box>
@@ -235,24 +271,19 @@ export default function SubscriptionsPage() {
 				Subscriptions
 			</Typography>
 
-			<Tabs
-				value={activeTab}
-				onChange={(_, v: number) => setActiveTab(v)}
-				sx={{ mb: 3, borderBottom: '1px solid', borderColor: 'divider' }}
-			>
-				<Tab label='Plan Cards' />
+			<Tabs value={activeTab} onChange={(_, v: number) => setActiveTab(v)} sx={{ mb: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
+				<Tab label='Plans' />
 				<Tab label='Active Subscriptions' />
 			</Tabs>
 
-			{/* ── Tab 0: Plan Cards ─────────────────────────────────── */}
 			{activeTab === 0 && (
 				<Box>
 					<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
 						<Typography variant='body1' color='text.secondary'>
-							Create one card per subscription plan. Students will see these on the Pricing page.
+							Create subscription plans and add dynamic billing options for monthly, 3 months, 6 months, yearly, or any duration.
 						</Typography>
 						<Button variant='contained' startIcon={<AddIcon />} onClick={() => handleOpenPlanDialog()}>
-							Add Plan Card
+							Add Plan
 						</Button>
 					</Box>
 
@@ -261,101 +292,56 @@ export default function SubscriptionsPage() {
 							<CircularProgress />
 						</Box>
 					) : (
-						<>
-							{/* Configured plan cards */}
-							<Grid container spacing={3}>
-								{planConfigs.map((config) => {
-									const accentColor = config.color || PLAN_COLORS[config.plan] || '#1976d2';
-									return (
-										<Grid key={config._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-											<Card
-												elevation={0}
-												sx={{
-													border: '2px solid',
-													borderColor: accentColor,
-													borderRadius: 3,
-													height: '100%',
-													display: 'flex',
-													flexDirection: 'column',
-												}}
-											>
-												<CardContent sx={{ flex: 1 }}>
-													<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-														<Typography variant='h6' sx={{ fontWeight: 700, color: accentColor }}>
-															{config.plan}
+						<Grid container spacing={3}>
+							{planConfigs.map((config) => {
+								const accentColor = config.color || PLAN_COLORS[config.plan] || '#1976d2';
+								const billingOptions = getBillingOptions(config);
+								return (
+									<Grid key={config._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+										<Card elevation={0} sx={{ border: '2px solid', borderColor: accentColor, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+											<CardContent sx={{ flex: 1 }}>
+												<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+													<Typography variant='h6' sx={{ fontWeight: 700, color: accentColor }}>
+														{config.plan}
+													</Typography>
+													{config.badge && <Chip label={config.badge} size='small' sx={{ bgcolor: accentColor, color: 'white', fontWeight: 600 }} />}
+												</Box>
+												<Box sx={{ mb: 2 }}>
+													{billingOptions.map((option) => (
+														<Typography key={`${config._id}-${option.duration}`} variant='body2'>
+															<strong>{option.label}:</strong> BDT {option.price.toLocaleString()} / {option.duration === 1 ? 'month' : `${option.duration} months`}
 														</Typography>
-														{config.badge && (
-															<Chip label={config.badge} size='small' sx={{ bgcolor: accentColor, color: 'white', fontWeight: 600 }} />
-														)}
-													</Box>
-													<Typography variant='h4' sx={{ fontWeight: 800, mb: 0.25 }}>
-														৳{config.price.toLocaleString()}
-													</Typography>
-													<Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-														per {config.duration === 1 ? 'month' : `${config.duration} months`}
-													</Typography>
-													<Divider sx={{ mb: 1.5 }} />
-													{config.features.map((f, i) => (
-														<Box key={i} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', mb: 0.75 }}>
-															<CheckIcon sx={{ fontSize: 16, color: accentColor, mt: 0.2, flexShrink: 0 }} />
-															<Typography variant='body2'>{f}</Typography>
-														</Box>
 													))}
-												</CardContent>
-												<CardActions sx={{ px: 2, pb: 2 }}>
-													<Button
-														size='small'
-														startIcon={<EditIcon />}
-														onClick={() => handleOpenPlanDialog(config)}
-													>
-														Edit
-													</Button>
-													<IconButton
-														size='small'
-														color='error'
-														onClick={() => handleDeletePlan(config._id)}
-													>
-														<DeleteIcon fontSize='small' />
-													</IconButton>
-												</CardActions>
-											</Card>
-										</Grid>
-									);
-								})}
-							</Grid>
-
-							{/* Unconfigured plans hint */}
-							{SUBSCRIPTION_PLANS.some((p) => !configuredPlans.has(p)) && (
-								<Box sx={{ mt: 3 }}>
-									<Typography variant='body2' color='text.secondary' sx={{ mb: 1 }}>
-										Plans not yet configured:
-									</Typography>
-									<Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-										{SUBSCRIPTION_PLANS.filter((p) => !configuredPlans.has(p)).map((p) => (
-											<Chip
-												key={p}
-												label={p}
-												variant='outlined'
-												onClick={() => {
-													setPlanForm({ plan: p, price: '', duration: '1', badge: '', color: '', features: [''] });
-													setPlanDialogOpen(true);
-												}}
-												icon={<AddIcon />}
-											/>
-										))}
-									</Box>
-								</Box>
-							)}
-						</>
+												</Box>
+												<Divider sx={{ mb: 1.5 }} />
+												{config.features.map((f, i) => (
+													<Box key={i} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', mb: 0.75 }}>
+														<CheckIcon sx={{ fontSize: 16, color: accentColor, mt: 0.2, flexShrink: 0 }} />
+														<Typography variant='body2'>{f}</Typography>
+													</Box>
+												))}
+											</CardContent>
+											<CardActions sx={{ px: 2, pb: 2 }}>
+												<Button size='small' startIcon={<EditIcon />} onClick={() => handleOpenPlanDialog(config)}>
+													Edit
+												</Button>
+												<IconButton size='small' color='error' onClick={() => handleDeletePlan(config._id)}>
+													<DeleteIcon fontSize='small' />
+												</IconButton>
+											</CardActions>
+										</Card>
+									</Grid>
+								);
+							})}
+						</Grid>
 					)}
 				</Box>
 			)}
 
-			{/* ── Tab 1: Active Subscriptions ──────────────────────── */}
 			{activeTab === 1 && (
 				<Box>
 					<Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-						<Button variant='contained' startIcon={<AddIcon />} onClick={handleOpenAssignDialog}>
+						<Button variant='contained' startIcon={<AddIcon />} onClick={handleOpenAssignDialog} disabled={planConfigs.length === 0}>
 							Assign Subscription
 						</Button>
 					</Box>
@@ -365,16 +351,13 @@ export default function SubscriptionsPage() {
 							<CircularProgress />
 						</Box>
 					) : (
-						<TableContainer
-							component={Paper}
-							elevation={0}
-							sx={{ border: '1px solid', borderColor: 'divider' }}
-						>
+						<TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
 							<Table>
 								<TableHead>
 									<TableRow>
 										<TableCell sx={{ fontWeight: 600 }}>User</TableCell>
 										<TableCell sx={{ fontWeight: 600 }}>Plan</TableCell>
+										<TableCell sx={{ fontWeight: 600 }}>Billing</TableCell>
 										<TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
 										<TableCell sx={{ fontWeight: 600 }}>Start Date</TableCell>
 										<TableCell sx={{ fontWeight: 600 }}>End Date</TableCell>
@@ -387,16 +370,9 @@ export default function SubscriptionsPage() {
 										<TableRow key={sub._id}>
 											<TableCell>{(sub.user as IUser).name}</TableCell>
 											<TableCell>
-												<Chip
-													label={sub.plan}
-													size='small'
-													sx={{
-														bgcolor: PLAN_COLORS[sub.plan] ?? '#1976d2',
-														color: 'white',
-														fontWeight: 600,
-													}}
-												/>
+												<Chip label={sub.plan} size='small' sx={{ bgcolor: PLAN_COLORS[sub.plan] ?? '#1976d2', color: 'white', fontWeight: 600 }} />
 											</TableCell>
+											<TableCell>{sub.billingLabel ?? (sub.billingDuration ? `${sub.billingDuration} months` : '-')}</TableCell>
 											<TableCell>
 												<Chip label={sub.status} size='small' color={getStatusColor(sub.status)} />
 											</TableCell>
@@ -405,12 +381,7 @@ export default function SubscriptionsPage() {
 											<TableCell>{(sub.assignedBy as IUser)?.name || 'Self'}</TableCell>
 											<TableCell>
 												{sub.status === 'Active' && (
-													<IconButton
-														size='small'
-														color='error'
-														onClick={() => handleCancel(sub._id)}
-														title='Cancel Subscription'
-													>
+													<IconButton size='small' color='error' onClick={() => handleCancel(sub._id)} title='Cancel Subscription'>
 														<CancelIcon />
 													</IconButton>
 												)}
@@ -419,7 +390,7 @@ export default function SubscriptionsPage() {
 									))}
 									{subscriptions.length === 0 && (
 										<TableRow>
-											<TableCell colSpan={7} align='center' sx={{ py: 4, color: 'text.secondary' }}>
+											<TableCell colSpan={8} align='center' sx={{ py: 4, color: 'text.secondary' }}>
 												No subscriptions yet.
 											</TableCell>
 										</TableRow>
@@ -431,145 +402,78 @@ export default function SubscriptionsPage() {
 				</Box>
 			)}
 
-			{/* ── Plan Config Dialog ────────────────────────────────── */}
-			<AppModal
-				open={planDialogOpen}
-				onClose={() => setPlanDialogOpen(false)}
-				title='Subscription Plan Card'
-				onSave={() => void handleSavePlan()}
-				saving={planSaving}
-				maxWidth='sm'
-			>
-					<TextField
-						label='Plan'
-						select
-						value={planForm.plan}
-						onChange={(e) => setPlanForm((p) => ({ ...p, plan: e.target.value as SubscriptionPlan }))}
-						fullWidth
-						sx={{ mt: 2 }}
-						required
-					>
-						{SUBSCRIPTION_PLANS.map((plan) => (
-							<MenuItem key={plan} value={plan}>
-								{plan}
-							</MenuItem>
-						))}
-					</TextField>
+			<AppModal open={planDialogOpen} onClose={() => setPlanDialogOpen(false)} title='Subscription Plan' onSave={() => void handleSavePlan()} saving={planSaving} maxWidth='sm'>
+				<TextField
+					label='Plan name'
+					value={planForm.plan}
+					onChange={(e) => setPlanForm((p) => ({ ...p, plan: e.target.value }))}
+					fullWidth
+					sx={{ mt: 2 }}
+					required
+					placeholder='Premium'
+				/>
 
-					<Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-						<TextField
-							label='Price (BDT)'
-							type='number'
-							value={planForm.price}
-							onChange={(e) => setPlanForm((p) => ({ ...p, price: e.target.value }))}
-							fullWidth
-							required
-							slotProps={{ htmlInput: { min: 0 } }}
-						/>
-						<TextField
-							label='Duration (months)'
-							type='number'
-							value={planForm.duration}
-							onChange={(e) => setPlanForm((p) => ({ ...p, duration: e.target.value }))}
-							fullWidth
-							required
-							slotProps={{ htmlInput: { min: 1 } }}
-						/>
+				<Typography variant='subtitle2' sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
+					Billing Options
+				</Typography>
+				{planForm.billingOptions.map((option, i) => (
+					<Box key={i} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1.2fr 0.8fr 1fr auto' }, gap: 1, mb: 1 }}>
+						<TextField label='Label' value={option.label} onChange={(e) => handleBillingOptionChange(i, 'label', e.target.value)} size='small' placeholder='Monthly' />
+						<TextField label='Months' type='number' value={option.duration} onChange={(e) => handleBillingOptionChange(i, 'duration', e.target.value)} size='small' slotProps={{ htmlInput: { min: 1 } }} />
+						<TextField label='Price (BDT)' type='number' value={option.price} onChange={(e) => handleBillingOptionChange(i, 'price', e.target.value)} size='small' slotProps={{ htmlInput: { min: 0 } }} />
+						<IconButton size='small' color='error' onClick={() => removeBillingOption(i)} disabled={planForm.billingOptions.length <= 1}>
+							<CancelIcon fontSize='small' />
+						</IconButton>
 					</Box>
+				))}
+				<Button size='small' startIcon={<AddIcon />} onClick={addBillingOption} sx={{ mt: 0.5 }}>
+					Add Billing Option
+				</Button>
 
-					<Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-						<TextField
-							label='Badge (e.g. Popular)'
-							value={planForm.badge}
-							onChange={(e) => setPlanForm((p) => ({ ...p, badge: e.target.value }))}
-							fullWidth
-						/>
-						<TextField
-							label='Card Color (hex)'
-							value={planForm.color}
-							onChange={(e) => setPlanForm((p) => ({ ...p, color: e.target.value }))}
-							fullWidth
-							placeholder='#7c3aed'
-						/>
+				<Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+					<TextField label='Badge (e.g. Popular)' value={planForm.badge} onChange={(e) => setPlanForm((p) => ({ ...p, badge: e.target.value }))} fullWidth />
+					<TextField label='Card Color (hex)' value={planForm.color} onChange={(e) => setPlanForm((p) => ({ ...p, color: e.target.value }))} fullWidth placeholder='#7c3aed' />
+				</Box>
+
+				<Typography variant='subtitle2' sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
+					Features
+				</Typography>
+				{planForm.features.map((feat, i) => (
+					<Box key={i} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+						<TextField value={feat} onChange={(e) => handleFeatureChange(i, e.target.value)} placeholder={`Feature ${i + 1}`} size='small' fullWidth />
+						<IconButton size='small' color='error' onClick={() => removeFeature(i)} disabled={planForm.features.length <= 1}>
+							<CancelIcon fontSize='small' />
+						</IconButton>
 					</Box>
-
-					<Typography variant='subtitle2' sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
-						Features
-					</Typography>
-					{planForm.features.map((feat, i) => (
-						<Box key={i} sx={{ display: 'flex', gap: 1, mb: 1 }}>
-							<TextField
-								value={feat}
-								onChange={(e) => handleFeatureChange(i, e.target.value)}
-								placeholder={`Feature ${i + 1}`}
-								size='small'
-								fullWidth
-							/>
-							<IconButton
-								size='small'
-								color='error'
-								onClick={() => removeFeature(i)}
-								disabled={planForm.features.length <= 1}
-							>
-								<CancelIcon fontSize='small' />
-							</IconButton>
-						</Box>
-					))}
-					<Button size='small' startIcon={<AddIcon />} onClick={addFeature} sx={{ mt: 0.5 }}>
-						Add Feature
-					</Button>
+				))}
+				<Button size='small' startIcon={<AddIcon />} onClick={addFeature} sx={{ mt: 0.5 }}>
+					Add Feature
+				</Button>
 			</AppModal>
 
-			{/* ── Assign Subscription Dialog ───────────────────────── */}
-			<AppModal
-				open={assignDialogOpen}
-				onClose={() => setAssignDialogOpen(false)}
-				title='Assign Subscription'
-				onSave={() => void handleAssign()}
-				saveText='Assign'
-				saving={assignSaving}
-				maxWidth='sm'
-			>
-					<TextField
-						label='User'
-						select
-						value={assignForm.userId}
-						onChange={(e) => setAssignForm((p) => ({ ...p, userId: e.target.value }))}
-						fullWidth
-						sx={{ mt: 2 }}
-						required
-					>
-						{users.map((user) => (
-							<MenuItem key={user._id} value={user._id}>
-								{user.name} ({user.email})
-							</MenuItem>
-						))}
-					</TextField>
-					<TextField
-						label='Plan'
-						select
-						value={assignForm.plan}
-						onChange={(e) => setAssignForm((p) => ({ ...p, plan: e.target.value as SubscriptionPlan }))}
-						fullWidth
-						sx={{ mt: 2 }}
-						required
-					>
-						{SUBSCRIPTION_PLANS.map((plan) => (
-							<MenuItem key={plan} value={plan}>
-								{plan}
-							</MenuItem>
-						))}
-					</TextField>
-					<TextField
-						label='End Date'
-						type='date'
-						value={assignForm.endDate}
-						onChange={(e) => setAssignForm((p) => ({ ...p, endDate: e.target.value }))}
-						fullWidth
-						sx={{ mt: 2 }}
-						slotProps={{ inputLabel: { shrink: true } }}
-						required
-					/>
+			<AppModal open={assignDialogOpen} onClose={() => setAssignDialogOpen(false)} title='Assign Subscription' onSave={() => void handleAssign()} saveText='Assign' saving={assignSaving} maxWidth='sm'>
+				<TextField label='User' select value={assignForm.userId} onChange={(e) => setAssignForm((p) => ({ ...p, userId: e.target.value }))} fullWidth sx={{ mt: 2 }} required>
+					{users.map((user) => (
+						<MenuItem key={user._id} value={user._id}>
+							{user.name} ({user.email})
+						</MenuItem>
+					))}
+				</TextField>
+				<TextField label='Plan' select value={assignForm.plan} onChange={(e) => handleAssignPlanChange(e.target.value)} fullWidth sx={{ mt: 2 }} required>
+					{planConfigs.map((plan) => (
+						<MenuItem key={plan._id} value={plan.plan}>
+							{plan.plan}
+						</MenuItem>
+					))}
+				</TextField>
+				<TextField label='Billing option' select value={assignForm.billingDuration} onChange={(e) => setAssignForm((p) => ({ ...p, billingDuration: e.target.value }))} fullWidth sx={{ mt: 2 }} required>
+					{selectedAssignOptions.map((option) => (
+						<MenuItem key={option.duration} value={String(option.duration)}>
+							{option.label} - BDT {option.price.toLocaleString()}
+						</MenuItem>
+					))}
+				</TextField>
+				<TextField label='End Date' type='date' value={assignForm.endDate} onChange={(e) => setAssignForm((p) => ({ ...p, endDate: e.target.value }))} fullWidth sx={{ mt: 2 }} slotProps={{ inputLabel: { shrink: true } }} required />
 			</AppModal>
 		</Box>
 	);

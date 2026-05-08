@@ -1,5 +1,5 @@
 export type UserRole = 'Super Admin' | 'Admin' | 'Moderator' | 'Teacher' | 'Student';
-export type SubscriptionPlan = 'Basic' | 'Premium' | 'Gold' | 'Quiz Only';
+export type SubscriptionPlan = string;
 export type CourseVisibility = 'Public' | 'Private';
 export type CoursePricing = 'Free' | 'Paid';
 export type CourseStatus = 'Draft' | 'Published';

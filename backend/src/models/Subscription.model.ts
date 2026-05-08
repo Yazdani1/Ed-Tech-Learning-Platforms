@@ -6,6 +6,9 @@ export type SubscriptionStatus = 'Active' | 'Expired' | 'Cancelled';
 export interface ISubscription extends Document {
   user: Types.ObjectId;
   plan: SubscriptionPlan;
+  billingDuration?: number;
+  billingLabel?: string;
+  pricePaid?: number;
   status: SubscriptionStatus;
   startDate: Date;
   endDate: Date;
@@ -17,7 +20,10 @@ export interface ISubscription extends Document {
 const subscriptionSchema = new Schema<ISubscription>(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    plan: { type: String, enum: ['Basic', 'Premium', 'Gold', 'Quiz Only'], required: true },
+    plan: { type: String, required: true, trim: true },
+    billingDuration: { type: Number, min: 1 },
+    billingLabel: { type: String },
+    pricePaid: { type: Number, min: 0 },
     status: { type: String, enum: ['Active', 'Expired', 'Cancelled'], default: 'Active' },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },

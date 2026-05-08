@@ -1,11 +1,27 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { Subscription } from '../models/Subscription.model';
-import { SubscriptionPlanConfig } from '../models/SubscriptionPlanConfig.model';
+import { SubscriptionPlanConfig, type ISubscriptionPlanConfig } from '../models/SubscriptionPlanConfig.model';
 import { User } from '../models/User.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { SubscriptionPlan } from '../types/index';
+
+const getBillingOption = (
+  planConfig: ISubscriptionPlanConfig,
+  billingDuration?: number,
+) => {
+  const options = planConfig.billingOptions?.length
+    ? planConfig.billingOptions
+    : [{
+      label: planConfig.duration === 1 ? 'Monthly' : `${planConfig.duration} months`,
+      duration: planConfig.duration,
+      price: planConfig.price,
+    }];
+
+  if (!billingDuration) return options[0];
+  return options.find((option) => option.duration === Number(billingDuration)) ?? null;
+};
 
 export const getAllSubscriptions = asyncHandler(async (_req: Request, res: Response) => {
   const subs = await Subscription.find()
@@ -22,16 +38,22 @@ export const getMySubscription = asyncHandler(async (req: Request, res: Response
 });
 
 export const assignSubscription = asyncHandler(async (req: Request, res: Response) => {
-  const { userId, plan, endDate } = req.body as {
+  const { userId, plan, endDate, billingDuration } = req.body as {
     userId: string;
     plan: SubscriptionPlan;
     endDate: string;
+    billingDuration?: number;
   };
 
   if (!userId || !plan || !endDate) throw new AppError('userId, plan and endDate are required', 400);
 
   const user = await User.findById(userId);
   if (!user) throw new AppError('User not found', 404);
+
+  const planConfig = await SubscriptionPlanConfig.findOne({ plan: String(plan).trim(), isActive: true });
+  if (!planConfig) throw new AppError('Subscription plan not available', 404);
+  const billingOption = getBillingOption(planConfig, billingDuration);
+  if (!billingOption) throw new AppError('Billing option not available for this plan', 404);
 
   const userObjId = new Types.ObjectId(userId);
   await Subscription.updateMany({ user: userObjId, status: 'Active' }, { status: 'Cancelled' });
@@ -41,14 +63,23 @@ export const assignSubscription = asyncHandler(async (req: Request, res: Respons
 
   const sub = await Subscription.create({
     user: userObjId,
-    plan,
+    plan: planConfig.plan,
+    billingDuration: billingOption.duration,
+    billingLabel: billingOption.label,
+    pricePaid: billingOption.price,
     startDate,
     endDate: endDateObj,
     assignedBy: new Types.ObjectId(String(req.user._id)),
     status: 'Active',
   });
 
-  user.activeSubscription = { plan, startDate, endDate: endDateObj };
+  user.activeSubscription = {
+    plan: planConfig.plan,
+    billingDuration: billingOption.duration,
+    billingLabel: billingOption.label,
+    startDate,
+    endDate: endDateObj,
+  };
   await user.save();
 
   res.status(201).json({ success: true, message: 'Subscription assigned', data: sub });
@@ -79,11 +110,13 @@ export const cancelMySubscription = asyncHandler(async (req: Request, res: Respo
 });
 
 export const subscribeToPlan = asyncHandler(async (req: Request, res: Response) => {
-  const { plan } = req.body as { plan: SubscriptionPlan };
+  const { plan, billingDuration } = req.body as { plan: SubscriptionPlan; billingDuration?: number };
   if (!plan) throw new AppError('plan is required', 400);
 
-  const planConfig = await SubscriptionPlanConfig.findOne({ plan, isActive: true });
+  const planConfig = await SubscriptionPlanConfig.findOne({ plan: String(plan).trim(), isActive: true });
   if (!planConfig) throw new AppError('Subscription plan not available', 404);
+  const billingOption = getBillingOption(planConfig, billingDuration);
+  if (!billingOption) throw new AppError('Billing option not available for this plan', 404);
 
   const userId = new Types.ObjectId(String(req.user._id));
   const user = await User.findById(userId);
@@ -93,18 +126,27 @@ export const subscribeToPlan = asyncHandler(async (req: Request, res: Response) 
 
   const startDate = new Date();
   const endDate = new Date();
-  endDate.setMonth(endDate.getMonth() + planConfig.duration);
+  endDate.setMonth(endDate.getMonth() + billingOption.duration);
 
   const sub = await Subscription.create({
     user: userId,
-    plan,
+    plan: planConfig.plan,
+    billingDuration: billingOption.duration,
+    billingLabel: billingOption.label,
+    pricePaid: billingOption.price,
     startDate,
     endDate,
     assignedBy: userId,
     status: 'Active',
   });
 
-  user.activeSubscription = { plan, startDate, endDate };
+  user.activeSubscription = {
+    plan: planConfig.plan,
+    billingDuration: billingOption.duration,
+    billingLabel: billingOption.label,
+    startDate,
+    endDate,
+  };
   await user.save();
 
   res.status(201).json({ success: true, message: 'Subscribed successfully', data: sub });
