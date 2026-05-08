@@ -123,6 +123,10 @@ export default function AdminSidebar() {
 		navigate('/auth/login');
 	};
 
+	const handleNavigate = (path: string) => {
+		navigate(path, { flushSync: location.pathname.startsWith('/admin/chat') });
+	};
+
 	return (
 		<Drawer
 			variant='permanent'
@@ -181,7 +185,7 @@ export default function AdminSidebar() {
 								placement='right'
 							>
 								<ListItemButton
-									onClick={() => navigate(item.path)}
+									onClick={() => handleNavigate(item.path)}
 									selected={active}
 									sx={{
 										mx: 1,
@@ -241,7 +245,7 @@ export default function AdminSidebar() {
 									placement='right'
 								>
 									<ListItemButton
-										onClick={() => navigate(item.path)}
+										onClick={() => handleNavigate(item.path)}
 										selected={active}
 										sx={{
 											mx: 1,

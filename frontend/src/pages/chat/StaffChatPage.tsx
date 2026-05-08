@@ -136,7 +136,6 @@ export default function StaffChatPage() {
 			});
 			if (selectedConv && conv._id === selectedConv._id) {
 				setSelectedConv(conv);
-				socket.emit('chat:markRead', { conversationId: conv._id });
 			}
 		};
 
