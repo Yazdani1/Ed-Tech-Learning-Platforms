@@ -23,12 +23,93 @@ const getBillingOption = (
   return options.find((option) => option.duration === Number(billingDuration)) ?? null;
 };
 
-export const getAllSubscriptions = asyncHandler(async (_req: Request, res: Response) => {
-  const subs = await Subscription.find()
+export const getAllSubscriptions = asyncHandler(async (req: Request, res: Response) => {
+  const {
+    page = '1',
+    limit = '10',
+    status,
+    plan,
+    billingDuration,
+    search,
+  } = req.query as Record<string, string | undefined>;
+
+  const currentPage = Math.max(Number(page) || 1, 1);
+  const pageSize = Math.min(Math.max(Number(limit) || 10, 1), 100);
+  const skip = (currentPage - 1) * pageSize;
+  const now = new Date();
+
+  const baseFilter: Record<string, unknown> = {};
+  if (plan) baseFilter.plan = plan;
+  if (billingDuration) baseFilter.billingDuration = Number(billingDuration);
+  if (search?.trim()) {
+    const regex = new RegExp(search.trim(), 'i');
+    const matchedUsers = await User.find({ $or: [{ name: regex }, { email: regex }] }).select('_id');
+    baseFilter.$or = [
+      { plan: regex },
+      { user: { $in: matchedUsers.map((user) => user._id) } },
+    ];
+  }
+
+  const withStatusFilter = (filter: Record<string, unknown>, nextStatus?: string) => {
+    if (nextStatus === 'active') {
+      return { ...filter, status: 'Active', endDate: { $gt: now } };
+    }
+    if (nextStatus === 'cancelled') {
+      return { ...filter, status: 'Cancelled' };
+    }
+    if (nextStatus === 'expired') {
+      return {
+        ...filter,
+        $and: [
+          ...(Array.isArray(filter.$and) ? filter.$and : []),
+          {
+            $or: [
+              { status: 'Expired' },
+              { status: 'Active', endDate: { $lte: now } },
+            ],
+          },
+        ],
+      };
+    }
+    return filter;
+  };
+
+  const filter = withStatusFilter(baseFilter, status);
+
+  const [subs, total, activeCount, cancelledCount, expiredCount, allCount] = await Promise.all([
+    Subscription.find(filter)
     .populate('user', 'name email')
     .populate('assignedBy', 'name')
-    .sort({ createdAt: -1 });
-  res.status(200).json({ success: true, data: subs, total: subs.length });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize),
+    Subscription.countDocuments(filter),
+    Subscription.countDocuments(withStatusFilter(baseFilter, 'active')),
+    Subscription.countDocuments(withStatusFilter(baseFilter, 'cancelled')),
+    Subscription.countDocuments(withStatusFilter(baseFilter, 'expired')),
+    Subscription.countDocuments(baseFilter),
+  ]);
+
+  const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+  res.status(200).json({
+    success: true,
+    data: subs,
+    total,
+    pagination: {
+      page: currentPage,
+      limit: pageSize,
+      total,
+      totalPages,
+      hasNextPage: currentPage < totalPages,
+      hasPrevPage: currentPage > 1,
+    },
+    statusCounts: {
+      active: activeCount,
+      cancelled: cancelledCount,
+      expired: expiredCount,
+      all: allCount,
+    },
+  });
 });
 
 export const getMySubscription = asyncHandler(async (req: Request, res: Response) => {

@@ -31,11 +31,12 @@ import CheckIcon from '@mui/icons-material/Check';
 import SearchIcon from '@mui/icons-material/Search';
 import toast from 'react-hot-toast';
 import AppModal from '../../components/common/AppModal';
+import AppPagination from '../../components/common/AppPagination';
 import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { subscriptionService } from '../../services/subscription.service';
 import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import { userService } from '../../services/user.service';
-import type { ISubscription, ISubscriptionPlanConfig, IUser } from '../../types/index';
+import type { IPaginationMeta, ISubscription, ISubscriptionPlanConfig, IUser } from '../../types/index';
 import { formatDate } from '../../utils/dateTime';
 
 const PLAN_COLORS: Record<string, string> = {
@@ -59,6 +60,7 @@ const memberStatusTabs: Array<{ value: MemberStatusFilter; label: string }> = [
 	{ value: 'expired', label: 'Expired' },
 	{ value: 'all', label: 'All Records' },
 ];
+const SUBSCRIPTION_MEMBERS_PAGE_SIZE = 10;
 
 export default function SubscriptionsPage() {
 	const { confirm } = useConfirmModal();
@@ -78,6 +80,14 @@ export default function SubscriptionsPage() {
 	const [subscriptions, setSubscriptions] = useState<ISubscription[]>([]);
 	const [users, setUsers] = useState<IUser[]>([]);
 	const [subsLoading, setSubsLoading] = useState(true);
+	const [memberPage, setMemberPage] = useState(1);
+	const [memberPagination, setMemberPagination] = useState<IPaginationMeta | null>(null);
+	const [statusCounts, setStatusCounts] = useState<Record<MemberStatusFilter, number>>({
+		active: 0,
+		cancelled: 0,
+		expired: 0,
+		all: 0,
+	});
 	const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 	const [assignSaving, setAssignSaving] = useState(false);
 	const [assignForm, setAssignForm] = useState({
@@ -95,8 +105,12 @@ export default function SubscriptionsPage() {
 
 	useEffect(() => {
 		loadPlanConfigs();
-		loadSubscriptions();
+		loadUsers();
 	}, []);
+
+	useEffect(() => {
+		loadSubscriptions();
+	}, [memberPage, memberStatusTab, memberFilters]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const loadPlanConfigs = () => {
 		setPlanLoading(true);
@@ -106,12 +120,34 @@ export default function SubscriptionsPage() {
 			.finally(() => setPlanLoading(false));
 	};
 
+	const loadUsers = () => {
+		userService.getAll().then((res) => setUsers(res.data ?? [])).catch(() => setUsers([]));
+	};
+
 	const loadSubscriptions = () => {
+		const params: Record<string, string> = {
+			page: String(memberPage),
+			limit: String(SUBSCRIPTION_MEMBERS_PAGE_SIZE),
+			status: memberStatusTab,
+		};
+		if (memberFilters.search.trim()) params.search = memberFilters.search.trim();
+		if (memberFilters.plan) params.plan = memberFilters.plan;
+		if (memberFilters.billingDuration) params.billingDuration = memberFilters.billingDuration;
+
 		setSubsLoading(true);
-		Promise.all([
-			subscriptionService.getAll().then((res) => setSubscriptions(res.data ?? [])),
-			userService.getAll().then((res) => setUsers(res.data ?? [])),
-		]).finally(() => setSubsLoading(false));
+		subscriptionService
+			.getAll(params)
+			.then((res) => {
+				setSubscriptions(res.data ?? []);
+				setMemberPagination(res.pagination ?? null);
+				const counts = (res as typeof res & { statusCounts?: Record<MemberStatusFilter, number> }).statusCounts;
+				if (counts) setStatusCounts(counts);
+			})
+			.catch(() => {
+				setSubscriptions([]);
+				setMemberPagination(null);
+			})
+			.finally(() => setSubsLoading(false));
 	};
 
 	const handleOpenPlanDialog = (existing?: ISubscriptionPlanConfig) => {
@@ -301,34 +337,9 @@ export default function SubscriptionsPage() {
 		effectiveStatus: getEffectiveStatus(sub),
 	}));
 
-	const statusCounts = subscriptionRows.reduce(
-		(acc, sub) => {
-			if (sub.effectiveStatus === 'Active') acc.active += 1;
-			if (sub.effectiveStatus === 'Cancelled') acc.cancelled += 1;
-			if (sub.effectiveStatus === 'Expired') acc.expired += 1;
-			acc.all += 1;
-			return acc;
-		},
-		{ active: 0, cancelled: 0, expired: 0, all: 0 },
-	);
-
-	const filteredSubscriptions = subscriptionRows.filter((sub) => {
-		const user = sub.user as IUser;
-		const haystack = `${user?.name ?? ''} ${user?.email ?? ''} ${sub.plan}`.toLowerCase();
-		const matchesSearch = !memberFilters.search.trim() || haystack.includes(memberFilters.search.trim().toLowerCase());
-		const matchesPlan = !memberFilters.plan || sub.plan === memberFilters.plan;
-		const matchesBilling = !memberFilters.billingDuration || String(sub.billingDuration ?? '') === memberFilters.billingDuration;
-		const matchesStatus =
-			memberStatusTab === 'all' ||
-			(memberStatusTab === 'active' && sub.effectiveStatus === 'Active') ||
-			(memberStatusTab === 'cancelled' && sub.effectiveStatus === 'Cancelled') ||
-			(memberStatusTab === 'expired' && sub.effectiveStatus === 'Expired');
-
-		return matchesSearch && matchesPlan && matchesBilling && matchesStatus;
-	});
-
 	const clearMemberFilters = () => {
 		setMemberFilters({ search: '', plan: '', billingDuration: '' });
+		setMemberPage(1);
 	};
 
 	return (
@@ -422,7 +433,10 @@ export default function SubscriptionsPage() {
 
 					<Tabs
 						value={memberStatusTab}
-						onChange={(_, value: MemberStatusFilter) => setMemberStatusTab(value)}
+						onChange={(_, value: MemberStatusFilter) => {
+							setMemberStatusTab(value);
+							setMemberPage(1);
+						}}
 						sx={{ mb: 2, borderBottom: '1px solid', borderColor: 'divider' }}
 					>
 						{memberStatusTabs.map((tab) => (
@@ -449,7 +463,10 @@ export default function SubscriptionsPage() {
 								<TextField
 									label='Search members'
 									value={memberFilters.search}
-									onChange={(e) => setMemberFilters((current) => ({ ...current, search: e.target.value }))}
+									onChange={(e) => {
+										setMemberFilters((current) => ({ ...current, search: e.target.value }));
+										setMemberPage(1);
+									}}
 									fullWidth
 									size='small'
 									placeholder='Name, email, or plan'
@@ -465,7 +482,10 @@ export default function SubscriptionsPage() {
 									label='Subscription plan'
 									select
 									value={memberFilters.plan}
-									onChange={(e) => setMemberFilters((current) => ({ ...current, plan: e.target.value }))}
+									onChange={(e) => {
+										setMemberFilters((current) => ({ ...current, plan: e.target.value }));
+										setMemberPage(1);
+									}}
 									fullWidth
 									size='small'
 								>
@@ -482,7 +502,10 @@ export default function SubscriptionsPage() {
 									label='Billing duration'
 									select
 									value={memberFilters.billingDuration}
-									onChange={(e) => setMemberFilters((current) => ({ ...current, billingDuration: e.target.value }))}
+									onChange={(e) => {
+										setMemberFilters((current) => ({ ...current, billingDuration: e.target.value }));
+										setMemberPage(1);
+									}}
 									fullWidth
 									size='small'
 								>
@@ -523,7 +546,7 @@ export default function SubscriptionsPage() {
 									</TableRow>
 								</TableHead>
 								<TableBody>
-									{filteredSubscriptions.map((sub) => (
+									{subscriptionRows.map((sub) => (
 										<TableRow key={sub._id}>
 											<TableCell>
 												<Typography variant='body2' sx={{ fontWeight: 800 }}>
@@ -553,7 +576,7 @@ export default function SubscriptionsPage() {
 											</TableCell>
 										</TableRow>
 									))}
-									{filteredSubscriptions.length === 0 && (
+									{subscriptionRows.length === 0 && (
 										<TableRow>
 											<TableCell colSpan={9} align='center' sx={{ py: 4, color: 'text.secondary' }}>
 												No subscriptions match this view.
@@ -563,6 +586,16 @@ export default function SubscriptionsPage() {
 								</TableBody>
 							</Table>
 						</TableContainer>
+					)}
+					{memberPagination && (
+						<AppPagination
+							page={memberPagination.page}
+							totalPages={memberPagination.totalPages}
+							totalItems={memberPagination.total}
+							pageSize={memberPagination.limit}
+							onChange={setMemberPage}
+							disabled={subsLoading}
+						/>
 					)}
 				</Box>
 			)}
