@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
 	Alert,
-	Avatar,
 	Box,
 	Button,
 	Checkbox,
 	Chip,
 	CircularProgress,
+	Collapse,
 	Divider,
 	FormControl,
 	FormControlLabel,
+	IconButton,
 	InputLabel,
 	MenuItem,
 	Paper,
@@ -20,6 +21,7 @@ import {
 	TextField,
 	Typography,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
@@ -388,59 +390,14 @@ export default function NotificationsPage() {
 			) : (
 				<>
 					<Stack divider={<Divider flexItem />}>
-						{sentNotifications.map((notification) => {
-							const priorityStyle = PRIORITY_STYLES[notification.priority];
-							return (
-								<Box
-									key={notification._id}
-									sx={{ p: 2.25, borderLeft: '4px solid', borderLeftColor: priorityStyle.border }}
-								>
-									<Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-										<Box sx={{ flex: 1, minWidth: 0 }}>
-											<Box
-												sx={{
-													display: 'flex',
-													gap: 1,
-													alignItems: 'center',
-													flexWrap: 'wrap',
-													mb: 0.75,
-												}}
-											>
-												<Typography sx={{ fontWeight: 900 }}>{notification.title}</Typography>
-												<Chip size='small' label={notification.priority} color={priorityStyle.color} />
-												<Chip
-													size='small'
-													label={notification.targetRoles.join(', ')}
-													variant='outlined'
-												/>
-											</Box>
-											<Typography variant='body2' sx={{ lineHeight: 1.65, mb: 1 }}>
-												{notification.message}
-											</Typography>
-											<Typography variant='caption' color='text.secondary'>
-												Sent by {notification.sentBy?.name ?? 'Admin'} •{' '}
-												{formatDateTime(notification.createdAt)}
-											</Typography>
-										</Box>
-										<ItemActionMenu
-											actions={[
-												{
-													label: 'Edit',
-													icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
-													onClick: () => startEdit(notification),
-												},
-												{
-													label: 'Delete',
-													icon: <DeleteOutlineIcon fontSize='small' sx={{ mr: 1 }} />,
-													color: 'error',
-													onClick: () => void handleDelete(notification),
-												},
-											]}
-										/>
-									</Box>
-								</Box>
-							);
-						})}
+						{sentNotifications.map((notification) => (
+							<SentNotificationItem
+								key={notification._id}
+								notification={notification}
+								onEdit={() => startEdit(notification)}
+								onDelete={() => void handleDelete(notification)}
+							/>
+						))}
 					</Stack>
 					<Box sx={{ px: 2.5, pb: 2.5 }}>
 						<AppPagination
@@ -628,63 +585,181 @@ function NotificationItem({
 	notification: INotification;
 	onClick: () => void;
 }) {
+	const [expanded, setExpanded] = useState(false);
+	const priorityStyle = PRIORITY_STYLES[notification.priority];
+
+	const handleToggle = () => {
+		if (!notification.isRead) onClick();
+		setExpanded((prev) => !prev);
+	};
+
+	return (
+		<Box
+			sx={{
+				borderLeft: '4px solid',
+				borderLeftColor: priorityStyle.border,
+				bgcolor: expanded
+					? 'action.selected'
+					: notification.isRead
+					? 'background.paper'
+					: 'rgba(99,102,241,0.13)',
+				transition: 'background 0.2s ease',
+			}}
+		>
+			{/* Collapsed row — always visible */}
+			<Box
+				onClick={handleToggle}
+				sx={{
+					px: 2.25,
+					py: 1.5,
+					cursor: 'pointer',
+					display: 'flex',
+					alignItems: 'center',
+					gap: 1,
+					'&:hover': { bgcolor: notification.isRead ? 'action.hover' : 'rgba(99,102,241,0.2)' },
+				}}
+			>
+				<Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+					<Typography
+						sx={{
+							fontWeight: notification.isRead ? 600 : 900,
+							color: notification.isRead ? 'text.primary' : 'primary.main',
+							fontSize: '0.9rem',
+						}}
+					>
+						{notification.title}
+					</Typography>
+					<Chip size='small' label={notification.priority} color={priorityStyle.color} />
+					{!notification.isRead && (
+						<Chip size='small' label='Unread' color='primary' variant='outlined' />
+					)}
+					<Typography variant='caption' color='text.secondary' sx={{ ml: 'auto' }}>
+						{formatDateTime(notification.createdAt)}
+					</Typography>
+				</Box>
+				<IconButton
+					size='small'
+					sx={{
+						ml: 0.5,
+						transition: 'transform 0.2s',
+						transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+						flexShrink: 0,
+					}}
+					onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+				>
+					<ExpandMoreIcon fontSize='small' />
+				</IconButton>
+			</Box>
+
+			{/* Expanded details */}
+			<Collapse in={expanded} timeout='auto' unmountOnExit>
+				<Divider />
+				<Box sx={{ px: 2.25, py: 1.75 }}>
+					<Typography variant='body2' sx={{ lineHeight: 1.7, mb: 1 }}>
+						{notification.message}
+					</Typography>
+					<Typography variant='caption' color='text.secondary'>
+						Sent by{' '}
+						<Typography component='span' variant='caption' sx={{ fontWeight: 700, color: 'text.primary' }}>
+							{notification.sentBy?.name ?? 'Admin'}
+						</Typography>
+					</Typography>
+				</Box>
+			</Collapse>
+		</Box>
+	);
+}
+
+function SentNotificationItem({
+	notification,
+	onEdit,
+	onDelete,
+}: {
+	notification: INotification;
+	onEdit: () => void;
+	onDelete: () => void;
+}) {
+	const [expanded, setExpanded] = useState(false);
 	const priorityStyle = PRIORITY_STYLES[notification.priority];
 
 	return (
 		<Box
-			onClick={onClick}
 			sx={{
-				p: 2.25,
-				cursor: notification.isRead ? 'default' : 'pointer',
-				bgcolor: notification.isRead ? 'background.paper' : 'rgba(99,102,241,0.1)',
 				borderLeft: '4px solid',
 				borderLeftColor: priorityStyle.border,
-				transition: 'background 0.15s ease',
-				'&:hover': { bgcolor: notification.isRead ? 'grey.50' : 'rgba(99,102,241,0.15)' },
+				bgcolor: expanded ? 'action.selected' : 'background.paper',
+				transition: 'background 0.2s ease',
 			}}
 		>
-			<Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-				<Box sx={{ position: 'relative' }}>
-					<Avatar
-						src={notification.sentBy?.avatar}
-						sx={{ bgcolor: priorityStyle.border, width: 38, height: 38, fontSize: 14 }}
-					>
-						{notification.sentBy?.name?.[0]?.toUpperCase() ?? 'N'}
-					</Avatar>
-					{!notification.isRead && (
-						<Box
-							sx={{
-								position: 'absolute',
-								top: -2,
-								right: -2,
-								width: 11,
-								height: 11,
-								borderRadius: '50%',
-								bgcolor: 'primary.main',
-								border: '2px solid',
-								borderColor: 'background.paper',
-							}}
-						/>
-					)}
-				</Box>
-				<Box sx={{ flex: 1, minWidth: 0 }}>
-					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
-						<Typography sx={{ fontWeight: notification.isRead ? 700 : 900, color: notification.isRead ? 'text.primary' : 'primary.main' }}>
-							{notification.title}
-						</Typography>
-						<Chip size='small' label={notification.priority} color={priorityStyle.color} />
-						{!notification.isRead && (
-							<Chip size='small' label='Unread' color='primary' variant='outlined' />
-						)}
-					</Box>
-					<Typography variant='body2' sx={{ lineHeight: 1.65, mb: 1 }}>
-						{notification.message}
+			{/* Collapsed row */}
+			<Box
+				onClick={() => setExpanded((prev) => !prev)}
+				sx={{
+					px: 2.25,
+					py: 1.5,
+					cursor: 'pointer',
+					display: 'flex',
+					alignItems: 'center',
+					gap: 1,
+					'&:hover': { bgcolor: 'action.hover' },
+				}}
+			>
+				<Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+					<Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>
+						{notification.title}
 					</Typography>
-					<Typography variant='caption' color='text.secondary'>
-						Sent by {notification.sentBy?.name ?? 'Admin'} • {formatDateTime(notification.createdAt)}
+					<Chip size='small' label={notification.priority} color={priorityStyle.color} />
+					<Chip size='small' label={notification.targetRoles.join(', ')} variant='outlined' />
+					<Typography variant='caption' color='text.secondary' sx={{ ml: 'auto' }}>
+						{formatDateTime(notification.createdAt)}
 					</Typography>
 				</Box>
+				<IconButton
+					size='small'
+					sx={{
+						ml: 0.5,
+						transition: 'transform 0.2s',
+						transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+						flexShrink: 0,
+					}}
+					onClick={(e) => { e.stopPropagation(); setExpanded((prev) => !prev); }}
+				>
+					<ExpandMoreIcon fontSize='small' />
+				</IconButton>
 			</Box>
+
+			{/* Expanded details */}
+			<Collapse in={expanded} timeout='auto' unmountOnExit>
+				<Divider />
+				<Box sx={{ px: 2.25, py: 1.75, display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+					<Box sx={{ flex: 1, minWidth: 0 }}>
+						<Typography variant='body2' sx={{ lineHeight: 1.7, mb: 1 }}>
+							{notification.message}
+						</Typography>
+						<Typography variant='caption' color='text.secondary'>
+							Sent by{' '}
+							<Typography component='span' variant='caption' sx={{ fontWeight: 700, color: 'text.primary' }}>
+								{notification.sentBy?.name ?? 'Admin'}
+							</Typography>
+						</Typography>
+					</Box>
+					<ItemActionMenu
+						actions={[
+							{
+								label: 'Edit',
+								icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
+								onClick: onEdit,
+							},
+							{
+								label: 'Delete',
+								icon: <DeleteOutlineIcon fontSize='small' sx={{ mr: 1 }} />,
+								color: 'error',
+								onClick: onDelete,
+							},
+						]}
+					/>
+				</Box>
+			</Collapse>
 		</Box>
 	);
 }
