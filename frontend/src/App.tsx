@@ -50,7 +50,9 @@ export default function App() {
 			{/* Admin routes */}
 			<Route element={<ProtectedRoute allowedRoles={[...ADMIN_ROLES]} />}>
 				<Route element={<AdminLayout />}>
-					<Route path='/admin/dashboard' element={<DashboardPage />} />{' '}
+					<Route element={<ProtectedRoute allowedRoles={['Super Admin']} unauthorizedTo='/admin/courses' />}>
+						<Route path='/admin/dashboard' element={<DashboardPage />} />
+					</Route>
 					<Route path='/admin/profile' element={<ProfilePage />} />{' '}
 					<Route path='/admin/courses' element={<CoursesPage />} />
 					<Route path='/admin/courses/create' element={<CourseCreatePage />} />

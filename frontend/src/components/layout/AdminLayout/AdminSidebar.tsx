@@ -43,7 +43,7 @@ const navItems = [
 		label: 'nav.dashboard',
 		icon: <DashboardIcon />,
 		path: '/admin/dashboard',
-		roles: ['Super Admin', 'Admin', 'Moderator'],
+		roles: ['Super Admin'],
 	},
 	{
 		label: 'Profile',

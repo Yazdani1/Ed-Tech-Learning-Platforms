@@ -67,7 +67,8 @@ export default function PublicNavbar() {
   const dashboardPath =
     user?.role === 'Student' ? '/student/dashboard'
     : user?.role === 'Teacher' ? '/teacher/courses'
-    : '/admin/dashboard';
+    : user?.role === 'Super Admin' ? '/admin/dashboard'
+    : '/admin/courses';
 
   return (
     <>

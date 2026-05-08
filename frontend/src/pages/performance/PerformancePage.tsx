@@ -102,7 +102,7 @@ export default function PerformancePage() {
 
 	useEffect(() => {
 		if (user && user.role !== 'Super Admin')
-			navigate('/admin/dashboard', { replace: true });
+			navigate('/admin/courses', { replace: true });
 	}, [user, navigate]);
 
 	const [data, setData] = useState<IPerformanceData | null>(null);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
 	Avatar,
 	Box,
@@ -130,11 +131,18 @@ function ChartCard({
 
 export default function DashboardPage() {
 	const { user } = useAuth();
+	const navigate = useNavigate();
 	const [summary, setSummary] = useState<IDashboardSummary | null>(null);
-	const [loading, setLoading] = useState(user?.role !== 'Student');
+	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		if (!user || user.role === 'Student') return;
+		if (user && user.role !== 'Student' && user.role !== 'Super Admin') {
+			navigate('/admin/courses', { replace: true });
+		}
+	}, [navigate, user]);
+
+	useEffect(() => {
+		if (!user || user.role !== 'Super Admin') return;
 		setLoading(true);
 		dashboardService
 			.getSummary()
@@ -154,6 +162,8 @@ export default function DashboardPage() {
 			</Box>
 		);
 	}
+
+	if (user && user.role !== 'Super Admin') return null;
 
 	return (
 		<Box sx={{ pb: 3 }}>

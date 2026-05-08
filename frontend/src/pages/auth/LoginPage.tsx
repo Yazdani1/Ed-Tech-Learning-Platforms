@@ -18,8 +18,8 @@ import type { UserRole } from '../../types/index';
 
 const ROLE_REDIRECT: Record<UserRole, string> = {
 	'Super Admin': '/admin/dashboard',
-	Admin: '/admin/dashboard',
-	Moderator: '/admin/dashboard',
+	Admin: '/admin/courses',
+	Moderator: '/admin/courses',
 	Teacher: '/teacher/courses',
 	Student: '/student/dashboard',
 };
@@ -39,7 +39,7 @@ export default function LoginPage() {
 			const loggedUser = await login(email, password);
 			const redirect = loggedUser
 				? ROLE_REDIRECT[loggedUser.role]
-				: '/admin/dashboard';
+				: '/admin/courses';
 			navigate(redirect, { replace: true });
 		} finally {
 			setLoading(false);

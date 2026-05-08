@@ -4,7 +4,7 @@ import { protect, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.use(protect, authorize('Super Admin', 'Admin', 'Moderator'));
+router.use(protect, authorize('Super Admin'));
 
 router.get('/summary', getDashboardSummary);
 
