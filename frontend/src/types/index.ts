@@ -415,6 +415,8 @@ export interface ApiResponse<T = unknown> {
   message?: string;
   data?: T;
   total?: number;
+  page?: number;
+  limit?: number;
   totalUsers?: number;
   pagination?: IPaginationMeta;
 }
