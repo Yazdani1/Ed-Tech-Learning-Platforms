@@ -23,6 +23,7 @@ export interface IQuizBank extends Document {
   contextId?: Types.ObjectId;
   title: string;
   description?: string;
+  isFreePreview: boolean;
   questions: IQuizQuestion[];
   createdBy: Types.ObjectId;
   createdAt: Date;
@@ -65,6 +66,7 @@ const quizBankSchema = new Schema<IQuizBank>(
     contextId: { type: Schema.Types.ObjectId },
     title: { type: String, required: true, trim: true },
     description: { type: String },
+    isFreePreview: { type: Boolean, default: false },
     questions: { type: [quizQuestionSchema], default: [] },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },

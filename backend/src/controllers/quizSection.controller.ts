@@ -30,7 +30,11 @@ export const getCourseQuizSections = asyncHandler(async (req: Request, res: Resp
 });
 
 export const createQuizSection = asyncHandler(async (req: Request, res: Response) => {
-  const { course: courseId, title } = req.body as { course: string; title: string };
+  const { course: courseId, title, isFreePreview } = req.body as {
+    course: string;
+    title: string;
+    isFreePreview?: boolean;
+  };
   if (!courseId || !title?.trim()) throw new AppError('course and title are required', 400);
 
   const allowed = await canManage(req.user._id as Types.ObjectId, courseId, req.user.role);
@@ -41,6 +45,7 @@ export const createQuizSection = asyncHandler(async (req: Request, res: Response
     course: new Types.ObjectId(courseId),
     title: title.trim(),
     order: count,
+    isFreePreview: isFreePreview ?? false,
     createdBy: req.user._id,
   });
 
@@ -59,8 +64,9 @@ export const updateQuizSection = asyncHandler(async (req: Request, res: Response
   );
   if (!allowed) throw new AppError('Not authorized', 403);
 
-  const { title } = req.body as { title?: string };
+  const { title, isFreePreview } = req.body as { title?: string; isFreePreview?: boolean };
   if (title !== undefined) section.title = title.trim();
+  if (isFreePreview !== undefined) section.isFreePreview = isFreePreview;
   await section.save();
 
   const populated = await section.populate('createdBy', 'name avatar role');

@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { QuizBank, type QuizContextType } from '../models/QuizBank.model';
+import { QuizSection } from '../models/QuizSection.model';
 import { QuizAttempt } from '../models/QuizAttempt.model';
 import { Course } from '../models/Course.model';
 import { Teacher } from '../models/Teacher.model';
@@ -51,6 +52,8 @@ export const createQuizBank = asyncHandler(async (req: Request, res: Response) =
   const allowed = await canPost(req.user._id as Types.ObjectId, courseId, req.user.role);
   if (!allowed) throw new AppError('Not authorized to manage quiz banks for this course', 403);
 
+  const { isFreePreview } = req.body as { isFreePreview?: boolean };
+
   const bank = await QuizBank.create({
     course: new Types.ObjectId(courseId),
     quizSection: quizSection ? new Types.ObjectId(quizSection) : undefined,
@@ -58,6 +61,7 @@ export const createQuizBank = asyncHandler(async (req: Request, res: Response) =
     contextId: contextId ? new Types.ObjectId(contextId) : undefined,
     title: title.trim(),
     description: description?.trim(),
+    isFreePreview: isFreePreview ?? false,
     createdBy: req.user._id,
   });
 
@@ -96,9 +100,14 @@ export const updateQuizBank = asyncHandler(async (req: Request, res: Response) =
   const allowed = await canPost(req.user._id as Types.ObjectId, bank.course.toString(), req.user.role);
   if (!allowed) throw new AppError('Not authorized', 403);
 
-  const { title, description } = req.body as { title?: string; description?: string };
+  const { title, description, isFreePreview } = req.body as {
+    title?: string;
+    description?: string;
+    isFreePreview?: boolean;
+  };
   if (title !== undefined) bank.title = title.trim();
   if (description !== undefined) bank.description = description?.trim() || undefined;
+  if (isFreePreview !== undefined) bank.isFreePreview = isFreePreview;
   await bank.save();
 
   const populated = await bank.populate('createdBy', 'name avatar role');
@@ -278,3 +287,68 @@ export const resetAttempt = asyncHandler(async (req: Request, res: Response) => 
   });
   res.status(200).json({ success: true, message: 'Attempt reset' });
 });
+
+// ── Public (no auth) ────────────────────────────────────────────────────────
+
+export const getPublicCoursesWithQuizzes = asyncHandler(
+  async (_req: Request, res: Response) => {
+    const freeSectionCourses = await QuizSection.find(
+      { isFreePreview: true },
+      'course',
+    ).distinct('course');
+    const freeBankCourses = await QuizBank.find(
+      { isFreePreview: true },
+      'course',
+    ).distinct('course');
+
+    const courseIds = [
+      ...new Set([
+        ...freeSectionCourses.map(String),
+        ...freeBankCourses.map(String),
+      ]),
+    ];
+
+    const courses = await Course.find(
+      { _id: { $in: courseIds } },
+      'title subtitle coverImage',
+    );
+
+    res.status(200).json({ success: true, data: courses });
+  },
+);
+
+export const getPublicCourseQuizBanks = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId, 'title subtitle coverImage');
+    if (!course) throw new AppError('Course not found', 404);
+
+    const sections = await QuizSection.find({ course: courseId }).sort({
+      order: 1,
+      createdAt: 1,
+    });
+    const banks = await QuizBank.find({ course: courseId });
+
+    const result = [];
+    for (const section of sections) {
+      const sectionBanks = banks.filter(
+        (b) => b.quizSection?.toString() === section._id.toString(),
+      );
+      const visibleBanks = section.isFreePreview
+        ? sectionBanks
+        : sectionBanks.filter((b) => b.isFreePreview);
+
+      if (visibleBanks.length > 0) {
+        result.push({
+          _id: section._id,
+          title: section.title,
+          isFreePreview: section.isFreePreview,
+          banks: visibleBanks,
+        });
+      }
+    }
+
+    res.status(200).json({ success: true, data: { course, sections: result } });
+  },
+);

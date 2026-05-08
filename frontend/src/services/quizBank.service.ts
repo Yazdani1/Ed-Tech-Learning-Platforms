@@ -1,5 +1,5 @@
 import api from './api';
-import type { IQuizBank, IQuizAttempt } from '../types/index';
+import type { IQuizBank, IQuizAttempt, IPublicCourseQuizTree, ICourse } from '../types/index';
 
 export const quizBankService = {
   getByCourse: (courseId: string) =>
@@ -17,9 +17,10 @@ export const quizBankService = {
     contextId?: string;
     title: string;
     description?: string;
+    isFreePreview?: boolean;
   }) => api.post<IQuizBank>('/quiz-bank', data),
 
-  update: (id: string, data: { title?: string; description?: string }) =>
+  update: (id: string, data: { title?: string; description?: string; isFreePreview?: boolean }) =>
     api.put<IQuizBank>(`/quiz-bank/${id}`, data),
 
   delete: (id: string) => api.delete(`/quiz-bank/${id}`),
@@ -55,4 +56,13 @@ export const quizBankService = {
   ) => api.post<IQuizAttempt>(`/quiz-bank/${id}/attempt/answer`, data),
 
   resetAttempt: (id: string) => api.delete(`/quiz-bank/${id}/attempt`),
+
+  // Public (no auth required)
+  getPublicCourses: () =>
+    api.get<Pick<ICourse, '_id' | 'title' | 'subtitle' | 'coverImage'>[]>(
+      '/quiz-bank/public/courses',
+    ),
+
+  getPublicCourseTree: (courseId: string) =>
+    api.get<IPublicCourseQuizTree>(`/quiz-bank/public/course/${courseId}`),
 };

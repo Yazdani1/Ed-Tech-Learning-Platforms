@@ -32,6 +32,7 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const CourseBrowsePage = lazy(() => import('./pages/courses/CourseBrowsePage'));
 const FreeCoursesPage = lazy(() => import('./pages/courses/FreeCoursesPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const PracticeQuizPage = lazy(() => import('./pages/quiz/PracticeQuizPage'));
 const PublicTeachersPage = lazy(() => import('./pages/teachers/PublicTeachersPage'));
 const StaffChatPage = lazy(() => import('./pages/chat/StaffChatPage'));
 const StudentChatPage = lazy(() => import('./pages/chat/StudentChatPage'));
@@ -114,6 +115,7 @@ export default function App() {
 			<Route path='/free-courses' element={<FreeCoursesPage />} />
 			<Route path='/courses/:id' element={<CourseDetailPage />} />
 			<Route path='/teachers' element={<PublicTeachersPage />} />
+			<Route path='/practice-quiz' element={<PracticeQuizPage />} />
 
 			<Route path='*' element={<NotFoundPage />} />
 				</Routes>

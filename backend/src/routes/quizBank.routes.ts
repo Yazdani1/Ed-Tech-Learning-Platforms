@@ -13,9 +13,15 @@ import {
   getMyAttempt,
   submitAnswer,
   resetAttempt,
+  getPublicCoursesWithQuizzes,
+  getPublicCourseQuizBanks,
 } from '../controllers/quizBank.controller';
 
 const router = Router();
+
+// Public routes (no auth) — must be before /:id
+router.get('/public/courses', getPublicCoursesWithQuizzes);
+router.get('/public/course/:courseId', getPublicCourseQuizBanks);
 
 router.get('/course/:courseId', protect, getCourseQuizBanks);
 router.get('/context/:contextType/:contextId', protect, getContextQuizBanks);

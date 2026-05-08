@@ -286,6 +286,27 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
     toast.success('Practice reset');
   };
 
+  // Free preview toggles
+  const handleToggleSectionPreview = async (secId: string, current: boolean) => {
+    try {
+      const res = await quizSectionService.update(secId, { isFreePreview: !current });
+      if (res.data) setQuizSections((p) => p.map((s) => (s._id === secId ? res.data! : s)));
+      toast.success(!current ? 'Section set to Free Preview' : 'Free Preview removed');
+    } catch {
+      // handled
+    }
+  };
+
+  const handleToggleBankPreview = async (bankId: string, current: boolean) => {
+    try {
+      const res = await quizBankService.update(bankId, { isFreePreview: !current });
+      if (res.data) setQuizBanks((p) => p.map((b) => (b._id === bankId ? res.data! : b)));
+      toast.success(!current ? 'Quiz Bank set to Free Preview' : 'Free Preview removed');
+    } catch {
+      // handled
+    }
+  };
+
   // Section handlers
   const handleCreateSection = async () => {
     if (!createSecForm.title.trim()) { toast.error('Title is required'); return; }
@@ -608,7 +629,18 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                       </Typography>
                     )}
                     {canPost && editingSecId !== section._id && (
-                      <Box onClick={(e) => e.stopPropagation()}>
+                      <Box
+                        onClick={(e) => e.stopPropagation()}
+                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                      >
+                        <Chip
+                          label='Free'
+                          size='small'
+                          color={section.isFreePreview ? 'success' : 'default'}
+                          variant={section.isFreePreview ? 'filled' : 'outlined'}
+                          onClick={() => void handleToggleSectionPreview(section._id, section.isFreePreview)}
+                          sx={{ fontSize: '0.65rem', height: 18, cursor: 'pointer' }}
+                        />
                         <ItemActionMenu
                           actions={[
                             {
@@ -734,9 +766,17 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                           </Stack>
                         )}
 
-                        {/* Admin/Teacher: Manage button */}
+                        {/* Admin/Teacher: Free Preview chip + Manage button */}
                         {canPost && (
-                          <Box sx={{ px: 2, pb: 1, display: 'flex', gap: 0.5, alignItems: 'center', mt: 0.5 }}>
+                          <Box sx={{ px: 2, pb: 1, display: 'flex', gap: 0.5, alignItems: 'center', mt: 0.5, flexWrap: 'wrap' }}>
+                            <Chip
+                              label='Free'
+                              size='small'
+                              color={bank.isFreePreview ? 'success' : 'default'}
+                              variant={bank.isFreePreview ? 'filled' : 'outlined'}
+                              onClick={() => void handleToggleBankPreview(bank._id, bank.isFreePreview)}
+                              sx={{ fontSize: '0.65rem', height: 18, cursor: 'pointer' }}
+                            />
                             <Button
                               size='small'
                               variant='outlined'

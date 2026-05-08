@@ -450,6 +450,7 @@ export interface IQuizSection {
   course: string;
   title: string;
   order: number;
+  isFreePreview: boolean;
   createdBy: Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
   createdAt: string;
   updatedAt: string;
@@ -465,6 +466,7 @@ export interface IQuizBank {
   contextId?: string;
   title: string;
   description?: string;
+  isFreePreview: boolean;
   questions: IQuizQuestion[];
   createdBy: {
     _id: string;
@@ -474,6 +476,18 @@ export interface IQuizBank {
   };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface IPublicQuizSection {
+  _id: string;
+  title: string;
+  isFreePreview: boolean;
+  banks: IQuizBank[];
+}
+
+export interface IPublicCourseQuizTree {
+  course: Pick<ICourse, '_id' | 'title' | 'subtitle' | 'coverImage'>;
+  sections: IPublicQuizSection[];
 }
 
 export interface IAttemptAnswer {
