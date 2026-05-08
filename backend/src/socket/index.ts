@@ -103,6 +103,35 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 			}
 		});
 
+		socket.on('chat:typing', async (payload: { conversationId?: string; isTyping?: boolean }) => {
+			try {
+				let conv;
+				if (isStaff && payload?.conversationId) {
+					conv = await ChatConversation.findById(payload.conversationId);
+				} else {
+					conv = await ChatConversation.findOne({ student: user._id });
+				}
+				if (!conv) return;
+
+				const convId = (conv._id as Types.ObjectId).toString();
+				const typingPayload = {
+					conversationId: convId,
+					userId: user._id.toString(),
+					userName: user.name,
+					userRole: user.role,
+					isTyping: Boolean(payload?.isTyping),
+				};
+
+				if (isStaff) {
+					socket.to(`conv:${convId}`).emit('chat:typing', typingPayload);
+				} else {
+					socket.to('staff').emit('chat:typing', typingPayload);
+				}
+			} catch {
+				/* silent */
+			}
+		});
+
 		socket.on('chat:markRead', async (payload: { conversationId: string }) => {
 			const { conversationId } = payload ?? {};
 			if (!conversationId) return;

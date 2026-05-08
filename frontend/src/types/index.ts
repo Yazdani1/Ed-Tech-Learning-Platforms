@@ -55,6 +55,14 @@ export interface IChatMessage {
   createdAt: string;
 }
 
+export interface IChatTypingEvent {
+  conversationId: string;
+  userId: string;
+  userName: string;
+  userRole: string;
+  isTyping: boolean;
+}
+
 export interface ITeacher {
   _id: string;
   name: string;

@@ -10,10 +10,12 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import SearchIcon from '@mui/icons-material/Search';
 import { chatService } from '../../services/chat.service';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/useAuth';
-import type { IChatConversation, IChatMessage } from '../../types';
+import type { IChatConversation, IChatMessage, IChatTypingEvent } from '../../types';
+import TypingIndicator from '../../components/chat/TypingIndicator';
 
 const HEADER_GRADIENT = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
 const SENT_GRADIENT = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
@@ -40,8 +42,11 @@ export default function StudentChatPage({ embedded = false }: { embedded?: boole
 	const [conversation, setConversation] = useState<IChatConversation | null>(null);
 	const [messages, setMessages] = useState<IChatMessage[]>([]);
 	const [input, setInput] = useState('');
+	const [messageSearch, setMessageSearch] = useState('');
+	const [typingUser, setTypingUser] = useState<IChatTypingEvent | null>(null);
 	const [loading, setLoading] = useState(true);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		setLoading(true);
@@ -63,7 +68,16 @@ export default function StudentChatPage({ embedded = false }: { embedded?: boole
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-	}, [messages]);
+	}, [messages, typingUser]);
+
+	useEffect(() => {
+		return () => {
+			if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+			if (conversation?._id) {
+				socket?.emit('chat:typing', { conversationId: conversation._id, isTyping: false });
+			}
+		};
+	}, [socket, conversation?._id]);
 
 	useEffect(() => {
 		if (!socket || !conversation) return;
@@ -74,21 +88,52 @@ export default function StudentChatPage({ embedded = false }: { embedded?: boole
 				if (prev.some((m) => m._id === msg._id)) return prev;
 				return [...prev, msg];
 			});
+			if (msg.senderId !== user?._id) setTypingUser(null);
 			socket.emit('chat:markRead', { conversationId: conversation._id });
 			clearUnread();
 		};
 
+		const onTyping = (event: IChatTypingEvent) => {
+			if (event.conversationId !== conversation._id || event.userId === user?._id) return;
+			setTypingUser(event.isTyping ? event : null);
+		};
+
 		socket.on('chat:message', onMessage);
+		socket.on('chat:typing', onTyping);
 		return () => {
 			socket.off('chat:message', onMessage);
+			socket.off('chat:typing', onTyping);
 		};
-	}, [socket, conversation?._id]);
+	}, [socket, conversation?._id, user?._id]);
+
+	const emitTyping = (isTyping: boolean) => {
+		if (!conversation?._id) return;
+		socket?.emit('chat:typing', { conversationId: conversation._id, isTyping });
+	};
+
+	const handleInputChange = (value: string) => {
+		setInput(value);
+		emitTyping(value.trim().length > 0);
+		if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+		typingTimeoutRef.current = setTimeout(() => emitTyping(false), 1200);
+	};
 
 	const handleSend = () => {
 		if (!input.trim()) return;
+		emitTyping(false);
 		socket?.emit('chat:send', { content: input.trim() });
 		setInput('');
 	};
+
+	const normalizedMessageSearch = messageSearch.trim().toLowerCase();
+	const visibleMessages = normalizedMessageSearch
+		? messages.filter((msg) =>
+				[msg.content, msg.senderName, msg.senderRole]
+					.join(' ')
+					.toLowerCase()
+					.includes(normalizedMessageSearch),
+			)
+		: messages;
 
 	return (
 		<Box
@@ -169,6 +214,34 @@ export default function StudentChatPage({ embedded = false }: { embedded?: boole
 					</Box>
 				</Box>
 
+				<Box sx={{ px: 2, py: 1.25, bgcolor: '#fff', borderBottom: '1px solid', borderColor: 'rgba(99,102,241,0.12)' }}>
+					<TextField
+						fullWidth
+						size='small'
+						placeholder='Search messages...'
+						value={messageSearch}
+						onChange={(e) => setMessageSearch(e.target.value)}
+						sx={{
+							'& .MuiOutlinedInput-root': {
+								borderRadius: 2,
+								bgcolor: '#f8f7ff',
+								'&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+									borderColor: '#6366f1',
+								},
+							},
+						}}
+						slotProps={{
+							input: {
+								startAdornment: (
+									<InputAdornment position='start'>
+										<SearchIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+									</InputAdornment>
+								),
+							},
+						}}
+					/>
+				</Box>
+
 				{/* Messages */}
 				<Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2.5, bgcolor: '#f8f7ff' }}>
 					{loading ? (
@@ -200,8 +273,14 @@ export default function StudentChatPage({ embedded = false }: { embedded?: boole
 								Send us a message and we'll respond as soon as possible.
 							</Typography>
 						</Box>
+					) : visibleMessages.length === 0 ? (
+						<Box sx={{ textAlign: 'center', mt: 8 }}>
+							<Typography variant='body2' color='text.secondary'>
+								No messages match your search.
+							</Typography>
+						</Box>
 					) : (
-						messages.map((msg) => {
+						visibleMessages.map((msg) => {
 							const isMe = msg.senderId === user?._id;
 							return (
 								<Box
@@ -284,6 +363,9 @@ export default function StudentChatPage({ embedded = false }: { embedded?: boole
 							);
 						})
 					)}
+					{typingUser && !normalizedMessageSearch && (
+						<TypingIndicator typingUser={typingUser} />
+					)}
 					<div ref={messagesEndRef} />
 				</Box>
 
@@ -302,7 +384,7 @@ export default function StudentChatPage({ embedded = false }: { embedded?: boole
 						size='small'
 						placeholder='Type your message...'
 						value={input}
-						onChange={(e) => setInput(e.target.value)}
+						onChange={(e) => handleInputChange(e.target.value)}
 						onKeyDown={(e) => {
 							if (e.key === 'Enter' && !e.shiftKey) {
 								e.preventDefault();

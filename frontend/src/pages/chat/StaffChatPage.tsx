@@ -18,7 +18,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import { chatService } from '../../services/chat.service';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/useAuth';
-import type { IChatConversation, IChatMessage } from '../../types';
+import type { IChatConversation, IChatMessage, IChatTypingEvent } from '../../types';
+import TypingIndicator from '../../components/chat/TypingIndicator';
 
 const HEADER_GRADIENT = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
 const SENT_GRADIENT = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
@@ -56,7 +57,10 @@ export default function StaffChatPage() {
 	const [loadingConvs, setLoadingConvs] = useState(true);
 	const [loadingMsgs, setLoadingMsgs] = useState(false);
 	const [search, setSearch] = useState('');
+	const [messageSearch, setMessageSearch] = useState('');
+	const [typingUser, setTypingUser] = useState<IChatTypingEvent | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		setLoadingConvs(true);
@@ -73,6 +77,8 @@ export default function StaffChatPage() {
 
 	useEffect(() => {
 		if (!selectedConv) return;
+		setTypingUser(null);
+		setMessageSearch('');
 		setLoadingMsgs(true);
 		chatService
 			.getMessages(selectedConv._id)
@@ -87,7 +93,16 @@ export default function StaffChatPage() {
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-	}, [messages]);
+	}, [messages, typingUser]);
+
+	useEffect(() => {
+		return () => {
+			if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+			if (selectedConv?._id) {
+				socket?.emit('chat:typing', { conversationId: selectedConv._id, isTyping: false });
+			}
+		};
+	}, [socket, selectedConv?._id]);
 
 	useEffect(() => {
 		if (!socket) return;
@@ -98,6 +113,7 @@ export default function StaffChatPage() {
 					if (prev.some((m) => m._id === msg._id)) return prev;
 					return [...prev, msg];
 				});
+				if (msg.senderId !== user?._id) setTypingUser(null);
 				socket.emit('chat:markRead', { conversationId: selectedConv._id });
 			}
 		};
@@ -118,23 +134,57 @@ export default function StaffChatPage() {
 			}
 		};
 
+		const onTyping = (event: IChatTypingEvent) => {
+			if (event.userId === user?._id) return;
+			if (!selectedConv || event.conversationId !== selectedConv._id) return;
+			setTypingUser(event.isTyping ? event : null);
+		};
+
 		socket.on('chat:message', onMessage);
 		socket.on('chat:conversationUpdated', onConvUpdated);
+		socket.on('chat:typing', onTyping);
 		return () => {
 			socket.off('chat:message', onMessage);
 			socket.off('chat:conversationUpdated', onConvUpdated);
+			socket.off('chat:typing', onTyping);
 		};
-	}, [socket, selectedConv?._id]);
+	}, [socket, selectedConv?._id, user?._id]);
+
+	const emitTyping = (isTyping: boolean) => {
+		if (!selectedConv?._id) return;
+		socket?.emit('chat:typing', { conversationId: selectedConv._id, isTyping });
+	};
+
+	const handleInputChange = (value: string) => {
+		setInput(value);
+		emitTyping(value.trim().length > 0);
+		if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+		typingTimeoutRef.current = setTimeout(() => emitTyping(false), 1200);
+	};
 
 	const handleSend = () => {
 		if (!input.trim() || !selectedConv) return;
+		emitTyping(false);
 		socket?.emit('chat:send', { content: input.trim(), conversationId: selectedConv._id });
 		setInput('');
 	};
 
+	const normalizedConversationSearch = search.trim().toLowerCase();
 	const filteredConvs = conversations.filter((c) =>
-		c.student?.name?.toLowerCase().includes(search.toLowerCase()),
+		[c.student?.name, c.student?.email, c.lastMessage]
+			.join(' ')
+			.toLowerCase()
+			.includes(normalizedConversationSearch),
 	);
+	const normalizedMessageSearch = messageSearch.trim().toLowerCase();
+	const visibleMessages = normalizedMessageSearch
+		? messages.filter((msg) =>
+				[msg.content, msg.senderName, msg.senderRole]
+					.join(' ')
+					.toLowerCase()
+					.includes(normalizedMessageSearch),
+			)
+		: messages;
 
 	return (
 		<Box sx={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden', bgcolor: '#f5f4ff' }}>
@@ -307,6 +357,34 @@ export default function StaffChatPage() {
 						</Box>
 					</Box>
 
+					<Box sx={{ px: 2, py: 1.25, bgcolor: '#fff', borderBottom: '1px solid', borderColor: 'rgba(99,102,241,0.12)' }}>
+						<TextField
+							fullWidth
+							size='small'
+							placeholder='Search messages...'
+							value={messageSearch}
+							onChange={(e) => setMessageSearch(e.target.value)}
+							sx={{
+								'& .MuiOutlinedInput-root': {
+									borderRadius: 2,
+									bgcolor: '#f8f7ff',
+									'&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+										borderColor: '#6366f1',
+									},
+								},
+							}}
+							slotProps={{
+								input: {
+									startAdornment: (
+										<InputAdornment position='start'>
+											<SearchIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+										</InputAdornment>
+									),
+								},
+							}}
+						/>
+					</Box>
+
 					{/* Messages */}
 					<Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2, bgcolor: '#f8f7ff' }}>
 						{loadingMsgs ? (
@@ -320,8 +398,14 @@ export default function StaffChatPage() {
 									No messages yet. Start the conversation!
 								</Typography>
 							</Box>
+						) : visibleMessages.length === 0 ? (
+							<Box sx={{ textAlign: 'center', mt: 8 }}>
+								<Typography variant='body2' color='text.secondary'>
+									No messages match your search.
+								</Typography>
+							</Box>
 						) : (
-							messages.map((msg) => {
+							visibleMessages.map((msg) => {
 								const isMe = msg.senderId === user?._id;
 								return (
 									<Box
@@ -400,6 +484,9 @@ export default function StaffChatPage() {
 								);
 							})
 						)}
+						{typingUser && !normalizedMessageSearch && (
+							<TypingIndicator typingUser={typingUser} />
+						)}
 						<div ref={messagesEndRef} />
 					</Box>
 
@@ -418,7 +505,7 @@ export default function StaffChatPage() {
 							size='small'
 							placeholder={`Reply to ${selectedConv.student?.name ?? 'student'}...`}
 							value={input}
-							onChange={(e) => setInput(e.target.value)}
+							onChange={(e) => handleInputChange(e.target.value)}
 							onKeyDown={(e) => {
 								if (e.key === 'Enter' && !e.shiftKey) {
 									e.preventDefault();
