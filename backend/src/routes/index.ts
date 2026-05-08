@@ -15,6 +15,8 @@ import enrollmentRouter from './enrollment.routes';
 import performanceRouter from './performance.routes';
 import qaRouter from './qa.routes';
 import dashboardRouter from './dashboard.routes';
+import chatRouter from './chat.routes';
+import notificationRouter from './notification.routes';
 
 const router = Router();
 
@@ -34,5 +36,7 @@ router.use('/enrollments', enrollmentRouter);
 router.use('/performance', performanceRouter);
 router.use('/qa', qaRouter);
 router.use('/dashboard', dashboardRouter);
+router.use('/chat', chatRouter);
+router.use('/notifications', notificationRouter);
 
 export default router;

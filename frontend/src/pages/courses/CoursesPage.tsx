@@ -154,7 +154,7 @@ export default function CoursesPage() {
 		load
 			.then((res) => {
 				const data = res.data;
-				let valid = Array.isArray(data)
+				const valid = Array.isArray(data)
 					? data.filter((c): c is ICourse => Boolean(c && (c as ICourse)._id))
 					: [];
 				setCourses(valid);
@@ -709,7 +709,12 @@ function CourseCardWithRemove({
 }) {
 	return (
 		<Box sx={{ position: 'relative' }}>
-			<CourseCard course={course} basePath='/student/courses' appendPath='/learn' />
+			<CourseCard
+				course={course}
+				basePath='/student/courses'
+				appendPath='/learn'
+				showPreview={false}
+			/>
 			{subscriptionBadge && (
 				<Box
 					sx={{

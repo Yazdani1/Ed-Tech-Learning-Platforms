@@ -33,6 +33,62 @@ export interface IUser {
   updatedAt?: string;
 }
 
+export interface IChatConversation {
+  _id: string;
+  student: Pick<IUser, '_id' | 'name' | 'avatar' | 'email'>;
+  unreadByStaff: number;
+  unreadByStudent: number;
+  lastMessage: string;
+  lastMessageAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IChatMessage {
+  _id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  senderRole: string;
+  senderAvatar: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface IChatTypingEvent {
+  conversationId: string;
+  userId: string;
+  userName: string;
+  userRole: string;
+  isTyping: boolean;
+}
+
+export interface IChatPresenceEvent {
+  studentId: string;
+  isOnline: boolean;
+}
+
+export type NotificationPriority = 'Low' | 'Normal' | 'High' | 'Urgent';
+
+export interface INotificationRecipient {
+  user: string;
+  readAt?: string;
+}
+
+export interface INotification {
+  _id: string;
+  title: string;
+  message: string;
+  priority: NotificationPriority;
+  targetRoles: UserRole[];
+  sentBy: Pick<IUser, '_id' | 'name' | 'role' | 'avatar'>;
+  recipients: INotificationRecipient[];
+  isRead?: boolean;
+  readAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ITeacher {
   _id: string;
   name: string;
@@ -359,6 +415,8 @@ export interface ApiResponse<T = unknown> {
   message?: string;
   data?: T;
   total?: number;
+  page?: number;
+  limit?: number;
   totalUsers?: number;
   pagination?: IPaginationMeta;
 }

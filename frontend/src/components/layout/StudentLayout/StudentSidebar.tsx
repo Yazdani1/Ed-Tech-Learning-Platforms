@@ -21,8 +21,13 @@ import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ChatIcon from '@mui/icons-material/Chat';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import Badge from '@mui/material/Badge';
 import { useAuth } from '../../../context/useAuth';
 import { useTranslation } from 'react-i18next';
+import { useChat } from '../../../context/ChatContext';
+import { useNotifications } from '../../../context/NotificationContext';
 
 const DRAWER_OPEN = 240;
 const DRAWER_CLOSED = 64;
@@ -37,11 +42,15 @@ const navItems = [
 	{ label: 'Profile', icon: <PersonIcon />, path: '/student/profile' },
 	{ label: 'nav.myCourses', icon: <BookIcon />, path: '/student/courses' },
 	{ label: 'Pricing', icon: <CardMembershipIcon />, path: '/pricing' },
+	{ label: 'Support Chat', icon: <ChatIcon />, path: '/student/chat' },
+	{ label: 'Notifications', icon: <NotificationsIcon />, path: '/student/notifications' },
 ];
 
 export default function StudentSidebar() {
 	const { user, logout } = useAuth();
 	const { t } = useTranslation();
+	const { totalUnread } = useChat();
+	const { unreadCount } = useNotifications();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [open, setOpen] = useState(!location.pathname.includes('/learn'));
@@ -98,6 +107,12 @@ export default function StudentSidebar() {
 					const active = item.exact
 						? location.pathname === item.path
 						: location.pathname.startsWith(item.path);
+					const badgeCount =
+						item.path === '/student/chat'
+							? totalUnread
+							: item.path === '/student/notifications'
+								? unreadCount
+								: 0;
 					return (
 						<Tooltip
 							key={item.path}
@@ -123,7 +138,13 @@ export default function StudentSidebar() {
 										color: active ? 'primary.main' : 'inherit',
 									}}
 								>
-									{item.icon}
+									<Badge
+										badgeContent={badgeCount}
+										color='error'
+										invisible={badgeCount === 0}
+									>
+										{item.icon}
+									</Badge>
 								</ListItemIcon>
 								{open && <ListItemText primary={t(item.label)} />}
 							</ListItemButton>

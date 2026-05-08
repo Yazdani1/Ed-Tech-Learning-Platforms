@@ -7,6 +7,8 @@ import StudentLayout from './components/layout/StudentLayout/StudentLayout';
 import TeacherLayout from './components/layout/TeacherLayout/TeacherLayout';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import { ConfirmModalProvider } from './context/ConfirmModalContext';
+import { ChatProvider } from './context/ChatContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
@@ -31,12 +33,17 @@ const CourseBrowsePage = lazy(() => import('./pages/courses/CourseBrowsePage'));
 const FreeCoursesPage = lazy(() => import('./pages/courses/FreeCoursesPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const PublicTeachersPage = lazy(() => import('./pages/teachers/PublicTeachersPage'));
+const StaffChatPage = lazy(() => import('./pages/chat/StaffChatPage'));
+const StudentChatPage = lazy(() => import('./pages/chat/StudentChatPage'));
+const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage'));
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
 export default function App() {
 	return (
 		<ConfirmModalProvider>
+			<ChatProvider>
+			<NotificationProvider>
 			<Suspense fallback={<LoadingSpinner />}>
 				<Routes>
 				<Route path='/' element={<HomePage />} />
@@ -72,6 +79,8 @@ export default function App() {
 					<Route path='/admin/course-qa' element={<AdminCourseQAPage />} />
 					<Route path='/admin/performance' element={<PerformancePage />} />
 					<Route path='/admin/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
+					<Route path='/admin/chat' element={<StaffChatPage />} />
+					<Route path='/admin/notifications' element={<NotificationsPage />} />
 				</Route>
 			</Route>
 
@@ -83,6 +92,8 @@ export default function App() {
 					<Route path='/student/dashboard' element={<DashboardPage />} />{' '}
 					<Route path='/student/profile' element={<ProfilePage />} />{' '}
 					<Route path='/student/courses' element={<CoursesPage />} />
+					<Route path='/student/chat' element={<StudentChatPage />} />
+					<Route path='/student/notifications' element={<NotificationsPage />} />
 				</Route>
 			</Route>
 
@@ -92,6 +103,8 @@ export default function App() {
 					<Route path='/teacher/profile' element={<ProfilePage />} />
 					<Route path='/teacher/courses' element={<TeacherCoursesPage />} />
 					<Route path='/teacher/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
+					<Route path='/teacher/chat' element={<StaffChatPage />} />
+					<Route path='/teacher/notifications' element={<NotificationsPage />} />
 				</Route>
 			</Route>
 
@@ -105,6 +118,8 @@ export default function App() {
 			<Route path='*' element={<NotFoundPage />} />
 				</Routes>
 			</Suspense>
+			</NotificationProvider>
+			</ChatProvider>
 		</ConfirmModalProvider>
 	);
 }

@@ -25,8 +25,13 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ChatIcon from '@mui/icons-material/Chat';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import Badge from '@mui/material/Badge';
 import { useAuth } from '../../../context/useAuth';
 import { useTranslation } from 'react-i18next';
+import { useChat } from '../../../context/ChatContext';
+import { useNotifications } from '../../../context/NotificationContext';
 
 const DRAWER_OPEN = 240;
 const DRAWER_CLOSED = 64;
@@ -64,6 +69,18 @@ const navItems = [
 		roles: ['Super Admin', 'Admin', 'Moderator'],
 	},
 	{
+		label: 'Support Chat',
+		icon: <ChatIcon />,
+		path: '/admin/chat',
+		roles: ['Super Admin', 'Admin', 'Moderator', 'Teacher'],
+	},
+	{
+		label: 'Notifications',
+		icon: <NotificationsIcon />,
+		path: '/admin/notifications',
+		roles: ['Super Admin', 'Admin', 'Moderator'],
+	},
+	{
 		label: 'nav.teachers',
 		icon: <PersonIcon />,
 		path: '/admin/teachers',
@@ -96,6 +113,8 @@ const superAdminItems = [
 export default function AdminSidebar() {
 	const { user, logout } = useAuth();
 	const { t } = useTranslation();
+	const { totalUnread } = useChat();
+	const { unreadCount } = useNotifications();
 	const navigate = useNavigate();
 	const location = useLocation();
 
@@ -111,6 +130,16 @@ export default function AdminSidebar() {
 	const handleLogout = async () => {
 		await logout();
 		navigate('/auth/login');
+	};
+
+	const handleNavigate = (path: string) => {
+		navigate(path, { flushSync: location.pathname.startsWith('/admin/chat') });
+	};
+
+	const getBadgeCount = (path: string) => {
+		if (path === '/admin/chat') return totalUnread;
+		if (path === '/admin/notifications') return unreadCount;
+		return 0;
 	};
 
 	return (
@@ -164,6 +193,7 @@ export default function AdminSidebar() {
 						const active = item.exact
 							? location.pathname === item.path
 							: location.pathname.startsWith(item.path);
+						const badgeCount = getBadgeCount(item.path);
 						return (
 							<Tooltip
 								key={item.path}
@@ -171,7 +201,7 @@ export default function AdminSidebar() {
 								placement='right'
 							>
 								<ListItemButton
-									onClick={() => navigate(item.path)}
+									onClick={() => handleNavigate(item.path)}
 									selected={active}
 									sx={{
 										mx: 1,
@@ -188,8 +218,14 @@ export default function AdminSidebar() {
 											mr: open ? 2 : 0,
 											color: active ? 'primary.main' : 'inherit',
 										}}
-									>
-										{item.icon}
+										>
+										<Badge
+											badgeContent={badgeCount}
+											color='error'
+											invisible={badgeCount === 0}
+										>
+											{item.icon}
+										</Badge>
 									</ListItemIcon>
 									{open && <ListItemText primary={t(item.label)} />}
 								</ListItemButton>
@@ -225,7 +261,7 @@ export default function AdminSidebar() {
 									placement='right'
 								>
 									<ListItemButton
-										onClick={() => navigate(item.path)}
+										onClick={() => handleNavigate(item.path)}
 										selected={active}
 										sx={{
 											mx: 1,
