@@ -1,11 +1,10 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { Course } from '../models/Course.model';
-import { Enrollment } from '../models/Enrollment.model';
+import { Enrollment, type EnrollmentType } from '../models/Enrollment.model';
 import { User } from '../models/User.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
-import type { EnrollmentType } from '../models/Enrollment.model';
 
 const money = (value: number) => Math.round(value * 100) / 100;
 

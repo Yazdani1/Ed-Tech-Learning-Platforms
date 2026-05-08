@@ -2,7 +2,6 @@ import './types/express-augmentation';
 import express, { type Application } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 import apiRoutes from './routes/index';

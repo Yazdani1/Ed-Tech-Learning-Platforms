@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
 	Avatar,
 	Box,
@@ -13,7 +13,6 @@ import {
 	Typography,
 	Divider,
 } from '@mui/material';
-import { Outlet } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
 import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';

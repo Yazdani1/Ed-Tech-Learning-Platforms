@@ -40,7 +40,7 @@ export default function AppPagination({
 		const lastMiddlePage = totalPages - boundaryCount;
 		const halfWindow = Math.floor(safeMiddleCount / 2);
 		let start = Math.max(page - halfWindow, firstMiddlePage);
-		let end = Math.min(start + safeMiddleCount - 1, lastMiddlePage);
+		const end = Math.min(start + safeMiddleCount - 1, lastMiddlePage);
 
 		start = Math.max(end - safeMiddleCount + 1, firstMiddlePage);
 

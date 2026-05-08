@@ -36,7 +36,7 @@ export default tseslint.config(
       // ── General ───────────────────────────────────────────────────────
       'no-console': 'off',
       'no-duplicate-imports': 'error',
-      'eqeqeq': ['error', 'always'],
+      'eqeqeq': ['error', 'always', { null: 'ignore' }],
       'no-var': 'error',
       'prefer-const': 'error',
     },

@@ -198,7 +198,7 @@ export default function BulkEditModal({ open, courses, onClose, onSuccess }: Bul
 	const toggleOne = (id: string) =>
 		setSelectedIds((prev) => {
 			const next = new Set(prev);
-			next.has(id) ? next.delete(id) : next.add(id);
+			if (next.has(id)) { next.delete(id); } else { next.add(id); }
 			return next;
 		});
 

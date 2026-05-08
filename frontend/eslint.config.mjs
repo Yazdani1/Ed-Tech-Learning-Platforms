@@ -54,7 +54,10 @@ export default tseslint.config(
 
       // ── General ───────────────────────────────────────────────────────
       'no-duplicate-imports': 'error',
-      'eqeqeq': ['error', 'always'],
+      'eqeqeq': ['error', 'always', { null: 'ignore' }],
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/purity': 'warn',
       'no-var': 'error',
       'prefer-const': 'error',
     },

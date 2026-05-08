@@ -154,7 +154,7 @@ export default function CoursesPage() {
 		load
 			.then((res) => {
 				const data = res.data;
-				let valid = Array.isArray(data)
+				const valid = Array.isArray(data)
 					? data.filter((c): c is ICourse => Boolean(c && (c as ICourse)._id))
 					: [];
 				setCourses(valid);
