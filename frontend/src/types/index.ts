@@ -63,6 +63,11 @@ export interface IChatTypingEvent {
   isTyping: boolean;
 }
 
+export interface IChatPresenceEvent {
+  studentId: string;
+  isOnline: boolean;
+}
+
 export interface ITeacher {
   _id: string;
   name: string;

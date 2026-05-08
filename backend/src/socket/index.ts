@@ -8,6 +8,7 @@ import { ChatConversation } from '../models/ChatConversation.model';
 import { ChatMessage } from '../models/ChatMessage.model';
 
 const STAFF_ROLES = ['Super Admin', 'Admin', 'Moderator', 'Teacher'];
+const onlineStudents = new Map<string, number>();
 
 interface SocketUser {
 	_id: Types.ObjectId;
@@ -51,10 +52,18 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 
 		if (isStaff) {
 			await socket.join('staff');
+			socket.emit('chat:presenceSnapshot', Array.from(onlineStudents.keys()));
 		} else {
 			let conv = await ChatConversation.findOne({ student: user._id });
 			if (!conv) conv = await ChatConversation.create({ student: user._id });
 			await socket.join(`conv:${(conv._id as Types.ObjectId).toString()}`);
+
+			const studentId = user._id.toString();
+			const connectionCount = onlineStudents.get(studentId) ?? 0;
+			onlineStudents.set(studentId, connectionCount + 1);
+			if (connectionCount === 0) {
+				io.to('staff').emit('chat:presence', { studentId, isOnline: true });
+			}
 		}
 
 		socket.on('chat:send', async (payload: { content: string; conversationId?: string }) => {
@@ -150,6 +159,19 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 				}
 			} catch {
 				/* silent */
+			}
+		});
+
+		socket.on('disconnect', () => {
+			if (isStaff) return;
+
+			const studentId = user._id.toString();
+			const connectionCount = onlineStudents.get(studentId) ?? 0;
+			if (connectionCount <= 1) {
+				onlineStudents.delete(studentId);
+				io.to('staff').emit('chat:presence', { studentId, isOnline: false });
+			} else {
+				onlineStudents.set(studentId, connectionCount - 1);
 			}
 		});
 	});

@@ -18,7 +18,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import { chatService } from '../../services/chat.service';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/useAuth';
-import type { IChatConversation, IChatMessage, IChatTypingEvent } from '../../types';
+import type {
+	IChatConversation,
+	IChatMessage,
+	IChatPresenceEvent,
+	IChatTypingEvent,
+} from '../../types';
 import TypingIndicator from '../../components/chat/TypingIndicator';
 
 const HEADER_GRADIENT = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
@@ -59,6 +64,7 @@ export default function StaffChatPage() {
 	const [search, setSearch] = useState('');
 	const [messageSearch, setMessageSearch] = useState('');
 	const [typingUser, setTypingUser] = useState<IChatTypingEvent | null>(null);
+	const [onlineStudentIds, setOnlineStudentIds] = useState<Set<string>>(new Set());
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -140,13 +146,33 @@ export default function StaffChatPage() {
 			setTypingUser(event.isTyping ? event : null);
 		};
 
+		const onPresenceSnapshot = (studentIds: string[]) => {
+			setOnlineStudentIds(new Set(studentIds));
+		};
+
+		const onPresence = (event: IChatPresenceEvent) => {
+			setOnlineStudentIds((prev) => {
+				const next = new Set(prev);
+				if (event.isOnline) {
+					next.add(event.studentId);
+				} else {
+					next.delete(event.studentId);
+				}
+				return next;
+			});
+		};
+
 		socket.on('chat:message', onMessage);
 		socket.on('chat:conversationUpdated', onConvUpdated);
 		socket.on('chat:typing', onTyping);
+		socket.on('chat:presenceSnapshot', onPresenceSnapshot);
+		socket.on('chat:presence', onPresence);
 		return () => {
 			socket.off('chat:message', onMessage);
 			socket.off('chat:conversationUpdated', onConvUpdated);
 			socket.off('chat:typing', onTyping);
+			socket.off('chat:presenceSnapshot', onPresenceSnapshot);
+			socket.off('chat:presence', onPresence);
 		};
 	}, [socket, selectedConv?._id, user?._id]);
 
@@ -185,6 +211,9 @@ export default function StaffChatPage() {
 					.includes(normalizedMessageSearch),
 			)
 		: messages;
+	const selectedStudentOnline = selectedConv?.student?._id
+		? onlineStudentIds.has(selectedConv.student._id)
+		: false;
 
 	return (
 		<Box sx={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden', bgcolor: '#f5f4ff' }}>
@@ -259,6 +288,9 @@ export default function StaffChatPage() {
 					<List disablePadding sx={{ overflowY: 'auto', flex: 1 }}>
 						{filteredConvs.map((conv) => {
 							const isSelected = selectedConv?._id === conv._id;
+							const isStudentOnline = conv.student?._id
+								? onlineStudentIds.has(conv.student._id)
+								: false;
 							return (
 								<ListItemButton
 									key={conv._id}
@@ -279,34 +311,75 @@ export default function StaffChatPage() {
 										invisible={conv.unreadByStaff === 0}
 										sx={{ '& .MuiBadge-badge': { fontSize: 10, minWidth: 16, height: 16 } }}
 									>
-										<Avatar
-											src={conv.student?.avatar}
-											sx={{
-												width: 40,
-												height: 40,
-												bgcolor: avatarColor('Student'),
-												fontSize: 15,
-												fontWeight: 700,
-											}}
-										>
-											{conv.student?.name?.[0]?.toUpperCase()}
-										</Avatar>
+										<Box sx={{ position: 'relative' }}>
+											<Avatar
+												src={conv.student?.avatar}
+												sx={{
+													width: 40,
+													height: 40,
+													bgcolor: avatarColor('Student'),
+													fontSize: 15,
+													fontWeight: 700,
+												}}
+											>
+												{conv.student?.name?.[0]?.toUpperCase()}
+											</Avatar>
+											<Box
+												sx={{
+													position: 'absolute',
+													right: 1,
+													bottom: 1,
+													width: 11,
+													height: 11,
+													borderRadius: '50%',
+													bgcolor: isStudentOnline ? '#22c55e' : '#cbd5e1',
+													border: '2px solid #fff',
+													boxShadow: isStudentOnline
+														? '0 0 0 2px rgba(34,197,94,0.18)'
+														: 'none',
+												}}
+											/>
+										</Box>
 									</Badge>
 									<Box sx={{ flex: 1, minWidth: 0 }}>
 										<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-											<Typography
-												variant='body2'
-												sx={{ fontWeight: conv.unreadByStaff > 0 ? 700 : 500, fontSize: 13 }}
-												noWrap
-											>
-												{conv.student?.name ?? 'Student'}
-											</Typography>
+											<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, minWidth: 0 }}>
+												<Box
+													sx={{
+														width: 7,
+														height: 7,
+														borderRadius: '50%',
+														bgcolor: isStudentOnline ? '#22c55e' : '#cbd5e1',
+														flexShrink: 0,
+													}}
+												/>
+												<Typography
+													variant='body2'
+													sx={{ fontWeight: conv.unreadByStaff > 0 ? 700 : 500, fontSize: 13 }}
+													noWrap
+												>
+													{conv.student?.name ?? 'Student'}
+												</Typography>
+											</Box>
 											{conv.lastMessageAt && (
 												<Typography variant='caption' sx={{ color: 'text.disabled', fontSize: 10, flexShrink: 0, ml: 0.5 }}>
 													{formatDate(conv.lastMessageAt)}
 												</Typography>
 											)}
 										</Box>
+										<Typography
+											variant='caption'
+											sx={{
+												color: isStudentOnline ? '#16a34a' : 'text.disabled',
+												fontWeight: isStudentOnline ? 700 : 500,
+												display: 'block',
+												fontSize: 10,
+												lineHeight: 1.2,
+												mt: 0.1,
+											}}
+										>
+											{isStudentOnline ? 'Active now' : 'Offline'}
+										</Typography>
 										<Typography
 											variant='caption'
 											sx={{
@@ -348,9 +421,24 @@ export default function StaffChatPage() {
 							{selectedConv.student?.name?.[0]?.toUpperCase()}
 						</Avatar>
 						<Box>
-							<Typography sx={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>
-								{selectedConv.student?.name}
-							</Typography>
+							<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+								<Box
+									sx={{
+										width: 8,
+										height: 8,
+										borderRadius: '50%',
+										bgcolor: selectedStudentOnline ? '#4ade80' : 'rgba(255,255,255,0.55)',
+										boxShadow: selectedStudentOnline ? '0 0 8px #4ade80' : 'none',
+										flexShrink: 0,
+									}}
+								/>
+								<Typography sx={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>
+									{selectedConv.student?.name}
+								</Typography>
+								<Typography sx={{ fontSize: 11, opacity: 0.85, fontWeight: 600 }}>
+									{selectedStudentOnline ? 'Active now' : 'Offline'}
+								</Typography>
+							</Box>
 							<Typography sx={{ fontSize: 12, opacity: 0.8 }}>
 								{selectedConv.student?.email}
 							</Typography>
