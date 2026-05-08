@@ -38,6 +38,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { notificationService } from '../../services/notification.service';
 import { formatDateTime } from '../../utils/dateTime';
 import type { INotification, NotificationPriority, UserRole } from '../../types';
+import RichTextEditor from '../../components/course/RichTextEditor';
 
 const ROLE_OPTIONS: UserRole[] = ['Super Admin', 'Admin', 'Moderator', 'Teacher', 'Student'];
 const PRIORITY_OPTIONS: NotificationPriority[] = ['Low', 'Normal', 'High', 'Urgent'];
@@ -342,7 +343,7 @@ export default function NotificationsPage() {
 				</Box>
 			) : (
 				<>
-					<Stack divider={<Divider flexItem />}>
+					<Stack spacing={1.5} sx={{ p: 2 }}>
 						{notifications.map((notification) => (
 							<NotificationItem
 								key={notification._id}
@@ -351,7 +352,7 @@ export default function NotificationsPage() {
 							/>
 						))}
 					</Stack>
-					<Box sx={{ px: 2.5, pb: 2.5 }}>
+					<Box sx={{ px: 2, pb: 2 }}>
 						<AppPagination
 							page={inboxPagination.page}
 							totalPages={inboxTotalPages}
@@ -389,7 +390,7 @@ export default function NotificationsPage() {
 				</Box>
 			) : (
 				<>
-					<Stack divider={<Divider flexItem />}>
+					<Stack spacing={1.5} sx={{ p: 2 }}>
 						{sentNotifications.map((notification) => (
 							<SentNotificationItem
 								key={notification._id}
@@ -399,7 +400,7 @@ export default function NotificationsPage() {
 							/>
 						))}
 					</Stack>
-					<Box sx={{ px: 2.5, pb: 2.5 }}>
+					<Box sx={{ px: 2, pb: 2 }}>
 						<AppPagination
 							page={sentPagination.page}
 							totalPages={sentTotalPages}
@@ -538,14 +539,12 @@ export default function NotificationsPage() {
 						fullWidth
 						slotProps={{ htmlInput: { maxLength: 140 } }}
 					/>
-					<TextField
-						label='Message'
+					<RichTextEditor
+						key={editingId ?? 'edit'}
 						value={editForm.message}
-						onChange={(e) => setEditForm((prev) => ({ ...prev, message: e.target.value }))}
-						fullWidth
-						multiline
-						minRows={4}
-						slotProps={{ htmlInput: { maxLength: 2000 } }}
+						onChange={(html) => setEditForm((prev) => ({ ...prev, message: html }))}
+						placeholder='Write your notification message...'
+						minHeight={160}
 					/>
 					<FormControl fullWidth>
 						<InputLabel>Priority</InputLabel>
@@ -594,12 +593,17 @@ function NotificationItem({
 	};
 
 	return (
-		<Box
+		<Paper
+			elevation={0}
 			sx={{
 				borderLeft: '4px solid',
 				borderLeftColor: priorityStyle.border,
+				border: '1px solid',
+				borderColor: 'divider',
+				borderRadius: 0.5,
+				overflow: 'hidden',
 				bgcolor: expanded
-					? 'action.selected'
+					? 'rgba(245,158,11,0.1)'
 					: notification.isRead
 					? 'background.paper'
 					: 'rgba(99,102,241,0.13)',
@@ -655,9 +659,20 @@ function NotificationItem({
 			<Collapse in={expanded} timeout='auto' unmountOnExit>
 				<Divider />
 				<Box sx={{ px: 2.25, py: 1.75 }}>
-					<Typography variant='body2' sx={{ lineHeight: 1.7, mb: 1 }}>
-						{notification.message}
-					</Typography>
+					<Box
+						sx={{
+							fontSize: '0.875rem',
+							lineHeight: 1.7,
+							mb: 1,
+							color: 'text.primary',
+							'& p': { m: 0, mb: 0.5 },
+							'& p:last-child': { mb: 0 },
+							'& ul, & ol': { pl: 2.5, mb: 0.5 },
+							'& h2': { fontSize: '1rem', fontWeight: 700, mt: 0.5, mb: 0.5 },
+							'& h3': { fontSize: '0.9rem', fontWeight: 700, mt: 0.5, mb: 0.5 },
+						}}
+						dangerouslySetInnerHTML={{ __html: notification.message }}
+					/>
 					<Typography variant='caption' color='text.secondary'>
 						Sent by{' '}
 						<Typography component='span' variant='caption' sx={{ fontWeight: 700, color: 'text.primary' }}>
@@ -666,7 +681,7 @@ function NotificationItem({
 					</Typography>
 				</Box>
 			</Collapse>
-		</Box>
+		</Paper>
 	);
 }
 
@@ -683,11 +698,16 @@ function SentNotificationItem({
 	const priorityStyle = PRIORITY_STYLES[notification.priority];
 
 	return (
-		<Box
+		<Paper
+			elevation={0}
 			sx={{
 				borderLeft: '4px solid',
 				borderLeftColor: priorityStyle.border,
-				bgcolor: expanded ? 'action.selected' : 'background.paper',
+				border: '1px solid',
+				borderColor: 'divider',
+				borderRadius: 0.5,
+				overflow: 'hidden',
+				bgcolor: expanded ? 'rgba(245,158,11,0.1)' : 'background.paper',
 				transition: 'background 0.2s ease',
 			}}
 		>
@@ -714,35 +734,7 @@ function SentNotificationItem({
 						{formatDateTime(notification.createdAt)}
 					</Typography>
 				</Box>
-				<IconButton
-					size='small'
-					sx={{
-						ml: 0.5,
-						transition: 'transform 0.2s',
-						transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-						flexShrink: 0,
-					}}
-					onClick={(e) => { e.stopPropagation(); setExpanded((prev) => !prev); }}
-				>
-					<ExpandMoreIcon fontSize='small' />
-				</IconButton>
-			</Box>
-
-			{/* Expanded details */}
-			<Collapse in={expanded} timeout='auto' unmountOnExit>
-				<Divider />
-				<Box sx={{ px: 2.25, py: 1.75, display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-					<Box sx={{ flex: 1, minWidth: 0 }}>
-						<Typography variant='body2' sx={{ lineHeight: 1.7, mb: 1 }}>
-							{notification.message}
-						</Typography>
-						<Typography variant='caption' color='text.secondary'>
-							Sent by{' '}
-							<Typography component='span' variant='caption' sx={{ fontWeight: 700, color: 'text.primary' }}>
-								{notification.sentBy?.name ?? 'Admin'}
-							</Typography>
-						</Typography>
-					</Box>
+				<Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
 					<ItemActionMenu
 						actions={[
 							{
@@ -759,7 +751,45 @@ function SentNotificationItem({
 						]}
 					/>
 				</Box>
+				<IconButton
+					size='small'
+					sx={{
+						transition: 'transform 0.2s',
+						transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+						flexShrink: 0,
+					}}
+					onClick={(e) => { e.stopPropagation(); setExpanded((prev) => !prev); }}
+				>
+					<ExpandMoreIcon fontSize='small' />
+				</IconButton>
+			</Box>
+
+			{/* Expanded details */}
+			<Collapse in={expanded} timeout='auto' unmountOnExit>
+				<Divider />
+				<Box sx={{ px: 2.25, py: 1.75 }}>
+					<Box
+						sx={{
+							fontSize: '0.875rem',
+							lineHeight: 1.7,
+							mb: 1,
+							color: 'text.primary',
+							'& p': { m: 0, mb: 0.5 },
+							'& p:last-child': { mb: 0 },
+							'& ul, & ol': { pl: 2.5, mb: 0.5 },
+							'& h2': { fontSize: '1rem', fontWeight: 700, mt: 0.5, mb: 0.5 },
+							'& h3': { fontSize: '0.9rem', fontWeight: 700, mt: 0.5, mb: 0.5 },
+						}}
+						dangerouslySetInnerHTML={{ __html: notification.message }}
+					/>
+					<Typography variant='caption' color='text.secondary'>
+						Sent by{' '}
+						<Typography component='span' variant='caption' sx={{ fontWeight: 700, color: 'text.primary' }}>
+							{notification.sentBy?.name ?? 'Admin'}
+						</Typography>
+					</Typography>
+				</Box>
 			</Collapse>
-		</Box>
+		</Paper>
 	);
 }
