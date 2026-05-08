@@ -85,7 +85,9 @@ export default function CourseDetailPage() {
 	const [enrolling, setEnrolling] = useState(false);
 	const [subPlans, setSubPlans] = useState<ISubscriptionPlanConfig[]>([]);
 	const [studyCurricula, setStudyCurricula] = useState<IStudyCurriculum[]>([]);
-	const [contentView, setContentView] = useState<'recorded' | 'curriculum'>('recorded');
+	const [contentView, setContentView] = useState<'recorded' | 'curriculum'>(
+		'recorded',
+	);
 	const [selectedOption, setSelectedOption] = useState<
 		'subscription' | 'direct'
 	>('direct');
@@ -259,7 +261,6 @@ export default function CourseDetailPage() {
 		? getYouTubeId(introLecture.videoUrl!)
 		: null;
 
-	// All free-preview lectures that have a video
 	const allPreviewLectures: ILecture[] = (course.sections ?? []).flatMap((s) =>
 		s.lectures.filter((l) => l.isPreview && l.videoUrl),
 	);
@@ -268,7 +269,6 @@ export default function CourseDetailPage() {
 		<Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
 			<PublicNavbar />
 
-			{/* â”€â”€ Dark hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<Box sx={{ bgcolor: '#1c1d1f', color: 'white', py: { xs: 5, md: 7 } }}>
 				<Container maxWidth='lg'>
 					<Grid container spacing={4}>
@@ -684,24 +684,24 @@ export default function CourseDetailPage() {
 										Course content
 									</Typography>
 									{activeContentView === 'recorded' && (
-									<Button
-										size='small'
-										onClick={() => {
-											if (!course?.sections) return;
-											const allIds = course.sections.map((s) => s._id);
-											if (expanded.length === allIds.length) {
-												setExpanded([]);
-											} else {
-												setExpanded(allIds);
-											}
-										}}
-										sx={{ color: 'primary.main', fontWeight: 600 }}
-									>
-										{expanded.length === (course?.sections?.length ?? 0) &&
-										(course?.sections?.length ?? 0) > 0
-											? 'Collapse all sections'
-											: 'Expand all sections'}
-									</Button>
+										<Button
+											size='small'
+											onClick={() => {
+												if (!course?.sections) return;
+												const allIds = course.sections.map((s) => s._id);
+												if (expanded.length === allIds.length) {
+													setExpanded([]);
+												} else {
+													setExpanded(allIds);
+												}
+											}}
+											sx={{ color: 'primary.main', fontWeight: 600 }}
+										>
+											{expanded.length === (course?.sections?.length ?? 0) &&
+											(course?.sections?.length ?? 0) > 0
+												? 'Collapse all sections'
+												: 'Expand all sections'}
+										</Button>
 									)}
 									{activeContentView === 'curriculum' && (
 										<Button
@@ -716,7 +716,8 @@ export default function CourseDetailPage() {
 											}}
 											sx={{ color: 'primary.main', fontWeight: 600 }}
 										>
-											{liveExpanded.length === studyCurricula.length && studyCurricula.length > 0
+											{liveExpanded.length === studyCurricula.length &&
+											studyCurricula.length > 0
 												? 'Collapse all weeks'
 												: 'Expand all weeks'}
 										</Button>
@@ -724,10 +725,16 @@ export default function CourseDetailPage() {
 								</Box>
 
 								{showContentTabs && (
-									<Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+									<Box
+										sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}
+									>
 										<Button
 											size='small'
-											variant={activeContentView === 'recorded' ? 'contained' : 'outlined'}
+											variant={
+												activeContentView === 'recorded'
+													? 'contained'
+													: 'outlined'
+											}
 											startIcon={<OndemandVideoIcon fontSize='small' />}
 											onClick={() => setContentView('recorded')}
 										>
@@ -735,7 +742,11 @@ export default function CourseDetailPage() {
 										</Button>
 										<Button
 											size='small'
-											variant={activeContentView === 'curriculum' ? 'contained' : 'outlined'}
+											variant={
+												activeContentView === 'curriculum'
+													? 'contained'
+													: 'outlined'
+											}
 											startIcon={<EventIcon fontSize='small' />}
 											onClick={() => setContentView('curriculum')}
 										>
@@ -755,132 +766,135 @@ export default function CourseDetailPage() {
 								</Typography>
 
 								{activeContentView === 'recorded' ? (
-								<Box
-									sx={{
-										border: '1px solid',
-										borderColor: 'divider',
-										borderRadius: 2,
-										overflow: 'hidden',
-									}}
-								>
-									{course.sections.map((section, si) => (
-										<Accordion
-											key={section._id}
-											expanded={expanded.includes(section._id)}
-											onChange={(_e, isExpanded) => {
-												setExpanded((prev) =>
-													isExpanded
-														? [...prev, section._id]
-														: prev.filter((id) => id !== section._id),
-												);
-											}}
-											elevation={0}
-											disableGutters
-											sx={{
-												borderBottom:
-													si < course.sections.length - 1
-														? '1px solid'
-														: 'none',
-												borderColor: 'divider',
-												'&::before': { display: 'none' },
-											}}
-										>
-											<AccordionSummary
-												expandIcon={<ExpandMoreIcon />}
+									<Box
+										sx={{
+											border: '1px solid',
+											borderColor: 'divider',
+											borderRadius: 2,
+											overflow: 'hidden',
+										}}
+									>
+										{course.sections.map((section, si) => (
+											<Accordion
+												key={section._id}
+												expanded={expanded.includes(section._id)}
+												onChange={(_e, isExpanded) => {
+													setExpanded((prev) =>
+														isExpanded
+															? [...prev, section._id]
+															: prev.filter((id) => id !== section._id),
+													);
+												}}
+												elevation={0}
+												disableGutters
 												sx={{
-													bgcolor: 'grey.50',
-													px: 2.5,
-													py: 1.5,
-													minHeight: 56,
+													borderBottom:
+														si < course.sections.length - 1
+															? '1px solid'
+															: 'none',
+													borderColor: 'divider',
+													'&::before': { display: 'none' },
 												}}
 											>
-												<Typography sx={{ fontWeight: 600, flex: 1 }}>
-													{section.title}
-												</Typography>
-												<Typography
-													variant='caption'
-													color='text.secondary'
-													sx={{ mr: 1, alignSelf: 'center' }}
+												<AccordionSummary
+													expandIcon={<ExpandMoreIcon />}
+													sx={{
+														bgcolor: 'grey.50',
+														px: 2.5,
+														py: 1.5,
+														minHeight: 56,
+													}}
 												>
-													{section.lectures.length} lecture
-													{section.lectures.length !== 1 ? 's' : ''} â€¢{' '}
-													{formatSectionDuration(getSectionDuration(section))}
-												</Typography>
-											</AccordionSummary>
-											<AccordionDetails sx={{ p: 0 }}>
-												{section.lectures.map((lecture, li) => {
-													const canPreview =
-														lecture.isPreview && !!lecture.videoUrl;
-													return (
-														<Box
-															key={lecture._id}
-															onClick={
-																canPreview
-																	? () => setPreviewLecture(lecture)
-																	: undefined
-															}
-															sx={{
-																display: 'flex',
-																alignItems: 'center',
-																gap: 1.5,
-																px: 2.5,
-																py: 1.25,
-																borderTop: li > 0 ? '1px solid' : 'none',
-																borderColor: 'divider',
-																...(canPreview && {
-																	cursor: 'pointer',
-																	'&:hover': { bgcolor: 'action.hover' },
-																}),
-															}}
-														>
-															<PlayCircleOutlinedIcon
-																fontSize='small'
+													<Typography sx={{ fontWeight: 600, flex: 1 }}>
+														{section.title}
+													</Typography>
+													<Typography
+														variant='caption'
+														color='text.secondary'
+														sx={{ mr: 1, alignSelf: 'center' }}
+													>
+														{section.lectures.length} lecture
+														{section.lectures.length !== 1 ? 's' : ''} â€¢{' '}
+														{formatSectionDuration(getSectionDuration(section))}
+													</Typography>
+												</AccordionSummary>
+												<AccordionDetails sx={{ p: 0 }}>
+													{section.lectures.map((lecture, li) => {
+														const canPreview =
+															lecture.isPreview && !!lecture.videoUrl;
+														return (
+															<Box
+																key={lecture._id}
+																onClick={
+																	canPreview
+																		? () => setPreviewLecture(lecture)
+																		: undefined
+																}
 																sx={{
-																	color: canPreview
-																		? 'info.main'
-																		: 'action.active',
-																}}
-															/>
-															<Typography
-																variant='body2'
-																sx={{
-																	flex: 1,
-																	color: canPreview ? 'info.main' : 'inherit',
+																	display: 'flex',
+																	alignItems: 'center',
+																	gap: 1.5,
+																	px: 2.5,
+																	py: 1.25,
+																	borderTop: li > 0 ? '1px solid' : 'none',
+																	borderColor: 'divider',
+																	...(canPreview && {
+																		cursor: 'pointer',
+																		'&:hover': { bgcolor: 'action.hover' },
+																	}),
 																}}
 															>
-																{lecture.title}
-															</Typography>
-															{lecture.duration && (
-																<Typography
-																	variant='caption'
-																	color='text.secondary'
-																	sx={{ mr: 1 }}
-																>
-																	{formatLectureDuration(lecture.duration)}
-																</Typography>
-															)}
-															{lecture.isPreview && (
-																<Chip
-																	label='Free Preview'
-																	size='small'
-																	color='info'
-																	variant='outlined'
+																<PlayCircleOutlinedIcon
+																	fontSize='small'
+																	sx={{
+																		color: canPreview
+																			? 'info.main'
+																			: 'action.active',
+																	}}
 																/>
-															)}
+																<Typography
+																	variant='body2'
+																	sx={{
+																		flex: 1,
+																		color: canPreview ? 'info.main' : 'inherit',
+																	}}
+																>
+																	{lecture.title}
+																</Typography>
+																{lecture.duration && (
+																	<Typography
+																		variant='caption'
+																		color='text.secondary'
+																		sx={{ mr: 1 }}
+																	>
+																		{formatLectureDuration(lecture.duration)}
+																	</Typography>
+																)}
+																{lecture.isPreview && (
+																	<Chip
+																		label='Free Preview'
+																		size='small'
+																		color='info'
+																		variant='outlined'
+																	/>
+																)}
+															</Box>
+														);
+													})}
+													{section.lectures.length === 0 && (
+														<Box sx={{ px: 2.5, py: 2 }}>
+															<Typography
+																variant='body2'
+																color='text.secondary'
+															>
+																No lectures yet.
+															</Typography>
 														</Box>
-													);
-												})}
-												{section.lectures.length === 0 && (
-													<Box sx={{ px: 2.5, py: 2 }}>
-														<Typography variant='body2' color='text.secondary'>
-															No lectures yet.
-														</Typography>
-													</Box>
-												)}
-											</AccordionDetails>
-										</Accordion>
-									))}
-								</Box>
+													)}
+												</AccordionDetails>
+											</Accordion>
+										))}
+									</Box>
 								) : (
 									<Box
 										sx={{
@@ -928,13 +942,24 @@ export default function CourseDetailPage() {
 													}}
 												>
 													<Box sx={{ flex: 1, minWidth: 0 }}>
-														<Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+														<Box
+															sx={{
+																display: 'flex',
+																gap: 1.5,
+																alignItems: 'center',
+															}}
+														>
 															<Box
 																sx={{
 																	width: 64,
 																	minHeight: 78,
 																	borderRadius: 1,
-																	bgcolor: ci % 3 === 0 ? '#f59e0b' : ci % 3 === 1 ? '#fb7c3c' : '#0ea5e9',
+																	bgcolor:
+																		ci % 3 === 0
+																			? '#f59e0b'
+																			: ci % 3 === 1
+																				? '#fb7c3c'
+																				: '#0ea5e9',
 																	color: 'white',
 																	display: 'flex',
 																	flexDirection: 'column',
@@ -947,14 +972,32 @@ export default function CourseDetailPage() {
 																	flexShrink: 0,
 																}}
 															>
-																<Typography sx={{ fontSize: '0.78rem', fontWeight: 800, lineHeight: 1.1 }}>
+																<Typography
+																	sx={{
+																		fontSize: '0.78rem',
+																		fontWeight: 800,
+																		lineHeight: 1.1,
+																	}}
+																>
 																	Week
 																</Typography>
-																<Typography sx={{ fontSize: '1.25rem', fontWeight: 900, lineHeight: 1.1 }}>
+																<Typography
+																	sx={{
+																		fontSize: '1.25rem',
+																		fontWeight: 900,
+																		lineHeight: 1.1,
+																	}}
+																>
 																	{ci + 1}
 																</Typography>
 															</Box>
-															<Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#111827' }}>
+															<Typography
+																sx={{
+																	fontWeight: 800,
+																	fontSize: '1rem',
+																	color: '#111827',
+																}}
+															>
 																{curriculum.title || curriculum.weekName}
 															</Typography>
 														</Box>
@@ -974,15 +1017,28 @@ export default function CourseDetailPage() {
 														}}
 													>
 														<EventIcon sx={{ fontSize: 17 }} />
-														<Typography variant='caption' sx={{ fontWeight: 800 }}>
+														<Typography
+															variant='caption'
+															sx={{ fontWeight: 800 }}
+														>
 															{curriculum.lectures.length} Live Class
 														</Typography>
 													</Box>
 												</AccordionSummary>
 												<AccordionDetails sx={{ p: 0 }}>
 													<Box
-														sx={{ px: 2.5, py: 1.5, fontSize: '0.9rem', lineHeight: 1.7, color: 'text.secondary', '& p': { m: 0, mb: 0.5 }, '& ul, & ol': { pl: 2.5, my: 0.5 } }}
-														dangerouslySetInnerHTML={{ __html: curriculum.description }}
+														sx={{
+															px: 2.5,
+															py: 1.5,
+															fontSize: '0.9rem',
+															lineHeight: 1.7,
+															color: 'text.secondary',
+															'& p': { m: 0, mb: 0.5 },
+															'& ul, & ol': { pl: 2.5, my: 0.5 },
+														}}
+														dangerouslySetInnerHTML={{
+															__html: curriculum.description,
+														}}
 													/>
 													<Box
 														sx={{
@@ -996,9 +1052,20 @@ export default function CourseDetailPage() {
 															bgcolor: 'background.paper',
 														}}
 													>
-														<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-															<EventIcon sx={{ fontSize: 18, color: 'primary.main' }} />
-															<Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
+														<Box
+															sx={{
+																display: 'flex',
+																alignItems: 'center',
+																gap: 0.75,
+															}}
+														>
+															<EventIcon
+																sx={{ fontSize: 18, color: 'primary.main' }}
+															/>
+															<Typography
+																variant='subtitle2'
+																sx={{ fontWeight: 800 }}
+															>
 																{curriculum.lectures.length} Live Class
 															</Typography>
 														</Box>
@@ -1017,27 +1084,59 @@ export default function CourseDetailPage() {
 															}}
 														>
 															<Box sx={{ flex: 1, minWidth: 0 }}>
-																<Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 0.75 }}>
-																	<Typography variant='body2' sx={{ fontWeight: 800, color: '#111827' }}>
+																<Box
+																	sx={{
+																		display: 'flex',
+																		alignItems: 'flex-start',
+																		justifyContent: 'space-between',
+																		gap: 2,
+																		mb: 0.75,
+																	}}
+																>
+																	<Typography
+																		variant='body2'
+																		sx={{ fontWeight: 800, color: '#111827' }}
+																	>
 																		{lecture.title}
 																	</Typography>
-																	<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
-																	<Chip
-																		icon={<CalendarTodayIcon sx={{ fontSize: 14 }} />}
-																		label={formatLiveClassDate(lecture.day)}
-																		size='small'
+																	<Box
 																		sx={{
-																			bgcolor: '#e0f2fe',
-																			color: '#075985',
-																			fontWeight: 700,
-																			borderRadius: 1,
+																			display: 'flex',
+																			gap: 1,
+																			alignItems: 'center',
+																			flexShrink: 0,
 																		}}
-																	/>
-																		<Chip icon={<AccessTimeIcon sx={{ fontSize: 14 }} />} label={formatLiveClassTime(lecture.time)} size='small' variant='outlined' />
+																	>
+																		<Chip
+																			icon={
+																				<CalendarTodayIcon
+																					sx={{ fontSize: 14 }}
+																				/>
+																			}
+																			label={formatLiveClassDate(lecture.day)}
+																			size='small'
+																			sx={{
+																				bgcolor: '#e0f2fe',
+																				color: '#075985',
+																				fontWeight: 700,
+																				borderRadius: 1,
+																			}}
+																		/>
+																		<Chip
+																			icon={
+																				<AccessTimeIcon sx={{ fontSize: 14 }} />
+																			}
+																			label={formatLiveClassTime(lecture.time)}
+																			size='small'
+																			variant='outlined'
+																		/>
 																	</Box>
 																</Box>
 																{lecture.description && (
-																	<Typography variant='body2' color='text.secondary'>
+																	<Typography
+																		variant='body2'
+																		color='text.secondary'
+																	>
 																		{lecture.description}
 																	</Typography>
 																)}
@@ -1334,7 +1433,11 @@ export default function CourseDetailPage() {
 												onClick={() =>
 													navigate(`/admin/courses/${course._id}/learn`)
 												}
-												sx={{ fontWeight: 700, borderRadius: 2, mt: !isModerator ? 1.5 : 0 }}
+												sx={{
+													fontWeight: 700,
+													borderRadius: 2,
+													mt: !isModerator ? 1.5 : 0,
+												}}
 											>
 												Student View
 											</Button>
@@ -1424,8 +1527,7 @@ export default function CourseDetailPage() {
 													color='text.secondary'
 													sx={{ mt: 1 }}
 												>
-													Enrolled on{' '}
-													{formatDateTime(enrollmentDate)}
+													Enrolled on {formatDateTime(enrollmentDate)}
 												</Typography>
 											)}
 											<Box sx={{ mt: 2 }}>
@@ -1935,14 +2037,28 @@ export default function CourseDetailPage() {
 														{course.pricing === 'Free' || !priceInfo ? (
 															<Typography
 																variant='h5'
-																sx={{ fontWeight: 800, lineHeight: 1.2, mt: 0.25 }}
+																sx={{
+																	fontWeight: 800,
+																	lineHeight: 1.2,
+																	mt: 0.25,
+																}}
 															>
 																Free
 															</Typography>
 														) : (
 															<Box sx={{ mt: 0.25 }}>
-																<Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
-																	<Typography variant='h5' sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+																<Box
+																	sx={{
+																		display: 'flex',
+																		alignItems: 'baseline',
+																		gap: 1,
+																		flexWrap: 'wrap',
+																	}}
+																>
+																	<Typography
+																		variant='h5'
+																		sx={{ fontWeight: 900, lineHeight: 1.2 }}
+																	>
 																		{formatBdt(priceInfo.discountPrice)}
 																	</Typography>
 																	{priceInfo.hasDiscount && (
@@ -1950,17 +2066,32 @@ export default function CourseDetailPage() {
 																			label={`${priceInfo.discountPercent}% off`}
 																			size='small'
 																			color='success'
-																			sx={{ height: 24, fontSize: '0.75rem', fontWeight: 800 }}
+																			sx={{
+																				height: 24,
+																				fontSize: '0.75rem',
+																				fontWeight: 800,
+																			}}
 																		/>
 																	)}
 																</Box>
 																{priceInfo.hasDiscount && (
-																	<Typography variant='body2' color='text.secondary' sx={{ mt: 0.5 }}>
+																	<Typography
+																		variant='body2'
+																		color='text.secondary'
+																		sx={{ mt: 0.5 }}
+																	>
 																		List price{' '}
-																		<Box component='span' sx={{ textDecoration: 'line-through', fontWeight: 700 }}>
+																		<Box
+																			component='span'
+																			sx={{
+																				textDecoration: 'line-through',
+																				fontWeight: 700,
+																			}}
+																		>
 																			{formatBdt(priceInfo.listPrice)}
 																		</Box>{' '}
-																		You save {formatBdt(priceInfo.discountAmount)}
+																		You save{' '}
+																		{formatBdt(priceInfo.discountAmount)}
 																	</Typography>
 																)}
 															</Box>
@@ -2113,7 +2244,13 @@ export default function CourseDetailPage() {
 				hideActions
 				contentDividers={false}
 				paperSx={{ borderRadius: 3, overflow: 'hidden', bgcolor: '#0f0f0f' }}
-				titleSx={{ bgcolor: '#1a1a1a', color: 'white', py: 1.5, px: 2.5, pr: 6 }}
+				titleSx={{
+					bgcolor: '#1a1a1a',
+					color: 'white',
+					py: 1.5,
+					px: 2.5,
+					pr: 6,
+				}}
 				closeButtonSx={{ color: 'grey.400', '&:hover': { color: 'white' } }}
 				contentSx={{
 					p: 0,
@@ -2142,126 +2279,123 @@ export default function CourseDetailPage() {
 					</Box>
 				}
 			>
-					{/* Video player */}
-					<Box
-						sx={{
-							flex: 1,
-							bgcolor: '#000',
-							position: 'relative',
-							minHeight: { xs: 240, md: 420 },
-						}}
-					>
-						{previewLecture?.videoUrl &&
-						getYouTubeId(previewLecture.videoUrl) ? (
-							<Box
-								key={previewLecture._id}
-								component='iframe'
-								src={`https://www.youtube.com/embed/${getYouTubeId(previewLecture.videoUrl)}?autoplay=1`}
-								title={previewLecture.title}
-								allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
-								allowFullScreen
-								sx={{
-									position: 'absolute',
-									inset: 0,
-									width: '100%',
-									height: '100%',
-									border: 'none',
-								}}
-							/>
-						) : (
-							<Box
-								sx={{
-									position: 'absolute',
-									inset: 0,
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'center',
-								}}
-							>
-								<Typography color='grey.500'>No video available</Typography>
-							</Box>
-						)}
-					</Box>
-
-					{/* Sidebar: other preview lectures */}
-					{allPreviewLectures.length > 1 && (
+				{/* Video player */}
+				<Box
+					sx={{
+						flex: 1,
+						bgcolor: '#000',
+						position: 'relative',
+						minHeight: { xs: 240, md: 420 },
+					}}
+				>
+					{previewLecture?.videoUrl && getYouTubeId(previewLecture.videoUrl) ? (
+						<Box
+							key={previewLecture._id}
+							component='iframe'
+							src={`https://www.youtube.com/embed/${getYouTubeId(previewLecture.videoUrl)}?autoplay=1`}
+							title={previewLecture.title}
+							allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+							allowFullScreen
+							sx={{
+								position: 'absolute',
+								inset: 0,
+								width: '100%',
+								height: '100%',
+								border: 'none',
+							}}
+						/>
+					) : (
 						<Box
 							sx={{
-								width: { xs: '100%', md: 280 },
-								bgcolor: '#1a1a1a',
+								position: 'absolute',
+								inset: 0,
 								display: 'flex',
-								flexDirection: 'column',
-								borderLeft: { md: '1px solid #2a2a2a' },
-								borderTop: { xs: '1px solid #2a2a2a', md: 'none' },
-								overflow: 'hidden',
+								alignItems: 'center',
+								justifyContent: 'center',
 							}}
 						>
-							<Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid #2a2a2a' }}>
-								<Typography
-									variant='caption'
-									sx={{
-										color: 'grey.400',
-										fontWeight: 600,
-										textTransform: 'uppercase',
-										letterSpacing: 0.5,
-									}}
-								>
-									Free Previews ({allPreviewLectures.length})
-								</Typography>
-							</Box>
-							<List disablePadding sx={{ overflow: 'auto', flex: 1 }}>
-								{allPreviewLectures.map((lec) => {
-									const isActive = lec._id === previewLecture?._id;
-									return (
-										<ListItemButton
-											key={lec._id}
-											selected={isActive}
-											onClick={() => setPreviewLecture(lec)}
-											sx={{
-												px: 2,
-												py: 1.25,
-												gap: 1.25,
-												borderBottom: '1px solid #2a2a2a',
-												'&.Mui-selected': { bgcolor: '#7c3aed22' },
-												'&.Mui-selected:hover': { bgcolor: '#7c3aed33' },
-												'&:hover': { bgcolor: '#ffffff0a' },
-											}}
-										>
-											{isActive ? (
-												<PlayCircleFilledIcon
-													sx={{ fontSize: 20, color: '#a78bfa', flexShrink: 0 }}
-												/>
-											) : (
-												<PlayCircleOutlinedIcon
-													sx={{
-														fontSize: 20,
-														color: 'grey.500',
-														flexShrink: 0,
-													}}
-												/>
-											)}
-											<ListItemText
-												primary={lec.title}
-												slotProps={{
-													primary: {
-														style: {
-															fontSize: '0.82rem',
-															fontWeight: isActive ? 700 : 400,
-															color: isActive ? '#a78bfa' : '#d1d5db',
-															lineHeight: 1.35,
-														},
-													},
-												}}
-											/>
-										</ListItemButton>
-									);
-								})}
-							</List>
+							<Typography color='grey.500'>No video available</Typography>
 						</Box>
 					)}
+				</Box>
+
+				{/* Sidebar: other preview lectures */}
+				{allPreviewLectures.length > 1 && (
+					<Box
+						sx={{
+							width: { xs: '100%', md: 280 },
+							bgcolor: '#1a1a1a',
+							display: 'flex',
+							flexDirection: 'column',
+							borderLeft: { md: '1px solid #2a2a2a' },
+							borderTop: { xs: '1px solid #2a2a2a', md: 'none' },
+							overflow: 'hidden',
+						}}
+					>
+						<Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid #2a2a2a' }}>
+							<Typography
+								variant='caption'
+								sx={{
+									color: 'grey.400',
+									fontWeight: 600,
+									textTransform: 'uppercase',
+									letterSpacing: 0.5,
+								}}
+							>
+								Free Previews ({allPreviewLectures.length})
+							</Typography>
+						</Box>
+						<List disablePadding sx={{ overflow: 'auto', flex: 1 }}>
+							{allPreviewLectures.map((lec) => {
+								const isActive = lec._id === previewLecture?._id;
+								return (
+									<ListItemButton
+										key={lec._id}
+										selected={isActive}
+										onClick={() => setPreviewLecture(lec)}
+										sx={{
+											px: 2,
+											py: 1.25,
+											gap: 1.25,
+											borderBottom: '1px solid #2a2a2a',
+											'&.Mui-selected': { bgcolor: '#7c3aed22' },
+											'&.Mui-selected:hover': { bgcolor: '#7c3aed33' },
+											'&:hover': { bgcolor: '#ffffff0a' },
+										}}
+									>
+										{isActive ? (
+											<PlayCircleFilledIcon
+												sx={{ fontSize: 20, color: '#a78bfa', flexShrink: 0 }}
+											/>
+										) : (
+											<PlayCircleOutlinedIcon
+												sx={{
+													fontSize: 20,
+													color: 'grey.500',
+													flexShrink: 0,
+												}}
+											/>
+										)}
+										<ListItemText
+											primary={lec.title}
+											slotProps={{
+												primary: {
+													style: {
+														fontSize: '0.82rem',
+														fontWeight: isActive ? 700 : 400,
+														color: isActive ? '#a78bfa' : '#d1d5db',
+														lineHeight: 1.35,
+													},
+												},
+											}}
+										/>
+									</ListItemButton>
+								);
+							})}
+						</List>
+					</Box>
+				)}
 			</AppModal>
 		</Box>
 	);
 }
-
-
