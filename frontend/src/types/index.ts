@@ -430,3 +430,64 @@ export interface IPaginationMeta {
   hasNextPage: boolean;
   hasPrevPage: boolean;
 }
+
+export interface IQuizOption {
+  _id?: string;
+  text: string;
+  explanation?: string;
+}
+
+export interface IQuizQuestion {
+  _id: string;
+  question: string;
+  options: IQuizOption[];
+  correctOptionIndices: number[];
+  order: number;
+}
+
+export interface IQuizSection {
+  _id: string;
+  course: string;
+  title: string;
+  order: number;
+  createdBy: Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type QuizContextType = 'Section' | 'Announcement' | 'Course';
+
+export interface IQuizBank {
+  _id: string;
+  course: string;
+  quizSection?: string;
+  contextType?: QuizContextType;
+  contextId?: string;
+  title: string;
+  description?: string;
+  questions: IQuizQuestion[];
+  createdBy: {
+    _id: string;
+    name: string;
+    avatar?: string;
+    role: UserRole;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IAttemptAnswer {
+  questionId: string;
+  selectedOptionIndices: number[];
+  isCorrect: boolean;
+}
+
+export interface IQuizAttempt {
+  _id: string;
+  student: string;
+  quizBank: string;
+  course: string;
+  answers: IAttemptAnswer[];
+  createdAt: string;
+  updatedAt: string;
+}
