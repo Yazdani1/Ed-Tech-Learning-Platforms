@@ -28,6 +28,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
+import SearchIcon from '@mui/icons-material/Search';
 import toast from 'react-hot-toast';
 import AppModal from '../../components/common/AppModal';
 import { useConfirmModal } from '../../context/ConfirmModalContext';
@@ -50,6 +51,14 @@ const getBillingOptions = (plan: ISubscriptionPlanConfig) =>
 		: [{ label: plan.duration === 1 ? 'Monthly' : `${plan.duration} months`, duration: plan.duration, price: plan.price }];
 
 const blankBillingOption = () => ({ label: '', duration: '1', price: '' });
+type MemberStatusFilter = 'active' | 'cancelled' | 'expired' | 'all';
+
+const memberStatusTabs: Array<{ value: MemberStatusFilter; label: string }> = [
+	{ value: 'active', label: 'Active Members' },
+	{ value: 'cancelled', label: 'Cancelled' },
+	{ value: 'expired', label: 'Expired' },
+	{ value: 'all', label: 'All Records' },
+];
 
 export default function SubscriptionsPage() {
 	const { confirm } = useConfirmModal();
@@ -76,6 +85,12 @@ export default function SubscriptionsPage() {
 		plan: '',
 		billingDuration: '',
 		endDate: '',
+	});
+	const [memberStatusTab, setMemberStatusTab] = useState<MemberStatusFilter>('active');
+	const [memberFilters, setMemberFilters] = useState({
+		search: '',
+		plan: '',
+		billingDuration: '',
 	});
 
 	useEffect(() => {
@@ -264,6 +279,57 @@ export default function SubscriptionsPage() {
 
 	const selectedAssignPlan = planConfigs.find((plan) => plan.plan === assignForm.plan);
 	const selectedAssignOptions = selectedAssignPlan ? getBillingOptions(selectedAssignPlan) : [];
+	const planFilterOptions = planConfigs.map((plan) => plan.plan);
+	const billingFilterOptions = Array.from(
+		new Map(
+			planConfigs
+				.flatMap((plan) => getBillingOptions(plan))
+				.map((option) => [option.duration, option.label || `${option.duration} months`]),
+		).entries(),
+	)
+		.map(([duration, label]) => ({ duration, label }))
+		.sort((a, b) => a.duration - b.duration);
+
+	const getEffectiveStatus = (sub: ISubscription): 'Active' | 'Expired' | 'Cancelled' => {
+		if (sub.status === 'Cancelled') return 'Cancelled';
+		if (sub.status === 'Expired' || new Date(sub.endDate) <= new Date()) return 'Expired';
+		return 'Active';
+	};
+
+	const subscriptionRows = subscriptions.map((sub) => ({
+		...sub,
+		effectiveStatus: getEffectiveStatus(sub),
+	}));
+
+	const statusCounts = subscriptionRows.reduce(
+		(acc, sub) => {
+			if (sub.effectiveStatus === 'Active') acc.active += 1;
+			if (sub.effectiveStatus === 'Cancelled') acc.cancelled += 1;
+			if (sub.effectiveStatus === 'Expired') acc.expired += 1;
+			acc.all += 1;
+			return acc;
+		},
+		{ active: 0, cancelled: 0, expired: 0, all: 0 },
+	);
+
+	const filteredSubscriptions = subscriptionRows.filter((sub) => {
+		const user = sub.user as IUser;
+		const haystack = `${user?.name ?? ''} ${user?.email ?? ''} ${sub.plan}`.toLowerCase();
+		const matchesSearch = !memberFilters.search.trim() || haystack.includes(memberFilters.search.trim().toLowerCase());
+		const matchesPlan = !memberFilters.plan || sub.plan === memberFilters.plan;
+		const matchesBilling = !memberFilters.billingDuration || String(sub.billingDuration ?? '') === memberFilters.billingDuration;
+		const matchesStatus =
+			memberStatusTab === 'all' ||
+			(memberStatusTab === 'active' && sub.effectiveStatus === 'Active') ||
+			(memberStatusTab === 'cancelled' && sub.effectiveStatus === 'Cancelled') ||
+			(memberStatusTab === 'expired' && sub.effectiveStatus === 'Expired');
+
+		return matchesSearch && matchesPlan && matchesBilling && matchesStatus;
+	});
+
+	const clearMemberFilters = () => {
+		setMemberFilters({ search: '', plan: '', billingDuration: '' });
+	};
 
 	return (
 		<Box>
@@ -273,7 +339,7 @@ export default function SubscriptionsPage() {
 
 			<Tabs value={activeTab} onChange={(_, v: number) => setActiveTab(v)} sx={{ mb: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
 				<Tab label='Plans' />
-				<Tab label='Active Subscriptions' />
+				<Tab label='Subscription Members' />
 			</Tabs>
 
 			{activeTab === 0 && (
@@ -340,11 +406,101 @@ export default function SubscriptionsPage() {
 
 			{activeTab === 1 && (
 				<Box>
-					<Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+					<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 2 }}>
+						<Box>
+							<Typography variant='h6' sx={{ fontWeight: 800 }}>
+								Subscription Members
+							</Typography>
+							<Typography variant='body2' color='text.secondary'>
+								Review active members, cancelled records, expired access, and plan-based user lists.
+							</Typography>
+						</Box>
 						<Button variant='contained' startIcon={<AddIcon />} onClick={handleOpenAssignDialog} disabled={planConfigs.length === 0}>
 							Assign Subscription
 						</Button>
 					</Box>
+
+					<Tabs
+						value={memberStatusTab}
+						onChange={(_, value: MemberStatusFilter) => setMemberStatusTab(value)}
+						sx={{ mb: 2, borderBottom: '1px solid', borderColor: 'divider' }}
+					>
+						{memberStatusTabs.map((tab) => (
+							<Tab
+								key={tab.value}
+								value={tab.value}
+								label={`${tab.label} (${statusCounts[tab.value]})`}
+							/>
+						))}
+					</Tabs>
+
+					<Paper
+						elevation={0}
+						sx={{
+							p: 2,
+							mb: 2.5,
+							border: '1px solid',
+							borderColor: 'divider',
+							borderRadius: 2,
+						}}
+					>
+						<Grid container spacing={2} sx={{ alignItems: 'center' }}>
+							<Grid size={{ xs: 12, md: 4 }}>
+								<TextField
+									label='Search members'
+									value={memberFilters.search}
+									onChange={(e) => setMemberFilters((current) => ({ ...current, search: e.target.value }))}
+									fullWidth
+									size='small'
+									placeholder='Name, email, or plan'
+									slotProps={{
+										input: {
+											startAdornment: <SearchIcon fontSize='small' sx={{ color: 'text.secondary', mr: 1 }} />,
+										},
+									}}
+								/>
+							</Grid>
+							<Grid size={{ xs: 12, sm: 6, md: 3 }}>
+								<TextField
+									label='Subscription plan'
+									select
+									value={memberFilters.plan}
+									onChange={(e) => setMemberFilters((current) => ({ ...current, plan: e.target.value }))}
+									fullWidth
+									size='small'
+								>
+									<MenuItem value=''>All plans</MenuItem>
+									{planFilterOptions.map((plan) => (
+										<MenuItem key={plan} value={plan}>
+											{plan}
+										</MenuItem>
+									))}
+								</TextField>
+							</Grid>
+							<Grid size={{ xs: 12, sm: 6, md: 3 }}>
+								<TextField
+									label='Billing duration'
+									select
+									value={memberFilters.billingDuration}
+									onChange={(e) => setMemberFilters((current) => ({ ...current, billingDuration: e.target.value }))}
+									fullWidth
+									size='small'
+								>
+									<MenuItem value=''>All durations</MenuItem>
+									{billingFilterOptions.map((option) => (
+										<MenuItem key={option.duration} value={String(option.duration)}>
+											{option.label}
+										</MenuItem>
+									))}
+								</TextField>
+							</Grid>
+							<Grid size={{ xs: 12, md: 2 }}>
+								<Button fullWidth variant='outlined' onClick={clearMemberFilters} sx={{ fontWeight: 800 }}>
+									Clear
+								</Button>
+							</Grid>
+						</Grid>
+					</Paper>
 
 					{subsLoading ? (
 						<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
@@ -358,6 +514,7 @@ export default function SubscriptionsPage() {
 										<TableCell sx={{ fontWeight: 600 }}>User</TableCell>
 										<TableCell sx={{ fontWeight: 600 }}>Plan</TableCell>
 										<TableCell sx={{ fontWeight: 600 }}>Billing</TableCell>
+										<TableCell sx={{ fontWeight: 600 }}>Paid</TableCell>
 										<TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
 										<TableCell sx={{ fontWeight: 600 }}>Start Date</TableCell>
 										<TableCell sx={{ fontWeight: 600 }}>End Date</TableCell>
@@ -366,15 +523,23 @@ export default function SubscriptionsPage() {
 									</TableRow>
 								</TableHead>
 								<TableBody>
-									{subscriptions.map((sub) => (
+									{filteredSubscriptions.map((sub) => (
 										<TableRow key={sub._id}>
-											<TableCell>{(sub.user as IUser).name}</TableCell>
+											<TableCell>
+												<Typography variant='body2' sx={{ fontWeight: 800 }}>
+													{(sub.user as IUser).name}
+												</Typography>
+												<Typography variant='caption' color='text.secondary'>
+													{(sub.user as IUser).email}
+												</Typography>
+											</TableCell>
 											<TableCell>
 												<Chip label={sub.plan} size='small' sx={{ bgcolor: PLAN_COLORS[sub.plan] ?? '#1976d2', color: 'white', fontWeight: 600 }} />
 											</TableCell>
 											<TableCell>{sub.billingLabel ?? (sub.billingDuration ? `${sub.billingDuration} months` : '-')}</TableCell>
+											<TableCell>{sub.pricePaid !== undefined ? `BDT ${sub.pricePaid.toLocaleString()}` : '-'}</TableCell>
 											<TableCell>
-												<Chip label={sub.status} size='small' color={getStatusColor(sub.status)} />
+												<Chip label={sub.effectiveStatus} size='small' color={getStatusColor(sub.effectiveStatus)} />
 											</TableCell>
 											<TableCell>{formatDate(sub.startDate)}</TableCell>
 											<TableCell>{formatDate(sub.endDate)}</TableCell>
@@ -388,10 +553,10 @@ export default function SubscriptionsPage() {
 											</TableCell>
 										</TableRow>
 									))}
-									{subscriptions.length === 0 && (
+									{filteredSubscriptions.length === 0 && (
 										<TableRow>
-											<TableCell colSpan={8} align='center' sx={{ py: 4, color: 'text.secondary' }}>
-												No subscriptions yet.
+											<TableCell colSpan={9} align='center' sx={{ py: 4, color: 'text.secondary' }}>
+												No subscriptions match this view.
 											</TableCell>
 										</TableRow>
 									)}
