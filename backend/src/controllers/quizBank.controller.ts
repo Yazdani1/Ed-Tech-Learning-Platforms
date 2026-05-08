@@ -330,6 +330,10 @@ export const getPublicCourseQuizBanks = asyncHandler(
     });
     const banks = await QuizBank.find({ course: courseId });
 
+    const freeSectionIds = new Set(
+      sections.filter((s) => s.isFreePreview).map((s) => s._id.toString()),
+    );
+
     const result = [];
     for (const section of sections) {
       const sectionBanks = banks.filter(
@@ -349,6 +353,19 @@ export const getPublicCourseQuizBanks = asyncHandler(
       }
     }
 
-    res.status(200).json({ success: true, data: { course, sections: result } });
+    const lockedBanks = banks.filter((b) => {
+      const inFreeSection = b.quizSection && freeSectionIds.has(b.quizSection.toString());
+      return !inFreeSection && !b.isFreePreview;
+    });
+    const lockedBankCount = lockedBanks.length;
+    const lockedQuestionCount = lockedBanks.reduce(
+      (sum, b) => sum + (b.questions?.length ?? 0),
+      0,
+    );
+
+    res.status(200).json({
+      success: true,
+      data: { course, sections: result, lockedBankCount, lockedQuestionCount },
+    });
   },
 );

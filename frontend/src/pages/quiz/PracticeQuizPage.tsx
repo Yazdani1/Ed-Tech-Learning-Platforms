@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Accordion,
   AccordionDetails,
@@ -8,6 +9,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Divider,
   IconButton,
   LinearProgress,
   List,
@@ -26,8 +28,10 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import toast from 'react-hot-toast';
 import { quizBankService } from '../../services/quizBank.service';
 import type {
@@ -82,6 +86,8 @@ export default function PracticeQuizPage() {
   // ── Section/bank tree ────────────────────────────────────────────────────
   const [sections, setSections] = useState<IPublicQuizSection[]>([]);
   const [treeLoading, setTreeLoading] = useState(false);
+  const [lockedBankCount, setLockedBankCount] = useState(0);
+  const [lockedQuestionCount, setLockedQuestionCount] = useState(0);
 
   // ── Practice state ───────────────────────────────────────────────────────
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
@@ -120,12 +126,21 @@ export default function PracticeQuizPage() {
 
   // Fetch section/bank tree when course changes
   useEffect(() => {
-    if (!selectedCourseId) { setSections([]); return; }
+    if (!selectedCourseId) {
+      setSections([]);
+      setLockedBankCount(0);
+      setLockedQuestionCount(0);
+      return;
+    }
     setTreeLoading(true);
     setSelectedBankId(null);
     quizBankService
       .getPublicCourseTree(selectedCourseId)
-      .then((r) => setSections(r.data?.sections ?? []))
+      .then((r) => {
+        setSections(r.data?.sections ?? []);
+        setLockedBankCount(r.data?.lockedBankCount ?? 0);
+        setLockedQuestionCount(r.data?.lockedQuestionCount ?? 0);
+      })
       .catch(() => {})
       .finally(() => setTreeLoading(false));
   }, [selectedCourseId]);
@@ -293,7 +308,7 @@ export default function PracticeQuizPage() {
         {/* ── Column 1: Course list ─────────────────────────────────── */}
         <Box
           sx={{
-            width: 240,
+            width: 270,
             flexShrink: 0,
             borderRight: '1px solid',
             borderColor: 'divider',
@@ -618,7 +633,7 @@ export default function PracticeQuizPage() {
         {/* ── Column 3: Section / bank tree (right) ─────────────────── */}
         <Box
           sx={{
-            width: 280,
+            width: 310,
             flexShrink: 0,
             borderLeft: '1px solid',
             borderColor: 'divider',
@@ -862,6 +877,48 @@ export default function PracticeQuizPage() {
                 </AccordionDetails>
               </Accordion>
             ))
+          )}
+
+          {/* Buy card — shown when there are locked banks */}
+          {selectedCourseId && !treeLoading && lockedBankCount > 0 && (
+            <>
+              <Divider />
+              <Box
+                sx={{
+                  m: 1.5,
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1.5px dashed',
+                  borderColor: 'warning.main',
+                  bgcolor: 'rgba(245,158,11,0.05)',
+                  textAlign: 'center',
+                }}
+              >
+                <LockOutlinedIcon sx={{ fontSize: 26, color: 'warning.main', mb: 0.5 }} />
+                <Typography variant='subtitle2' sx={{ fontWeight: 700, mb: 0.25 }}>
+                  {lockedBankCount} more quiz bank{lockedBankCount !== 1 ? 's' : ''} locked
+                </Typography>
+                <Typography
+                  variant='caption'
+                  color='text.secondary'
+                  sx={{ display: 'block', mb: 1.5, lineHeight: 1.4 }}
+                >
+                  {lockedQuestionCount} question{lockedQuestionCount !== 1 ? 's' : ''} available
+                  with full course access
+                </Typography>
+                <Button
+                  variant='contained'
+                  color='warning'
+                  size='small'
+                  component={RouterLink}
+                  to={`/courses/${selectedCourseId}`}
+                  startIcon={<SchoolOutlinedIcon sx={{ fontSize: 16 }} />}
+                  sx={{ fontWeight: 700, borderRadius: 5 }}
+                >
+                  Buy Course
+                </Button>
+              </Box>
+            </>
           )}
         </Box>
       </Box>

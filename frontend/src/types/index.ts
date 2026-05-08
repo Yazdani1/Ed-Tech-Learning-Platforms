@@ -488,6 +488,8 @@ export interface IPublicQuizSection {
 export interface IPublicCourseQuizTree {
   course: Pick<ICourse, '_id' | 'title' | 'subtitle' | 'coverImage'>;
   sections: IPublicQuizSection[];
+  lockedBankCount: number;
+  lockedQuestionCount: number;
 }
 
 export interface IAttemptAnswer {
