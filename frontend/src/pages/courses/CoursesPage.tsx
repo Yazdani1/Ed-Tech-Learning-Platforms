@@ -709,7 +709,12 @@ function CourseCardWithRemove({
 }) {
 	return (
 		<Box sx={{ position: 'relative' }}>
-			<CourseCard course={course} basePath='/student/courses' appendPath='/learn' />
+			<CourseCard
+				course={course}
+				basePath='/student/courses'
+				appendPath='/learn'
+				showPreview={false}
+			/>
 			{subscriptionBadge && (
 				<Box
 					sx={{

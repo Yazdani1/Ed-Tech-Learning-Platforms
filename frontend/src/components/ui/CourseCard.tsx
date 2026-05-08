@@ -65,6 +65,7 @@ interface CourseCardProps {
 	appendPath?: string;
 	isEnrolled?: boolean;
 	learningPath?: string;
+	showPreview?: boolean;
 }
 
 export function CourseCardSkeleton({ showAction = false }: { showAction?: boolean }) {
@@ -119,6 +120,7 @@ export default function CourseCard({
 	appendPath = '',
 	isEnrolled = false,
 	learningPath,
+	showPreview = true,
 }: CourseCardProps) {
 	const navigate = useNavigate();
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -134,11 +136,13 @@ export default function CourseCard({
 		course.includedInSubscription && course.allowedSubscriptionPlans.length > 0;
 
 	const openPreview = (element: HTMLElement) => {
+		if (!showPreview) return;
 		if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
 		setAnchorEl(element);
 	};
 
 	const closePreview = () => {
+		if (!showPreview) return;
 		closeTimerRef.current = setTimeout(() => setAnchorEl(null), 120);
 	};
 
@@ -330,6 +334,7 @@ export default function CourseCard({
 				</CardActionArea>
 			</Card>
 
+			{showPreview && (
 			<Popover
 				open={Boolean(anchorEl)}
 				anchorEl={anchorEl}
@@ -534,6 +539,7 @@ export default function CourseCard({
 					</Box>
 				</Box>
 			</Popover>
+			)}
 		</>
 	);
 }
