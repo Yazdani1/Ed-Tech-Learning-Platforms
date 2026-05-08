@@ -7,15 +7,22 @@ export const generateToken = (userId: string): string =>
     expiresIn: config.jwtExpire as jwt.SignOptions['expiresIn'],
   });
 
+const isProduction = config.nodeEnv === 'production';
+
 export const sendTokenCookie = (token: string, res: Response): void => {
   res.cookie('token', token, {
     httpOnly: true,
-    secure: config.nodeEnv === 'production',
-    sameSite: 'strict',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
 
 export const clearTokenCookie = (res: Response): void => {
-  res.cookie('token', '', { httpOnly: true, expires: new Date(0) });
+  res.cookie('token', '', {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'strict',
+    expires: new Date(0),
+  });
 };
