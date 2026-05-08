@@ -15,6 +15,7 @@ import {
   Pagination,
   Paper,
   Stack,
+  Switch,
   TextField,
   Tooltip,
   Typography,
@@ -571,6 +572,9 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
         ) : (
           quizSections.map((section) => {
             const banks = quizBanks.filter((b) => b.quizSection === section._id);
+            const hasActiveBank = banks.some(
+              (b) => b._id === selectedBankId || b._id === managingBankId,
+            );
             return (
               <Accordion
                 key={section._id}
@@ -578,15 +582,20 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                 elevation={0}
                 disableGutters
                 sx={{
-                  bgcolor: 'transparent',
+                  bgcolor: hasActiveBank ? 'rgba(25,118,210,0.03)' : 'transparent',
                   borderBottom: '1px solid',
-                  borderColor: 'divider',
+                  borderColor: hasActiveBank ? 'primary.200' : 'divider',
                   '&::before': { display: 'none' },
                 }}
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon sx={{ fontSize: 18 }} />}
-                  sx={{ px: 2, py: 0.75, bgcolor: 'grey.50', minHeight: 44 }}
+                  sx={{
+                    px: 2,
+                    py: 0.75,
+                    bgcolor: hasActiveBank ? 'rgba(25,118,210,0.09)' : 'grey.50',
+                    minHeight: 44,
+                  }}
                 >
                   <Box
                     sx={{
@@ -631,15 +640,17 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                     {canPost && editingSecId !== section._id && (
                       <Box
                         onClick={(e) => e.stopPropagation()}
-                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                        sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}
                       >
-                        <Chip
-                          label='Free'
+                        <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.68rem' }}>
+                          Free
+                        </Typography>
+                        <Switch
                           size='small'
-                          color={section.isFreePreview ? 'success' : 'default'}
-                          variant={section.isFreePreview ? 'filled' : 'outlined'}
-                          onClick={() => void handleToggleSectionPreview(section._id, section.isFreePreview)}
-                          sx={{ fontSize: '0.65rem', height: 18, cursor: 'pointer' }}
+                          checked={section.isFreePreview}
+                          onChange={() => void handleToggleSectionPreview(section._id, section.isFreePreview)}
+                          color='success'
+                          sx={{ transform: 'scale(0.8)', mx: -0.5 }}
                         />
                         <ItemActionMenu
                           actions={[
@@ -699,37 +710,91 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                         sx={{
                           borderTop: '1px solid',
                           borderColor: 'divider',
-                          bgcolor:
-                            isSelected || isManaging ? 'primary.50' : 'background.paper',
+                          bgcolor: isManaging
+                            ? 'rgba(245,158,11,0.08)'
+                            : isSelected
+                            ? 'primary.50'
+                            : 'background.paper',
                         }}
                       >
-                        <Box sx={{ px: 2, pt: 1.25, pb: canPost ? 0.5 : 0 }}>
-                          <Typography
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: '0.82rem',
-                              lineHeight: 1.3,
-                              color:
-                                isSelected || isManaging
+                        {/* Title row — clickable for canPost, inline actions on right */}
+                        <Box
+                          sx={{
+                            px: 2,
+                            pt: 1.25,
+                            pb: 0.75,
+                            cursor: canPost ? 'pointer' : 'default',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 0.5,
+                          }}
+                          onClick={canPost ? () => handleManage(bank._id) : undefined}
+                        >
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: '0.82rem',
+                                lineHeight: 1.3,
+                                color: isManaging
+                                  ? 'warning.dark'
+                                  : isSelected
                                   ? 'primary.main'
                                   : 'text.primary',
-                            }}
-                          >
-                            {bank.title}
-                          </Typography>
-                          {bank.description && (
-                            <Typography
-                              variant='caption'
-                              color='text.secondary'
-                              sx={{
-                                display: 'block',
-                                mt: 0.25,
-                                lineHeight: 1.3,
-                                fontSize: '0.72rem',
                               }}
                             >
-                              {bank.description}
+                              {bank.title}
                             </Typography>
+                            {bank.description && (
+                              <Typography
+                                variant='caption'
+                                color='text.secondary'
+                                sx={{ display: 'block', mt: 0.25, lineHeight: 1.3, fontSize: '0.72rem' }}
+                              >
+                                {bank.description}
+                              </Typography>
+                            )}
+                          </Box>
+
+                          {/* Admin/Teacher: Free toggle + menu inline */}
+                          {canPost && (
+                            <Box
+                              sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0, mt: 0.1 }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.68rem' }}>
+                                Free
+                              </Typography>
+                              <Switch
+                                size='small'
+                                checked={bank.isFreePreview}
+                                onChange={() => void handleToggleBankPreview(bank._id, bank.isFreePreview)}
+                                color='success'
+                                sx={{ transform: 'scale(0.8)', mx: -0.5 }}
+                              />
+                              <ItemActionMenu
+                                actions={[
+                                  {
+                                    label: 'Edit',
+                                    icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
+                                    onClick: () => {
+                                      setEditingBankId(bank._id);
+                                      setEditBankForm({
+                                        title: bank.title,
+                                        description: bank.description ?? '',
+                                      });
+                                      handleManage(bank._id);
+                                    },
+                                  },
+                                  {
+                                    label: 'Delete',
+                                    color: 'error',
+                                    icon: <DeleteOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
+                                    onClick: () => void handleDeleteBank(bank._id),
+                                  },
+                                ]}
+                              />
+                            </Box>
                           )}
                         </Box>
 
@@ -764,50 +829,6 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                               sx={{ fontSize: '0.72rem', height: 22 }}
                             />
                           </Stack>
-                        )}
-
-                        {/* Admin/Teacher: Free Preview chip + Manage button */}
-                        {canPost && (
-                          <Box sx={{ px: 2, pb: 1, display: 'flex', gap: 0.5, alignItems: 'center', mt: 0.5, flexWrap: 'wrap' }}>
-                            <Chip
-                              label='Free'
-                              size='small'
-                              color={bank.isFreePreview ? 'success' : 'default'}
-                              variant={bank.isFreePreview ? 'filled' : 'outlined'}
-                              onClick={() => void handleToggleBankPreview(bank._id, bank.isFreePreview)}
-                              sx={{ fontSize: '0.65rem', height: 18, cursor: 'pointer' }}
-                            />
-                            <Button
-                              size='small'
-                              variant='outlined'
-                              sx={{ fontSize: '0.7rem', py: 0.2, px: 1 }}
-                              onClick={() => handleManage(bank._id)}
-                            >
-                              Manage
-                            </Button>
-                            <ItemActionMenu
-                              actions={[
-                                {
-                                  label: 'Edit',
-                                  icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
-                                  onClick: () => {
-                                    setEditingBankId(bank._id);
-                                    setEditBankForm({
-                                      title: bank.title,
-                                      description: bank.description ?? '',
-                                    });
-                                    handleManage(bank._id);
-                                  },
-                                },
-                                {
-                                  label: 'Delete',
-                                  color: 'error',
-                                  icon: <DeleteOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
-                                  onClick: () => void handleDeleteBank(bank._id),
-                                },
-                              ]}
-                            />
-                          </Box>
                         )}
                       </Box>
                     );
@@ -903,7 +924,7 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
             </Typography>
             {canPost && (
               <Typography variant='body2' sx={{ opacity: 0.4 }}>
-                Click <strong>+</strong> to add a section, then <strong>Add Quiz Bank</strong> inside it.
+                Click <strong>+</strong> to add a section, then click a quiz bank to manage it.
               </Typography>
             )}
           </Box>

@@ -3,16 +3,18 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Avatar,
   Box,
   Button,
   Chip,
   CircularProgress,
   IconButton,
   LinearProgress,
-  MenuItem,
+  List,
+  ListItemButton,
+  ListItemText,
   Pagination,
   Paper,
-  Select,
   Stack,
   Tooltip,
   Typography,
@@ -25,6 +27,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import toast from 'react-hot-toast';
 import { quizBankService } from '../../services/quizBank.service';
 import type {
@@ -67,49 +70,46 @@ function getSubsectionQuestions(
 export default function PracticeQuizPage() {
   const { user } = useAuth();
   const { confirm } = useConfirmModal();
+  const isLoggedIn = Boolean(user);
 
-  const [courses, setCourses] = useState<Pick<ICourse, '_id' | 'title' | 'subtitle' | 'coverImage'>[]>([]);
+  // ── Course list ──────────────────────────────────────────────────────────
+  const [courses, setCourses] = useState<
+    Pick<ICourse, '_id' | 'title' | 'subtitle' | 'coverImage'>[]
+  >([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
+  // ── Section/bank tree ────────────────────────────────────────────────────
   const [sections, setSections] = useState<IPublicQuizSection[]>([]);
   const [treeLoading, setTreeLoading] = useState(false);
 
+  // ── Practice state ───────────────────────────────────────────────────────
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
   const [selectedSubsection, setSelectedSubsection] = useState<Subsection>('all');
-
-  // For logged-in users: API-backed attempt
   const [attempt, setAttempt] = useState<IQuizAttempt | null>(null);
   const [attemptLoading, setAttemptLoading] = useState(false);
   const attemptRef = useRef<IQuizAttempt | null>(null);
-
-  // For guests: local answers map
   const [localAnswers, setLocalAnswers] = useState<Map<string, LocalAnswer>>(new Map());
   const localAnswersRef = useRef<Map<string, LocalAnswer>>(new Map());
-
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [isChecked, setIsChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const isLoggedIn = Boolean(user);
-
-  // Unified answers (API or local)
+  // Unified effective answers
   const effectiveAnswers: Map<string, LocalAnswer> = isLoggedIn
-    ? new Map(attempt?.answers.map((a) => [a.questionId, {
-        selectedOptionIndices: a.selectedOptionIndices,
-        isCorrect: a.isCorrect,
-      }]) ?? [])
+    ? new Map(
+        attempt?.answers.map((a) => [
+          a.questionId,
+          { selectedOptionIndices: a.selectedOptionIndices, isCorrect: a.isCorrect },
+        ]) ?? [],
+      )
     : localAnswers;
 
-  useEffect(() => {
-    attemptRef.current = attempt;
-  }, [attempt]);
+  useEffect(() => { attemptRef.current = attempt; }, [attempt]);
+  useEffect(() => { localAnswersRef.current = localAnswers; }, [localAnswers]);
 
-  useEffect(() => {
-    localAnswersRef.current = localAnswers;
-  }, [localAnswers]);
-
+  // Fetch courses with free preview quizzes
   useEffect(() => {
     quizBankService
       .getPublicCourses()
@@ -118,6 +118,7 @@ export default function PracticeQuizPage() {
       .finally(() => setCoursesLoading(false));
   }, []);
 
+  // Fetch section/bank tree when course changes
   useEffect(() => {
     if (!selectedCourseId) { setSections([]); return; }
     setTreeLoading(true);
@@ -129,7 +130,7 @@ export default function PracticeQuizPage() {
       .finally(() => setTreeLoading(false));
   }, [selectedCourseId]);
 
-  // Load attempt from API when bank selected (logged-in only)
+  // Load API attempt when bank selected (logged-in only)
   useEffect(() => {
     if (!selectedBankId || !isLoggedIn) { setAttempt(null); return; }
     setAttemptLoading(true);
@@ -148,7 +149,7 @@ export default function PracticeQuizPage() {
     if (!isLoggedIn) setLocalAnswers(new Map());
   }, [selectedBankId, selectedSubsection, isLoggedIn]);
 
-  // Pre-populate from existing attempt (logged-in, 'all' subsection only)
+  // Pre-populate from existing attempt ('all' + logged-in only)
   useEffect(() => {
     if (selectedSubsection !== 'all' || !isLoggedIn) {
       setSelectedOptions([]);
@@ -170,7 +171,6 @@ export default function PracticeQuizPage() {
     }
   }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Flatten all banks across sections
   const allBanks = sections.flatMap((s) => s.banks);
   const selectedBank = allBanks.find((b) => b._id === selectedBankId) ?? null;
   const activeQuestions = selectedBank
@@ -179,12 +179,16 @@ export default function PracticeQuizPage() {
   const currentQuestion = activeQuestions[currentPage] ?? null;
 
   const totalQ = selectedBank?.questions.length ?? 0;
-  const correctCount = selectedBank?.questions.filter((q) => effectiveAnswers.get(q._id)?.isCorrect).length ?? 0;
-  const incorrectCount = selectedBank?.questions.filter((q) => {
-    const a = effectiveAnswers.get(q._id);
-    return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
-  }).length ?? 0;
+  const correctCount =
+    selectedBank?.questions.filter((q) => effectiveAnswers.get(q._id)?.isCorrect).length ?? 0;
+  const incorrectCount =
+    selectedBank?.questions.filter((q) => {
+      const a = effectiveAnswers.get(q._id);
+      return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
+    }).length ?? 0;
   const progressPct = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0;
+
+  const selectedCourse = courses.find((c) => c._id === selectedCourseId) ?? null;
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -202,7 +206,6 @@ export default function PracticeQuizPage() {
 
   const handleCheck = async () => {
     if (!currentQuestion || selectedOptions.length === 0) return;
-
     if (isLoggedIn && selectedBankId) {
       setSubmitting(true);
       try {
@@ -213,12 +216,11 @@ export default function PracticeQuizPage() {
         setAttempt(res.data ?? null);
         setIsChecked(true);
       } catch {
-        // handled
+        // handled by interceptor
       } finally {
         setSubmitting(false);
       }
     } else {
-      // Guest: compute locally
       const isCorrect = arraysEqualSorted(
         selectedOptions,
         currentQuestion.correctOptionIndices,
@@ -270,25 +272,38 @@ export default function PracticeQuizPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <PublicNavbar />
 
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', height: 'calc(100vh - 68px)' }}>
-
-        {/* ── Left panel ─────────────────────────────────────────────── */}
+      <Box
+        sx={{
+          display: 'flex',
+          flex: 1,
+          overflow: 'hidden',
+          height: 'calc(100vh - 68px)',
+        }}
+      >
+        {/* ── Column 1: Course list ─────────────────────────────────── */}
         <Box
           sx={{
-            width: 300,
+            width: 240,
+            flexShrink: 0,
             borderRight: '1px solid',
             borderColor: 'divider',
             overflow: 'auto',
-            flexShrink: 0,
             bgcolor: 'background.paper',
             display: 'flex',
             flexDirection: 'column',
           }}
         >
-          {/* Course selector */}
+          {/* Header */}
           <Box
             sx={{
               px: 2,
@@ -301,172 +316,103 @@ export default function PracticeQuizPage() {
               zIndex: 1,
             }}
           >
-            <Typography variant='subtitle2' sx={{ fontWeight: 700, mb: 1 }}>
-              Practice Quiz
+            <Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
+              Courses
             </Typography>
-            {coursesLoading ? (
-              <CircularProgress size={16} />
-            ) : courses.length === 0 ? (
+            <Typography variant='caption' color='text.secondary'>
+              Free preview quizzes
+            </Typography>
+          </Box>
+
+          {coursesLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={22} />
+            </Box>
+          ) : courses.length === 0 ? (
+            <Box sx={{ px: 2, py: 3 }}>
               <Typography variant='caption' color='text.secondary'>
                 No free preview quizzes available yet.
               </Typography>
-            ) : (
-              <Select
-                size='small'
-                fullWidth
-                displayEmpty
-                value={selectedCourseId}
-                onChange={(e) => setSelectedCourseId(e.target.value)}
-              >
-                <MenuItem value=''>
-                  <em>Select a course</em>
-                </MenuItem>
-                {courses.map((c) => (
-                  <MenuItem key={c._id} value={c._id}>
-                    {c.title}
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          </Box>
-
-          {/* Section/bank tree */}
-          {treeLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : !selectedCourseId ? (
-            <Box sx={{ px: 2, py: 3 }}>
-              <Typography variant='caption' color='text.secondary'>
-                Select a course above to see its free preview quizzes.
-              </Typography>
-            </Box>
-          ) : sections.length === 0 ? (
-            <Box sx={{ px: 2, py: 3 }}>
-              <Typography variant='caption' color='text.secondary'>
-                No free preview quizzes in this course yet.
-              </Typography>
             </Box>
           ) : (
-            sections.map((section) => (
-              <Accordion
-                key={section._id}
-                defaultExpanded
-                elevation={0}
-                disableGutters
-                sx={{
-                  bgcolor: 'transparent',
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  '&::before': { display: 'none' },
-                }}
-              >
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon sx={{ fontSize: 18 }} />}
-                  sx={{ px: 2, py: 0.75, bgcolor: 'grey.50', minHeight: 44 }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography sx={{ fontWeight: 600, fontSize: '0.82rem', lineHeight: 1.3 }}>
-                      {section.title}
-                    </Typography>
-                    {section.isFreePreview && (
-                      <Chip
-                        label='Free'
-                        size='small'
-                        color='success'
-                        sx={{ fontSize: '0.65rem', height: 16 }}
-                      />
-                    )}
-                  </Box>
-                </AccordionSummary>
-
-                <AccordionDetails sx={{ p: 0 }}>
-                  {section.banks.map((bank) => {
-                    const isSelected = selectedBankId === bank._id;
-                    const bAnswers = isSelected ? effectiveAnswers : new Map<string, LocalAnswer>();
-                    const bCorrect = bank.questions.filter((q) => bAnswers.get(q._id)?.isCorrect).length;
-                    const bIncorrect = bank.questions.filter((q) => {
-                      const a = bAnswers.get(q._id);
-                      return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
-                    }).length;
-
-                    return (
-                      <Box
-                        key={bank._id}
-                        sx={{
-                          borderTop: '1px solid',
-                          borderColor: 'divider',
-                          bgcolor: isSelected ? 'primary.50' : 'background.paper',
-                        }}
-                      >
-                        <Box sx={{ px: 2, pt: 1.25, pb: 0 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: '0.82rem',
-                                lineHeight: 1.3,
-                                color: isSelected ? 'primary.main' : 'text.primary',
-                                flex: 1,
-                              }}
-                            >
-                              {bank.title}
-                            </Typography>
-                            {bank.isFreePreview && !section.isFreePreview && (
-                              <Chip
-                                label='Free'
-                                size='small'
-                                color='success'
-                                sx={{ fontSize: '0.6rem', height: 15 }}
-                              />
-                            )}
-                          </Box>
-                        </Box>
-
-                        {/* Subsection chips */}
-                        <Stack
-                          direction='row'
-                          sx={{ px: 2, pb: 1, flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}
-                        >
-                          <Chip
-                            label={`All ${bank.questions.length}`}
-                            size='small'
-                            clickable
-                            color={isSelected && selectedSubsection === 'all' ? 'primary' : 'default'}
-                            onClick={() => handleSelectBank(bank._id, 'all')}
-                            sx={{ fontSize: '0.72rem', height: 22 }}
-                          />
-                          {isLoggedIn && (
-                            <>
-                              <Chip
-                                label={`Wrong ${bIncorrect}`}
-                                size='small'
-                                clickable
-                                color={isSelected && selectedSubsection === 'incorrect' ? 'error' : 'default'}
-                                onClick={() => handleSelectBank(bank._id, 'incorrect')}
-                                sx={{ fontSize: '0.72rem', height: 22 }}
-                              />
-                              <Chip
-                                label={`Correct ${bCorrect}`}
-                                size='small'
-                                clickable
-                                color={isSelected && selectedSubsection === 'correct' ? 'success' : 'default'}
-                                onClick={() => handleSelectBank(bank._id, 'correct')}
-                                sx={{ fontSize: '0.72rem', height: 22 }}
-                              />
-                            </>
-                          )}
-                        </Stack>
-                      </Box>
-                    );
-                  })}
-                </AccordionDetails>
-              </Accordion>
-            ))
+            <List disablePadding>
+              {courses.map((course) => {
+                const isSelected = selectedCourseId === course._id;
+                const initials = course.title
+                  .split(' ')
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join('')
+                  .toUpperCase();
+                return (
+                  <ListItemButton
+                    key={course._id}
+                    selected={isSelected}
+                    onClick={() => setSelectedCourseId(course._id)}
+                    sx={{
+                      py: 1.25,
+                      px: 2,
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      '&.Mui-selected': {
+                        bgcolor: 'primary.50',
+                        borderLeft: '3px solid',
+                        borderLeftColor: 'primary.main',
+                        pl: '13px',
+                      },
+                      '&.Mui-selected:hover': { bgcolor: 'primary.50' },
+                      alignItems: 'flex-start',
+                      gap: 1.25,
+                    }}
+                  >
+                    <Avatar
+                      src={course.coverImage}
+                      variant='rounded'
+                      sx={{
+                        width: 38,
+                        height: 38,
+                        bgcolor: isSelected ? 'primary.main' : 'grey.200',
+                        color: isSelected ? 'white' : 'text.secondary',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        flexShrink: 0,
+                        mt: 0.25,
+                      }}
+                    >
+                      {!course.coverImage && initials}
+                    </Avatar>
+                    <ListItemText
+                      primary={course.title}
+                      secondary={course.subtitle}
+                      slotProps={{
+                        primary: {
+                          sx: {
+                            fontWeight: isSelected ? 700 : 500,
+                            fontSize: '0.82rem',
+                            lineHeight: 1.35,
+                            color: isSelected ? 'primary.main' : 'text.primary',
+                          },
+                        },
+                        secondary: {
+                          sx: {
+                            fontSize: '0.72rem',
+                            mt: 0.25,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          },
+                        },
+                      }}
+                    />
+                  </ListItemButton>
+                );
+              })}
+            </List>
           )}
         </Box>
 
-        {/* ── Right panel ────────────────────────────────────────────── */}
+        {/* ── Column 2: Practice panel ──────────────────────────────── */}
         <Box sx={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
           {!selectedBankId ? (
             <Box
@@ -481,9 +427,11 @@ export default function PracticeQuizPage() {
                 color: 'text.secondary',
               }}
             >
-              <QuizOutlinedIcon sx={{ fontSize: 80, opacity: 0.15 }} />
-              <Typography variant='h6' sx={{ fontWeight: 700, opacity: 0.35 }}>
-                Select a quiz to start practising
+              <QuizOutlinedIcon sx={{ fontSize: 84, opacity: 0.12 }} />
+              <Typography variant='h6' sx={{ fontWeight: 700, opacity: 0.3 }}>
+                {!selectedCourseId
+                  ? 'Select a course and quiz to start practising'
+                  : 'Select a quiz from the panel to start'}
               </Typography>
               {!isLoggedIn && (
                 <Box
@@ -492,24 +440,25 @@ export default function PracticeQuizPage() {
                     alignItems: 'center',
                     gap: 1,
                     mt: 1,
-                    px: 2,
-                    py: 1,
+                    px: 2.5,
+                    py: 1.25,
                     bgcolor: 'info.50',
-                    borderRadius: 1,
+                    borderRadius: 2,
                     border: '1px solid',
                     borderColor: 'info.200',
+                    maxWidth: 440,
                   }}
                 >
                   <LockOpenOutlinedIcon fontSize='small' color='info' />
                   <Typography variant='body2' color='info.dark'>
-                    Sign in to save your progress and track wrong/correct answers.
+                    Sign in to save your progress and track wrong / correct answers.
                   </Typography>
                 </Box>
               )}
             </Box>
           ) : (
-            <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 740, mx: 'auto' }}>
-              {/* Header */}
+            <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 760, mx: 'auto' }}>
+              {/* Bank title + subsection badge */}
               <Box sx={{ mb: 3 }}>
                 <Typography variant='h5' sx={{ fontWeight: 700, mb: 0.5 }}>
                   {selectedBank?.title}
@@ -519,7 +468,7 @@ export default function PracticeQuizPage() {
                     {selectedBank.description}
                   </Typography>
                 )}
-                <Stack direction='row' spacing={1} sx={{ mt: 1 }}>
+                <Stack direction='row' spacing={1} sx={{ mt: 1.25 }}>
                   <Chip
                     size='small'
                     label={
@@ -546,74 +495,76 @@ export default function PracticeQuizPage() {
                 </Stack>
               </Box>
 
-              {/* Progress (logged-in only) */}
-              {isLoggedIn && (
-                attemptLoading ? (
-                  <Box sx={{ mb: 3 }}><CircularProgress size={20} /></Box>
-                ) : (
-                  <Paper variant='outlined' sx={{ p: 2, mb: 3, borderRadius: 1 }}>
-                    <Box sx={{ display: 'flex', gap: 2.5, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                        <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'text.disabled' }} />
-                        <Typography variant='body2' color='text.secondary'>Total: {totalQ}</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                        <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'success.main' }} />
-                        <Typography variant='body2' color='success.main' sx={{ fontWeight: 700 }}>
-                          Correct: {correctCount}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                        <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'error.main' }} />
-                        <Typography variant='body2' color='error.main' sx={{ fontWeight: 700 }}>
-                          Incorrect: {incorrectCount}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ ml: 'auto' }}>
-                        <Tooltip title='Reset answers'>
-                          <IconButton size='small' onClick={() => void handleResetAttempt()} sx={{ opacity: 0.5 }}>
-                            <RefreshIcon fontSize='small' />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </Box>
-                    <LinearProgress variant='determinate' value={progressPct} color='success' sx={{ height: 8, borderRadius: 4 }} />
-                    <Typography variant='caption' color='text.secondary' sx={{ mt: 0.5, display: 'block' }}>
-                      {progressPct}% correct ({correctCount}/{totalQ})
-                    </Typography>
-                  </Paper>
-                )
-              )}
-
-              {/* Guest progress bar (local) */}
-              {!isLoggedIn && (correctCount > 0 || incorrectCount > 0) && (
+              {/* Progress bar */}
+              {(isLoggedIn ? !attemptLoading : correctCount + incorrectCount > 0) && (
                 <Paper variant='outlined' sx={{ p: 2, mb: 3, borderRadius: 1 }}>
-                  <Box sx={{ display: 'flex', gap: 2.5, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: 2.5,
+                      mb: 1.5,
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {isLoggedIn && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <Box
+                          sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'text.disabled' }}
+                        />
+                        <Typography variant='body2' color='text.secondary'>
+                          Total: {totalQ}
+                        </Typography>
+                      </Box>
+                    )}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'success.main' }} />
+                      <Box
+                        sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'success.main' }}
+                      />
                       <Typography variant='body2' color='success.main' sx={{ fontWeight: 700 }}>
                         Correct: {correctCount}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'error.main' }} />
+                      <Box
+                        sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'error.main' }}
+                      />
                       <Typography variant='body2' color='error.main' sx={{ fontWeight: 700 }}>
                         Incorrect: {incorrectCount}
                       </Typography>
                     </Box>
                     <Box sx={{ ml: 'auto' }}>
-                      <Tooltip title='Reset local answers'>
-                        <IconButton size='small' onClick={() => void handleResetAttempt()} sx={{ opacity: 0.5 }}>
+                      <Tooltip title='Reset answers'>
+                        <IconButton
+                          size='small'
+                          onClick={() => void handleResetAttempt()}
+                          sx={{ opacity: 0.5 }}
+                        >
                           <RefreshIcon fontSize='small' />
                         </IconButton>
                       </Tooltip>
                     </Box>
                   </Box>
-                  <LinearProgress variant='determinate' value={progressPct} color='success' sx={{ height: 8, borderRadius: 4 }} />
-                  <Typography variant='caption' color='warning.dark' sx={{ mt: 0.5, display: 'block' }}>
-                    Sign in to save your progress across sessions.
+                  <LinearProgress
+                    variant='determinate'
+                    value={progressPct}
+                    color='success'
+                    sx={{ height: 8, borderRadius: 4 }}
+                  />
+                  <Typography
+                    variant='caption'
+                    sx={{ mt: 0.5, display: 'block', color: isLoggedIn ? 'text.secondary' : 'warning.dark' }}
+                  >
+                    {isLoggedIn
+                      ? `${progressPct}% correct (${correctCount}/${totalQ})`
+                      : 'Sign in to save your progress across sessions.'}
                   </Typography>
                 </Paper>
+              )}
+              {isLoggedIn && attemptLoading && (
+                <Box sx={{ mb: 3 }}>
+                  <CircularProgress size={20} />
+                </Box>
               )}
 
               {/* Empty subsection */}
@@ -647,7 +598,7 @@ export default function PracticeQuizPage() {
                   )}
 
                   {activeQuestions.length > 1 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                       <Pagination
                         count={activeQuestions.length}
                         page={currentPage + 1}
@@ -663,12 +614,262 @@ export default function PracticeQuizPage() {
             </Box>
           )}
         </Box>
+
+        {/* ── Column 3: Section / bank tree (right) ─────────────────── */}
+        <Box
+          sx={{
+            width: 280,
+            flexShrink: 0,
+            borderLeft: '1px solid',
+            borderColor: 'divider',
+            overflow: 'auto',
+            bgcolor: 'background.paper',
+          }}
+        >
+          {/* Header */}
+          <Box
+            sx={{
+              px: 2,
+              py: 1.5,
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              position: 'sticky',
+              top: 0,
+              bgcolor: 'background.paper',
+              zIndex: 1,
+            }}
+          >
+            {selectedCourse ? (
+              <>
+                <Typography
+                  variant='subtitle2'
+                  sx={{
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {selectedCourse.title}
+                </Typography>
+                <Typography variant='caption' color='text.secondary'>
+                  {sections.reduce((acc, s) => acc + s.banks.length, 0)} quiz bank
+                  {sections.reduce((acc, s) => acc + s.banks.length, 0) !== 1 ? 's' : ''}
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
+                  Sections
+                </Typography>
+                <Typography variant='caption' color='text.secondary'>
+                  Select a course
+                </Typography>
+              </>
+            )}
+          </Box>
+
+          {!selectedCourseId ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                py: 8,
+                px: 2,
+                gap: 1.5,
+                color: 'text.secondary',
+              }}
+            >
+              <MenuBookOutlinedIcon sx={{ fontSize: 42, opacity: 0.18 }} />
+              <Typography
+                variant='body2'
+                sx={{ textAlign: 'center', opacity: 0.5, fontSize: '0.82rem' }}
+              >
+                Select a course from the left to see its free preview quizzes.
+              </Typography>
+            </Box>
+          ) : treeLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : sections.length === 0 ? (
+            <Box sx={{ px: 2, py: 4, textAlign: 'center' }}>
+              <Typography variant='caption' color='text.secondary'>
+                No free preview quizzes in this course.
+              </Typography>
+            </Box>
+          ) : (
+            sections.map((section) => (
+              <Accordion
+                key={section._id}
+                defaultExpanded
+                elevation={0}
+                disableGutters
+                sx={{
+                  bgcolor: 'transparent',
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  '&::before': { display: 'none' },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon sx={{ fontSize: 18 }} />}
+                  sx={{ px: 2, py: 0.75, bgcolor: 'grey.50', minHeight: 44 }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, overflow: 'hidden' }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.82rem',
+                        lineHeight: 1.3,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {section.title}
+                    </Typography>
+                    {section.isFreePreview && (
+                      <Chip
+                        label='Free'
+                        size='small'
+                        color='success'
+                        sx={{ fontSize: '0.62rem', height: 16, flexShrink: 0 }}
+                      />
+                    )}
+                  </Box>
+                </AccordionSummary>
+
+                <AccordionDetails sx={{ p: 0 }}>
+                  {section.banks.map((bank) => {
+                    const isSelected = selectedBankId === bank._id;
+                    const bAnswers = isSelected
+                      ? effectiveAnswers
+                      : new Map<string, LocalAnswer>();
+                    const bCorrect = bank.questions.filter(
+                      (q) => bAnswers.get(q._id)?.isCorrect,
+                    ).length;
+                    const bIncorrect = bank.questions.filter((q) => {
+                      const a = bAnswers.get(q._id);
+                      return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
+                    }).length;
+
+                    return (
+                      <Box
+                        key={bank._id}
+                        sx={{
+                          borderTop: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: isSelected ? 'primary.50' : 'background.paper',
+                        }}
+                      >
+                        <Box sx={{ px: 2, pt: 1.25, pb: 0 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                            <Typography
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: '0.82rem',
+                                lineHeight: 1.3,
+                                color: isSelected ? 'primary.main' : 'text.primary',
+                                flex: 1,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {bank.title}
+                            </Typography>
+                            {bank.isFreePreview && !section.isFreePreview && (
+                              <Chip
+                                label='Free'
+                                size='small'
+                                color='success'
+                                sx={{ fontSize: '0.6rem', height: 15, flexShrink: 0 }}
+                              />
+                            )}
+                          </Box>
+                          {bank.description && (
+                            <Typography
+                              variant='caption'
+                              color='text.secondary'
+                              sx={{
+                                display: 'block',
+                                mt: 0.25,
+                                fontSize: '0.72rem',
+                                lineHeight: 1.3,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {bank.description}
+                            </Typography>
+                          )}
+                        </Box>
+
+                        {/* Subsection chips */}
+                        <Stack
+                          direction='row'
+                          sx={{ px: 2, pb: 1, flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}
+                        >
+                          <Chip
+                            label={`All ${bank.questions.length}`}
+                            size='small'
+                            clickable
+                            color={
+                              isSelected && selectedSubsection === 'all'
+                                ? 'primary'
+                                : 'default'
+                            }
+                            onClick={() => handleSelectBank(bank._id, 'all')}
+                            sx={{ fontSize: '0.72rem', height: 22 }}
+                          />
+                          {isLoggedIn && (
+                            <>
+                              <Chip
+                                label={`Wrong ${bIncorrect}`}
+                                size='small'
+                                clickable
+                                color={
+                                  isSelected && selectedSubsection === 'incorrect'
+                                    ? 'error'
+                                    : 'default'
+                                }
+                                onClick={() => handleSelectBank(bank._id, 'incorrect')}
+                                sx={{ fontSize: '0.72rem', height: 22 }}
+                              />
+                              <Chip
+                                label={`Correct ${bCorrect}`}
+                                size='small'
+                                clickable
+                                color={
+                                  isSelected && selectedSubsection === 'correct'
+                                    ? 'success'
+                                    : 'default'
+                                }
+                                onClick={() => handleSelectBank(bank._id, 'correct')}
+                                sx={{ fontSize: '0.72rem', height: 22 }}
+                              />
+                            </>
+                          )}
+                        </Stack>
+                      </Box>
+                    );
+                  })}
+                </AccordionDetails>
+              </Accordion>
+            ))
+          )}
+        </Box>
       </Box>
     </Box>
   );
 }
 
-// ── Practice card (identical logic to QuizBankTab) ─────────────────────────
+// ── Practice card ──────────────────────────────────────────────────────────
 
 function PracticeCard({
   question,
@@ -700,15 +901,28 @@ function PracticeCard({
   const multipleCorrect = question.correctOptionIndices.length > 1;
 
   return (
-    <Paper variant='outlined' sx={{ p: 3, borderRadius: 1 }}>
+    <Paper variant='outlined' sx={{ p: 3, borderRadius: 1.5 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-        <Chip label={`Q ${questionNumber} of ${totalQuestions}`} size='small' sx={{ fontWeight: 700 }} />
+        <Chip
+          label={`Q ${questionNumber} of ${totalQuestions}`}
+          size='small'
+          sx={{ fontWeight: 700 }}
+        />
         {multipleCorrect && (
-          <Chip label='Select all that apply' size='small' color='info' variant='outlined' sx={{ fontSize: '0.7rem' }} />
+          <Chip
+            label='Select all that apply'
+            size='small'
+            color='info'
+            variant='outlined'
+            sx={{ fontSize: '0.7rem' }}
+          />
         )}
       </Box>
 
-      <Typography variant='h6' sx={{ fontWeight: 600, mb: 3, lineHeight: 1.55, fontSize: '1.05rem' }}>
+      <Typography
+        variant='h6'
+        sx={{ fontWeight: 600, mb: 3, lineHeight: 1.55, fontSize: '1.05rem' }}
+      >
         {question.question}
       </Typography>
 
@@ -723,7 +937,8 @@ function PracticeCard({
             if (isCorrect) { borderColor = '#22c55e'; bgColor = 'rgba(34,197,94,0.1)'; }
             else if (isSelected) { borderColor = '#ef4444'; bgColor = 'rgba(239,68,68,0.1)'; }
           } else if (isSelected) {
-            borderColor = 'primary.main'; bgColor = 'primary.50';
+            borderColor = 'primary.main';
+            bgColor = 'primary.50';
           }
 
           return (
@@ -731,35 +946,74 @@ function PracticeCard({
               key={idx}
               onClick={() => onToggleOption(idx)}
               sx={{
-                display: 'flex', alignItems: 'flex-start', gap: 1.5,
-                p: 1.5, borderRadius: 1, border: '1.5px solid', borderColor, bgcolor: bgColor,
-                cursor: isChecked ? 'default' : 'pointer', transition: 'all 0.15s ease',
-                ...(!isChecked && { '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.50' } }),
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1.5,
+                p: 1.5,
+                borderRadius: 1,
+                border: '1.5px solid',
+                borderColor,
+                bgcolor: bgColor,
+                cursor: isChecked ? 'default' : 'pointer',
+                transition: 'all 0.15s ease',
+                ...(!isChecked && {
+                  '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.50' },
+                }),
               }}
             >
-              {/* Checkbox */}
+              {/* Checkbox indicator */}
               <Box
                 sx={{
-                  width: 22, height: 22, borderRadius: 0.75, border: '1.5px solid', mt: 0.15, flexShrink: 0,
-                  borderColor: isChecked ? (isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'divider') : (isSelected ? 'primary.main' : 'action.disabled'),
-                  bgcolor: isChecked ? (isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'transparent') : (isSelected ? 'primary.main' : 'transparent'),
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 22,
+                  height: 22,
+                  borderRadius: 0.75,
+                  border: '1.5px solid',
+                  mt: 0.15,
+                  flexShrink: 0,
+                  borderColor: isChecked
+                    ? isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'divider'
+                    : isSelected ? 'primary.main' : 'action.disabled',
+                  bgcolor: isChecked
+                    ? isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'transparent'
+                    : isSelected ? 'primary.main' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 {(isSelected || (isChecked && isCorrect)) && (
-                  <Box component='span' sx={{ color: 'white', fontSize: '0.65rem', fontWeight: 900, lineHeight: 1 }}>✓</Box>
+                  <Box
+                    component='span'
+                    sx={{ color: 'white', fontSize: '0.65rem', fontWeight: 900, lineHeight: 1 }}
+                  >
+                    ✓
+                  </Box>
                 )}
               </Box>
 
-              {/* Label circle */}
+              {/* Letter circle */}
               <Box
                 sx={{
-                  width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: '1.5px solid', flexShrink: 0,
-                  borderColor: isChecked ? (isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'divider') : (isSelected ? 'primary.main' : 'action.disabled'),
-                  bgcolor: isChecked ? (isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'transparent') : (isSelected ? 'primary.main' : 'transparent'),
-                  color: (isChecked && (isCorrect || isSelected)) || (!isChecked && isSelected) ? 'white' : 'text.secondary',
-                  fontWeight: 800, fontSize: '0.78rem',
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1.5px solid',
+                  flexShrink: 0,
+                  borderColor: isChecked
+                    ? isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'divider'
+                    : isSelected ? 'primary.main' : 'action.disabled',
+                  bgcolor: isChecked
+                    ? isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'transparent'
+                    : isSelected ? 'primary.main' : 'transparent',
+                  color:
+                    (isChecked && (isCorrect || isSelected)) || (!isChecked && isSelected)
+                      ? 'white'
+                      : 'text.secondary',
+                  fontWeight: 800,
+                  fontSize: '0.78rem',
                 }}
               >
                 {OPTION_LABELS[idx]}
@@ -769,50 +1023,106 @@ function PracticeCard({
                 <Typography
                   variant='body2'
                   sx={{
-                    fontWeight: isSelected ? 600 : 400, lineHeight: 1.55,
-                    color: isChecked ? (isCorrect ? 'success.dark' : isSelected ? 'error.dark' : 'text.secondary') : (isSelected ? 'primary.main' : 'text.primary'),
+                    fontWeight: isSelected ? 600 : 400,
+                    lineHeight: 1.55,
+                    color: isChecked
+                      ? isCorrect ? 'success.dark' : isSelected ? 'error.dark' : 'text.secondary'
+                      : isSelected ? 'primary.main' : 'text.primary',
                   }}
                 >
                   {opt.text}
                 </Typography>
                 {isChecked && opt.explanation && (
-                  <Typography variant='caption' sx={{ display: 'block', mt: 0.5, fontStyle: 'italic', lineHeight: 1.4, color: isCorrect ? 'success.dark' : isSelected ? 'error.dark' : 'text.secondary', opacity: 0.85 }}>
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      display: 'block',
+                      mt: 0.5,
+                      fontStyle: 'italic',
+                      lineHeight: 1.4,
+                      color: isCorrect
+                        ? 'success.dark'
+                        : isSelected
+                        ? 'error.dark'
+                        : 'text.secondary',
+                      opacity: 0.85,
+                    }}
+                  >
                     {opt.explanation}
                   </Typography>
                 )}
               </Box>
 
-              {isChecked && isCorrect && <CheckCircleIcon sx={{ fontSize: 20, color: 'success.main', flexShrink: 0 }} />}
-              {isChecked && isSelected && !isCorrect && <CancelIcon sx={{ fontSize: 20, color: 'error.main', flexShrink: 0 }} />}
+              {isChecked && isCorrect && (
+                <CheckCircleIcon sx={{ fontSize: 20, color: 'success.main', flexShrink: 0 }} />
+              )}
+              {isChecked && isSelected && !isCorrect && (
+                <CancelIcon sx={{ fontSize: 20, color: 'error.main', flexShrink: 0 }} />
+              )}
             </Box>
           );
         })}
       </Stack>
 
       {isChecked && (
-        <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, bgcolor: isCorrectAnswer ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border: '1px solid', borderColor: isCorrectAnswer ? '#22c55e' : '#ef4444' }}>
-          <Typography variant='body2' sx={{ fontWeight: 700, color: isCorrectAnswer ? 'success.dark' : 'error.dark' }}>
-            {isCorrectAnswer ? '✓ Correct!' : '✗ Incorrect — correct answer(s) are highlighted above.'}
+        <Box
+          sx={{
+            mt: 2,
+            p: 1.5,
+            borderRadius: 1,
+            bgcolor: isCorrectAnswer ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+            border: '1px solid',
+            borderColor: isCorrectAnswer ? '#22c55e' : '#ef4444',
+          }}
+        >
+          <Typography
+            variant='body2'
+            sx={{ fontWeight: 700, color: isCorrectAnswer ? 'success.dark' : 'error.dark' }}
+          >
+            {isCorrectAnswer
+              ? '✓ Correct!'
+              : '✗ Incorrect — correct answer(s) are highlighted above.'}
           </Typography>
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', gap: 1, mt: 2.5, justifyContent: 'flex-end', alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          mt: 2.5,
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+        }}
+      >
         {!isChecked && (
-          <Button variant='outlined' startIcon={<SkipNextIcon />} onClick={onSkip} disabled={isLastQuestion}>
+          <Button
+            variant='outlined'
+            startIcon={<SkipNextIcon />}
+            onClick={onSkip}
+            disabled={isLastQuestion}
+          >
             Skip
           </Button>
         )}
         {!isChecked ? (
           <Button
-            variant='contained' onClick={onCheck}
+            variant='contained'
+            onClick={onCheck}
             disabled={selectedOptions.length === 0 || submitting}
-            endIcon={submitting ? <CircularProgress size={16} color='inherit' /> : undefined}
+            endIcon={
+              submitting ? <CircularProgress size={16} color='inherit' /> : undefined
+            }
           >
             Check Answer
           </Button>
         ) : (
-          <Button variant='contained' endIcon={<ArrowForwardIcon />} onClick={onNext} disabled={isLastQuestion}>
+          <Button
+            variant='contained'
+            endIcon={<ArrowForwardIcon />}
+            onClick={onNext}
+            disabled={isLastQuestion}
+          >
             Next
           </Button>
         )}
