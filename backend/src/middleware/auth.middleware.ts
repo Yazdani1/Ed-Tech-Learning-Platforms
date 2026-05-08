@@ -10,7 +10,11 @@ interface JwtPayload {
 }
 
 export const protect = asyncHandler(async (req, _res, next) => {
-  const token: string | undefined = req.cookies.token as string | undefined;
+  let token: string | undefined = req.cookies.token as string | undefined;
+  if (!token) {
+    const auth = req.headers.authorization;
+    if (auth?.startsWith('Bearer ')) token = auth.slice(7);
+  }
   if (!token) throw new AppError('Not authorized, please login', 401);
 
   const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;

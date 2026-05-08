@@ -33,12 +33,18 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 	});
 	ioInstance = io;
 
-	// Authenticate socket via JWT cookie
+	// Authenticate socket via JWT cookie or auth.token
 	io.use(async (socket, next) => {
 		try {
-			const cookieStr = socket.handshake.headers.cookie ?? '';
-			const match = cookieStr.match(/(?:^|;\s*)token=([^;]+)/);
-			const token = match ? decodeURIComponent(match[1]) : null;
+			let token: string | null = null;
+			const authToken = socket.handshake.auth?.token as string | undefined;
+			if (authToken) {
+				token = authToken;
+			} else {
+				const cookieStr = socket.handshake.headers.cookie ?? '';
+				const match = cookieStr.match(/(?:^|;\s*)token=([^;]+)/);
+				token = match ? decodeURIComponent(match[1]) : null;
+			}
 			if (!token) return next(new Error('Not authorized'));
 
 			const decoded = jwt.verify(token, config.jwtSecret) as { id: string };

@@ -53,7 +53,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		if (!isAuthenticated || !user) return;
 
-		const s = io(SOCKET_URL, { withCredentials: true });
+		const token = localStorage.getItem('authToken');
+		const s = io(SOCKET_URL, { withCredentials: true, auth: token ? { token } : undefined });
 		setSocket(s);
 
 		s.on('chat:message', (msg: IChatMessage) => {

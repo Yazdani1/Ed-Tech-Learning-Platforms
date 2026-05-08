@@ -18,6 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const login = async (email: string, password: string) => {
 		const res = await authService.login(email, password);
+		if (res.token) localStorage.setItem('authToken', res.token);
 		const userData = res.data ?? null;
 		setUser(userData);
 		toast.success('Logged in successfully');
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const register = async (name: string, email: string, password: string) => {
 		const res = await authService.register(name, email, password);
+		if (res.token) localStorage.setItem('authToken', res.token);
 		const userData = res.data ?? null;
 		setUser(userData);
 		toast.success('Account created successfully');
@@ -34,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const logout = async () => {
 		await authService.logout();
+		localStorage.removeItem('authToken');
 		setUser(null);
 		toast.success('Logged out successfully');
 	};
