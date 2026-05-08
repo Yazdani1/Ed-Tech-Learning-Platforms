@@ -34,7 +34,7 @@ function formatTime(iso: string) {
 	return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function StudentChatPage() {
+export default function StudentChatPage({ embedded = false }: { embedded?: boolean }) {
 	const { user } = useAuth();
 	const { socket, clearUnread } = useChat();
 	const [conversation, setConversation] = useState<IChatConversation | null>(null);
@@ -95,8 +95,7 @@ export default function StudentChatPage() {
 			sx={{
 				display: 'flex',
 				flexDirection: 'column',
-				height: 'calc(100vh - 64px)',
-				p: 2,
+				...(embedded ? { flex: 1, minHeight: 0 } : { height: 'calc(100vh - 64px)', p: 2 }),
 			}}
 		>
 			<Box

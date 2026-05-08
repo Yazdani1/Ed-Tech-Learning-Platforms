@@ -78,6 +78,8 @@ import type {
 import CourseQASection from '../../components/course/CourseQASection';
 import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar';
 import ChatWidget from '../../components/chat/ChatWidget';
+import StudentChatPage from '../chat/StudentChatPage';
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import { useAuth } from '../../context/useAuth';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
@@ -92,7 +94,8 @@ type NavSection =
 	| 'announcements'
 	| 'study_materials'
 	| 'students'
-	| 'qa';
+	| 'qa'
+	| 'support_chat';
 
 const getYouTubeId = (url: string) => {
 	const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
@@ -142,6 +145,7 @@ const NAV_ITEMS: { key: NavSection; label: string; icon: React.ReactNode }[] = [
 	},
 	{ key: 'students', label: 'Students', icon: <PeopleOutlinedIcon /> },
 	{ key: 'qa', label: 'Q & A', icon: <QuestionAnswerOutlinedIcon /> },
+	{ key: 'support_chat', label: 'Support Chat', icon: <SupportAgentIcon /> },
 ];
 
 export default function StudentCourseLearningPage() {
@@ -665,7 +669,11 @@ export default function StudentCourseLearningPage() {
 	const isTeacherOrAdmin = user?.role === 'Teacher' || isAdminRole;
 	const canSeeStudentList = Boolean(user && user.role !== 'Student');
 	const canExportStudentList = isAdminRole;
-	const visibleNavItems = NAV_ITEMS.filter((item) => item.key !== 'students' || canSeeStudentList);
+	const visibleNavItems = NAV_ITEMS.filter(
+		(item) =>
+			(item.key !== 'students' || canSeeStudentList) &&
+			(item.key !== 'support_chat' || user?.role === 'Student'),
+	);
 
 	return (
 		<Box
@@ -799,7 +807,7 @@ export default function StudentCourseLearningPage() {
 							flex: 1,
 							display: 'flex',
 							flexDirection: 'column',
-							overflow: 'auto',
+							overflow: activeNav === 'support_chat' ? 'hidden' : 'auto',
 							minWidth: 0,
 						}}
 					>
@@ -2186,6 +2194,11 @@ export default function StudentCourseLearningPage() {
 								initialQuestionId={initialQuestionId}
 							/>
 						</Box>
+					)}
+
+					{/* ── Support Chat ───────────────────────────── */}
+					{activeNav === 'support_chat' && (
+						<StudentChatPage embedded />
 					)}
 				</Box>
 
