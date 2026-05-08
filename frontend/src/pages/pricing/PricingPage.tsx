@@ -368,7 +368,7 @@ export default function PricingPage() {
 				</Container>
 			</Box>
 
-			<Container maxWidth='lg' sx={{ py: { xs: 5, md: 8 } }}>
+			<Container maxWidth='xl' sx={{ py: { xs: 5, md: 8 } }}>
 				{loading ? (
 					<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
 						<CircularProgress />
@@ -462,7 +462,7 @@ export default function PricingPage() {
 								const subscribeKey = selectedOption ? `${plan.plan}:${selectedOption.duration}` : `${plan.plan}:unavailable`;
 
 								return (
-									<Grid key={plan._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+									<Grid key={plan._id} size={{ xs: 12, sm: 6, lg: 4, xl: 3 }} sx={{ minWidth: { lg: 320 } }}>
 									<Card
 										elevation={isCurrent ? 6 : 1}
 										sx={{
@@ -470,6 +470,7 @@ export default function PricingPage() {
 											border: '2px solid',
 											borderColor: isCurrent ? accentColor : 'divider',
 											height: '100%',
+											minHeight: { md: 500 },
 											display: 'flex',
 											flexDirection: 'column',
 											transition: 'transform 0.15s, box-shadow 0.15s',
@@ -536,11 +537,42 @@ export default function PricingPage() {
 
 											<Divider sx={{ my: 2 }} />
 
-											<Box>
+											<Box
+												sx={{
+													borderTop: '1px solid',
+													borderColor: 'divider',
+												}}
+											>
 												{plan.features.map((feat, i) => (
-													<Box key={i} sx={{ display: 'flex', gap: 1.25, alignItems: 'flex-start', mb: 1 }}>
-														<CheckIcon sx={{ fontSize: 17, color: accentColor, mt: 0.2, flexShrink: 0 }} />
-														<Typography variant='body2'>{feat}</Typography>
+													<Box
+														key={i}
+														sx={{
+															display: 'flex',
+															gap: 1.25,
+															alignItems: 'flex-start',
+															px: 0,
+															py: 1.1,
+															borderBottom: '1px solid',
+															borderColor: 'divider',
+														}}
+													>
+														<Box
+															sx={{
+																width: 22,
+																height: 22,
+																borderRadius: '50%',
+																bgcolor: `${accentColor}14`,
+																display: 'flex',
+																alignItems: 'center',
+																justifyContent: 'center',
+																flexShrink: 0,
+															}}
+														>
+															<CheckIcon sx={{ fontSize: 15, color: accentColor }} />
+														</Box>
+														<Typography variant='body2' sx={{ lineHeight: 1.5 }}>
+															{feat}
+														</Typography>
 													</Box>
 												))}
 											</Box>
@@ -570,7 +602,7 @@ export default function PricingPage() {
 														},
 													}}
 												>
-													View Included Courses
+													View Included Courses ({plan.courseCount})
 												</Button>
 											)}
 											{!selectedOption ? (
