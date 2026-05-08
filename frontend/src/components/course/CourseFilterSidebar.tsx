@@ -43,6 +43,7 @@ interface Props {
 	onTogglePricing: (pricing: CoursePricing) => void;
 	selectedPlans: SubscriptionPlan[];
 	onTogglePlan: (plan: SubscriptionPlan) => void;
+	subscriptionPlanOptions?: SubscriptionPlan[];
 	activeFilterCount: number;
 	onClearAll: () => void;
 }
@@ -60,17 +61,20 @@ export default function CourseFilterSidebar({
 	onTogglePricing,
 	selectedPlans,
 	onTogglePlan,
+	subscriptionPlanOptions,
 	activeFilterCount,
 	onClearAll,
 }: Props) {
 	const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+	const displayedSubscriptionPlans = subscriptionPlanOptions ?? subscriptionPlans;
 
 	useEffect(() => {
+		if (subscriptionPlanOptions) return;
 		subscriptionPlanConfigService
 			.getAll()
 			.then((res) => setSubscriptionPlans((res.data ?? []).map((plan) => plan.plan)))
 			.catch(() => setSubscriptionPlans([]));
-	}, []);
+	}, [subscriptionPlanOptions]);
 
 	return (
 		<Box>
@@ -216,7 +220,7 @@ export default function CourseFilterSidebar({
 						</Typography>
 						<Box sx={{ maxHeight: 200, overflowY: 'auto', pr: 0.5 }}>
 							<FormGroup>
-								{subscriptionPlans.map((plan) => (
+								{displayedSubscriptionPlans.map((plan) => (
 									<FormControlLabel
 										key={plan}
 										control={

@@ -17,11 +17,18 @@ import {
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
+import SchoolIcon from '@mui/icons-material/School';
 import toast from 'react-hot-toast';
 import PublicNavbar from '../../components/layout/PublicNavbar';
+import AppModal from '../../components/common/AppModal';
+import CourseFilterSidebar from '../../components/course/CourseFilterSidebar';
+import CourseCard, { CourseCardSkeleton } from '../../components/ui/CourseCard';
+import { categoryService } from '../../services/category.service';
+import { courseService } from '../../services/course.service';
+import { courseTypeService } from '../../services/courseType.service';
 import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import { subscriptionService } from '../../services/subscription.service';
-import type { ISubscriptionPlanConfig, SubscriptionPlan } from '../../types/index';
+import type { ICategory, ICourse, ICourseType, ISubscriptionPlanConfig, CoursePricing, SubscriptionPlan } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
 import { formatDate } from '../../utils/dateTime';
 
@@ -63,12 +70,221 @@ const getSavingsInfo = (
 	};
 };
 
+const PLAN_COURSE_SKELETONS = Array.from({ length: 8 });
+
+function PlanCoursesModal({
+	plan,
+	open,
+	onClose,
+}: {
+	plan: ISubscriptionPlanConfig | null;
+	open: boolean;
+	onClose: () => void;
+}) {
+	const { user, isLoading: authLoading } = useAuth();
+	const [searchInput, setSearchInput] = useState('');
+	const [selectedCourseTypes, setSelectedCourseTypes] = useState<string[]>([]);
+	const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+	const [selectedPricing, setSelectedPricing] = useState<CoursePricing[]>([]);
+	const [categories, setCategories] = useState<ICategory[]>([]);
+	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
+	const [courses, setCourses] = useState<ICourse[]>([]);
+	const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
+	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (!open) return;
+		Promise.all([categoryService.getAll(), courseTypeService.getAll()]).then(([catRes, typeRes]) => {
+			setCategories(catRes.data ?? []);
+			setCourseTypes(typeRes.data ?? []);
+		});
+	}, [open]);
+
+	useEffect(() => {
+		if (!open || authLoading) return;
+		if (user?.role === 'Student') {
+			courseService
+				.getEnrolled()
+				.then((res) => setEnrolledCourseIds((res.data ?? []).map((course) => course._id)))
+				.catch(() => setEnrolledCourseIds([]));
+		} else {
+			setEnrolledCourseIds([]);
+		}
+	}, [authLoading, open, user]);
+
+	useEffect(() => {
+		if (!open || !plan) return;
+
+		const params: Record<string, string> = {
+			subscriptionPlans: plan.plan,
+			limit: '100',
+		};
+		if (searchInput.trim()) params.search = searchInput.trim();
+		if (selectedCourseTypes.length > 0) params.courseTypes = selectedCourseTypes.join(',');
+		if (selectedCategories.length > 0) params.categories = selectedCategories.join(',');
+		if (selectedPricing.length > 0) params.pricing = selectedPricing.join(',');
+
+		setLoading(true);
+		courseService
+			.browse(params)
+			.then((res) => {
+				const data = res.data;
+				setCourses(Array.isArray(data) ? data.filter((course): course is ICourse => Boolean(course?._id)) : []);
+			})
+			.catch(() => setCourses([]))
+			.finally(() => setLoading(false));
+	}, [open, plan, searchInput, selectedCategories, selectedCourseTypes, selectedPricing]);
+
+	const toggleCourseType = (id: string) => {
+		setSelectedCourseTypes((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+	};
+
+	const toggleCategory = (id: string) => {
+		setSelectedCategories((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+	};
+
+	const togglePricing = (pricing: CoursePricing) => {
+		setSelectedPricing((current) => (current.includes(pricing) ? current.filter((item) => item !== pricing) : [...current, pricing]));
+	};
+
+	const clearAll = () => {
+		setSearchInput('');
+		setSelectedCourseTypes([]);
+		setSelectedCategories([]);
+		setSelectedPricing([]);
+	};
+
+	const activeFilterCount = selectedCourseTypes.length + selectedCategories.length + selectedPricing.length;
+	const hasActiveFilter = Boolean(searchInput.trim()) || activeFilterCount > 0;
+
+	return (
+		<AppModal
+			open={open}
+			onClose={onClose}
+			title={plan ? `${plan.plan} included courses` : 'Included courses'}
+			maxWidth='xl'
+			cancelText='Close'
+			cancelButtonSx={{
+				border: '1px solid',
+				borderColor: 'error.main',
+				color: 'error.main',
+				borderRadius: 2,
+				px: 2.5,
+				fontWeight: 800,
+				'&:hover': {
+					borderColor: 'error.dark',
+					bgcolor: 'error.50',
+					color: 'error.dark',
+				},
+			}}
+			contentSx={{ p: 0, height: { xs: '78vh', md: '82vh' } }}
+			paperSx={{ height: { xs: '92vh', md: '88vh' } }}
+		>
+			<Box sx={{ display: 'flex', height: '100%', minHeight: 0 }}>
+				<Box
+					sx={{
+						width: 282,
+						flexShrink: 0,
+						borderRight: '1px solid',
+						borderColor: 'divider',
+						display: { xs: 'none', md: 'block' },
+						p: 2,
+						overflowY: 'auto',
+					}}
+				>
+					<CourseFilterSidebar
+						searchInput={searchInput}
+						onSearchChange={setSearchInput}
+						courseTypes={courseTypes}
+						selectedCourseTypes={selectedCourseTypes}
+						onToggleCourseType={toggleCourseType}
+						categories={categories}
+						selectedCategories={selectedCategories}
+						onToggleCategory={toggleCategory}
+						selectedPricing={selectedPricing}
+						onTogglePricing={togglePricing}
+						selectedPlans={plan ? [plan.plan] : []}
+						onTogglePlan={() => {}}
+						subscriptionPlanOptions={plan ? [plan.plan] : []}
+						activeFilterCount={activeFilterCount}
+						onClearAll={clearAll}
+					/>
+				</Box>
+
+				<Box sx={{ flex: 1, minWidth: 0, overflowY: 'auto', p: { xs: 2, md: 3 } }}>
+					<Box sx={{ display: { xs: 'block', md: 'none' }, mb: 2 }}>
+						<CourseFilterSidebar
+							searchInput={searchInput}
+							onSearchChange={setSearchInput}
+							courseTypes={courseTypes}
+							selectedCourseTypes={selectedCourseTypes}
+							onToggleCourseType={toggleCourseType}
+							categories={categories}
+							selectedCategories={selectedCategories}
+							onToggleCategory={toggleCategory}
+							selectedPricing={selectedPricing}
+							onTogglePricing={togglePricing}
+							selectedPlans={plan ? [plan.plan] : []}
+							onTogglePlan={() => {}}
+							subscriptionPlanOptions={plan ? [plan.plan] : []}
+							activeFilterCount={activeFilterCount}
+							onClearAll={clearAll}
+						/>
+					</Box>
+
+					<Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', mb: 2.5 }}>
+						<Typography variant='body2' color='text.secondary'>
+							{loading ? 'Loading courses...' : `${courses.length} course${courses.length !== 1 ? 's' : ''} included`}
+						</Typography>
+						{plan && <Chip label={plan.plan} size='small' color='primary' sx={{ fontWeight: 800 }} />}
+					</Box>
+
+					{loading ? (
+						<Grid container spacing={2.5}>
+							{PLAN_COURSE_SKELETONS.map((_, index) => (
+								<Grid key={index} size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+									<CourseCardSkeleton showAction={user?.role === 'Student'} />
+								</Grid>
+							))}
+						</Grid>
+					) : courses.length === 0 ? (
+						<Box sx={{ textAlign: 'center', py: 8 }}>
+							<Typography variant='h6' color='text.secondary'>
+								{hasActiveFilter ? 'No included courses match your filters.' : 'No courses are assigned to this subscription yet.'}
+							</Typography>
+							{hasActiveFilter && (
+								<Button onClick={clearAll} sx={{ mt: 2 }}>
+									Clear filters
+								</Button>
+							)}
+						</Box>
+					) : (
+						<Grid container spacing={2.5}>
+							{courses.map((course) => (
+								<Grid key={course._id} size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+									<CourseCard
+										course={course}
+										basePath='/courses'
+										isEnrolled={enrolledCourseIds.includes(course._id)}
+										learningPath={`/student/courses/${course._id}/learn`}
+									/>
+								</Grid>
+							))}
+						</Grid>
+					)}
+				</Box>
+			</Box>
+		</AppModal>
+	);
+}
+
 export default function PricingPage() {
 	const { user, refreshUser } = useAuth();
 	const navigate = useNavigate();
 	const [plans, setPlans] = useState<ISubscriptionPlanConfig[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
+	const [courseModalPlan, setCourseModalPlan] = useState<ISubscriptionPlanConfig | null>(null);
 	const [subscribing, setSubscribing] = useState<string | null>(null);
 
 	const isStudent = user?.role === 'Student';
@@ -167,34 +383,66 @@ export default function PricingPage() {
 					<>
 						{billingDurations.length > 1 && (
 							<Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-								<ToggleButtonGroup
-									exclusive
-									value={selectedDuration}
-									onChange={(_, value: number | null) => {
-										if (!value) return;
-										setSelectedDuration(value);
-									}}
+								<Box
 									sx={{
-										flexWrap: 'wrap',
-										justifyContent: 'center',
-										gap: 0.75,
-										'& .MuiToggleButton-root': {
-											border: '1px solid',
-											borderColor: 'divider',
-											borderRadius: 2,
-											px: { xs: 1.5, sm: 2.5 },
-											py: 1,
-											fontWeight: 700,
-											textTransform: 'none',
-										},
+										display: 'inline-flex',
+										p: 0.75,
+										borderRadius: 3,
+										bgcolor: '#f8fafc',
+										border: '1px solid',
+										borderColor: '#dbeafe',
+										boxShadow: '0 10px 28px rgba(15, 23, 42, 0.08)',
 									}}
 								>
-									{billingDurations.map((option) => (
-										<ToggleButton key={option.duration} value={option.duration}>
-											{option.label}
-										</ToggleButton>
-									))}
-								</ToggleButtonGroup>
+									<ToggleButtonGroup
+										exclusive
+										value={selectedDuration}
+										onChange={(_, value: number | null) => {
+											if (!value) return;
+											setSelectedDuration(value);
+										}}
+										sx={{
+											flexWrap: 'wrap',
+											justifyContent: 'center',
+											gap: 0.75,
+											'& .MuiToggleButtonGroup-grouped': {
+												border: 0,
+												m: 0,
+												borderRadius: 2,
+											},
+											'& .MuiToggleButton-root': {
+												minWidth: { xs: 92, sm: 116 },
+												px: { xs: 1.5, sm: 2.25 },
+												py: 1,
+												color: '#334155',
+												fontWeight: 800,
+												textTransform: 'none',
+												bgcolor: 'white',
+												boxShadow: 'inset 0 0 0 1px rgba(148, 163, 184, 0.22)',
+												transition: 'all 0.18s ease',
+												'&:hover': {
+													bgcolor: '#eff6ff',
+													color: '#1d4ed8',
+													transform: 'translateY(-1px)',
+												},
+												'&.Mui-selected': {
+													color: 'white',
+													bgcolor: '#2563eb',
+													boxShadow: '0 8px 18px rgba(37, 99, 235, 0.28)',
+												},
+												'&.Mui-selected:hover': {
+													bgcolor: '#1d4ed8',
+												},
+											},
+										}}
+									>
+										{billingDurations.map((option) => (
+											<ToggleButton key={option.duration} value={option.duration}>
+												{option.label}
+											</ToggleButton>
+										))}
+									</ToggleButtonGroup>
+								</Box>
 							</Box>
 						)}
 
@@ -278,7 +526,7 @@ export default function PricingPage() {
 											)}
 
 											{plan.courseCount > 0 && (
-												<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.75, mb: 0.5 }}>
+												<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 1, mb: 0.5 }}>
 													<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: accentColor, flexShrink: 0 }} />
 													<Typography variant='caption' sx={{ color: accentColor, fontWeight: 700 }}>
 														{plan.courseCount} course{plan.courseCount !== 1 ? 's' : ''} included free
@@ -298,7 +546,33 @@ export default function PricingPage() {
 											</Box>
 										</CardContent>
 
-										<CardActions sx={{ p: 2, pt: 0 }}>
+										<CardActions sx={{ p: 2, pt: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+											{plan.courseCount > 0 && (
+												<Button
+													fullWidth
+													size='small'
+													variant='contained'
+													startIcon={<SchoolIcon fontSize='small' />}
+													onClick={() => setCourseModalPlan(plan)}
+													sx={{
+														borderRadius: 999,
+														fontWeight: 900,
+														textTransform: 'none',
+														py: 0.85,
+														color: 'white',
+														bgcolor: accentColor,
+														boxShadow: `0 10px 20px ${accentColor}33`,
+														background: `linear-gradient(135deg, ${accentColor} 0%, #0ea5e9 100%)`,
+														'&:hover': {
+															bgcolor: accentColor,
+															boxShadow: `0 14px 28px ${accentColor}40`,
+															transform: 'translateY(-1px)',
+														},
+													}}
+												>
+													View Included Courses
+												</Button>
+											)}
 											{!selectedOption ? (
 												<Button fullWidth variant='outlined' disabled sx={{ borderRadius: 2, fontWeight: 700 }}>
 													Not Available
@@ -374,6 +648,11 @@ export default function PricingPage() {
 					</Box>
 				)}
 			</Container>
+			<PlanCoursesModal
+				plan={courseModalPlan}
+				open={Boolean(courseModalPlan)}
+				onClose={() => setCourseModalPlan(null)}
+			/>
 		</Box>
 	);
 }
