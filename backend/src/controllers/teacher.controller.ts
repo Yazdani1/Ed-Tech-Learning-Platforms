@@ -36,6 +36,7 @@ export const getMyTeacherCourses = asyncHandler(async (req: Request, res: Respon
   }
   const courses = await Course.find({ teachers: teacherProfile._id })
     .populate('category', 'name slug')
+    .populate('courseType', 'name slug description')
     .populate('teachers', 'name profileImage')
     .sort({ createdAt: -1 });
   res.status(200).json({ success: true, data: courses, total: courses.length });

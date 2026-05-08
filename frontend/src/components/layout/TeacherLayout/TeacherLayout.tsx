@@ -107,7 +107,7 @@ export default function TeacherLayout() {
 							{open && <ListItemText primary='Home' />}
 						</ListItemButton>
 					</Tooltip>
-					<Tooltip title={open ? '' : 'My Courses'} placement='right'>
+					<Tooltip title={open ? '' : 'Assigned courses'} placement='right'>
 						<ListItemButton
 							onClick={() => navigate('/teacher/courses')}
 							selected={location.pathname.startsWith('/teacher/courses')}
@@ -129,7 +129,7 @@ export default function TeacherLayout() {
 							>
 								<SchoolIcon />
 							</ListItemIcon>
-							{open && <ListItemText primary='My Courses' />}
+							{open && <ListItemText primary='Assigned courses' />}
 						</ListItemButton>
 					</Tooltip>
 					<Tooltip title={open ? '' : 'Profile'} placement='right'>
