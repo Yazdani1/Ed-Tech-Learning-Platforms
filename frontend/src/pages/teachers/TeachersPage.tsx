@@ -97,9 +97,15 @@ export default function TeachersPage() {
 	};
 
 	const loadTeacherUsers = () => {
-		userService.getAll().then((res) => {
-			setTeacherUsers((res.data ?? []).filter((u) => u.role === 'Teacher'));
-		});
+		userService
+			.getAll({ role: 'Teacher', limit: '100' })
+			.then((res) => {
+				setTeacherUsers(res.data ?? []);
+			})
+			.catch(() => {
+				setTeacherUsers([]);
+				toast.error('Failed to load teacher user accounts');
+			});
 	};
 
 	const handleOpenDialog = (teacher?: ITeacher) => {
@@ -147,6 +153,19 @@ export default function TeachersPage() {
 		setDetailsOpen(false);
 		setDetailsTeacher(null);
 		setDetailsCourses([]);
+	};
+
+	const getLinkableTeacherUsers = () => {
+		const linkedUserIds = new Set(
+			teachers
+				.map((teacher) => teacher.userId)
+				.filter((userId): userId is string => Boolean(userId)),
+		);
+
+		return teacherUsers.filter((user) => {
+			if (editingTeacher?.userId === user._id) return true;
+			return !linkedUserIds.has(user._id);
+		});
 	};
 
 	const handleSave = async () => {
@@ -255,6 +274,13 @@ export default function TeachersPage() {
 										borderColor: 'divider',
 										borderRadius: 1,
 										height: '100%',
+										transition: 'transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease',
+										boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+										'&:hover': {
+											transform: 'translateY(-4px)',
+											borderColor: 'primary.light',
+											boxShadow: '0 12px 28px rgba(15,23,42,0.10), 0 4px 10px rgba(15,23,42,0.06)',
+										},
 									}}
 								>
 									<Box sx={{ position: 'absolute', top: 10, right: 10 }}>
@@ -460,7 +486,7 @@ export default function TeachersPage() {
 								<MenuItem value=''>
 									<em>None</em>
 								</MenuItem>
-								{teacherUsers.map((u) => (
+								{getLinkableTeacherUsers().map((u) => (
 									<MenuItem key={u._id} value={u._id}>
 										{u.name} — {u.email} — {u.role}
 									</MenuItem>
@@ -523,6 +549,19 @@ function TeacherDetailsModal({
 			onClose={onClose}
 			title='Teacher details'
 			cancelText='Close'
+			cancelButtonSx={{
+				border: '1px solid',
+				borderColor: 'error.main',
+				color: 'error.main',
+				borderRadius: 2,
+				px: 2.5,
+				fontWeight: 800,
+				'&:hover': {
+					borderColor: 'error.dark',
+					bgcolor: 'error.50',
+					color: 'error.dark',
+				},
+			}}
 			maxWidth='lg'
 			contentSx={{ p: 0 }}
 		>
@@ -682,6 +721,11 @@ function TeacherDetailsModal({
 										<Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, alignItems: 'center' }}>
 											<Chip label={course.status} size='small' color={course.status === 'Published' ? 'success' : 'default'} variant='outlined' />
 											<Chip label={course.visibility} size='small' />
+											<Chip
+												label={`${course.enrollmentStats?.totalEnrollments ?? 0} student${(course.enrollmentStats?.totalEnrollments ?? 0) !== 1 ? 's' : ''}`}
+												size='small'
+												variant='outlined'
+											/>
 											<Button
 												size='small'
 												variant='contained'
@@ -689,7 +733,7 @@ function TeacherDetailsModal({
 												onClick={() => onCourseOpen(course._id)}
 												sx={{ fontWeight: 800 }}
 											>
-												Learn page
+												View Course
 											</Button>
 										</Box>
 									</Paper>
