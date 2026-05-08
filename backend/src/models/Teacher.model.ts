@@ -1,4 +1,4 @@
-import { Schema, model, type Document } from 'mongoose';
+import { Schema, model, type Document, type Types } from 'mongoose';
 
 export interface ISocialLinks {
   website?: string;
@@ -14,6 +14,7 @@ export interface ITeacher extends Document {
   profileImagePublicId?: string;
   expertise: string[];
   socialLinks?: ISocialLinks;
+  userId?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +32,7 @@ const teacherSchema = new Schema<ITeacher>(
       twitter: String,
       youtube: String,
     },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', sparse: true, unique: true },
   },
   { timestamps: true }
 );

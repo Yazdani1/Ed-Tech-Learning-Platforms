@@ -7,8 +7,11 @@ export interface IUser extends Document {
   password: string;
   role: UserRole;
   avatar?: string;
+  avatarPublicId?: string;
   activeSubscription?: {
     plan: SubscriptionPlan;
+    billingDuration?: number;
+    billingLabel?: string;
     startDate: Date;
     endDate: Date;
   };
@@ -28,8 +31,11 @@ const userSchema = new Schema<IUser>(
       default: 'Student',
     },
     avatar: String,
+    avatarPublicId: { type: String, select: false },
     activeSubscription: {
-      plan: { type: String, enum: ['Basic', 'Premium', 'Gold', 'Quiz Only'] },
+      plan: { type: String, trim: true },
+      billingDuration: { type: Number, min: 1 },
+      billingLabel: { type: String },
       startDate: Date,
       endDate: Date,
     },
@@ -37,5 +43,8 @@ const userSchema = new Schema<IUser>(
   },
   { timestamps: true }
 );
+
+userSchema.index({ createdAt: -1 });
+userSchema.index({ role: 1, createdAt: -1 });
 
 export const User = model<IUser>('User', userSchema);

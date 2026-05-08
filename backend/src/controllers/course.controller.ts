@@ -1,36 +1,324 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { Course } from '../models/Course.model';
+import { Enrollment } from '../models/Enrollment.model';
 import { Section } from '../models/Section.model';
 import { Lecture } from '../models/Lecture.model';
+import { StudyCurriculum } from '../models/StudyCurriculum.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 import type { CourseStatus, SubscriptionPlan } from '../types/index';
 
+const normalizeCoursePrices = (pricing: string, listPrice?: number, discountPrice?: number) => {
+	if (pricing !== 'Paid') {
+		return { listPrice: 0, discountPrice: 0, price: 0 };
+	}
+
+	const safeListPrice = Math.max(Number(listPrice ?? discountPrice ?? 0), 0);
+	const safeDiscountPrice = Math.max(Number(discountPrice ?? safeListPrice), 0);
+	const finalPrice = Math.min(safeDiscountPrice, safeListPrice);
+
+	return { listPrice: safeListPrice, discountPrice: finalPrice, price: finalPrice };
+};
+
+const expireExpiredCourseDiscounts = async () => {
+	const now = new Date();
+	const expiredCourses = await Course.find({
+		pricing: 'Paid',
+		discountEndsAt: { $lte: now },
+		discountPercent: { $gt: 0 },
+	}).select('price listPrice');
+
+	if (expiredCourses.length === 0) return;
+
+	await Course.bulkWrite(
+		expiredCourses.map((course) => {
+			const listPrice = course.listPrice ?? course.price ?? 0;
+			return {
+				updateOne: {
+					filter: { _id: course._id },
+					update: {
+						$set: {
+							price: listPrice,
+							discountPrice: listPrice,
+							discountPercent: 0,
+						},
+						$unset: { discountEndsAt: '' },
+					},
+				},
+			};
+		}),
+	);
+};
+
 export const getCourses = asyncHandler(async (req: Request, res: Response) => {
-	const { category, status, pricing, visibility, search } = req.query as Record<string, string>;
+	await expireExpiredCourseDiscounts();
+	const { category, courseType, teacher, status, pricing, visibility, subscriptionPlans, search, enrollmentFilter, earningFilter } = req.query as Record<string, string>;
 
 	const filter: Record<string, unknown> = {};
 	if (category) filter.category = category;
+	if (courseType) filter.courseType = courseType;
+	if (teacher) filter.teachers = teacher;
 	if (status) filter.status = status;
 	if (pricing) filter.pricing = pricing;
 	if (visibility) filter.visibility = visibility;
+	if (subscriptionPlans) {
+		const plans = subscriptionPlans.split(',').map((s) => s.trim()).filter(Boolean);
+		if (plans.length > 0) {
+			filter.includedInSubscription = true;
+			filter.allowedSubscriptionPlans = { $in: plans };
+		}
+	}
 	if (search) filter.title = { $regex: search, $options: 'i' };
 
 	const courses = await Course.find(filter)
 		.populate('category', 'name slug')
+		.populate('courseType', 'name slug description')
 		.populate('teachers', 'name profileImage')
 		.sort({ createdAt: -1 });
 
-	res.status(200).json({ success: true, data: courses, total: courses.length });
+	const now = new Date();
+	const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+	const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+	const courseIds = courses.map((course) => course._id);
+	const enrollmentStats = courseIds.length > 0
+		? await Enrollment.aggregate<{
+			_id: Types.ObjectId;
+			totalEnrollments: number;
+			paidEnrollments: number;
+			lifetimeEarned: number;
+			thisMonthCount: number;
+			thisMonthPaidEnrollments: number;
+			thisMonthEarned: number;
+			previousMonthCount: number;
+			previousMonthPaidEnrollments: number;
+			previousMonthEarned: number;
+		}>([
+			{ $match: { course: { $in: courseIds } } },
+			{
+				$group: {
+					_id: '$course',
+					totalEnrollments: { $sum: 1 },
+					paidEnrollments: {
+						$sum: { $cond: [{ $eq: ['$enrollmentType', 'paid'] }, 1, 0] },
+					},
+					lifetimeEarned: {
+						$sum: {
+							$cond: [
+								{ $eq: ['$enrollmentType', 'paid'] },
+								{ $ifNull: ['$paidPrice', 0] },
+								0,
+							],
+						},
+					},
+					thisMonthCount: {
+						$sum: { $cond: [{ $gte: ['$createdAt', startOfMonth] }, 1, 0] },
+					},
+					thisMonthPaidEnrollments: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $eq: ['$enrollmentType', 'paid'] },
+										{ $gte: ['$createdAt', startOfMonth] },
+									],
+								},
+								1,
+								0,
+							],
+						},
+					},
+					thisMonthEarned: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $eq: ['$enrollmentType', 'paid'] },
+										{ $gte: ['$createdAt', startOfMonth] },
+									],
+								},
+								{ $ifNull: ['$paidPrice', 0] },
+								0,
+							],
+						},
+					},
+					previousMonthCount: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $gte: ['$createdAt', startOfPreviousMonth] },
+										{ $lt: ['$createdAt', startOfMonth] },
+									],
+								},
+								1,
+								0,
+							],
+						},
+					},
+					previousMonthPaidEnrollments: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $eq: ['$enrollmentType', 'paid'] },
+										{ $gte: ['$createdAt', startOfPreviousMonth] },
+										{ $lt: ['$createdAt', startOfMonth] },
+									],
+								},
+								1,
+								0,
+							],
+						},
+					},
+					previousMonthEarned: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $eq: ['$enrollmentType', 'paid'] },
+										{ $gte: ['$createdAt', startOfPreviousMonth] },
+										{ $lt: ['$createdAt', startOfMonth] },
+									],
+								},
+								{ $ifNull: ['$paidPrice', 0] },
+								0,
+							],
+						},
+					},
+				},
+			},
+		])
+		: [];
+	const statsByCourseId = new Map(enrollmentStats.map((stat) => [String(stat._id), stat]));
+	const coursesWithStats = courses.map((course) => {
+		const courseObject = course.toObject();
+		const stat = statsByCourseId.get(String(course._id));
+		const fallbackPrice = course.price ?? 0;
+		return {
+			...courseObject,
+			enrollmentStats: {
+				totalEnrollments: stat?.totalEnrollments ?? 0,
+				lifetimeEarned: stat?.lifetimeEarned || (stat?.paidEnrollments ?? 0) * fallbackPrice,
+				thisMonthCount: stat?.thisMonthCount ?? 0,
+				thisMonthEarned: stat?.thisMonthEarned || (stat?.thisMonthPaidEnrollments ?? 0) * fallbackPrice,
+				previousMonthCount: stat?.previousMonthCount ?? 0,
+				previousMonthEarned: stat?.previousMonthEarned || (stat?.previousMonthPaidEnrollments ?? 0) * fallbackPrice,
+			},
+		};
+	});
+	const filteredCourses = coursesWithStats.filter((course) => {
+		const stats = course.enrollmentStats;
+
+		if (enrollmentFilter === 'has_lifetime' && stats.totalEnrollments === 0) return false;
+		if (enrollmentFilter === 'none_lifetime' && stats.totalEnrollments > 0) return false;
+		if (enrollmentFilter === 'has_this_month' && stats.thisMonthCount === 0) return false;
+		if (enrollmentFilter === 'none_this_month' && stats.thisMonthCount > 0) return false;
+		if (enrollmentFilter === 'has_previous_month' && stats.previousMonthCount === 0) return false;
+		if (enrollmentFilter === 'none_previous_month' && stats.previousMonthCount > 0) return false;
+
+		if (earningFilter === 'has_lifetime' && stats.lifetimeEarned <= 0) return false;
+		if (earningFilter === 'none_lifetime' && stats.lifetimeEarned > 0) return false;
+		if (earningFilter === 'has_this_month' && stats.thisMonthEarned <= 0) return false;
+		if (earningFilter === 'none_this_month' && stats.thisMonthEarned > 0) return false;
+		if (earningFilter === 'has_previous_month' && stats.previousMonthEarned <= 0) return false;
+		if (earningFilter === 'none_previous_month' && stats.previousMonthEarned > 0) return false;
+
+		return true;
+	});
+
+	res.status(200).json({ success: true, data: filteredCourses, total: filteredCourses.length });
+});
+
+export const browseCourses = asyncHandler(async (req: Request, res: Response) => {
+	await expireExpiredCourseDiscounts();
+	const { search, courseTypes, categories, subscriptionPlans, pricing, page, limit } = req.query as Record<string, string>;
+
+	// Security: hard-coded — public users only ever see Published + Public courses
+	const filter: Record<string, unknown> = {
+		status: 'Published',
+		visibility: 'Public',
+	};
+
+	if (search?.trim())
+		filter.title = { $regex: search.trim(), $options: 'i' };
+
+	if (courseTypes) {
+		const ids = courseTypes.split(',').map((s) => s.trim()).filter((s) => Types.ObjectId.isValid(s)).map((s) => new Types.ObjectId(s));
+		if (ids.length > 0) filter.courseType = { $in: ids };
+	}
+
+	if (categories) {
+		const ids = categories.split(',').map((s) => s.trim()).filter((s) => Types.ObjectId.isValid(s)).map((s) => new Types.ObjectId(s));
+		if (ids.length > 0) filter.category = { $in: ids };
+	}
+
+	if (pricing) {
+		const values = pricing.split(',').map((s) => s.trim()).filter((s) => ['Free', 'Paid'].includes(s));
+		if (values.length > 0) filter.pricing = { $in: values };
+	}
+
+	if (subscriptionPlans) {
+		const plans = subscriptionPlans.split(',').map((s) => s.trim()).filter(Boolean);
+		if (plans.length > 0) {
+			filter.includedInSubscription = true;
+			filter.allowedSubscriptionPlans = { $in: plans };
+		}
+	}
+
+	const query = Course.find(filter)
+		.populate('category', 'name slug')
+		.populate('courseType', 'name slug description')
+		.populate('teachers', 'name profileImage')
+		.populate({
+			path: 'sections',
+			select: 'lectures order',
+			populate: {
+				path: 'lectures',
+				select: 'title videoUrl isPreview order',
+			},
+		})
+		.sort({ createdAt: -1 });
+
+	const shouldPaginate = Boolean(page || limit);
+
+	if (!shouldPaginate) {
+		const courses = await query;
+		res.status(200).json({ success: true, data: courses, total: courses.length });
+		return;
+	}
+
+	const currentPage = Math.max(Number(page) || 1, 1);
+	const perPage = Math.min(Math.max(Number(limit) || 8, 1), 100);
+	const total = await Course.countDocuments(filter);
+	const totalPages = Math.max(Math.ceil(total / perPage), 1);
+	const safePage = Math.min(currentPage, totalPages);
+
+	const courses = await query.skip((safePage - 1) * perPage).limit(perPage);
+
+	res.status(200).json({
+		success: true,
+		data: courses,
+		total,
+		pagination: {
+			page: safePage,
+			limit: perPage,
+			total,
+			totalPages,
+			hasNextPage: safePage < totalPages,
+			hasPrevPage: safePage > 1,
+		},
+	});
 });
 
 export const getCourseById = asyncHandler(
 	async (req: Request, res: Response) => {
+		await expireExpiredCourseDiscounts();
 		const course = await Course.findById(req.params.id)
 			.populate('category', 'name slug')
-			.populate('teachers', 'name bio profileImage expertise')
+			.populate('courseType', 'name slug description')
+			.populate('teachers', 'name bio profileImage expertise socialLinks userId')
 			.populate({ path: 'sections', populate: { path: 'lectures' } });
 
 		if (!course) throw new AppError('Course not found', 404);
@@ -38,22 +326,75 @@ export const getCourseById = asyncHandler(
 	},
 );
 
+export const getActiveDiscountSummary = asyncHandler(async (_req: Request, res: Response) => {
+	await expireExpiredCourseDiscounts();
+	const now = new Date();
+	const groups = await Course.aggregate<{
+		_id: null;
+		courseCount: number;
+		discountPercent: number;
+		discountEndsAt: Date;
+		maxListPrice: number;
+		minDiscountPrice: number;
+	}>([
+		{
+			$match: {
+				status: 'Published',
+				visibility: 'Public',
+				pricing: 'Paid',
+				discountPercent: { $gt: 0 },
+				discountEndsAt: { $gt: now },
+			},
+		},
+		{
+			$group: {
+				_id: null,
+				courseCount: { $sum: 1 },
+				discountPercent: { $max: '$discountPercent' },
+				discountEndsAt: { $min: '$discountEndsAt' },
+				maxListPrice: { $max: '$listPrice' },
+				minDiscountPrice: { $min: '$discountPrice' },
+			},
+		},
+		{ $limit: 1 },
+	]);
+
+	const active = groups[0];
+	res.status(200).json({
+		success: true,
+		data: active
+			? {
+					courseCount: active.courseCount,
+					discountPercent: active.discountPercent,
+					discountEndsAt: active.discountEndsAt,
+					maxListPrice: active.maxListPrice,
+					minDiscountPrice: active.minDiscountPrice,
+				}
+			: null,
+	});
+});
+
 export const createCourse = asyncHandler(
 	async (req: Request, res: Response) => {
 		const body = req.body as {
 			title: string;
 			subtitle?: string;
 			category: string;
+			courseType: string;
+			startDate?: string;
+			endDate?: string;
 			teachers?: string;
 			visibility?: string;
 			pricing?: string;
 			price?: string;
+			listPrice?: string;
+			discountPrice?: string;
 			includedInSubscription?: string;
 			allowedSubscriptionPlans?: string;
 		};
 
-		if (!body.title || !body.category)
-			throw new AppError('Title and category are required', 400);
+		if (!body.title || !body.category || !body.courseType)
+			throw new AppError('Title, category, and course type are required', 400);
 
 		let coverImage: string | undefined;
 		let coverImagePublicId: string | undefined;
@@ -67,18 +408,28 @@ export const createCourse = asyncHandler(
 			coverImagePublicId = result.publicId;
 		}
 
+		const pricing = (body.pricing ?? 'Free') as 'Free' | 'Paid';
+		const prices = normalizeCoursePrices(
+			pricing,
+			body.listPrice ? Number(body.listPrice) : body.price ? Number(body.price) : undefined,
+			body.discountPrice ? Number(body.discountPrice) : body.price ? Number(body.price) : undefined,
+		);
+
 		const course = await Course.create({
 			title: body.title,
 			subtitle: body.subtitle,
 			category: new Types.ObjectId(body.category),
+			courseType: new Types.ObjectId(body.courseType),
+			startDate: body.startDate ? new Date(body.startDate) : undefined,
+			endDate: body.endDate ? new Date(body.endDate) : undefined,
 			teachers: body.teachers
 				? (JSON.parse(body.teachers) as string[]).map(
 						(id) => new Types.ObjectId(id),
 					)
 				: [],
 			visibility: (body.visibility ?? 'Private') as 'Public' | 'Private',
-			pricing: (body.pricing ?? 'Free') as 'Free' | 'Paid',
-			price: body.price ? Number(body.price) : undefined,
+			pricing,
+			...prices,
 			includedInSubscription: body.includedInSubscription === 'true',
 			allowedSubscriptionPlans: body.allowedSubscriptionPlans
 				? (JSON.parse(body.allowedSubscriptionPlans) as SubscriptionPlan[])
@@ -118,11 +469,37 @@ export const updateCourse = asyncHandler(
 		if (body.description !== undefined) course.description = body.description;
 		if (body.category !== undefined)
 			course.category = new Types.ObjectId(body.category);
+		if (body.courseType !== undefined)
+			course.courseType = new Types.ObjectId(body.courseType);
+		if (body.startDate !== undefined)
+			course.startDate = body.startDate ? new Date(body.startDate) : (null as unknown as Date);
+		if (body.endDate !== undefined)
+			course.endDate = body.endDate ? new Date(body.endDate) : (null as unknown as Date);
 		if (body.visibility !== undefined)
 			course.visibility = body.visibility as 'Public' | 'Private';
 		if (body.pricing !== undefined)
 			course.pricing = body.pricing as 'Free' | 'Paid';
-		if (body.price !== undefined) course.price = Number(body.price);
+		if (
+			body.pricing !== undefined ||
+			body.price !== undefined ||
+			body.listPrice !== undefined ||
+			body.discountPrice !== undefined
+		) {
+			const prices = normalizeCoursePrices(
+				course.pricing,
+				body.listPrice !== undefined
+					? Number(body.listPrice)
+					: course.listPrice ?? course.price,
+				body.discountPrice !== undefined
+					? Number(body.discountPrice)
+					: body.price !== undefined
+						? Number(body.price)
+						: course.discountPrice ?? course.price,
+			);
+			course.listPrice = prices.listPrice;
+			course.discountPrice = prices.discountPrice;
+			course.price = prices.price;
+		}
 		if (body.includedInSubscription !== undefined)
 			course.includedInSubscription = body.includedInSubscription === 'true';
 		if (body.teachers)
@@ -155,7 +532,10 @@ export const updateCourseStatus = asyncHandler(
 
 		const course = await Course.findByIdAndUpdate(
 			req.params.id,
-			{ status },
+			{
+				status,
+				publishedAt: status === 'Published' ? new Date() : null,
+			},
 			{ new: true },
 		);
 		if (!course) throw new AppError('Course not found', 404);
@@ -179,9 +559,189 @@ export const deleteCourse = asyncHandler(
 			await deleteFromCloudinary(course.coverImagePublicId);
 		await Lecture.deleteMany({ section: { $in: course.sections } });
 		await Section.deleteMany({ course: course._id });
+		await StudyCurriculum.deleteMany({ course: course._id });
 		await course.deleteOne();
 
 		res.status(200).json({ success: true, message: 'Course deleted' });
 	},
 );
 
+export const bulkUpdateCourses = asyncHandler(
+	async (req: Request, res: Response) => {
+		const body = req.body as {
+			courseIds: string[];
+			updates?: {
+				courseType?: string | null;
+				category?: string;
+				startDate?: string | null;
+				endDate?: string | null;
+				status?: string;
+				visibility?: string;
+				pricing?: string;
+				price?: number | null;
+				includedInSubscription?: boolean;
+				allowedSubscriptionPlans?: SubscriptionPlan[];
+				teachers?: string[];
+			};
+			announcement?: { title: string; description: string };
+		};
+
+		const { courseIds, updates, announcement } = body;
+
+		if (!Array.isArray(courseIds) || courseIds.length === 0)
+			throw new AppError('courseIds must be a non-empty array', 400);
+
+		if (!updates && !announcement)
+			throw new AppError('Provide at least one field to update or an announcement', 400);
+
+		const invalidId = courseIds.find((id) => !Types.ObjectId.isValid(id));
+		if (invalidId) throw new AppError(`Invalid course ID: ${invalidId}`, 400);
+
+		const objectIds = courseIds.map((id) => new Types.ObjectId(id));
+
+		// Verify all courses exist
+		const found = await Course.countDocuments({ _id: { $in: objectIds } });
+		if (found !== courseIds.length)
+			throw new AppError('One or more courses were not found', 404);
+
+		// ── Field updates ──────────────────────────────────────────────
+		if (updates && Object.keys(updates).length > 0) {
+			const $set: Record<string, unknown> = {};
+
+			if ('courseType' in updates)
+				$set.courseType = updates.courseType ? new Types.ObjectId(updates.courseType) : null;
+			if ('category' in updates) {
+				if (!Types.ObjectId.isValid(updates.category!))
+					throw new AppError('Invalid category ID', 400);
+				$set.category = new Types.ObjectId(updates.category!);
+			}
+			if ('startDate' in updates)
+				$set.startDate = updates.startDate ? new Date(updates.startDate) : null;
+			if ('endDate' in updates)
+				$set.endDate = updates.endDate ? new Date(updates.endDate) : null;
+			if ('status' in updates) {
+				if (!['Draft', 'Published'].includes(updates.status!))
+					throw new AppError('Status must be Draft or Published', 400);
+				$set.status = updates.status;
+				$set.publishedAt = updates.status === 'Published' ? new Date() : null;
+			}
+			if ('visibility' in updates) {
+				if (!['Public', 'Private'].includes(updates.visibility!))
+					throw new AppError('Visibility must be Public or Private', 400);
+				$set.visibility = updates.visibility;
+			}
+			if ('pricing' in updates) {
+				if (!['Free', 'Paid'].includes(updates.pricing!))
+					throw new AppError('Pricing must be Free or Paid', 400);
+				$set.pricing = updates.pricing;
+				if (updates.pricing === 'Paid' && updates.price == null)
+					throw new AppError('Price is required when pricing is Paid', 400);
+			}
+			if ('price' in updates) $set.price = updates.price;
+			if ('includedInSubscription' in updates)
+				$set.includedInSubscription = updates.includedInSubscription;
+			if ('allowedSubscriptionPlans' in updates)
+				$set.allowedSubscriptionPlans = updates.allowedSubscriptionPlans;
+			if ('teachers' in updates) {
+				const invalidTeacher = (updates.teachers ?? []).find(
+					(id) => !Types.ObjectId.isValid(id),
+				);
+				if (invalidTeacher) throw new AppError(`Invalid teacher ID: ${invalidTeacher}`, 400);
+				$set.teachers = (updates.teachers ?? []).map((id) => new Types.ObjectId(id));
+			}
+
+			if (Object.keys($set).length > 0)
+				await Course.updateMany({ _id: { $in: objectIds } }, { $set });
+		}
+
+		// ── Bulk announcement ──────────────────────────────────────────
+		if (announcement) {
+			const { title, description } = announcement;
+			if (!title?.trim()) throw new AppError('Announcement title is required', 400);
+			if (!description?.trim()) throw new AppError('Announcement description is required', 400);
+
+			const { Announcement } = await import('../models/Announcement.model');
+			await Announcement.insertMany(
+				objectIds.map((courseId) => ({
+					course: courseId,
+					title: title.trim(),
+					description: description.trim(),
+					postedBy: req.user._id,
+				})),
+			);
+		}
+
+		res.status(200).json({
+			success: true,
+			message: `Successfully updated ${courseIds.length} course${courseIds.length !== 1 ? 's' : ''}`,
+			updatedCount: courseIds.length,
+		});
+	},
+);
+
+export const bulkApplyCourseDiscount = asyncHandler(async (req: Request, res: Response) => {
+	const body = req.body as {
+		courseIds: string[];
+		discountPercent: number;
+		discountEndsAt: string;
+	};
+	const { courseIds, discountPercent, discountEndsAt } = body;
+
+	if (!Array.isArray(courseIds) || courseIds.length === 0)
+		throw new AppError('courseIds must be a non-empty array', 400);
+
+	const invalidId = courseIds.find((id) => !Types.ObjectId.isValid(id));
+	if (invalidId) throw new AppError(`Invalid course ID: ${invalidId}`, 400);
+
+	const percent = Number(discountPercent);
+	if (!Number.isFinite(percent) || percent <= 0 || percent >= 100)
+		throw new AppError('Discount percentage must be between 1 and 99', 400);
+
+	const endsAt = new Date(discountEndsAt);
+	if (Number.isNaN(endsAt.getTime()) || endsAt <= new Date())
+		throw new AppError('Discount end date and time must be in the future', 400);
+
+	const objectIds = courseIds.map((id) => new Types.ObjectId(id));
+	const courses = await Course.find({ _id: { $in: objectIds } }).select(
+		'price listPrice pricing',
+	);
+
+	if (courses.length !== courseIds.length)
+		throw new AppError('One or more courses were not found', 404);
+
+	const writes = courses.map((course) => {
+		const listPrice = Math.max(course.listPrice ?? course.price ?? 0, 0);
+		if (listPrice <= 0) {
+			throw new AppError('All selected courses must have a positive list price', 400);
+		}
+		const discountPrice = Math.round(listPrice * (1 - percent / 100) * 100) / 100;
+		return {
+			updateOne: {
+				filter: { _id: course._id },
+				update: {
+					$set: {
+						pricing: 'Paid' as const,
+						listPrice,
+						discountPrice,
+						price: discountPrice,
+						discountPercent: percent,
+						discountEndsAt: endsAt,
+					},
+				},
+			},
+		};
+	});
+
+	if (writes.length > 0) await Course.bulkWrite(writes);
+
+	res.status(200).json({
+		success: true,
+		message: `Discount applied to ${writes.length} course${writes.length !== 1 ? 's' : ''}`,
+		updatedCount: writes.length,
+		data: {
+			courseCount: writes.length,
+			discountPercent: percent,
+			discountEndsAt: endsAt,
+		},
+	});
+});

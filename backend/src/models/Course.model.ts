@@ -8,13 +8,21 @@ export interface ICourse extends Document {
   coverImage?: string;
   coverImagePublicId?: string;
   category: Types.ObjectId;
+  courseType: Types.ObjectId;
+  startDate?: Date;
+  endDate?: Date;
   teachers: Types.ObjectId[];
   visibility: CourseVisibility;
   pricing: CoursePricing;
   price?: number;
+  listPrice?: number;
+  discountPrice?: number;
+  discountPercent?: number;
+  discountEndsAt?: Date;
   includedInSubscription: boolean;
   allowedSubscriptionPlans: SubscriptionPlan[];
   status: CourseStatus;
+  publishedAt?: Date;
   whatYouWillLearn: string[];
   whatYouWillGet: string[];
   requirements: string[];
@@ -32,13 +40,21 @@ const courseSchema = new Schema<ICourse>(
     coverImage: String,
     coverImagePublicId: String,
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    courseType: { type: Schema.Types.ObjectId, ref: 'CourseType' },
+    startDate: { type: Date },
+    endDate: { type: Date },
     teachers: [{ type: Schema.Types.ObjectId, ref: 'Teacher' }],
     visibility: { type: String, enum: ['Public', 'Private'], default: 'Private' },
     pricing: { type: String, enum: ['Free', 'Paid'], default: 'Free' },
     price: { type: Number, min: 0 },
+    listPrice: { type: Number, min: 0 },
+    discountPrice: { type: Number, min: 0 },
+    discountPercent: { type: Number, min: 0, max: 100 },
+    discountEndsAt: { type: Date },
     includedInSubscription: { type: Boolean, default: false },
-    allowedSubscriptionPlans: [{ type: String, enum: ['Basic', 'Premium', 'Gold', 'Quiz Only'] }],
+    allowedSubscriptionPlans: [{ type: String, trim: true }],
     status: { type: String, enum: ['Draft', 'Published'], default: 'Draft' },
+    publishedAt: { type: Date },
     whatYouWillLearn: [String],
     whatYouWillGet: [String],
     requirements: [String],

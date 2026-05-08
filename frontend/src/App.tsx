@@ -1,28 +1,45 @@
+import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AuthLayout from './components/layout/AuthLayout';
 import AdminLayout from './components/layout/AdminLayout/AdminLayout';
 import StudentLayout from './components/layout/StudentLayout/StudentLayout';
+import TeacherLayout from './components/layout/TeacherLayout/TeacherLayout';
+import LoadingSpinner from './components/common/LoadingSpinner';
+import { ConfirmModalProvider } from './context/ConfirmModalContext';
 
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-import DashboardPage from './pages/dashboard/DashboardPage';
-import CoursesPage from './pages/courses/CoursesPage';
-import CourseCreatePage from './pages/courses/CourseCreatePage';
-import CourseDetailPage from './pages/courses/CourseDetailPage';
-import CategoriesPage from './pages/categories/CategoriesPage';
-import TeachersPage from './pages/teachers/TeachersPage';
-import UsersPage from './pages/users/UsersPage';
-import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
-import HomePage from './pages/HomePage';
-import NotFoundPage from './pages/NotFoundPage';
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
+const ProfilePage = lazy(() => import('./pages/dashboard/ProfilePage'));
+const CoursesPage = lazy(() => import('./pages/courses/CoursesPage'));
+const CourseCreatePage = lazy(() => import('./pages/courses/CourseCreatePage'));
+const CourseDetailPage = lazy(() => import('./pages/courses/CourseDetailPage'));
+const CategoriesPage = lazy(() => import('./pages/categories/CategoriesPage'));
+const CourseTypesPage = lazy(() => import('./pages/courseTypes/CourseTypesPage'));
+const TeachersPage = lazy(() => import('./pages/teachers/TeachersPage'));
+const UsersPage = lazy(() => import('./pages/users/UsersPage'));
+const SubscriptionsPage = lazy(() => import('./pages/subscriptions/SubscriptionsPage'));
+const AdminEnrollmentsPage = lazy(() => import('./pages/enrollments/AdminEnrollmentsPage'));
+const PerformancePage = lazy(() => import('./pages/performance/PerformancePage'));
+const AdminCourseQAPage = lazy(() => import('./pages/qa/AdminCourseQAPage'));
+const StudentCourseLearningPage = lazy(() => import('./pages/courses/StudentCourseLearningPage'));
+const TeacherCoursesPage = lazy(() => import('./pages/courses/TeacherCoursesPage'));
+const PricingPage = lazy(() => import('./pages/pricing/PricingPage'));
+const HomePage = lazy(() => import('./pages/HomePage'));
+const CourseBrowsePage = lazy(() => import('./pages/courses/CourseBrowsePage'));
+const FreeCoursesPage = lazy(() => import('./pages/courses/FreeCoursesPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const PublicTeachersPage = lazy(() => import('./pages/teachers/PublicTeachersPage'));
 
-const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator', 'Teacher'] as const;
+const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
 export default function App() {
 	return (
-		<Routes>
-			<Route path='/' element={<HomePage />} />
+		<ConfirmModalProvider>
+			<Suspense fallback={<LoadingSpinner />}>
+				<Routes>
+				<Route path='/' element={<HomePage />} />
 
 			{/* Auth */}
 			<Route element={<AuthLayout />}>
@@ -33,7 +50,10 @@ export default function App() {
 			{/* Admin routes */}
 			<Route element={<ProtectedRoute allowedRoles={[...ADMIN_ROLES]} />}>
 				<Route element={<AdminLayout />}>
-					<Route path='/admin/dashboard' element={<DashboardPage />} />
+					<Route element={<ProtectedRoute allowedRoles={['Super Admin']} unauthorizedTo='/admin/courses' />}>
+						<Route path='/admin/dashboard' element={<DashboardPage />} />
+					</Route>
+					<Route path='/admin/profile' element={<ProfilePage />} />{' '}
 					<Route path='/admin/courses' element={<CoursesPage />} />
 					<Route path='/admin/courses/create' element={<CourseCreatePage />} />
 					<Route path='/admin/courses/:id' element={<CourseDetailPage />} />
@@ -41,25 +61,50 @@ export default function App() {
 						path='/admin/courses/:id/edit'
 						element={<CourseCreatePage />}
 					/>
-					<Route path='/admin/categories' element={<CategoriesPage />} />
+					<Route element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']} />}>
+						<Route path='/admin/categories' element={<CategoriesPage />} />
+						<Route path='/admin/course-types' element={<CourseTypesPage />} />
+					</Route>
 					<Route path='/admin/teachers' element={<TeachersPage />} />
-					<Route path='/admin/students' element={<UsersPage />} />
+					<Route path='/admin/users' element={<UsersPage />} />
 					<Route path='/admin/subscriptions' element={<SubscriptionsPage />} />
+					<Route path='/admin/enrollments/:courseId' element={<AdminEnrollmentsPage />} />
+					<Route path='/admin/course-qa' element={<AdminCourseQAPage />} />
+					<Route path='/admin/performance' element={<PerformancePage />} />
+					<Route path='/admin/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
 				</Route>
 			</Route>
 
 			{/* Student routes */}
 			<Route element={<ProtectedRoute allowedRoles={['Student']} />}>
+				{/* Full-screen learning page — no StudentLayout sidebar */}
+				<Route path='/student/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
 				<Route element={<StudentLayout />}>
-					<Route path='/student/dashboard' element={<DashboardPage />} />
+					<Route path='/student/dashboard' element={<DashboardPage />} />{' '}
+					<Route path='/student/profile' element={<ProfilePage />} />{' '}
 					<Route path='/student/courses' element={<CoursesPage />} />
 				</Route>
 			</Route>
 
+			{/* Teacher routes */}
+			<Route element={<ProtectedRoute allowedRoles={['Teacher']} />}>
+				<Route element={<TeacherLayout />}>
+					<Route path='/teacher/profile' element={<ProfilePage />} />
+					<Route path='/teacher/courses' element={<TeacherCoursesPage />} />
+					<Route path='/teacher/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
+				</Route>
+			</Route>
+
 			{/* Public routes */}
+			<Route path='/pricing' element={<PricingPage />} />
+			<Route path='/courses' element={<CourseBrowsePage />} />
+			<Route path='/free-courses' element={<FreeCoursesPage />} />
 			<Route path='/courses/:id' element={<CourseDetailPage />} />
+			<Route path='/teachers' element={<PublicTeachersPage />} />
 
 			<Route path='*' element={<NotFoundPage />} />
-		</Routes>
+				</Routes>
+			</Suspense>
+		</ConfirmModalProvider>
 	);
 }

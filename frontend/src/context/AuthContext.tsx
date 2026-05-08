@@ -18,20 +18,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const login = async (email: string, password: string) => {
 		const res = await authService.login(email, password);
-		setUser(res.data ?? null);
+		const userData = res.data ?? null;
+		setUser(userData);
 		toast.success('Logged in successfully');
+		return userData;
 	};
 
 	const register = async (name: string, email: string, password: string) => {
 		const res = await authService.register(name, email, password);
-		setUser(res.data ?? null);
+		const userData = res.data ?? null;
+		setUser(userData);
 		toast.success('Account created successfully');
+		return userData;
 	};
 
 	const logout = async () => {
 		await authService.logout();
 		setUser(null);
 		toast.success('Logged out successfully');
+	};
+
+	const refreshUser = async () => {
+		const res = await authService.getMe();
+		setUser(res.data ?? null);
 	};
 
 	return (
@@ -43,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				login,
 				register,
 				logout,
+				refreshUser,
 			}}
 		>
 			{children}

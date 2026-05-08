@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getTeachers,
   getTeacherById,
+  getMyTeacherCourses,
   createTeacher,
   updateTeacher,
   deleteTeacher,
@@ -12,6 +13,7 @@ import { upload } from '../middleware/upload.middleware';
 const router = Router();
 
 router.get('/', getTeachers);
+router.get('/my-courses', protect, authorize('Teacher'), getMyTeacherCourses);
 router.get('/:id', getTeacherById);
 
 router.post('/', protect, authorize('Super Admin', 'Admin'), upload.single('profileImage'), createTeacher);

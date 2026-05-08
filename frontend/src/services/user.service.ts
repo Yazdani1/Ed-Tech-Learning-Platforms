@@ -2,9 +2,15 @@ import api from './api';
 import type { IUser } from '../types/index';
 
 export const userService = {
-	getAll: () => api.get<IUser[]>('/users'),
-	getById: (id: string) => api.get<IUser>(`/users/${id}`),
-	updateRole: (id: string, role: IUser['role']) =>
-		api.put<IUser>(`/users/${id}/role`, { role }),
-	delete: (id: string) => api.delete(`/users/${id}`),
+  create: (data: { name: string; email: string; password: string; role: IUser['role'] }) =>
+    api.post<IUser>('/users', data),
+  getAll: (params?: Record<string, string>) => api.get<IUser[]>('/users', { params }),
+  getById: (id: string) => api.get<IUser>(`/users/${id}`),
+  update: (
+    id: string,
+    data: { name: string; email: string; password?: string; role: IUser['role'] },
+  ) => api.put<IUser>(`/users/${id}`, data),
+  updateRole: (id: string, role: IUser['role']) =>
+    api.put<IUser>(`/users/${id}/role`, { role }),
+  delete: (id: string) => api.delete(`/users/${id}`),
 };

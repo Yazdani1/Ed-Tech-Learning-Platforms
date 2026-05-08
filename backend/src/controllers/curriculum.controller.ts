@@ -63,16 +63,17 @@ export const addLecture = asyncHandler(async (req: Request, res: Response) => {
   const section = await Section.findOne({ _id: req.params.sectionId, course: req.params.courseId });
   if (!section) throw new AppError('Section not found', 404);
 
-  const { title, description, videoUrl, isPreview } = req.body as {
+  const { title, description, videoUrl, isPreview, duration } = req.body as {
     title: string;
     description?: string;
     videoUrl?: string;
     isPreview?: boolean;
+    duration?: number;
   };
   if (!title) throw new AppError('Lecture title is required', 400);
 
   const order = section.lectures.length;
-  const lecture = await Lecture.create({ section: section._id, title, description, videoUrl, isPreview, order });
+  const lecture = await Lecture.create({ section: section._id, title, description, videoUrl, isPreview, duration, order });
 
   section.lectures.push(lecture._id);
   await section.save();
@@ -84,17 +85,19 @@ export const updateLecture = asyncHandler(async (req: Request, res: Response) =>
   const lecture = await Lecture.findOne({ _id: req.params.lectureId, section: req.params.sectionId });
   if (!lecture) throw new AppError('Lecture not found', 404);
 
-  const { title, description, videoUrl, isPreview } = req.body as {
+  const { title, description, videoUrl, isPreview, duration } = req.body as {
     title?: string;
     description?: string;
     videoUrl?: string;
     isPreview?: boolean;
+    duration?: number;
   };
 
   if (title !== undefined) lecture.title = title;
   if (description !== undefined) lecture.description = description;
   if (videoUrl !== undefined) lecture.videoUrl = videoUrl;
   if (isPreview !== undefined) lecture.isPreview = isPreview;
+  if (duration !== undefined) lecture.duration = duration;
 
   await lecture.save();
   res.status(200).json({ success: true, message: 'Lecture updated', data: lecture });

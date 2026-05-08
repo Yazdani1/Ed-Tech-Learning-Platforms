@@ -1,0 +1,901 @@
+import { useEffect, useState } from 'react';
+import {
+	Box,
+	Button,
+	Checkbox,
+	Chip,
+	CircularProgress,
+	Divider,
+	FormControlLabel,
+	FormGroup,
+	FormLabel,
+	IconButton,
+	InputAdornment,
+	MenuItem,
+	Paper,
+	Switch,
+	Tab,
+	Tabs,
+	TextField,
+	Tooltip,
+	Typography,
+} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import IndeterminateCheckBoxIcon from '@mui/icons-material/IndeterminateCheckBox';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import toast from 'react-hot-toast';
+import AppModal from '../common/AppModal';
+import RichTextEditor from './RichTextEditor';
+import { courseService } from '../../services/course.service';
+import { categoryService } from '../../services/category.service';
+import { courseTypeService } from '../../services/courseType.service';
+import { teacherService } from '../../services/teacher.service';
+import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
+import type { ICourse, ICategory, ICourseType, ITeacher, SubscriptionPlan } from '../../types/index';
+
+const STATUS_OPTIONS = ['Published', 'Draft'] as const;
+const VISIBILITY_OPTIONS = ['Public', 'Private'] as const;
+const PRICING_OPTIONS = ['Free', 'Paid'] as const;
+
+// A labelled field block inside the card
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+	return (
+		<Box>
+			<Typography
+				variant='caption'
+				sx={{
+					fontWeight: 700,
+					textTransform: 'uppercase',
+					letterSpacing: 0.75,
+					color: 'text.secondary',
+					display: 'block',
+					mb: 0.75,
+				}}
+			>
+				{label}
+			</Typography>
+			{children}
+		</Box>
+	);
+}
+
+type FormState = {
+	courseType: string;
+	category: string;
+	status: '' | 'Published' | 'Draft';
+	visibility: '' | 'Public' | 'Private';
+	pricing: '' | 'Free' | 'Paid';
+	price: string;
+	subscriptionIncluded: boolean;
+	subscriptionPlans: SubscriptionPlan[];
+	teacherIds: string[];
+	startDate: string;
+	endDate: string;
+};
+
+type DiscountFormState = {
+	discountPercent: string;
+	discountEndsAt: string;
+};
+
+const defaultForm = (): FormState => ({
+	courseType: '',
+	category: '',
+	status: '',
+	visibility: '',
+	pricing: '',
+	price: '',
+	subscriptionIncluded: false,
+	subscriptionPlans: [],
+	teacherIds: [],
+	startDate: '',
+	endDate: '',
+});
+
+const defaultDiscountForm = (): DiscountFormState => ({
+	discountPercent: '',
+	discountEndsAt: '',
+});
+
+interface BulkEditModalProps {
+	open: boolean;
+	courses: ICourse[];
+	onClose: () => void;
+	onSuccess: () => void;
+}
+
+export default function BulkEditModal({ open, courses, onClose, onSuccess }: BulkEditModalProps) {
+	// ── Course selection ─────────────────────────────────────────
+	const [search, setSearch] = useState('');
+	const [statusFilter, setStatusFilter] = useState<'All' | 'Published' | 'Draft'>('All');
+	const [visibilityFilter, setVisibilityFilter] = useState<'All' | 'Public' | 'Private'>('All');
+	const [pricingFilter, setPricingFilter] = useState<'All' | 'Free' | 'Paid'>('All');
+	const [categoryFilter, setCategoryFilter] = useState('');
+	const [courseTypeFilter, setCourseTypeFilter] = useState('');
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+	// ── Reference data ───────────────────────────────────────────
+	const [categories, setCategories] = useState<ICategory[]>([]);
+	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
+	const [teachers, setTeachers] = useState<ITeacher[]>([]);
+	const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+	const [refLoading, setRefLoading] = useState(false);
+
+	// ── Tab ──────────────────────────────────────────────────────
+	const [tab, setTab] = useState(0);
+
+	// ── Form ─────────────────────────────────────────────────────
+	const [form, setForm] = useState<FormState>(defaultForm);
+	const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
+		setForm((p) => ({ ...p, [k]: v }));
+	const [discountForm, setDiscountForm] = useState<DiscountFormState>(defaultDiscountForm);
+	const setDiscount = <K extends keyof DiscountFormState>(k: K, v: DiscountFormState[K]) =>
+		setDiscountForm((p) => ({ ...p, [k]: v }));
+
+	// ── Announcement ─────────────────────────────────────────────
+	const [ann, setAnn] = useState({ title: '', description: '' });
+
+	// ── Subscription edited flag ─────────────────────────────────
+	const [subscriptionEdited, setSubscriptionEdited] = useState(false);
+
+	// ── Submit ───────────────────────────────────────────────────
+	const [submitting, setSubmitting] = useState(false);
+
+	useEffect(() => {
+		if (!open) return;
+		setRefLoading(true);
+		Promise.all([categoryService.getAll(), courseTypeService.getAll(), teacherService.getAll(), subscriptionPlanConfigService.getAll()])
+			.then(([cats, cts, tchs, plans]) => {
+				setCategories(cats.data ?? []);
+				setCourseTypes(cts.data ?? []);
+				setTeachers(tchs.data ?? []);
+				setSubscriptionPlans((plans.data ?? []).map((plan) => plan.plan));
+			})
+			.finally(() => setRefLoading(false));
+	}, [open]);
+
+	const handleClose = () => {
+		setSearch('');
+		setStatusFilter('All');
+		setVisibilityFilter('All');
+		setPricingFilter('All');
+		setCategoryFilter('');
+		setCourseTypeFilter('');
+		setSelectedIds(new Set());
+		setTab(0);
+		setForm(defaultForm());
+		setDiscountForm(defaultDiscountForm());
+		setAnn({ title: '', description: '' });
+		setSubscriptionEdited(false);
+		onClose();
+	};
+
+	// ── Filtered list ────────────────────────────────────────────
+	const filtered = courses.filter((c) => {
+		if (search && !c.title.toLowerCase().includes(search.toLowerCase())) return false;
+		if (statusFilter !== 'All' && c.status !== statusFilter) return false;
+		if (visibilityFilter !== 'All' && c.visibility !== visibilityFilter) return false;
+		if (pricingFilter !== 'All' && c.pricing !== pricingFilter) return false;
+		if (categoryFilter && c.category?._id !== categoryFilter) return false;
+		if (courseTypeFilter && c.courseType?._id !== courseTypeFilter) return false;
+		return true;
+	});
+
+	const allSelected = filtered.length > 0 && filtered.every((c) => selectedIds.has(c._id));
+	const someSelected = filtered.some((c) => selectedIds.has(c._id));
+
+	const toggleAll = () => {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (allSelected) filtered.forEach((c) => next.delete(c._id));
+			else filtered.forEach((c) => next.add(c._id));
+			return next;
+		});
+	};
+
+	const toggleOne = (id: string) =>
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			next.has(id) ? next.delete(id) : next.add(id);
+			return next;
+		});
+
+	// ── Submit ───────────────────────────────────────────────────
+	const handleSubmit = async () => {
+		if (selectedIds.size === 0) { toast.error('Select at least one course'); return; }
+
+		if (tab === 1) {
+			const discountPercent = Number(discountForm.discountPercent);
+			if (!Number.isFinite(discountPercent) || discountPercent <= 0 || discountPercent >= 100) {
+				toast.error('Discount percentage must be between 1 and 99');
+				return;
+			}
+			if (!discountForm.discountEndsAt || new Date(discountForm.discountEndsAt) <= new Date()) {
+				toast.error('Discount end date and time must be in the future');
+				return;
+			}
+
+			setSubmitting(true);
+			try {
+				await courseService.bulkDiscount({
+					courseIds: Array.from(selectedIds),
+					discountPercent,
+					discountEndsAt: new Date(discountForm.discountEndsAt).toISOString(),
+				});
+				toast.success(`Discount applied to ${selectedIds.size} course${selectedIds.size !== 1 ? 's' : ''}`);
+				onSuccess();
+				handleClose();
+			} catch {
+				// handled by interceptor
+			} finally {
+				setSubmitting(false);
+			}
+			return;
+		}
+
+		// Build updates — only include fields the user actually filled
+		const updates: Parameters<typeof courseService.bulkUpdate>[0]['updates'] = {};
+
+		if (form.courseType !== '') updates.courseType = form.courseType || null;
+		if (form.category !== '') updates.category = form.category;
+		if (form.status !== '') updates.status = form.status;
+		if (form.visibility !== '') updates.visibility = form.visibility;
+		if (form.pricing !== '') {
+			updates.pricing = form.pricing;
+			if (form.pricing === 'Paid') {
+				const price = Number(form.price);
+				if (!price || price < 0) { toast.error('Enter a valid price'); return; }
+				updates.price = price;
+			} else {
+				updates.price = null;
+			}
+		}
+		if (subscriptionEdited) {
+			updates.includedInSubscription = form.subscriptionIncluded;
+			updates.allowedSubscriptionPlans = form.subscriptionPlans;
+		}
+		if (form.teacherIds.length > 0) updates.teachers = form.teacherIds;
+		if (form.startDate !== '') updates.startDate = form.startDate || null;
+		if (form.endDate !== '') updates.endDate = form.endDate || null;
+
+		const hasUpdates = Object.keys(updates).length > 0;
+		const hasAnn = ann.title.trim() && ann.description.trim();
+
+		if (!hasUpdates && !hasAnn) {
+			toast.error('Fill in at least one field to update');
+			return;
+		}
+		if (tab === 2 && !hasAnn) {
+			toast.error('Announcement title and description are required');
+			return;
+		}
+
+		const payload: Parameters<typeof courseService.bulkUpdate>[0] = {
+			courseIds: Array.from(selectedIds),
+			...(hasUpdates ? { updates } : {}),
+			...(hasAnn ? { announcement: { title: ann.title.trim(), description: ann.description.trim() } } : {}),
+		};
+
+		setSubmitting(true);
+		try {
+			await courseService.bulkUpdate(payload);
+			toast.success(`Updated ${selectedIds.size} course${selectedIds.size !== 1 ? 's' : ''}`);
+			onSuccess();
+			handleClose();
+		} catch {
+			// handled by interceptor
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	const selectedCount = selectedIds.size;
+
+	return (
+		<AppModal
+			open={open}
+			onClose={handleClose}
+			title={
+				<Box>
+					<Typography variant='h6' sx={{ fontWeight: 700 }}>Bulk Edit Courses</Typography>
+					<Typography variant='caption' color='text.secondary'>
+						Select courses on the left, then fill in the fields you want to update
+					</Typography>
+				</Box>
+			}
+			maxWidth='xl'
+			hideActions
+			contentDividers={false}
+			contentSx={{ p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+			paperSx={{ height: '90vh' }}
+		>
+			<Divider />
+
+			<Box sx={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
+
+				{/* ── LEFT: course selector ─────────────────────────── */}
+				<Box
+					sx={{
+						width: { xs: '100%', md: '40%' },
+						flexShrink: 0,
+						display: 'flex',
+						flexDirection: 'column',
+						borderRight: '1px solid',
+						borderColor: 'divider',
+					}}
+				>
+					{/* Search + filters */}
+					<Box sx={{ p: 2, pb: 1.5, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+						<TextField
+							size='small'
+							fullWidth
+							placeholder='Search courses…'
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							slotProps={{
+								input: {
+									startAdornment: (
+										<InputAdornment position='start'>
+											<SearchIcon fontSize='small' />
+										</InputAdornment>
+									),
+								},
+							}}
+						/>
+
+						{/* Selection filters */}
+						<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
+							<TextField
+								select size='small'
+								value={statusFilter}
+								onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+								label='Status'
+							>
+								<MenuItem value='All'>All</MenuItem>
+								{STATUS_OPTIONS.map((status) => (
+									<MenuItem key={status} value={status}>{status}</MenuItem>
+								))}
+							</TextField>
+							<TextField
+								select size='small'
+								value={visibilityFilter}
+								onChange={(e) => setVisibilityFilter(e.target.value as typeof visibilityFilter)}
+								label='Visibility'
+							>
+								<MenuItem value='All'>All</MenuItem>
+								{VISIBILITY_OPTIONS.map((visibility) => (
+									<MenuItem key={visibility} value={visibility}>{visibility}</MenuItem>
+								))}
+							</TextField>
+							<TextField
+								select size='small'
+								value={pricingFilter}
+								onChange={(e) => setPricingFilter(e.target.value as typeof pricingFilter)}
+								label='Pricing'
+							>
+								<MenuItem value='All'>All</MenuItem>
+								{PRICING_OPTIONS.map((pricing) => (
+									<MenuItem key={pricing} value={pricing}>{pricing}</MenuItem>
+								))}
+							</TextField>
+							<TextField
+								select size='small'
+								value={categoryFilter}
+								onChange={(e) => setCategoryFilter(e.target.value)}
+								label='Category'
+							>
+								<MenuItem value=''>All</MenuItem>
+								{categories.map((c) => (
+									<MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
+								))}
+							</TextField>
+							<TextField
+								select size='small'
+								value={courseTypeFilter}
+								onChange={(e) => setCourseTypeFilter(e.target.value)}
+								label='Course Type'
+							>
+								<MenuItem value=''>All</MenuItem>
+								{courseTypes.map((ct) => (
+									<MenuItem key={ct._id} value={ct._id}>{ct.name}</MenuItem>
+								))}
+							</TextField>
+						</Box>
+					</Box>
+
+					{/* Select-all bar */}
+					<Box
+						sx={{
+							px: 2,
+							py: 1,
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'space-between',
+							borderTop: '1px solid',
+							borderBottom: '1px solid',
+							borderColor: 'divider',
+							bgcolor: 'grey.50',
+						}}
+					>
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }} onClick={toggleAll}>
+							<IconButton size='small' disableRipple>
+								{allSelected
+									? <CheckBoxIcon color='primary' fontSize='small' />
+									: someSelected
+										? <IndeterminateCheckBoxIcon color='primary' fontSize='small' />
+										: <CheckBoxOutlineBlankIcon fontSize='small' />}
+							</IconButton>
+							<Typography variant='caption' sx={{ fontWeight: 600 }}>
+								{allSelected ? 'Deselect all' : 'Select all'} ({filtered.length})
+							</Typography>
+						</Box>
+						{selectedCount > 0 && (
+							<Chip label={`${selectedCount} selected`} size='small' color='primary' sx={{ fontWeight: 700 }} />
+						)}
+					</Box>
+
+					{/* Course rows */}
+					<Box sx={{ flex: 1, overflowY: 'auto' }}>
+						{filtered.length === 0 ? (
+							<Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+								<SchoolOutlinedIcon sx={{ fontSize: 40, mb: 1, opacity: 0.25 }} />
+								<Typography variant='body2'>No courses match</Typography>
+							</Box>
+						) : (
+							filtered.map((course) => {
+								const checked = selectedIds.has(course._id);
+								return (
+									<Box
+										key={course._id}
+										onClick={() => toggleOne(course._id)}
+										sx={{
+											display: 'flex',
+											alignItems: 'center',
+											gap: 1.5,
+											px: 2,
+											py: 1.25,
+											cursor: 'pointer',
+											borderBottom: '1px solid',
+											borderColor: 'divider',
+											bgcolor: checked ? 'primary.50' : 'transparent',
+											transition: 'background 0.12s',
+											'&:hover': { bgcolor: checked ? 'primary.100' : 'action.hover' },
+										}}
+									>
+										<Checkbox
+											checked={checked}
+											size='small'
+											sx={{ p: 0, flexShrink: 0 }}
+											onClick={(e) => e.stopPropagation()}
+											onChange={() => toggleOne(course._id)}
+										/>
+										<Box
+											sx={{
+												width: 52,
+												height: 36,
+												borderRadius: 0.5,
+												overflow: 'hidden',
+												flexShrink: 0,
+												bgcolor: 'grey.200',
+												display: 'flex',
+												alignItems: 'center',
+												justifyContent: 'center',
+											}}
+										>
+											{course.coverImage ? (
+												<Box
+													component='img'
+													src={course.coverImage}
+													alt=''
+													sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+												/>
+											) : (
+												<SchoolOutlinedIcon sx={{ fontSize: 18, color: 'grey.400' }} />
+											)}
+										</Box>
+										<Box sx={{ flex: 1, minWidth: 0 }}>
+											<Typography
+												variant='body2'
+												sx={{ fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+											>
+												{course.title}
+											</Typography>
+											<Box sx={{ display: 'flex', gap: 0.5, mt: 0.3, alignItems: 'center' }}>
+												<Chip
+													label={course.status}
+													size='small'
+													sx={{
+														height: 16,
+														fontSize: '0.6rem',
+														fontWeight: 700,
+														bgcolor: course.status === 'Published' ? '#16a34a' : '#6b7280',
+														color: 'white',
+													}}
+												/>
+												{course.courseType && (
+													<Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.68rem' }}>
+														{course.courseType.name}
+													</Typography>
+												)}
+											</Box>
+										</Box>
+									</Box>
+								);
+							})
+						)}
+					</Box>
+				</Box>
+
+				{/* ── RIGHT: update panel ──────────────────────────────── */}
+				<Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+					<Tabs
+						value={tab}
+						onChange={(_, v: number) => setTab(v)}
+						sx={{ borderBottom: '1px solid', borderColor: 'divider', px: 2, flexShrink: 0 }}
+					>
+						<Tab label='Update Fields' sx={{ fontWeight: 600, fontSize: '0.85rem' }} />
+						<Tab label='Discount Campaign' sx={{ fontWeight: 600, fontSize: '0.85rem' }} />
+						<Tab label='Post Announcement' sx={{ fontWeight: 600, fontSize: '0.85rem' }} />
+					</Tabs>
+
+					<Box sx={{ flex: 1, overflowY: 'auto', p: 2.5 }}>
+						{refLoading ? (
+							<Box sx={{ display: 'flex', justifyContent: 'center', pt: 6 }}>
+								<CircularProgress />
+							</Box>
+						) : tab === 0 ? (
+							/* ── Update Fields ────────────────────────────────── */
+							<Paper
+								variant='outlined'
+								sx={{ borderRadius: 0.5, overflow: 'hidden' }}
+							>
+								{/* Course Type + Category */}
+								<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+									<Box sx={{ display: 'flex', gap: 2 }}>
+										<Box sx={{ flex: 1 }}>
+											<Field label='Course Type'>
+												<TextField
+													select
+													size='small'
+													fullWidth
+													value={form.courseType}
+													onChange={(e) => set('courseType', e.target.value)}
+												>
+													<MenuItem value=''>— No change —</MenuItem>
+													<MenuItem value='__clear__'><em>Clear course type</em></MenuItem>
+													{courseTypes.map((ct) => (
+														<MenuItem key={ct._id} value={ct._id}>{ct.name}</MenuItem>
+													))}
+												</TextField>
+											</Field>
+										</Box>
+										<Box sx={{ flex: 1 }}>
+											<Field label='Category'>
+												<TextField
+													select
+													size='small'
+													fullWidth
+													value={form.category}
+													onChange={(e) => set('category', e.target.value)}
+												>
+													<MenuItem value=''>— No change —</MenuItem>
+													{categories.map((c) => (
+														<MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
+													))}
+												</TextField>
+											</Field>
+										</Box>
+									</Box>
+								</Box>
+
+								{/* Status + Visibility + Pricing */}
+								<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+									<Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+										<Box sx={{ flex: '1 1 180px' }}>
+											<Field label='Status'>
+												<TextField
+													select
+													size='small'
+													fullWidth
+													value={form.status}
+													onChange={(e) => set('status', e.target.value as FormState['status'])}
+												>
+													<MenuItem value=''>— No change —</MenuItem>
+													{STATUS_OPTIONS.map((status) => (
+														<MenuItem key={status} value={status}>{status}</MenuItem>
+													))}
+												</TextField>
+											</Field>
+										</Box>
+										<Box sx={{ flex: '1 1 180px' }}>
+											<Field label='Visibility'>
+												<TextField
+													select
+													size='small'
+													fullWidth
+													value={form.visibility}
+													onChange={(e) => set('visibility', e.target.value as FormState['visibility'])}
+												>
+													<MenuItem value=''>— No change —</MenuItem>
+													{VISIBILITY_OPTIONS.map((visibility) => (
+														<MenuItem key={visibility} value={visibility}>{visibility}</MenuItem>
+													))}
+												</TextField>
+											</Field>
+										</Box>
+										<Box sx={{ flex: '1 1 180px' }}>
+											<Field label='Pricing'>
+												<TextField
+													select
+													size='small'
+													fullWidth
+													value={form.pricing}
+													onChange={(e) => set('pricing', e.target.value as FormState['pricing'])}
+												>
+													<MenuItem value=''>— No change —</MenuItem>
+													{PRICING_OPTIONS.map((pricing) => (
+														<MenuItem key={pricing} value={pricing}>{pricing}</MenuItem>
+													))}
+												</TextField>
+											</Field>
+										</Box>
+										{form.pricing === 'Paid' && (
+											<Box sx={{ flex: '1 1 180px' }}>
+												<Field label='Price (BDT)'>
+													<TextField
+														size='small'
+														type='number'
+														fullWidth
+														value={form.price}
+														onChange={(e) => set('price', e.target.value)}
+														slotProps={{ htmlInput: { min: 0 } }}
+													/>
+												</Field>
+											</Box>
+										)}
+									</Box>
+								</Box>
+
+								{/* Subscription */}
+								<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+									<Field label='Subscription'>
+										<FormControlLabel
+											control={
+												<Switch
+													checked={form.subscriptionIncluded}
+													onChange={(e) => {
+														set('subscriptionIncluded', e.target.checked);
+														setSubscriptionEdited(true);
+													}}
+												/>
+											}
+											label='Include in Subscription'
+										/>
+										{form.subscriptionIncluded && (
+											<Box sx={{ mt: 0.5 }}>
+												<FormLabel sx={{ fontSize: '0.78rem', fontWeight: 600 }}>Allowed plans</FormLabel>
+												<FormGroup row sx={{ mt: 0.5 }}>
+													{subscriptionPlans.map((plan) => (
+														<FormControlLabel
+															key={plan}
+															control={
+																<Checkbox
+																	size='small'
+																	checked={form.subscriptionPlans.includes(plan)}
+																	onChange={(e) => {
+																		const plans = e.target.checked
+																			? [...form.subscriptionPlans, plan]
+																			: form.subscriptionPlans.filter((p) => p !== plan);
+																		set('subscriptionPlans', plans);
+																		setSubscriptionEdited(true);
+																	}}
+																/>
+															}
+															label={<Typography variant='caption'>{plan}</Typography>}
+														/>
+													))}
+												</FormGroup>
+											</Box>
+										)}
+									</Field>
+								</Box>
+
+								{/* Teachers */}
+								<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+									<Field label='Teachers'>
+										<TextField
+											select
+											size='small'
+											fullWidth
+											value=''
+											label='Add teacher'
+											onChange={(e) => {
+												if (e.target.value && !form.teacherIds.includes(e.target.value))
+													set('teacherIds', [...form.teacherIds, e.target.value]);
+											}}
+											slotProps={{ select: { displayEmpty: true } }}
+										>
+											<MenuItem value='' disabled>Select to add</MenuItem>
+											{teachers.map((t) => (
+												<MenuItem key={t._id} value={t._id}>{t.name}</MenuItem>
+											))}
+										</TextField>
+										{form.teacherIds.length > 0 && (
+											<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+												{form.teacherIds.map((id) => {
+													const t = teachers.find((x) => x._id === id);
+													return t ? (
+														<Chip
+															key={id}
+															label={t.name}
+															size='small'
+															onDelete={() => set('teacherIds', form.teacherIds.filter((x) => x !== id))}
+														/>
+													) : null;
+												})}
+											</Box>
+										)}
+									</Field>
+								</Box>
+
+								{/* Start Date + End Date */}
+								<Box sx={{ p: 2 }}>
+									<Box sx={{ display: 'flex', gap: 2 }}>
+										<Box sx={{ flex: 1 }}>
+											<Field label='Start Date'>
+												<TextField
+													size='small'
+													type='date'
+													fullWidth
+													value={form.startDate}
+													onChange={(e) => set('startDate', e.target.value)}
+													slotProps={{ inputLabel: { shrink: true } }}
+													helperText='Leave empty for no change'
+												/>
+											</Field>
+										</Box>
+										<Box sx={{ flex: 1 }}>
+											<Field label='End Date'>
+												<TextField
+													size='small'
+													type='date'
+													fullWidth
+													value={form.endDate}
+													onChange={(e) => set('endDate', e.target.value)}
+													slotProps={{
+														inputLabel: { shrink: true },
+														htmlInput: { min: form.startDate || undefined }
+													}}
+													helperText='Leave empty for no change'
+												/>
+											</Field>
+										</Box>
+									</Box>
+								</Box>
+							</Paper>
+						) : tab === 1 ? (
+							<Paper variant='outlined' sx={{ borderRadius: 0.5, overflow: 'hidden' }}>
+								<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+									<Typography variant='subtitle1' sx={{ fontWeight: 800, mb: 0.5 }}>
+										Set discount for selected courses
+									</Typography>
+									<Typography variant='body2' color='text.secondary'>
+										The discount price is calculated from each course list price. When the timer ends, courses return to their regular list price.
+									</Typography>
+								</Box>
+								<Box sx={{ p: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+									<Field label='Discount Percentage'>
+										<TextField
+											size='small'
+											type='number'
+											fullWidth
+											value={discountForm.discountPercent}
+											onChange={(e) => setDiscount('discountPercent', e.target.value)}
+											placeholder='Example: 50'
+											slotProps={{
+												htmlInput: { min: 1, max: 99 },
+												input: {
+													endAdornment: <InputAdornment position='end'>%</InputAdornment>,
+												},
+											}}
+											helperText='Applied to each selected course list price'
+										/>
+									</Field>
+									<Field label='Discount Ends At'>
+										<TextField
+											size='small'
+											type='datetime-local'
+											fullWidth
+											value={discountForm.discountEndsAt}
+											onChange={(e) => setDiscount('discountEndsAt', e.target.value)}
+											slotProps={{
+												inputLabel: { shrink: true },
+												htmlInput: { min: new Date().toISOString().slice(0, 16) },
+											}}
+											helperText='Home page banner countdown uses this date and time'
+										/>
+									</Field>
+								</Box>
+								<Box sx={{ px: 2, pb: 2 }}>
+									<Paper
+										variant='outlined'
+										sx={{ p: 1.5, borderRadius: 1, bgcolor: '#f0fdf4', borderColor: '#bbf7d0' }}
+									>
+										<Typography variant='body2' sx={{ fontWeight: 800, color: '#166534' }}>
+											{selectedCount} selected course{selectedCount !== 1 ? 's' : ''}{' '}
+											{discountForm.discountPercent ? `will get ${discountForm.discountPercent}% off` : 'ready for discount'}
+										</Typography>
+										<Typography variant='caption' color='text.secondary'>
+											Example: list price ৳5000 at 50% becomes ৳2500. List price ৳4000 becomes ৳2000.
+										</Typography>
+									</Paper>
+								</Box>
+							</Paper>
+						) : (
+							/* ── Announcement tab ───────────────────────────────── */
+							<Paper variant='outlined' sx={{ borderRadius: 0.5, overflow: 'hidden' }}>
+								<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+									<Field label='Title'>
+										<TextField
+											size='small'
+											fullWidth
+											placeholder='Announcement title…'
+											value={ann.title}
+											onChange={(e) => setAnn((p) => ({ ...p, title: e.target.value }))}
+										/>
+									</Field>
+								</Box>
+								<Box sx={{ p: 2 }}>
+									<Field label='Description'>
+										<RichTextEditor
+											value={ann.description}
+											onChange={(html) => setAnn((p) => ({ ...p, description: html }))}
+											placeholder='Write your announcement…'
+											minHeight={180}
+										/>
+									</Field>
+								</Box>
+							</Paper>
+						)}
+					</Box>
+				</Box>
+			</Box>
+
+			<Divider />
+
+			{/* ── Footer ─────────────────────────────────────────────── */}
+			<Box sx={{ px: 3, py: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+				<Box>
+					{selectedCount > 0 ? (
+						<Tooltip title='Click a course to deselect'>
+							<Chip
+								label={`${selectedCount} course${selectedCount !== 1 ? 's' : ''} selected`}
+								color='primary'
+								variant='outlined'
+								size='small'
+								sx={{ fontWeight: 700 }}
+							/>
+						</Tooltip>
+					) : (
+						<Typography variant='caption' color='text.secondary'>No courses selected</Typography>
+					)}
+				</Box>
+				<Box sx={{ display: 'flex', gap: 1.5 }}>
+					<Button onClick={handleClose} disabled={submitting}>Cancel</Button>
+					<Button
+						variant='contained'
+						onClick={() => void handleSubmit()}
+						disabled={submitting || selectedCount === 0}
+						sx={{ minWidth: 150 }}
+					>
+						{submitting
+							? <CircularProgress size={18} color='inherit' />
+							: `Apply to ${selectedCount || '…'} course${selectedCount !== 1 ? 's' : ''}`}
+					</Button>
+				</Box>
+			</Box>
+		</AppModal>
+	);
+}

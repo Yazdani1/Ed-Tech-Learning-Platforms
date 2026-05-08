@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AppBar,
   Avatar,
@@ -14,20 +14,65 @@ import {
 import SchoolIcon from '@mui/icons-material/School';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../../context/useAuth';
+import { encodeParam, decodeParam } from '../../utils/urlParams';
+import PublicDiscountBanner from './PublicDiscountBanner';
+
+const prefetchPublicRoutes = () => {
+	void import('../../pages/courses/CourseBrowsePage');
+	void import('../../pages/courses/FreeCoursesPage');
+	void import('../../pages/pricing/PricingPage');
+	void import('../../pages/teachers/PublicTeachersPage');
+};
 
 export default function PublicNavbar() {
-  const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  // Keep the navbar input in sync with the URL ?q= param (e.g. when the user
+  // types in the browse-page sidebar, the navbar bar should reflect it too)
+  const currentQ = decodeParam(searchParams.get('q') ?? '');
+  const [query, setQuery] = useState(currentQ);
+
+  useEffect(() => {
+    setQuery(currentQ);
+  }, [currentQ]);
+
+  useEffect(() => {
+    const win = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    if (win.requestIdleCallback) {
+      const id = win.requestIdleCallback(prefetchPublicRoutes, { timeout: 2500 });
+      return () => win.cancelIdleCallback?.(id);
+    }
+
+    const id = window.setTimeout(prefetchPublicRoutes, 1200);
+    return () => window.clearTimeout(id);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) navigate(`/?q=${encodeURIComponent(query.trim())}`);
+    if (query.trim()) {
+      const params = new URLSearchParams();
+      params.set('q', encodeParam(query.trim()));
+      navigate(`/courses?${params.toString()}`);
+    } else {
+      navigate('/courses');
+    }
   };
 
-  const dashboardPath = user?.role === 'Student' ? '/student/dashboard' : '/admin/dashboard';
+  const dashboardPath =
+    user?.role === 'Student' ? '/student/dashboard'
+    : user?.role === 'Teacher' ? '/teacher/courses'
+    : user?.role === 'Super Admin' ? '/admin/dashboard'
+    : '/admin/courses';
 
   return (
+    <>
+    <PublicDiscountBanner />
     <AppBar
       position="sticky"
       elevation={0}
@@ -87,11 +132,43 @@ export default function PublicNavbar() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
           <Button
             component={RouterLink}
-            to="/"
+            to="/courses"
             color="inherit"
+            onMouseEnter={prefetchPublicRoutes}
+            onFocus={prefetchPublicRoutes}
             sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
           >
-            Browse
+            All Courses
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/free-courses"
+            color="inherit"
+            onMouseEnter={prefetchPublicRoutes}
+            onFocus={prefetchPublicRoutes}
+            sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
+          >
+            Free Courses
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/pricing"
+            color="inherit"
+            onMouseEnter={prefetchPublicRoutes}
+            onFocus={prefetchPublicRoutes}
+            sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
+          >
+            Pricing
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/teachers"
+            color="inherit"
+            onMouseEnter={prefetchPublicRoutes}
+            onFocus={prefetchPublicRoutes}
+            sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
+          >
+            Teachers
           </Button>
 
           {user ? (
@@ -134,5 +211,6 @@ export default function PublicNavbar() {
         </Box>
       </Toolbar>
     </AppBar>
+    </>
   );
 }

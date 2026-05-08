@@ -11,4 +11,6 @@ export const authService = {
   logout: () => api.post('/auth/logout'),
 
   getMe: () => api.get<IUser>('/auth/me'),
+
+  updateMe: (data: FormData) => api.put<IUser>('/auth/me', data),
 };

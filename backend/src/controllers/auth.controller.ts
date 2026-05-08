@@ -4,6 +4,7 @@ import { User } from '../models/User.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { generateToken, sendTokenCookie, clearTokenCookie } from '../utils/jwt';
+import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, password } = req.body as {
@@ -58,4 +59,66 @@ export const logout = asyncHandler(async (_req: Request, res: Response) => {
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findById(req.user._id);
   res.status(200).json({ success: true, data: user });
+});
+
+export const updateMe = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, currentPassword, newPassword, removeAvatar } = req.body as {
+    name?: string;
+    email?: string;
+    currentPassword?: string;
+    newPassword?: string;
+    removeAvatar?: string;
+  };
+
+  const user = await User.findById(req.user._id).select('+password +avatarPublicId');
+  if (!user) throw new AppError('User not found', 404);
+
+  if (name !== undefined) {
+    if (!name.trim()) throw new AppError('Name is required', 400);
+    user.name = name.trim();
+  }
+
+  if (email !== undefined) {
+    if (user.role !== 'Student') {
+      throw new AppError('Only students can update their email from profile', 403);
+    }
+    if (!email.trim()) throw new AppError('Email is required', 400);
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await User.findOne({
+      email: normalizedEmail,
+      _id: { $ne: user._id },
+    });
+    if (existing) throw new AppError('Email is already in use', 400);
+    user.email = normalizedEmail;
+  }
+
+  if (newPassword?.trim()) {
+    if (!currentPassword) throw new AppError('Current password is required', 400);
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) throw new AppError('Current password is incorrect', 400);
+    if (newPassword.trim().length < 6) {
+      throw new AppError('New password must be at least 6 characters', 400);
+    }
+    user.password = await bcrypt.hash(newPassword.trim(), 12);
+  }
+
+  if (req.file) {
+    if (user.avatarPublicId) await deleteFromCloudinary(user.avatarPublicId);
+    const result = await uploadToCloudinary(req.file.buffer, 'medhabee/users');
+    user.avatar = result.url;
+    user.avatarPublicId = result.publicId;
+  } else if (removeAvatar === 'true') {
+    if (user.avatarPublicId) await deleteFromCloudinary(user.avatarPublicId);
+    user.avatar = undefined;
+    user.avatarPublicId = undefined;
+  }
+
+  await user.save();
+
+  const safeUser = await User.findById(user._id);
+  res.status(200).json({
+    success: true,
+    message: 'Profile updated',
+    data: safeUser,
+  });
 });

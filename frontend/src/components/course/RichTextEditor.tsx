@@ -63,7 +63,7 @@ export default function RichTextEditor({
 	if (!editor) return null;
 
 	return (
-		<Paper variant='outlined' sx={{ borderRadius: 2, overflow: 'hidden' }}>
+		<Paper variant='outlined' sx={{ borderRadius: 0.5, overflow: 'hidden' }}>
 			{/* Toolbar */}
 			<Box
 				sx={{

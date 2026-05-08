@@ -5,6 +5,7 @@ export interface ILecture extends Document {
   title: string;
   description?: string;
   videoUrl?: string;
+  duration?: number; // seconds
   order: number;
   isPreview: boolean;
   createdAt: Date;
@@ -17,6 +18,7 @@ const lectureSchema = new Schema<ILecture>(
     title: { type: String, required: true, trim: true },
     description: String,
     videoUrl: String,
+    duration: { type: Number, min: 0 },
     order: { type: Number, default: 0 },
     isPreview: { type: Boolean, default: false },
   },
