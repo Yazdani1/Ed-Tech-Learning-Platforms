@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
 	Box,
@@ -37,18 +37,60 @@ const getBillingOptions = (plan: ISubscriptionPlanConfig) =>
 		? plan.billingOptions
 		: [{ label: plan.duration === 1 ? 'Monthly' : `${plan.duration} months`, duration: plan.duration, price: plan.price }];
 
+const getDurationLabel = (duration: number) => {
+	if (duration === 1) return 'Monthly';
+	if (duration === 3) return '3 months';
+	if (duration === 6) return '6 months';
+	if (duration === 12) return 'Yearly';
+	return `${duration} months`;
+};
+
+const getSavingsInfo = (
+	billingOptions: ReturnType<typeof getBillingOptions>,
+	selectedOption?: ReturnType<typeof getBillingOptions>[number],
+) => {
+	const monthlyOption = billingOptions.find((option) => option.duration === 1);
+	if (!monthlyOption || !selectedOption || selectedOption.duration <= 1) return null;
+
+	const monthlyTotal = monthlyOption.price * selectedOption.duration;
+	const savings = monthlyTotal - selectedOption.price;
+	if (savings <= 0) return null;
+
+	return {
+		savings,
+		percent: Math.round((savings / monthlyTotal) * 100),
+		monthlyEquivalent: Math.round(selectedOption.price / selectedOption.duration),
+	};
+};
+
 export default function PricingPage() {
 	const { user, refreshUser } = useAuth();
 	const navigate = useNavigate();
 	const [plans, setPlans] = useState<ISubscriptionPlanConfig[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [selectedDurations, setSelectedDurations] = useState<Record<string, number>>({});
+	const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
 	const [subscribing, setSubscribing] = useState<string | null>(null);
 
 	const isStudent = user?.role === 'Student';
 	const activePlan = user?.activeSubscription?.plan;
+	const activeBillingDuration = user?.activeSubscription?.billingDuration;
 	const activePlanExpiry = user?.activeSubscription?.endDate;
 	const isActivePlanValid = activePlanExpiry && new Date(activePlanExpiry) > new Date();
+
+	const billingDurations = useMemo(() => {
+		const labels = new Map<number, string>();
+		plans.forEach((plan) => {
+			getBillingOptions(plan).forEach((option) => {
+				if (!labels.has(option.duration)) {
+					labels.set(option.duration, option.label || getDurationLabel(option.duration));
+				}
+			});
+		});
+
+		return Array.from(labels.entries())
+			.map(([duration, label]) => ({ duration, label }))
+			.sort((a, b) => a.duration - b.duration);
+	}, [plans]);
 
 	useEffect(() => {
 		subscriptionPlanConfigService
@@ -56,13 +98,10 @@ export default function PricingPage() {
 			.then((res) => {
 				const nextPlans = res.data ?? [];
 				setPlans(nextPlans);
-				setSelectedDurations((current) =>
-					nextPlans.reduce<Record<string, number>>((acc, plan) => {
-						const options = getBillingOptions(plan);
-						acc[plan.plan] = current[plan.plan] ?? options[0]?.duration ?? 1;
-						return acc;
-					}, {}),
-				);
+				const durations = Array.from(
+					new Set(nextPlans.flatMap((plan) => getBillingOptions(plan).map((option) => option.duration))),
+				).sort((a, b) => a - b);
+				setSelectedDuration((current) => (current && durations.includes(current) ? current : durations.includes(1) ? 1 : durations[0] ?? null));
 			})
 			.finally(() => setLoading(false));
 	}, []);
@@ -125,18 +164,57 @@ export default function PricingPage() {
 						</Typography>
 					</Box>
 				) : (
-					<Grid container spacing={3} sx={{ justifyContent: 'center' }}>
-						{plans.map((plan) => {
-							const accentColor = plan.color || DEFAULT_COLORS[plan.plan] || '#1976d2';
-							const isCurrent = isStudent && isActivePlanValid && activePlan === plan.plan;
-							const billingOptions = getBillingOptions(plan);
-							const selectedDuration = selectedDurations[plan.plan] ?? billingOptions[0]?.duration ?? plan.duration;
-							const selectedOption =
-								billingOptions.find((option) => option.duration === selectedDuration) ?? billingOptions[0];
-							const subscribeKey = `${plan.plan}:${selectedOption.duration}`;
+					<>
+						{billingDurations.length > 1 && (
+							<Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+								<ToggleButtonGroup
+									exclusive
+									value={selectedDuration}
+									onChange={(_, value: number | null) => {
+										if (!value) return;
+										setSelectedDuration(value);
+									}}
+									sx={{
+										flexWrap: 'wrap',
+										justifyContent: 'center',
+										gap: 0.75,
+										'& .MuiToggleButton-root': {
+											border: '1px solid',
+											borderColor: 'divider',
+											borderRadius: 2,
+											px: { xs: 1.5, sm: 2.5 },
+											py: 1,
+											fontWeight: 700,
+											textTransform: 'none',
+										},
+									}}
+								>
+									{billingDurations.map((option) => (
+										<ToggleButton key={option.duration} value={option.duration}>
+											{option.label}
+										</ToggleButton>
+									))}
+								</ToggleButtonGroup>
+							</Box>
+						)}
 
-							return (
-								<Grid key={plan._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+						<Grid container spacing={3} sx={{ justifyContent: 'center' }}>
+							{plans.map((plan) => {
+								const accentColor = plan.color || DEFAULT_COLORS[plan.plan] || '#1976d2';
+								const billingOptions = getBillingOptions(plan);
+								const selectedOption = billingOptions.find((option) => option.duration === selectedDuration);
+								const isAvailable = Boolean(selectedOption);
+								const savingsInfo = getSavingsInfo(billingOptions, selectedOption);
+								const isCurrent =
+									Boolean(selectedOption) &&
+									isStudent &&
+									isActivePlanValid &&
+									activePlan === plan.plan &&
+									(!activeBillingDuration || activeBillingDuration === selectedOption?.duration);
+								const subscribeKey = selectedOption ? `${plan.plan}:${selectedOption.duration}` : `${plan.plan}:unavailable`;
+
+								return (
+									<Grid key={plan._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
 									<Card
 										elevation={isCurrent ? 6 : 1}
 										sx={{
@@ -150,6 +228,7 @@ export default function PricingPage() {
 											'&:hover': { transform: 'translateY(-4px)', boxShadow: 6 },
 											position: 'relative',
 											overflow: 'visible',
+											opacity: isAvailable ? 1 : 0.72,
 										}}
 									>
 										{(plan.badge || isCurrent) && (
@@ -175,34 +254,27 @@ export default function PricingPage() {
 
 											<Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mb: 0.5 }}>
 												<Typography variant='h3' sx={{ fontWeight: 800 }}>
-													BDT {selectedOption.price.toLocaleString()}
+													{selectedOption ? `BDT ${selectedOption.price.toLocaleString()}` : 'Not available'}
 												</Typography>
 											</Box>
 											<Typography variant='body2' color='text.secondary'>
-												for {selectedOption.duration === 1 ? '1 month' : `${selectedOption.duration} months`}
+												{selectedOption
+													? `for ${selectedOption.duration === 1 ? '1 month' : `${selectedOption.duration} months`}`
+													: `This plan does not offer ${selectedDuration ? getDurationLabel(selectedDuration).toLowerCase() : 'this billing duration'}`}
 											</Typography>
 
-											{billingOptions.length > 1 && (
-												<ToggleButtonGroup
-													exclusive
-													size='small'
-													value={selectedOption.duration}
-													onChange={(_, value: number | null) => {
-														if (!value) return;
-														setSelectedDurations((current) => ({ ...current, [plan.plan]: value }));
-													}}
-													sx={{ mt: 1.5, flexWrap: 'wrap', gap: 0.75 }}
-												>
-													{billingOptions.map((option) => (
-														<ToggleButton
-															key={`${plan._id}-${option.duration}`}
-															value={option.duration}
-															sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, px: 1.25 }}
-														>
-															{option.label}
-														</ToggleButton>
-													))}
-												</ToggleButtonGroup>
+											{savingsInfo && (
+												<Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1.25 }}>
+													<Chip
+														label={`Save BDT ${savingsInfo.savings.toLocaleString()} (${savingsInfo.percent}%)`}
+														size='small'
+														color='success'
+														sx={{ fontWeight: 800 }}
+													/>
+													<Typography variant='caption' color='text.secondary' sx={{ alignSelf: 'center' }}>
+														BDT {savingsInfo.monthlyEquivalent.toLocaleString()}/mo equivalent
+													</Typography>
+												</Box>
 											)}
 
 											{plan.courseCount > 0 && (
@@ -227,7 +299,11 @@ export default function PricingPage() {
 										</CardContent>
 
 										<CardActions sx={{ p: 2, pt: 0 }}>
-											{isCurrent ? (
+											{!selectedOption ? (
+												<Button fullWidth variant='outlined' disabled sx={{ borderRadius: 2, fontWeight: 700 }}>
+													Not Available
+												</Button>
+											) : isCurrent ? (
 												<Button fullWidth variant='outlined' disabled sx={{ borderRadius: 2, fontWeight: 700 }}>
 													Active Plan
 												</Button>
@@ -235,11 +311,11 @@ export default function PricingPage() {
 												<Button
 													fullWidth
 													variant='contained'
-													disabled={subscribing === subscribeKey}
-													onClick={() => void handleSubscribe(plan.plan, selectedOption.duration)}
+													disabled={!selectedOption || subscribing === subscribeKey}
+													onClick={() => selectedOption && void handleSubscribe(plan.plan, selectedOption.duration)}
 													sx={{ borderRadius: 2, fontWeight: 700, bgcolor: accentColor, '&:hover': { bgcolor: accentColor, opacity: 0.9 } }}
 												>
-													{subscribing === subscribeKey ? <CircularProgress size={20} color='inherit' /> : 'Switch Plan'}
+													{subscribing === subscribeKey ? <CircularProgress size={20} color='inherit' /> : activePlan === plan.plan ? 'Switch Billing' : 'Switch Plan'}
 												</Button>
 											) : !user ? (
 												<Button
@@ -255,8 +331,8 @@ export default function PricingPage() {
 												<Button
 													fullWidth
 													variant='contained'
-													disabled={subscribing === subscribeKey}
-													onClick={() => void handleSubscribe(plan.plan, selectedOption.duration)}
+													disabled={!selectedOption || subscribing === subscribeKey}
+													onClick={() => selectedOption && void handleSubscribe(plan.plan, selectedOption.duration)}
 													sx={{ borderRadius: 2, fontWeight: 700, bgcolor: accentColor, '&:hover': { bgcolor: accentColor, opacity: 0.9 } }}
 												>
 													{subscribing === subscribeKey ? <CircularProgress size={20} color='inherit' /> : 'Subscribe'}
@@ -267,7 +343,8 @@ export default function PricingPage() {
 								</Grid>
 							);
 						})}
-					</Grid>
+						</Grid>
+					</>
 				)}
 
 				{!user && plans.length > 0 && (

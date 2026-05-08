@@ -55,6 +55,7 @@ const seedPlans = [
 		],
 		billingOptions: [
 			{ label: 'Monthly', duration: 1, price: 299 },
+			{ label: '3 months', duration: 3, price: 799 },
 			{ label: '6 months', duration: 6, price: 1499 },
 			{ label: 'Yearly', duration: 12, price: 2499 },
 		],
@@ -128,6 +129,8 @@ const sampleSubscriptions = [
 	},
 ];
 
+const allowedBillingDurations = new Set([1, 3, 6, 12]);
+
 const addMonths = (date: Date, months: number) => {
 	const next = new Date(date);
 	next.setMonth(next.getMonth() + months);
@@ -162,6 +165,36 @@ async function seedPlanConfigs(createdBy: Types.ObjectId) {
 			{ upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
 		);
 	}
+}
+
+async function removeUnsupportedBillingDurations() {
+	const configs = await SubscriptionPlanConfig.find();
+	let cleanedCount = 0;
+	let deactivatedCount = 0;
+
+	for (const config of configs) {
+		const supportedOptions = (config.billingOptions ?? []).filter((option) =>
+			allowedBillingDurations.has(option.duration),
+		);
+		const changed = supportedOptions.length !== (config.billingOptions ?? []).length;
+
+		if (supportedOptions.length === 0) {
+			config.isActive = false;
+			deactivatedCount += 1;
+		} else {
+			const primaryOption = supportedOptions[0];
+			config.billingOptions = supportedOptions;
+			config.duration = primaryOption.duration;
+			config.price = primaryOption.price;
+			if (changed) cleanedCount += 1;
+		}
+
+		if (changed || supportedOptions.length === 0) {
+			await config.save();
+		}
+	}
+
+	return { cleanedCount, deactivatedCount };
 }
 
 async function seedCoursePlanAssignments() {
@@ -241,10 +274,15 @@ async function run() {
 	const adminId = new Types.ObjectId(String(admin._id));
 
 	await seedPlanConfigs(adminId);
+	const cleanup = await removeUnsupportedBillingDurations();
 	const updatedCourses = await seedCoursePlanAssignments();
 	await seedSampleSubscriptions(adminId);
 
 	console.log(`Seeded ${seedPlans.length} subscription plans.`);
+	console.log(`Removed unsupported billing durations from ${cleanup.cleanedCount} plan configs.`);
+	if (cleanup.deactivatedCount > 0) {
+		console.log(`Deactivated ${cleanup.deactivatedCount} plan configs with no supported billing options.`);
+	}
 	console.log(`Seeded ${sampleSubscriptions.length} sample subscription records.`);
 	console.log(`Updated ${updatedCourses} published courses with dynamic plan access.`);
 	console.log('Sample student password: Student123!');
