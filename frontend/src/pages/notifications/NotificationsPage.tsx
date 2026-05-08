@@ -10,7 +10,6 @@ import {
 	Divider,
 	FormControl,
 	FormControlLabel,
-	IconButton,
 	InputLabel,
 	MenuItem,
 	Paper,
@@ -27,7 +26,9 @@ import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined
 import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsActiveOutlined';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import toast from 'react-hot-toast';
+import AppModal from '../../components/common/AppModal';
 import AppPagination from '../../components/common/AppPagination';
+import ItemActionMenu from '../../components/common/ItemActionMenu';
 import { useAuth } from '../../context/useAuth';
 import { useChat } from '../../context/ChatContext';
 import { useConfirmModal } from '../../context/ConfirmModalContext';
@@ -68,7 +69,7 @@ export default function NotificationsPage() {
 	const { socket } = useChat();
 	const { confirm } = useConfirmModal();
 	const { refreshUnreadCount, clearUnreadCount } = useNotifications();
-	const [tab, setTab] = useState<'send' | 'all'>('all');
+	const [tab, setTab] = useState<'send' | 'all' | 'sent'>('all');
 	const [notifications, setNotifications] = useState<INotification[]>([]);
 	const [sentNotifications, setSentNotifications] = useState<INotification[]>([]);
 	const [inboxPagination, setInboxPagination] = useState<PaginationState>({
@@ -88,6 +89,7 @@ export default function NotificationsPage() {
 	const [form, setForm] = useState(blankForm);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editForm, setEditForm] = useState(blankForm);
+	const [editModalOpen, setEditModalOpen] = useState(false);
 
 	const canSend = user?.role === 'Super Admin' || user?.role === 'Admin';
 	const unreadCount = useMemo(
@@ -212,6 +214,12 @@ export default function NotificationsPage() {
 			priority: notification.priority,
 			targetRoles: notification.targetRoles,
 		});
+		setEditModalOpen(true);
+	};
+
+	const closeEditModal = () => {
+		setEditModalOpen(false);
+		setEditingId(null);
 	};
 
 	const handleUpdate = async () => {
@@ -233,7 +241,7 @@ export default function NotificationsPage() {
 					prev.map((item) => (item._id === editingId ? res.data! : item)),
 				);
 			}
-			setEditingId(null);
+			closeEditModal();
 			toast.success('Notification updated');
 		} finally {
 			setSavingEdit(false);
@@ -302,7 +310,7 @@ export default function NotificationsPage() {
 		);
 	};
 
-	const renderNotificationList = () => (
+	const renderInbox = () => (
 		<Paper elevation={0} sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
 			<Box sx={{ p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
 				<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -322,7 +330,6 @@ export default function NotificationsPage() {
 				</Button>
 			</Box>
 			<Divider />
-
 			{loadingInbox ? (
 				<Box sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
 					<CircularProgress />
@@ -359,6 +366,99 @@ export default function NotificationsPage() {
 		</Paper>
 	);
 
+	const renderSent = () => (
+		<Paper elevation={0} sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
+			<Box sx={{ p: 2.5 }}>
+				<Typography variant='h6' sx={{ fontWeight: 800 }}>
+					Sent Notifications
+				</Typography>
+				<Typography variant='body2' color='text.secondary'>
+					Edit, reprioritize, or remove notifications sent by the admin team.
+				</Typography>
+			</Box>
+			<Divider />
+			{loadingSent ? (
+				<Box sx={{ py: 7, display: 'flex', justifyContent: 'center' }}>
+					<CircularProgress />
+				</Box>
+			) : sentNotifications.length === 0 ? (
+				<Box sx={{ p: 4 }}>
+					<Alert severity='info'>No notifications sent yet.</Alert>
+				</Box>
+			) : (
+				<>
+					<Stack divider={<Divider flexItem />}>
+						{sentNotifications.map((notification) => {
+							const priorityStyle = PRIORITY_STYLES[notification.priority];
+							return (
+								<Box
+									key={notification._id}
+									sx={{ p: 2.25, borderLeft: '4px solid', borderLeftColor: priorityStyle.border }}
+								>
+									<Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+										<Box sx={{ flex: 1, minWidth: 0 }}>
+											<Box
+												sx={{
+													display: 'flex',
+													gap: 1,
+													alignItems: 'center',
+													flexWrap: 'wrap',
+													mb: 0.75,
+												}}
+											>
+												<Typography sx={{ fontWeight: 900 }}>{notification.title}</Typography>
+												<Chip size='small' label={notification.priority} color={priorityStyle.color} />
+												<Chip
+													size='small'
+													label={notification.targetRoles.join(', ')}
+													variant='outlined'
+												/>
+											</Box>
+											<Typography variant='body2' sx={{ lineHeight: 1.65, mb: 1 }}>
+												{notification.message}
+											</Typography>
+											<Typography variant='caption' color='text.secondary'>
+												Sent by {notification.sentBy?.name ?? 'Admin'} •{' '}
+												{formatDateTime(notification.createdAt)}
+											</Typography>
+										</Box>
+										<ItemActionMenu
+											actions={[
+												{
+													label: 'Edit',
+													icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
+													onClick: () => startEdit(notification),
+												},
+												{
+													label: 'Delete',
+													icon: <DeleteOutlineIcon fontSize='small' sx={{ mr: 1 }} />,
+													color: 'error',
+													onClick: () => void handleDelete(notification),
+												},
+											]}
+										/>
+									</Box>
+								</Box>
+							);
+						})}
+					</Stack>
+					<Box sx={{ px: 2.5, pb: 2.5 }}>
+						<AppPagination
+							page={sentPagination.page}
+							totalPages={sentTotalPages}
+							totalItems={sentPagination.total}
+							pageSize={sentPagination.limit}
+							onChange={(page) => {
+								setSentPagination((prev) => ({ ...prev, page }));
+								loadSent(page);
+							}}
+						/>
+					</Box>
+				</>
+			)}
+		</Paper>
+	);
+
 	return (
 		<Box>
 			<Box sx={{ mb: 3 }}>
@@ -374,15 +474,22 @@ export default function NotificationsPage() {
 
 			{canSend ? (
 				<>
-					<Paper elevation={0} sx={{ mb: 3, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+					<Paper
+						elevation={0}
+						sx={{ mb: 3, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+					>
 						<Tabs value={tab} onChange={(_event, value) => setTab(value)} sx={{ px: 1.5 }}>
 							<Tab value='send' label='Send Notification' />
 							<Tab value='all' label='All Notifications' />
+							<Tab value='sent' label='Sent Notifications' />
 						</Tabs>
 					</Paper>
 
-					{tab === 'send' ? (
-						<Paper elevation={0} sx={{ p: 2.5, borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+					{tab === 'send' && (
+						<Paper
+							elevation={0}
+							sx={{ p: 2.5, borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+						>
 							<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
 								<SendOutlinedIcon color='primary' />
 								<Typography variant='h6' sx={{ fontWeight: 800 }}>
@@ -433,7 +540,13 @@ export default function NotificationsPage() {
 								</Box>
 								<Button
 									variant='contained'
-									startIcon={sending ? <CircularProgress size={16} color='inherit' /> : <SendOutlinedIcon />}
+									startIcon={
+										sending ? (
+											<CircularProgress size={16} color='inherit' />
+										) : (
+											<SendOutlinedIcon />
+										)
+									}
 									onClick={() => void handleSend()}
 									disabled={sending}
 									sx={{ textTransform: 'none', fontWeight: 800, py: 1.1, alignSelf: 'flex-start' }}
@@ -442,134 +555,68 @@ export default function NotificationsPage() {
 								</Button>
 							</Stack>
 						</Paper>
-					) : (
-						<Stack spacing={3}>
-							{renderNotificationList()}
-							<Paper elevation={0} sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
-								<Box sx={{ p: 2.5 }}>
-									<Typography variant='h6' sx={{ fontWeight: 800 }}>
-										Sent Notifications
-									</Typography>
-									<Typography variant='body2' color='text.secondary'>
-										Edit, reprioritize, or remove notifications sent by the admin team.
-									</Typography>
-								</Box>
-								<Divider />
-								{loadingSent ? (
-									<Box sx={{ py: 7, display: 'flex', justifyContent: 'center' }}>
-										<CircularProgress />
-									</Box>
-								) : sentNotifications.length === 0 ? (
-									<Box sx={{ p: 4 }}>
-										<Alert severity='info'>No notifications sent yet.</Alert>
-									</Box>
-								) : (
-									<>
-										<Stack divider={<Divider flexItem />}>
-											{sentNotifications.map((notification) => {
-												const isEditing = editingId === notification._id;
-												const priorityStyle = PRIORITY_STYLES[notification.priority];
-												return (
-													<Box key={notification._id} sx={{ p: 2.25, borderLeft: '4px solid', borderLeftColor: priorityStyle.border }}>
-														{isEditing ? (
-															<Stack spacing={1.5}>
-																<TextField
-																	label='Title'
-																	value={editForm.title}
-																	onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
-																	fullWidth
-																	size='small'
-																/>
-																<TextField
-																	label='Message'
-																	value={editForm.message}
-																	onChange={(e) => setEditForm((prev) => ({ ...prev, message: e.target.value }))}
-																	fullWidth
-																	multiline
-																	minRows={3}
-																	size='small'
-																/>
-																<FormControl fullWidth size='small'>
-																	<InputLabel>Priority</InputLabel>
-																	<Select
-																		label='Priority'
-																		value={editForm.priority}
-																		onChange={(e) =>
-																			setEditForm((prev) => ({
-																				...prev,
-																				priority: e.target.value as NotificationPriority,
-																			}))
-																		}
-																	>
-																		{PRIORITY_OPTIONS.map((priority) => (
-																			<MenuItem key={priority} value={priority}>
-																				{priority}
-																			</MenuItem>
-																		))}
-																	</Select>
-																</FormControl>
-																<Box>{renderRoleSelectors('edit')}</Box>
-																<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-																	<Button onClick={() => setEditingId(null)}>Cancel</Button>
-																	<Button
-																		variant='contained'
-																		onClick={() => void handleUpdate()}
-																		disabled={savingEdit}
-																	>
-																		{savingEdit ? <CircularProgress size={16} color='inherit' /> : 'Save'}
-																	</Button>
-																</Box>
-															</Stack>
-														) : (
-															<Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-																<Box sx={{ flex: 1, minWidth: 0 }}>
-																	<Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 0.75 }}>
-																		<Typography sx={{ fontWeight: 900 }}>{notification.title}</Typography>
-																		<Chip size='small' label={notification.priority} color={priorityStyle.color} />
-																		<Chip size='small' label={notification.targetRoles.join(', ')} variant='outlined' />
-																	</Box>
-																	<Typography variant='body2' sx={{ lineHeight: 1.65, mb: 1 }}>
-																		{notification.message}
-																	</Typography>
-																	<Typography variant='caption' color='text.secondary'>
-																		Sent by {notification.sentBy?.name ?? 'Admin'} • {formatDateTime(notification.createdAt)}
-																	</Typography>
-																</Box>
-																<Box sx={{ display: 'flex', gap: 0.5 }}>
-																	<IconButton size='small' onClick={() => startEdit(notification)}>
-																		<EditOutlinedIcon fontSize='small' />
-																	</IconButton>
-																	<IconButton size='small' color='error' onClick={() => void handleDelete(notification)}>
-																		<DeleteOutlineIcon fontSize='small' />
-																	</IconButton>
-																</Box>
-															</Box>
-														)}
-													</Box>
-												);
-											})}
-										</Stack>
-										<Box sx={{ px: 2.5, pb: 2.5 }}>
-											<AppPagination
-												page={sentPagination.page}
-												totalPages={sentTotalPages}
-												totalItems={sentPagination.total}
-												pageSize={sentPagination.limit}
-												onChange={(page) => {
-													setSentPagination((prev) => ({ ...prev, page }));
-													loadSent(page);
-												}}
-											/>
-										</Box>
-									</>
-								)}
-							</Paper>
-						</Stack>
 					)}
+
+					{tab === 'all' && renderInbox()}
+					{tab === 'sent' && renderSent()}
 				</>
 			) : (
-				renderNotificationList()
+				renderInbox()
 			)}
+
+			<AppModal
+				open={editModalOpen}
+				title='Edit Notification'
+				onClose={closeEditModal}
+				onSave={() => void handleUpdate()}
+				saving={savingEdit}
+				saveText='Save Changes'
+				maxWidth='sm'
+			>
+				<Stack spacing={2} sx={{ pt: 0.5 }}>
+					<TextField
+						label='Title'
+						value={editForm.title}
+						onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+						fullWidth
+						slotProps={{ htmlInput: { maxLength: 140 } }}
+					/>
+					<TextField
+						label='Message'
+						value={editForm.message}
+						onChange={(e) => setEditForm((prev) => ({ ...prev, message: e.target.value }))}
+						fullWidth
+						multiline
+						minRows={4}
+						slotProps={{ htmlInput: { maxLength: 2000 } }}
+					/>
+					<FormControl fullWidth>
+						<InputLabel>Priority</InputLabel>
+						<Select
+							label='Priority'
+							value={editForm.priority}
+							onChange={(e) =>
+								setEditForm((prev) => ({
+									...prev,
+									priority: e.target.value as NotificationPriority,
+								}))
+							}
+						>
+							{PRIORITY_OPTIONS.map((priority) => (
+								<MenuItem key={priority} value={priority}>
+									{priority}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+					<Box>
+						<Typography variant='subtitle2' sx={{ fontWeight: 800, mb: 1 }}>
+							Send to roles
+						</Typography>
+						{renderRoleSelectors('edit')}
+					</Box>
+				</Stack>
+			</AppModal>
 		</Box>
 	);
 }
@@ -589,27 +636,46 @@ function NotificationItem({
 			sx={{
 				p: 2.25,
 				cursor: notification.isRead ? 'default' : 'pointer',
-				bgcolor: notification.isRead ? 'background.paper' : 'rgba(99,102,241,0.06)',
+				bgcolor: notification.isRead ? 'background.paper' : 'rgba(99,102,241,0.1)',
 				borderLeft: '4px solid',
 				borderLeftColor: priorityStyle.border,
 				transition: 'background 0.15s ease',
-				'&:hover': { bgcolor: notification.isRead ? 'grey.50' : 'rgba(99,102,241,0.1)' },
+				'&:hover': { bgcolor: notification.isRead ? 'grey.50' : 'rgba(99,102,241,0.15)' },
 			}}
 		>
 			<Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-				<Avatar
-					src={notification.sentBy?.avatar}
-					sx={{ bgcolor: priorityStyle.border, width: 38, height: 38, fontSize: 14 }}
-				>
-					{notification.sentBy?.name?.[0]?.toUpperCase() ?? 'N'}
-				</Avatar>
+				<Box sx={{ position: 'relative' }}>
+					<Avatar
+						src={notification.sentBy?.avatar}
+						sx={{ bgcolor: priorityStyle.border, width: 38, height: 38, fontSize: 14 }}
+					>
+						{notification.sentBy?.name?.[0]?.toUpperCase() ?? 'N'}
+					</Avatar>
+					{!notification.isRead && (
+						<Box
+							sx={{
+								position: 'absolute',
+								top: -2,
+								right: -2,
+								width: 11,
+								height: 11,
+								borderRadius: '50%',
+								bgcolor: 'primary.main',
+								border: '2px solid',
+								borderColor: 'background.paper',
+							}}
+						/>
+					)}
+				</Box>
 				<Box sx={{ flex: 1, minWidth: 0 }}>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
-						<Typography sx={{ fontWeight: notification.isRead ? 700 : 900 }}>
+						<Typography sx={{ fontWeight: notification.isRead ? 700 : 900, color: notification.isRead ? 'text.primary' : 'primary.main' }}>
 							{notification.title}
 						</Typography>
 						<Chip size='small' label={notification.priority} color={priorityStyle.color} />
-						{!notification.isRead && <Chip size='small' label='Unread' color='primary' variant='outlined' />}
+						{!notification.isRead && (
+							<Chip size='small' label='Unread' color='primary' variant='outlined' />
+						)}
 					</Box>
 					<Typography variant='body2' sx={{ lineHeight: 1.65, mb: 1 }}>
 						{notification.message}
