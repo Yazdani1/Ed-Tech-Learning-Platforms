@@ -7,6 +7,7 @@ import {
 	CardContent,
 	Chip,
 	CircularProgress,
+	Collapse,
 	Divider,
 	Grid,
 	IconButton,
@@ -29,6 +30,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import SearchIcon from '@mui/icons-material/Search';
+import TuneIcon from '@mui/icons-material/Tune';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import toast from 'react-hot-toast';
 import AppModal from '../../components/common/AppModal';
 import AppPagination from '../../components/common/AppPagination';
@@ -82,6 +85,7 @@ export default function SubscriptionsPage() {
 	const [subsLoading, setSubsLoading] = useState(true);
 	const [memberPage, setMemberPage] = useState(1);
 	const [memberPagination, setMemberPagination] = useState<IPaginationMeta | null>(null);
+	const [memberFiltersOpen, setMemberFiltersOpen] = useState(false);
 	const [statusCounts, setStatusCounts] = useState<Record<MemberStatusFilter, number>>({
 		active: 0,
 		cancelled: 0,
@@ -336,9 +340,15 @@ export default function SubscriptionsPage() {
 		...sub,
 		effectiveStatus: getEffectiveStatus(sub),
 	}));
+	const activeMemberFilterCount =
+		(memberFilters.search.trim() ? 1 : 0) +
+		(memberFilters.plan ? 1 : 0) +
+		(memberFilters.billingDuration ? 1 : 0) +
+		(memberStatusTab !== 'active' ? 1 : 0);
 
 	const clearMemberFilters = () => {
 		setMemberFilters({ search: '', plan: '', billingDuration: '' });
+		setMemberStatusTab('active');
 		setMemberPage(1);
 	};
 
@@ -451,78 +461,148 @@ export default function SubscriptionsPage() {
 					<Paper
 						elevation={0}
 						sx={{
-							p: 2,
 							mb: 2.5,
 							border: '1px solid',
 							borderColor: 'divider',
 							borderRadius: 2,
+							overflow: 'hidden',
 						}}
 					>
-						<Grid container spacing={2} sx={{ alignItems: 'center' }}>
-							<Grid size={{ xs: 12, md: 4 }}>
-								<TextField
-									label='Search members'
-									value={memberFilters.search}
-									onChange={(e) => {
-										setMemberFilters((current) => ({ ...current, search: e.target.value }));
-										setMemberPage(1);
-									}}
-									fullWidth
-									size='small'
-									placeholder='Name, email, or plan'
-									slotProps={{
-										input: {
-											startAdornment: <SearchIcon fontSize='small' sx={{ color: 'text.secondary', mr: 1 }} />,
-										},
-									}}
-								/>
-							</Grid>
-							<Grid size={{ xs: 12, sm: 6, md: 3 }}>
-								<TextField
-									label='Subscription plan'
-									select
-									value={memberFilters.plan}
-									onChange={(e) => {
-										setMemberFilters((current) => ({ ...current, plan: e.target.value }));
-										setMemberPage(1);
-									}}
-									fullWidth
-									size='small'
+						<Box
+							sx={{
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'space-between',
+								gap: 2,
+								p: 2,
+								bgcolor: 'grey.50',
+							}}
+						>
+							<Box>
+								<Typography variant='subtitle1' sx={{ fontWeight: 800 }}>
+									Filter members
+								</Typography>
+								<Typography variant='body2' color='text.secondary'>
+									{memberPagination
+										? `${memberPagination.total} member record${memberPagination.total !== 1 ? 's' : ''} match this view`
+										: 'Filter by member, subscription, billing, or status'}
+								</Typography>
+							</Box>
+							<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+								{activeMemberFilterCount > 0 && (
+									<Chip
+										label={`${activeMemberFilterCount} filter${activeMemberFilterCount !== 1 ? 's' : ''} active`}
+										size='small'
+										color='primary'
+										sx={{ fontWeight: 800 }}
+									/>
+								)}
+								{activeMemberFilterCount > 0 && (
+									<Button size='small' onClick={clearMemberFilters}>
+										Clear
+									</Button>
+								)}
+								<Button
+									variant={memberFiltersOpen ? 'contained' : 'outlined'}
+									startIcon={<TuneIcon />}
+									endIcon={
+										<ExpandMoreIcon
+											sx={{
+												transform: memberFiltersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+												transition: 'transform 160ms ease',
+											}}
+										/>
+									}
+									onClick={() => setMemberFiltersOpen((current) => !current)}
+									sx={{ fontWeight: 800, textTransform: 'none' }}
 								>
-									<MenuItem value=''>All plans</MenuItem>
-									{planFilterOptions.map((plan) => (
-										<MenuItem key={plan} value={plan}>
-											{plan}
-										</MenuItem>
-									))}
-								</TextField>
-							</Grid>
-							<Grid size={{ xs: 12, sm: 6, md: 3 }}>
-								<TextField
-									label='Billing duration'
-									select
-									value={memberFilters.billingDuration}
-									onChange={(e) => {
-										setMemberFilters((current) => ({ ...current, billingDuration: e.target.value }));
-										setMemberPage(1);
-									}}
-									fullWidth
-									size='small'
-								>
-									<MenuItem value=''>All durations</MenuItem>
-									{billingFilterOptions.map((option) => (
-										<MenuItem key={option.duration} value={String(option.duration)}>
-											{option.label}
-										</MenuItem>
-									))}
-								</TextField>
-							</Grid>
-							<Grid size={{ xs: 12, md: 2 }}>
-								<Button fullWidth variant='outlined' onClick={clearMemberFilters} sx={{ fontWeight: 800 }}>
-									Clear
+									{memberFiltersOpen ? 'Hide filters' : 'Show filters'}
 								</Button>
-							</Grid>
-						</Grid>
+							</Box>
+						</Box>
+						<Collapse in={memberFiltersOpen} timeout='auto' unmountOnExit>
+							<Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+								<Grid container spacing={2} sx={{ alignItems: 'center' }}>
+									<Grid size={{ xs: 12, md: 4 }}>
+										<TextField
+											label='Search members'
+											value={memberFilters.search}
+											onChange={(e) => {
+												setMemberFilters((current) => ({ ...current, search: e.target.value }));
+												setMemberPage(1);
+											}}
+											fullWidth
+											size='small'
+											placeholder='Name, email, or plan'
+											slotProps={{
+												input: {
+													startAdornment: <SearchIcon fontSize='small' sx={{ color: 'text.secondary', mr: 1 }} />,
+												},
+											}}
+										/>
+									</Grid>
+									<Grid size={{ xs: 12, sm: 6, md: 2.5 }}>
+										<TextField
+											label='Subscription plan'
+											select
+											value={memberFilters.plan}
+											onChange={(e) => {
+												setMemberFilters((current) => ({ ...current, plan: e.target.value }));
+												setMemberPage(1);
+											}}
+											fullWidth
+											size='small'
+										>
+											<MenuItem value=''>All plans</MenuItem>
+											{planFilterOptions.map((plan) => (
+												<MenuItem key={plan} value={plan}>
+													{plan}
+												</MenuItem>
+											))}
+										</TextField>
+									</Grid>
+									<Grid size={{ xs: 12, sm: 6, md: 2.5 }}>
+										<TextField
+											label='Subscription status'
+											select
+											value={memberStatusTab}
+											onChange={(e) => {
+												setMemberStatusTab(e.target.value as MemberStatusFilter);
+												setMemberPage(1);
+											}}
+											fullWidth
+											size='small'
+										>
+											{memberStatusTabs.map((tab) => (
+												<MenuItem key={tab.value} value={tab.value}>
+													{tab.label}
+												</MenuItem>
+											))}
+										</TextField>
+									</Grid>
+									<Grid size={{ xs: 12, sm: 6, md: 2 }}>
+										<TextField
+											label='Billing duration'
+											select
+											value={memberFilters.billingDuration}
+											onChange={(e) => {
+												setMemberFilters((current) => ({ ...current, billingDuration: e.target.value }));
+												setMemberPage(1);
+											}}
+											fullWidth
+											size='small'
+										>
+											<MenuItem value=''>All durations</MenuItem>
+											{billingFilterOptions.map((option) => (
+												<MenuItem key={option.duration} value={String(option.duration)}>
+													{option.label}
+												</MenuItem>
+											))}
+										</TextField>
+									</Grid>
+								</Grid>
+							</Box>
+						</Collapse>
 					</Paper>
 
 					{subsLoading ? (
