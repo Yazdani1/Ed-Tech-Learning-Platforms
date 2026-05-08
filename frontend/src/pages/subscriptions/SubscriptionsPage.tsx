@@ -54,6 +54,8 @@ const getBillingOptions = (plan: ISubscriptionPlanConfig) =>
 		? plan.billingOptions
 		: [{ label: plan.duration === 1 ? 'Monthly' : `${plan.duration} months`, duration: plan.duration, price: plan.price }];
 
+const getDurationText = (duration: number) => (duration === 1 ? '1 month' : `${duration} months`);
+
 const blankBillingOption = () => ({ label: '', duration: '1', price: '' });
 type MemberStatusFilter = 'active' | 'cancelled' | 'expired' | 'all';
 
@@ -382,33 +384,106 @@ export default function SubscriptionsPage() {
 						<Grid container spacing={3}>
 							{planConfigs.map((config) => {
 								const accentColor = config.color || PLAN_COLORS[config.plan] || '#1976d2';
-								const billingOptions = getBillingOptions(config);
+								const billingOptions = [...getBillingOptions(config)].sort((a, b) => a.duration - b.duration);
 								return (
 									<Grid key={config._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-										<Card elevation={0} sx={{ border: '2px solid', borderColor: accentColor, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-											<CardContent sx={{ flex: 1 }}>
-												<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-													<Typography variant='h6' sx={{ fontWeight: 700, color: accentColor }}>
-														{config.plan}
-													</Typography>
-													{config.badge && <Chip label={config.badge} size='small' sx={{ bgcolor: accentColor, color: 'white', fontWeight: 600 }} />}
-												</Box>
-												<Box sx={{ mb: 2 }}>
-													{billingOptions.map((option) => (
-														<Typography key={`${config._id}-${option.duration}`} variant='body2'>
-															<strong>{option.label}:</strong> BDT {option.price.toLocaleString()} / {option.duration === 1 ? 'month' : `${option.duration} months`}
+										<Card
+											elevation={0}
+											sx={{
+												border: '1px solid',
+												borderColor: `${accentColor}66`,
+												borderRadius: 2,
+												height: '100%',
+												display: 'flex',
+												flexDirection: 'column',
+												overflow: 'hidden',
+												boxShadow: '0 14px 34px rgba(15, 23, 42, 0.06)',
+											}}
+										>
+											<Box sx={{ height: 5, bgcolor: accentColor }} />
+											<CardContent sx={{ flex: 1, p: 2.25 }}>
+												<Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5, mb: 2 }}>
+													<Box>
+														<Typography variant='h6' sx={{ fontWeight: 900, color: accentColor, lineHeight: 1.2 }}>
+															{config.plan}
 														</Typography>
+														<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 700 }}>
+															{billingOptions.length} billing option{billingOptions.length !== 1 ? 's' : ''}
+														</Typography>
+													</Box>
+													{config.badge && (
+														<Chip
+															label={config.badge}
+															size='small'
+															sx={{ bgcolor: accentColor, color: 'white', fontWeight: 800, flexShrink: 0 }}
+														/>
+													)}
+												</Box>
+
+												<Box
+													sx={{
+														border: '1px solid',
+														borderColor: 'divider',
+														borderRadius: 1.5,
+														overflow: 'hidden',
+														mb: 2,
+														bgcolor: 'grey.50',
+													}}
+												>
+													{billingOptions.map((option) => (
+														<Box
+															key={`${config._id}-${option.duration}`}
+															sx={{
+																display: 'flex',
+																alignItems: 'center',
+																justifyContent: 'space-between',
+																gap: 1.5,
+																px: 1.4,
+																py: 1,
+																borderBottom: '1px solid',
+																borderColor: 'divider',
+																bgcolor: 'background.paper',
+																'&:last-of-type': { borderBottom: 0 },
+															}}
+														>
+															<Box sx={{ minWidth: 0 }}>
+																<Typography variant='body2' sx={{ fontWeight: 900 }}>
+																	{option.label}
+																</Typography>
+																<Typography variant='caption' color='text.secondary'>
+																	{getDurationText(option.duration)}
+																</Typography>
+															</Box>
+															<Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+																<Typography variant='body2' sx={{ fontWeight: 900 }}>
+																	BDT {option.price.toLocaleString()}
+																</Typography>
+																<Typography variant='caption' color='text.secondary'>
+																	{option.duration === 1
+																		? 'per month'
+																		: `BDT ${Math.round(option.price / option.duration).toLocaleString()}/mo`}
+																</Typography>
+															</Box>
+														</Box>
 													))}
 												</Box>
+
 												<Divider sx={{ mb: 1.5 }} />
-												{config.features.map((f, i) => (
-													<Box key={i} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', mb: 0.75 }}>
-														<CheckIcon sx={{ fontSize: 16, color: accentColor, mt: 0.2, flexShrink: 0 }} />
-														<Typography variant='body2'>{f}</Typography>
+												<Box sx={{ display: 'grid', gap: 0.85 }}>
+													{config.features.map((f, i) => (
+														<Box key={i} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+															<CheckIcon sx={{ fontSize: 16, color: accentColor, mt: 0.2, flexShrink: 0 }} />
+															<Typography variant='body2'>{f}</Typography>
+														</Box>
+													))}
+													{config.features.length === 0 && (
+														<Typography variant='body2' color='text.secondary'>
+															No features added yet.
+														</Typography>
+													)}
 													</Box>
-												))}
 											</CardContent>
-											<CardActions sx={{ px: 2, pb: 2 }}>
+											<CardActions sx={{ px: 2.25, pb: 2, pt: 0 }}>
 												<Button size='small' startIcon={<EditIcon />} onClick={() => handleOpenPlanDialog(config)}>
 													Edit
 												</Button>
