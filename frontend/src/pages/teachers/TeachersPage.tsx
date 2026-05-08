@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
 	Box,
 	Button,
@@ -9,22 +10,31 @@ import {
 	Avatar,
 	FormControl,
 	InputLabel,
+	Divider,
 	MenuItem,
+	Paper,
 	Select,
 	TextField,
 	Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import LinkIcon from '@mui/icons-material/Link';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import toast from 'react-hot-toast';
 import AppModal from '../../components/common/AppModal';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
 import { useConfirmModal } from '../../context/ConfirmModalContext';
+import { courseService } from '../../services/course.service';
 import { teacherService } from '../../services/teacher.service';
 import { userService } from '../../services/user.service';
-import type { ITeacher, IUser } from '../../types/index';
+import type { ICourse, ITeacher, IUser } from '../../types/index';
+import { formatDate } from '../../utils/dateTime';
 
 const EMPTY_FORM = {
 	name: '',
@@ -37,11 +47,17 @@ const EMPTY_FORM = {
 
 export default function TeachersPage() {
 	const { confirm } = useConfirmModal();
+	const navigate = useNavigate();
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
 	const [teacherUsers, setTeacherUsers] = useState<IUser[]>([]);
+	const [teacherCourseCounts, setTeacherCourseCounts] = useState<Record<string, number>>({});
 	const [loading, setLoading] = useState(true);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingTeacher, setEditingTeacher] = useState<ITeacher | null>(null);
+	const [detailsOpen, setDetailsOpen] = useState(false);
+	const [detailsTeacher, setDetailsTeacher] = useState<ITeacher | null>(null);
+	const [detailsCourses, setDetailsCourses] = useState<ICourse[]>([]);
+	const [detailsLoading, setDetailsLoading] = useState(false);
 	const [form, setForm] = useState(EMPTY_FORM);
 	const [saving, setSaving] = useState(false);
 
@@ -53,8 +69,31 @@ export default function TeachersPage() {
 	const loadTeachers = () => {
 		teacherService
 			.getAll()
-			.then((res) => setTeachers(res.data ?? []))
+			.then((res) => {
+				const loadedTeachers = res.data ?? [];
+				setTeachers(loadedTeachers);
+				void loadTeacherCourseCounts(loadedTeachers);
+			})
 			.finally(() => setLoading(false));
+	};
+
+	const loadTeacherCourseCounts = async (loadedTeachers: ITeacher[]) => {
+		if (loadedTeachers.length === 0) {
+			setTeacherCourseCounts({});
+			return;
+		}
+
+		try {
+			const entries = await Promise.all(
+				loadedTeachers.map(async (teacher) => {
+					const res = await courseService.getAll({ teacher: teacher._id });
+					return [teacher._id, res.data?.length ?? 0] as const;
+				}),
+			);
+			setTeacherCourseCounts(Object.fromEntries(entries));
+		} catch {
+			setTeacherCourseCounts(Object.fromEntries(loadedTeachers.map((teacher) => [teacher._id, 0])));
+		}
 	};
 
 	const loadTeacherUsers = () => {
@@ -85,6 +124,29 @@ export default function TeachersPage() {
 		setDialogOpen(false);
 		setEditingTeacher(null);
 		setForm(EMPTY_FORM);
+	};
+
+	const handleOpenDetails = async (teacher: ITeacher) => {
+		setDetailsTeacher(teacher);
+		setDetailsCourses([]);
+		setDetailsOpen(true);
+		setDetailsLoading(true);
+		try {
+			const res = await courseService.getAll({ teacher: teacher._id });
+			const courses = res.data ?? [];
+			setDetailsCourses(courses);
+			setTeacherCourseCounts((prev) => ({ ...prev, [teacher._id]: courses.length }));
+		} catch {
+			toast.error('Failed to load assigned courses');
+		} finally {
+			setDetailsLoading(false);
+		}
+	};
+
+	const handleCloseDetails = () => {
+		setDetailsOpen(false);
+		setDetailsTeacher(null);
+		setDetailsCourses([]);
 	};
 
 	const handleSave = async () => {
@@ -181,6 +243,7 @@ export default function TeachersPage() {
 						teachers.map((teacher) => {
 							const linked = teacherUsers.find((u) => u._id === teacher.userId);
 							const bio = teacher.bio.length > 130 ? `${teacher.bio.substring(0, 130)}...` : teacher.bio;
+							const courseCount = teacherCourseCounts[teacher._id];
 
 							return (
 								<Card
@@ -197,6 +260,11 @@ export default function TeachersPage() {
 									<Box sx={{ position: 'absolute', top: 10, right: 10 }}>
 										<ItemActionMenu
 											actions={[
+												{
+													label: 'View details',
+													icon: <VisibilityOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
+													onClick: () => void handleOpenDetails(teacher),
+												},
 												{
 													label: 'Edit',
 													icon: <EditOutlinedIcon fontSize='small' sx={{ mr: 1 }} />,
@@ -264,12 +332,29 @@ export default function TeachersPage() {
 										</Box>
 
 										<Box sx={{ mt: 'auto', pt: 2.25, width: '100%' }}>
+											<Box
+												sx={{
+													display: 'flex',
+													alignItems: 'center',
+													justifyContent: 'center',
+													gap: 1,
+													borderTop: '1px solid',
+													borderColor: 'divider',
+													pt: 1.5,
+													mb: 1.5,
+												}}
+											>
+												<MenuBookIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+												<Typography variant='body2' sx={{ fontWeight: 800 }}>
+													{courseCount == null
+														? 'Loading courses...'
+														: `${courseCount} course${courseCount !== 1 ? 's' : ''} teaching`}
+												</Typography>
+											</Box>
 											{linked ? (
 												<Box
 													sx={{
-														borderTop: '1px solid',
-														borderColor: 'divider',
-														pt: 1.5,
+														pt: 0.25,
 													}}
 												>
 													<Typography variant='body2' sx={{ fontWeight: 700 }}>
@@ -289,9 +374,7 @@ export default function TeachersPage() {
 													variant='body2'
 													color='text.disabled'
 													sx={{
-														borderTop: '1px solid',
-														borderColor: 'divider',
-														pt: 1.5,
+														pt: 0.25,
 													}}
 												>
 													Not linked
@@ -305,6 +388,19 @@ export default function TeachersPage() {
 					)}
 				</Box>
 			)}
+
+			<TeacherDetailsModal
+				open={detailsOpen}
+				teacher={detailsTeacher}
+				linkedUser={detailsTeacher ? teacherUsers.find((u) => u._id === detailsTeacher.userId) : undefined}
+				courses={detailsCourses}
+				loading={detailsLoading}
+				onCourseOpen={(courseId) => {
+					handleCloseDetails();
+					navigate(`/admin/courses/${courseId}/learn`);
+				}}
+				onClose={handleCloseDetails}
+			/>
 
 			<AppModal
 				open={dialogOpen}
@@ -396,5 +492,229 @@ export default function TeachersPage() {
 					</Box>
 			</AppModal>
 		</Box>
+	);
+}
+
+function TeacherDetailsModal({
+	open,
+	teacher,
+	linkedUser,
+	courses,
+	loading,
+	onCourseOpen,
+	onClose,
+}: {
+	open: boolean;
+	teacher: ITeacher | null;
+	linkedUser?: IUser;
+	courses: ICourse[];
+	loading: boolean;
+	onCourseOpen: (courseId: string) => void;
+	onClose: () => void;
+}) {
+	const socialLinks = teacher?.socialLinks
+		? Object.entries(teacher.socialLinks).filter((entry): entry is [string, string] => Boolean(entry[1]))
+		: [];
+	const joinedDate = teacher?.createdAt || linkedUser?.createdAt;
+
+	return (
+		<AppModal
+			open={open}
+			onClose={onClose}
+			title='Teacher details'
+			cancelText='Close'
+			maxWidth='lg'
+			contentSx={{ p: 0 }}
+		>
+			{!teacher ? null : (
+				<Box>
+					<Box
+						sx={{
+							p: 3,
+							display: 'grid',
+							gridTemplateColumns: { xs: '1fr', md: '220px 1fr' },
+							gap: 3,
+						}}
+					>
+						<Box sx={{ textAlign: { xs: 'left', md: 'center' } }}>
+							<Avatar
+								src={teacher.profileImage}
+								alt={teacher.name}
+								sx={{
+									width: 132,
+									height: 132,
+									fontSize: 48,
+									fontWeight: 900,
+									mx: { xs: 0, md: 'auto' },
+									mb: 2,
+								}}
+							>
+								{teacher.name.charAt(0)}
+							</Avatar>
+							<Chip label={linkedUser ? 'Linked account' : 'Not linked'} color={linkedUser ? 'primary' : 'default'} variant='outlined' />
+						</Box>
+
+						<Box sx={{ minWidth: 0 }}>
+							<Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+								<Box sx={{ minWidth: 0 }}>
+									<Typography variant='h5' sx={{ fontWeight: 900 }}>
+										{teacher.name}
+									</Typography>
+									{linkedUser?.email && (
+										<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.75, color: 'text.secondary' }}>
+											<EmailOutlinedIcon sx={{ fontSize: 17 }} />
+											<Typography variant='body2' sx={{ overflowWrap: 'anywhere' }}>
+												{linkedUser.email}
+											</Typography>
+										</Box>
+									)}
+								</Box>
+								<Paper variant='outlined' sx={{ px: 2, py: 1.25, borderRadius: 1, minWidth: 150 }}>
+									<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 800, textTransform: 'uppercase' }}>
+										Total courses
+									</Typography>
+									<Typography variant='h4' sx={{ fontWeight: 900, lineHeight: 1.1 }}>
+										{courses.length}
+									</Typography>
+								</Paper>
+							</Box>
+
+							<Typography variant='body2' color='text.secondary' sx={{ mt: 2, lineHeight: 1.7 }}>
+								{teacher.bio}
+							</Typography>
+
+							<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5, mt: 2.5 }}>
+								<InfoTile icon={<CalendarTodayIcon />} label='Joined' value={joinedDate ? formatDate(joinedDate) : 'Not available'} />
+								<InfoTile icon={<MenuBookIcon />} label='Teaching' value={`${courses.length} assigned course${courses.length !== 1 ? 's' : ''}`} />
+							</Box>
+
+							{teacher.expertise.length > 0 && (
+								<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 2.5 }}>
+									{teacher.expertise.map((item, index) => (
+										<Chip key={`${item}-${index}`} label={item} size='small' variant='outlined' />
+									))}
+								</Box>
+							)}
+
+							{socialLinks.length > 0 && (
+								<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+									{socialLinks.map(([label, url]) => (
+										<Button
+											key={label}
+											component='a'
+											href={url}
+											target='_blank'
+											rel='noreferrer'
+											size='small'
+											variant='outlined'
+											startIcon={<LinkIcon />}
+											sx={{ textTransform: 'capitalize', fontWeight: 800 }}
+										>
+											{label}
+										</Button>
+									))}
+								</Box>
+							)}
+						</Box>
+					</Box>
+
+					<Divider />
+
+					<Box sx={{ p: 3 }}>
+						<Typography variant='h6' sx={{ fontWeight: 900, mb: 2 }}>
+							Assigned courses
+						</Typography>
+
+						{loading ? (
+							<Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+								<CircularProgress />
+							</Box>
+						) : courses.length === 0 ? (
+							<Paper variant='outlined' sx={{ p: 4, textAlign: 'center', color: 'text.secondary', borderRadius: 1 }}>
+								No courses are assigned to this teacher yet.
+							</Paper>
+						) : (
+							<Box sx={{ display: 'grid', gap: 1.25 }}>
+								{courses.map((course) => (
+									<Paper
+										key={course._id}
+										variant='outlined'
+										sx={{
+											p: 1.5,
+											borderRadius: 1,
+											display: 'grid',
+											gridTemplateColumns: { xs: '1fr', sm: '72px 1fr auto' },
+											gap: 1.5,
+											alignItems: 'center',
+											transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+											'&:hover': {
+												borderColor: 'primary.light',
+												boxShadow: '0 10px 24px rgba(15,23,42,0.08)',
+											},
+										}}
+									>
+										<Box
+											sx={{
+												width: 72,
+												height: 52,
+												borderRadius: 1,
+												overflow: 'hidden',
+												bgcolor: 'grey.100',
+												display: { xs: 'none', sm: 'flex' },
+												alignItems: 'center',
+												justifyContent: 'center',
+											}}
+										>
+											{course.coverImage ? (
+												<Box component='img' src={course.coverImage} alt={course.title} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+											) : (
+												<MenuBookIcon color='primary' />
+											)}
+										</Box>
+										<Box sx={{ minWidth: 0 }}>
+											<Typography variant='subtitle2' sx={{ fontWeight: 900 }} noWrap>
+												{course.title}
+											</Typography>
+											<Typography variant='caption' color='text.secondary' noWrap sx={{ display: 'block' }}>
+												{course.courseType?.name || 'No course type'} · {course.category?.name || 'No category'}
+											</Typography>
+										</Box>
+										<Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, alignItems: 'center' }}>
+											<Chip label={course.status} size='small' color={course.status === 'Published' ? 'success' : 'default'} variant='outlined' />
+											<Chip label={course.visibility} size='small' />
+											<Button
+												size='small'
+												variant='contained'
+												startIcon={<VisibilityOutlinedIcon />}
+												onClick={() => onCourseOpen(course._id)}
+												sx={{ fontWeight: 800 }}
+											>
+												Learn page
+											</Button>
+										</Box>
+									</Paper>
+								))}
+							</Box>
+						)}
+					</Box>
+				</Box>
+			)}
+		</AppModal>
+	);
+}
+
+function InfoTile({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+	return (
+		<Paper variant='outlined' sx={{ p: 1.5, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1.25 }}>
+			<Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box>
+			<Box sx={{ minWidth: 0 }}>
+				<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 800, textTransform: 'uppercase' }}>
+					{label}
+				</Typography>
+				<Typography variant='body2' sx={{ fontWeight: 800 }} noWrap>
+					{value}
+				</Typography>
+			</Box>
+		</Paper>
 	);
 }

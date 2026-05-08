@@ -46,6 +46,8 @@ export interface ITeacher {
     youtube?: string;
   };
   userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ICategory {
