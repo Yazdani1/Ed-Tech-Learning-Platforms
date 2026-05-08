@@ -2364,7 +2364,7 @@ export default function StudentCourseLearningPage() {
 					)}
 				</Box>
 			</Box>
-			{!isTeacherOrAdmin && <ChatWidget />}
+			{!isTeacherOrAdmin && activeNav !== 'support_chat' && <ChatWidget />}
 		</Box>
 	);
 }
