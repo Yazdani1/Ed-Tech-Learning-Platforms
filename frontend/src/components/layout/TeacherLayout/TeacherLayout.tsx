@@ -18,11 +18,13 @@ import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ChatIcon from '@mui/icons-material/Chat';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Badge from '@mui/material/Badge';
 import { useAuth } from '../../../context/useAuth';
 import { useChat } from '../../../context/ChatContext';
+import { useNotifications } from '../../../context/NotificationContext';
 
 const DRAWER_OPEN = 220;
 const DRAWER_CLOSED = 64;
@@ -30,6 +32,7 @@ const DRAWER_CLOSED = 64;
 export default function TeacherLayout() {
 	const { user, logout } = useAuth();
 	const { totalUnread } = useChat();
+	const { unreadCount } = useNotifications();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const isLearningPage = location.pathname.includes('/learn');
@@ -185,6 +188,33 @@ export default function TeacherLayout() {
 								</Badge>
 							</ListItemIcon>
 							{open && <ListItemText primary='Support Chat' />}
+						</ListItemButton>
+					</Tooltip>
+					<Tooltip title={open ? '' : 'Notifications'} placement='right'>
+						<ListItemButton
+							onClick={() => navigate('/teacher/notifications')}
+							selected={location.pathname.startsWith('/teacher/notifications')}
+							sx={{
+								mx: 1,
+								borderRadius: 2,
+								mb: 0.5,
+								minHeight: 44,
+								justifyContent: open ? 'initial' : 'center',
+								px: open ? 2 : 1.5,
+							}}
+						>
+							<ListItemIcon
+								sx={{
+									minWidth: 0,
+									mr: open ? 2 : 0,
+									color: location.pathname.startsWith('/teacher/notifications') ? 'primary.main' : 'inherit',
+								}}
+							>
+								<Badge badgeContent={unreadCount} color='error' invisible={unreadCount === 0}>
+									<NotificationsIcon />
+								</Badge>
+							</ListItemIcon>
+							{open && <ListItemText primary='Notifications' />}
 						</ListItemButton>
 					</Tooltip>
 				</List>

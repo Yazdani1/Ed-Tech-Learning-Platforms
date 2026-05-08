@@ -9,6 +9,11 @@ import { ChatMessage } from '../models/ChatMessage.model';
 
 const STAFF_ROLES = ['Super Admin', 'Admin', 'Moderator', 'Teacher'];
 const onlineStudents = new Map<string, number>();
+let ioInstance: Server | null = null;
+
+export function getSocketIO(): Server | null {
+	return ioInstance;
+}
 
 interface SocketUser {
 	_id: Types.ObjectId;
@@ -26,6 +31,7 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 	const io = new Server(httpServer, {
 		cors: { origin: corsOrigin, credentials: true },
 	});
+	ioInstance = io;
 
 	// Authenticate socket via JWT cookie
 	io.use(async (socket, next) => {
@@ -49,6 +55,7 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 	io.on('connection', async (socket) => {
 		const user = socket.data.user as SocketUser;
 		const isStaff = STAFF_ROLES.includes(user.role);
+		await socket.join(`user:${user._id.toString()}`);
 
 		if (isStaff) {
 			await socket.join('staff');

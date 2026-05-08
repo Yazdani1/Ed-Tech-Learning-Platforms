@@ -68,6 +68,27 @@ export interface IChatPresenceEvent {
   isOnline: boolean;
 }
 
+export type NotificationPriority = 'Low' | 'Normal' | 'High' | 'Urgent';
+
+export interface INotificationRecipient {
+  user: string;
+  readAt?: string;
+}
+
+export interface INotification {
+  _id: string;
+  title: string;
+  message: string;
+  priority: NotificationPriority;
+  targetRoles: UserRole[];
+  sentBy: Pick<IUser, '_id' | 'name' | 'role' | 'avatar'>;
+  recipients: INotificationRecipient[];
+  isRead?: boolean;
+  readAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ITeacher {
   _id: string;
   name: string;
