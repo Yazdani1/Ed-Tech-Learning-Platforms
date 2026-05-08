@@ -33,6 +33,28 @@ export interface IUser {
   updatedAt?: string;
 }
 
+export interface IChatConversation {
+  _id: string;
+  student: Pick<IUser, '_id' | 'name' | 'avatar' | 'email'>;
+  unreadByStaff: number;
+  unreadByStudent: number;
+  lastMessage: string;
+  lastMessageAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IChatMessage {
+  _id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  senderRole: string;
+  senderAvatar: string;
+  content: string;
+  createdAt: string;
+}
+
 export interface ITeacher {
   _id: string;
   name: string;

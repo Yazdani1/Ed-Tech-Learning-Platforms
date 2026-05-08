@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import { Outlet } from 'react-router-dom';
 import StudentSidebar from './StudentSidebar';
+import ChatWidget from '../../chat/ChatWidget';
 
 export default function StudentLayout() {
   return (
@@ -9,6 +10,7 @@ export default function StudentLayout() {
       <Box component="main" sx={{ flex: 1, overflow: 'auto', p: 3 }}>
         <Outlet />
       </Box>
+      <ChatWidget />
     </Box>
   );
 }

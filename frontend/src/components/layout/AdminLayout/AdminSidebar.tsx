@@ -25,8 +25,11 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ChatIcon from '@mui/icons-material/Chat';
+import Badge from '@mui/material/Badge';
 import { useAuth } from '../../../context/useAuth';
 import { useTranslation } from 'react-i18next';
+import { useChat } from '../../../context/ChatContext';
 
 const DRAWER_OPEN = 240;
 const DRAWER_CLOSED = 64;
@@ -64,6 +67,12 @@ const navItems = [
 		roles: ['Super Admin', 'Admin', 'Moderator'],
 	},
 	{
+		label: 'Support Chat',
+		icon: <ChatIcon />,
+		path: '/admin/chat',
+		roles: ['Super Admin', 'Admin', 'Moderator', 'Teacher'],
+	},
+	{
 		label: 'nav.teachers',
 		icon: <PersonIcon />,
 		path: '/admin/teachers',
@@ -96,6 +105,7 @@ const superAdminItems = [
 export default function AdminSidebar() {
 	const { user, logout } = useAuth();
 	const { t } = useTranslation();
+	const { totalUnread } = useChat();
 	const navigate = useNavigate();
 	const location = useLocation();
 
@@ -189,7 +199,13 @@ export default function AdminSidebar() {
 											color: active ? 'primary.main' : 'inherit',
 										}}
 									>
-										{item.icon}
+										<Badge
+											badgeContent={item.path === '/admin/chat' ? totalUnread : 0}
+											color='error'
+											invisible={item.path !== '/admin/chat' || totalUnread === 0}
+										>
+											{item.icon}
+										</Badge>
 									</ListItemIcon>
 									{open && <ListItemText primary={t(item.label)} />}
 								</ListItemButton>

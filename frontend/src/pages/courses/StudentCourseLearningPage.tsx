@@ -77,6 +77,7 @@ import type {
 } from '../../types/index';
 import CourseQASection from '../../components/course/CourseQASection';
 import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar';
+import ChatWidget from '../../components/chat/ChatWidget';
 import { useAuth } from '../../context/useAuth';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
@@ -2350,9 +2351,11 @@ export default function StudentCourseLearningPage() {
 					)}
 				</Box>
 			</Box>
+			{!isTeacherOrAdmin && <ChatWidget />}
 		</Box>
 	);
 }
+
 
 // ── Stat card ─────────────────────────────────────────────────
 function StatItem({
