@@ -948,18 +948,25 @@ export default function PracticeQuizPage() {
                         key={bank._id}
                         expanded={isBankExpanded}
                         onChange={() => toggleBank(bank._id)}
-                        elevation={0}
+                        elevation={isSelected ? 2 : 0}
                         disableGutters
                         sx={{
-                          borderTop: '1px solid',
-                          borderColor: 'divider',
+                          mb: 1.25,
+                          mx: 1.5,
+                          borderRadius: '8px !important',
+                          border: '1px solid',
+                          borderColor: isSelected ? 'primary.light' : 'divider',
                           bgcolor: isSelected ? 'primary.50' : 'background.paper',
+                          overflow: 'hidden',
                           '&::before': { display: 'none' },
-                          ml: 1.5, // Indent from section
-                          borderLeft: '1px solid',
-                          borderLeftColor: 'divider',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            borderColor: isSelected ? 'primary.main' : 'primary.light',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                          },
                         }}
                       >
+
 
                         <AccordionSummary
                           expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />}
@@ -1069,6 +1076,8 @@ export default function PracticeQuizPage() {
                             />
                           </Stack>
                         </AccordionDetails>
+
+
                       </Accordion>
                     );
                   })}
@@ -1111,6 +1120,8 @@ function SubsectionProgressButton({
   selected: boolean;
   onClick: () => void;
 }) {
+
+
   const percent = total > 0 ? Math.round((progressValue / total) * 100) : 0;
   const selectedBg =
     color === 'error'
@@ -1170,6 +1181,8 @@ function SubsectionProgressButton({
     </Button>
   );
 }
+
+
 
 function PracticeCard({
   question,
