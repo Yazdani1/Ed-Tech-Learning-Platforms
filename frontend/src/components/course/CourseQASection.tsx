@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
 	Avatar,
 	Box,
@@ -27,6 +27,7 @@ import type { IQuestion, IAnswer } from '../../types/index';
 import RichTextEditor from './RichTextEditor';
 import ItemActionMenu from '../common/ItemActionMenu';
 import { formatDateTime } from '../../utils/dateTime';
+import AppPagination from '../common/AppPagination';
 import YouBadge from '../common/YouBadge';
 import { useConfirmModal } from '../../context/ConfirmModalContext';
 
@@ -78,6 +79,8 @@ export default function CourseQASection({
 	const [answerUpdating, setAnswerUpdating] = useState(false);
 	const [questionFilter, setQuestionFilter] = useState<QuestionFilter>('unresolved');
 	const [resolvingQuestionId, setResolvingQuestionId] = useState<string | null>(null);
+	const [currentPage, setCurrentPage] = useState(1);
+	const PAGE_SIZE = 8;
 
 	useEffect(() => {
 		setQaLoading(true);
@@ -101,6 +104,10 @@ export default function CourseQASection({
 			.catch(() => {})
 			.finally(() => setQaDetailLoading(false));
 	}, [initialQuestionId]);
+
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [questionFilter, questions.length]);
 
 	const isAdminOrMod = ['Admin', 'Super Admin', 'Moderator'].includes(userRole);
 	const canDelete = (ownerId: string) => userId === ownerId || isAdminOrMod;
@@ -1087,15 +1094,18 @@ export default function CourseQASection({
 					</Typography>
 				</Box>
 			) : (
-				<Paper
-					variant='outlined'
-					sx={{
-						borderRadius: 0.5,
-						boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
-						overflow: 'hidden',
-					}}
-				>
-					{filteredQuestions.map((q, index) => {
+				<Box>
+					<Paper
+						variant='outlined'
+						sx={{
+							borderRadius: 0.5,
+							boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
+							overflow: 'hidden',
+						}}
+					>
+					{filteredQuestions
+						.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+						.map((q, index) => {
 						const hasUpvoted = q.upvotes.includes(userId);
 						const needsStaffAnswer = questionNeedsStaffAnswer(q);
 						return (
@@ -1417,6 +1427,15 @@ export default function CourseQASection({
 						);
 					})}
 				</Paper>
+					<AppPagination
+						page={currentPage}
+						totalPages={Math.ceil(filteredQuestions.length / PAGE_SIZE)}
+						totalItems={filteredQuestions.length}
+						pageSize={PAGE_SIZE}
+						onChange={setCurrentPage}
+						align='center'
+					/>
+				</Box>
 			)}
 		</Box>
 	);

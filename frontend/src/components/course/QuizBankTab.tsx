@@ -12,8 +12,6 @@ import {
 	FormControlLabel,
 	IconButton,
 	LinearProgress,
-	Pagination,
-	PaginationItem,
 	Paper,
 	Stack,
 	Switch,
@@ -40,6 +38,7 @@ import type {
 	IQuizAttempt,
 	IQuizQuestion,
 } from '../../types/index';
+import AppPagination from '../common/AppPagination';
 import ItemActionMenu from '../common/ItemActionMenu';
 import { useConfirmModal } from '../../context/ConfirmModalContext';
 
@@ -117,6 +116,7 @@ export default function QuizBankTab({
 	const [expandedSections, setExpandedSections] = useState<string[]>([]);
 	const [expandedBanks, setExpandedBanks] = useState<string[]>([]);
 	const [courseStatsOpen, setCourseStatsOpen] = useState(true);
+	const [bankStatsOpen, setBankStatsOpen] = useState(true);
 
 	const [currentPage, setCurrentPage] = useState(0);
 	const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
@@ -362,11 +362,6 @@ export default function QuizBankTab({
 		if (currentPage < activeQuestions.length - 1) setCurrentPage((p) => p + 1);
 	};
 
-	const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) => {
-		setCurrentPage(page - 1);
-		setSelectedOptions([]);
-		setIsChecked(false);
-	};
 
 	const handleToggleOption = (idx: number) => {
 		if (isChecked) return;
@@ -375,8 +370,10 @@ export default function QuizBankTab({
 		);
 	};
 
-	const handleResetAttempt = async () => {
-		if (!selectedBankId) return;
+	const handleResetAttempt = async (bankId?: string) => {
+		const targetId = bankId ?? selectedBankId;
+		if (!targetId) return;
+		const targetBank = quizBanks.find((b) => b._id === targetId) ?? selectedBank;
 		const ok = await confirm({
 			title: 'Reset Practice',
 			message: 'Clear all your answers for this quiz bank?',
@@ -384,16 +381,18 @@ export default function QuizBankTab({
 			cancelText: 'Cancel',
 		});
 		if (!ok) return;
-		await quizBankService.resetAttempt(selectedBankId);
-		setAttempt(null);
+		await quizBankService.resetAttempt(targetId);
+		if (selectedBankId === targetId) setAttempt(null);
 		setCourseAnswers((prev) => {
 			const next = new Map(prev);
-			selectedBank?.questions.forEach((q) => next.delete(q._id));
+			targetBank?.questions.forEach((q) => next.delete(q._id));
 			return next;
 		});
-		setCurrentPage(0);
-		setSelectedOptions([]);
-		setIsChecked(false);
+		if (selectedBankId === targetId) {
+			setCurrentPage(0);
+			setSelectedOptions([]);
+			setIsChecked(false);
+		}
 		toast.success('Practice reset');
 	};
 
@@ -1058,6 +1057,19 @@ export default function QuizBankTab({
 																onClick={() => handleSelectBank(bank._id, 'correct')}
 															/>
 														</Stack>
+														{(bCorrect + bIncorrect) > 0 && (
+															<Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5, pt: 0.5, borderTop: '1px solid', borderColor: 'divider' }}>
+																<Tooltip title='Reset progress for this quiz bank' placement='top'>
+																	<IconButton
+																		size='small'
+																		onClick={(e) => { e.stopPropagation(); void handleResetAttempt(bank._id); }}
+																		sx={{ color: 'text.primary', '&:hover': { color: 'error.main', bgcolor: 'error.50' } }}
+																	>
+																		<RefreshIcon sx={{ fontSize: 15 }} />
+																	</IconButton>
+																</Tooltip>
+															</Box>
+														)}
 													</AccordionDetails>
 												</Accordion>
 											);
@@ -1373,14 +1385,29 @@ export default function QuizBankTab({
 					<Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 740, mx: 'auto' }}>
 						{/* Header */}
 						<Box sx={{ mb: 3 }}>
-							<Typography variant='h5' sx={{ fontWeight: 700, mb: 0.5 }}>
-								{selectedBank.title}
-							</Typography>
-							{selectedBank.description && (
-								<Typography variant='body2' color='text.secondary'>
-									{selectedBank.description}
-								</Typography>
-							)}
+							<Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+								<Box>
+									<Typography variant='h5' sx={{ fontWeight: 700, mb: 0.5 }}>
+										{selectedBank.title}
+									</Typography>
+									{selectedBank.description && (
+										<Typography variant='body2' color='text.secondary'>
+											{selectedBank.description}
+										</Typography>
+									)}
+								</Box>
+								{(correctCount + incorrectCount) > 0 && (
+									<Tooltip title='Reset all answers for this quiz bank' placement='left'>
+										<IconButton
+											size='small'
+											onClick={() => void handleResetAttempt()}
+											sx={{ flexShrink: 0, mt: 0.5, color: 'text.primary', '&:hover': { color: 'error.main', bgcolor: 'error.50' } }}
+										>
+											<RefreshIcon sx={{ fontSize: 18 }} />
+										</IconButton>
+									</Tooltip>
+								)}
+							</Box>
 							<Stack direction='row' spacing={1} sx={{ mt: 1 }}>
 								<Chip
 									size='small'
@@ -1410,52 +1437,83 @@ export default function QuizBankTab({
 
 						{/* Progress */}
 						{attemptLoading ? (
-							<Box sx={{ mb: 3 }}>
+							<Box sx={{ mb: 1.5 }}>
 								<CircularProgress size={20} />
 							</Box>
 						) : (
-							<Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 2, bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
-								<Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, mb: 2, flexWrap: 'wrap', justifyContent: 'space-between' }}>
-									<Box>
-										<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total</Typography>
-										<Typography variant='h6' sx={{ fontWeight: 800 }}>{totalQ}</Typography>
+							<Paper
+								variant='outlined'
+								sx={{
+									mb: 2,
+									borderRadius: 0.5,
+									bgcolor: 'background.paper',
+									boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+									overflow: 'hidden',
+								}}
+							>
+								<Box
+									onClick={() => setBankStatsOpen((p) => !p)}
+									sx={{
+										p: 1.5,
+										display: 'flex',
+										alignItems: 'center',
+										gap: 2,
+										cursor: 'pointer',
+										'&:hover': { bgcolor: 'action.hover' },
+										borderBottom: bankStatsOpen ? '1px solid' : 'none',
+										borderColor: 'divider',
+									}}
+								>
+									<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, flexWrap: 'wrap' }}>
+										{[
+											{ label: 'Total', value: totalQ, color: 'text.primary' },
+											{ label: 'Answered', value: correctCount + incorrectCount, color: 'primary.main' },
+											{ label: 'Correct', value: correctCount, color: 'success.main' },
+											{ label: 'Incorrect', value: incorrectCount, color: 'error.main' },
+											{ label: 'Not Answered Yet', value: totalQ - (correctCount + incorrectCount), color: 'warning.main' },
+										].map(({ label, value, color }, i, arr) => (
+											<Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+												<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+													{label}:
+												</Typography>
+												<Typography variant='caption' sx={{ fontWeight: 800, color }}>
+													{value}
+												</Typography>
+												{i < arr.length - 1 && (
+													<Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'action.disabled', ml: 0.5 }} />
+												)}
+											</Box>
+										))}
 									</Box>
-									<Box>
-										<Typography variant='caption' color='primary.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Answered</Typography>
-										<Typography variant='h6' sx={{ fontWeight: 800, color: 'primary.main' }}>{correctCount + incorrectCount}</Typography>
-									</Box>
-									<Box>
-										<Typography variant='caption' color='success.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Correct</Typography>
-										<Typography variant='h6' sx={{ fontWeight: 800, color: 'success.main' }}>{correctCount}</Typography>
-									</Box>
-									<Box>
-										<Typography variant='caption' color='error.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Incorrect</Typography>
-										<Typography variant='h6' sx={{ fontWeight: 800, color: 'error.main' }}>{incorrectCount}</Typography>
-									</Box>
-									<Box>
-										<Typography variant='caption' color='warning.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Not Answered Yet</Typography>
-										<Typography variant='h6' sx={{ fontWeight: 800, color: 'warning.main' }}>{totalQ - (correctCount + incorrectCount)}</Typography>
-									</Box>
-									<Box sx={{ ml: 'auto', alignSelf: 'flex-start' }}>
-										<Tooltip title='Reset answers'>
-											<IconButton size='small' onClick={() => void handleResetAttempt()} sx={{ bgcolor: 'action.hover', '&:hover': { bgcolor: 'action.selected' } }}>
-												<RefreshIcon fontSize='small' />
-											</IconButton>
-										</Tooltip>
-									</Box>
-								</Box>
-								<Box sx={{ height: 10, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
-									<Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
-									<Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
-								</Box>
-								<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-									<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+									<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 700, flexShrink: 0 }}>
 										{progressPct}% Accuracy
 									</Typography>
-									<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
-										{correctCount + incorrectCount} of {totalQ} questions completed
-									</Typography>
+									<ExpandMoreIcon
+										sx={{
+											fontSize: 18,
+											color: 'text.secondary',
+											transition: 'transform 0.2s',
+											transform: bankStatsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+										}}
+									/>
 								</Box>
+
+								<Collapse in={bankStatsOpen}>
+									<Box sx={{ p: 2 }}>
+										<Box sx={{ height: 10, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
+											<Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
+											<Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
+										</Box>
+										<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+											<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+												{progressPct}% Accuracy
+											</Typography>
+											<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+												{correctCount + incorrectCount} of {totalQ} questions completed
+											</Typography>
+										</Box>
+									</Box>
+								</Collapse>
 							</Paper>
 						)}
 
@@ -1473,6 +1531,40 @@ export default function QuizBankTab({
 							</Box>
 						) : (
 							<>
+								<Box sx={{ mb: 1.5 }}>
+									<Typography variant='h6' sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+										<Box
+											component='span'
+											sx={{
+												px: 1.25,
+												py: 0.25,
+												borderRadius: 0.5,
+												fontSize: '0.85rem',
+												fontWeight: 900,
+												color: 'white',
+												bgcolor:
+													selectedSubsection === 'all'
+														? 'common.black'
+														: selectedSubsection === 'incorrect'
+														? 'error.main'
+														: 'success.main',
+											}}
+										>
+											{selectedSubsection === 'all'
+												? 'All Questions'
+												: selectedSubsection === 'incorrect'
+												? 'Incorrect Questions'
+												: 'Correct Questions'}
+										</Box>
+										<Typography
+											component='span'
+											variant='h6'
+											sx={{ fontWeight: 800, color: 'text.secondary', ml: 0.5 }}
+										>
+											({activeQuestions.length})
+										</Typography>
+									</Typography>
+								</Box>
 								{currentQuestion && (
 									<QuestionPracticeCard
 										question={currentQuestion}
@@ -1490,51 +1582,40 @@ export default function QuizBankTab({
 								)}
 
 								{activeQuestions.length > 1 && (
-									<Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-										<Pagination
-											count={activeQuestions.length}
-											page={currentPage + 1}
-											onChange={handlePageChange}
-											size='small'
-											siblingCount={3}
-											renderItem={(item) => {
-												if (item.type !== 'page' || typeof item.page !== 'number')
-													return <PaginationItem {...item} />;
-												const qIndex = item.page - 1;
-												const q = activeQuestions[qIndex];
-												if (!q) return <PaginationItem {...item} />;
-												const ans = courseAnswers.get(q._id);
-												const isAnswered = ans && ans.selectedOptionIndices.length > 0;
-												let finalSx: any = { fontWeight: 800, transition: 'all 0.2s ease' };
-												if (isAnswered) {
-													const baseColor = ans.isCorrect ? '#22c55e' : '#ef4444';
-													const hoverColor = ans.isCorrect ? '#16a34a' : '#dc2626';
-													finalSx = {
-														...finalSx,
-														bgcolor: `${baseColor} !important`,
-														color: 'white !important',
-														'&:hover': { bgcolor: `${hoverColor} !important` },
-														'&.Mui-selected': {
-															bgcolor: `${baseColor} !important`,
-															border: '3px solid',
-															borderColor: 'primary.main',
-															boxShadow: '0 0 0 1px white inset',
-														},
-													};
-												} else if (item.selected) {
-													finalSx = {
-														...finalSx,
-														bgcolor: 'primary.main !important',
-														color: 'white !important',
+									<AppPagination
+										page={currentPage + 1}
+										totalPages={activeQuestions.length}
+										totalItems={activeQuestions.length}
+										pageSize={1}
+										onChange={(p) => {
+											setCurrentPage(p - 1);
+											setSelectedOptions([]);
+											setIsChecked(false);
+										}}
+										align='space-between'
+										getItemSx={(pageNo) => {
+											const qIndex = pageNo - 1;
+											const q = activeQuestions[qIndex];
+											if (!q) return {};
+											const ans = courseAnswers.get(q._id);
+											const isAnswered = ans && ans.selectedOptionIndices.length > 0;
+											if (isAnswered) {
+												const baseColor = ans.isCorrect ? '#22c55e' : '#ef4444';
+												const hoverColor = ans.isCorrect ? '#16a34a' : '#dc2626';
+												return {
+													bgcolor: `${baseColor} !important`,
+													color: 'white !important',
+													'&:hover': { bgcolor: `${hoverColor} !important` },
+													...(pageNo === currentPage + 1 && {
 														border: '3px solid',
 														borderColor: 'primary.main',
 														boxShadow: '0 0 0 1px white inset',
-													};
-												}
-												return <PaginationItem {...item} sx={finalSx} />;
-											}}
-										/>
-									</Box>
+													}),
+												};
+											}
+											return {};
+										}}
+									/>
 								)}
 							</>
 						)}
@@ -1945,7 +2026,7 @@ function QuestionPracticeCard({
 	const multipleCorrect = question.correctOptionIndices.length > 1;
 
 	return (
-		<Paper variant='outlined' sx={{ p: 3, borderRadius: 1 }}>
+		<Paper variant='outlined' sx={{ p: 2.5, borderRadius: 0.5 }}>
 			{/* Question number */}
 			<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
 				<Chip

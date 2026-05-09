@@ -24,6 +24,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import PlayCircleOutlinedIcon from '@mui/icons-material/PlayCircleOutlined';
 import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
+import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined';
 import CheckIcon from '@mui/icons-material/Check';
 import SchoolIcon from '@mui/icons-material/School';
 import ClassIcon from '@mui/icons-material/Class';
@@ -37,6 +38,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { courseService } from '../../services/course.service';
 import { studyCurriculumService } from '../../services/studyCurriculum.service';
 import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
+import { quizBankService } from '../../services/quizBank.service';
 import PublicNavbar from '../../components/layout/PublicNavbar';
 import AppModal from '../../components/common/AppModal';
 import {
@@ -55,6 +57,7 @@ import type {
 	ILecture,
 	IStudyCurriculum,
 	ISubscriptionPlanConfig,
+	IPublicQuizSection,
 } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
@@ -85,7 +88,8 @@ export default function CourseDetailPage() {
 	const [enrolling, setEnrolling] = useState(false);
 	const [subPlans, setSubPlans] = useState<ISubscriptionPlanConfig[]>([]);
 	const [studyCurricula, setStudyCurricula] = useState<IStudyCurriculum[]>([]);
-	const [contentView, setContentView] = useState<'recorded' | 'curriculum'>(
+	const [quizSections, setQuizSections] = useState<IPublicQuizSection[]>([]);
+	const [contentView, setContentView] = useState<'recorded' | 'curriculum' | 'quizzes'>(
 		'recorded',
 	);
 	const [selectedOption, setSelectedOption] = useState<
@@ -166,6 +170,14 @@ export default function CourseDetailPage() {
 	}, [id]);
 
 	useEffect(() => {
+		if (!id) return;
+		quizBankService
+			.getPublicCourseTree(id)
+			.then((r) => setQuizSections(r.data?.sections ?? []))
+			.catch(() => {});
+	}, [id]);
+
+	useEffect(() => {
 		subscriptionPlanConfigService
 			.getAll()
 			.then((r) => setSubPlans(r.data ?? []));
@@ -215,11 +227,18 @@ export default function CourseDetailPage() {
 		course.sections?.reduce((acc, s) => acc + s.lectures.length, 0) ?? 0;
 	const hasRecordedContent = (course.sections?.length ?? 0) > 0;
 	const hasStudyCurriculum = studyCurricula.length > 0;
-	const showContentTabs = hasRecordedContent && hasStudyCurriculum;
-	const activeContentView =
-		hasRecordedContent && (!hasStudyCurriculum || contentView === 'recorded')
-			? 'recorded'
-			: 'curriculum';
+	const hasQuizzes = quizSections.length > 0;
+	const showContentTabs = (hasRecordedContent ? 1 : 0) + (hasStudyCurriculum ? 1 : 0) + (hasQuizzes ? 1 : 0) > 1;
+
+	const activeContentView = (() => {
+		if (contentView === 'recorded' && hasRecordedContent) return 'recorded';
+		if (contentView === 'curriculum' && hasStudyCurriculum) return 'curriculum';
+		if (contentView === 'quizzes' && hasQuizzes) return 'quizzes';
+		if (hasRecordedContent) return 'recorded';
+		if (hasStudyCurriculum) return 'curriculum';
+		if (hasQuizzes) return 'quizzes';
+		return 'recorded';
+	})();
 	const totalCurriculumClasses = studyCurricula.reduce(
 		(total, curriculum) => total + curriculum.lectures.length,
 		0,
@@ -291,7 +310,7 @@ export default function CourseDetailPage() {
 								{course.category?.name && (
 									<>
 										<Typography variant='caption' sx={{ color: 'grey.500' }}>
-											â€º
+											»
 										</Typography>
 										<Typography variant='caption' sx={{ color: '#a78bfa' }}>
 											{course.category.name}
@@ -301,7 +320,7 @@ export default function CourseDetailPage() {
 								{course.courseType?.name && (
 									<>
 										<Typography variant='caption' sx={{ color: 'grey.500' }}>
-											â€º
+											»
 										</Typography>
 										<Typography variant='caption' sx={{ color: '#a78bfa' }}>
 											{course.courseType.name}
@@ -752,6 +771,18 @@ export default function CourseDetailPage() {
 										>
 											Live Class
 										</Button>
+										<Button
+											size='small'
+											variant={
+												activeContentView === 'quizzes'
+													? 'contained'
+													: 'outlined'
+											}
+											startIcon={<QuizOutlinedIcon fontSize='small' />}
+											onClick={() => setContentView('quizzes')}
+										>
+											Quizzes
+										</Button>
 									</Box>
 								)}
 
@@ -762,10 +793,12 @@ export default function CourseDetailPage() {
 								>
 									{activeContentView === 'recorded'
 										? `${course.sections.length} sections - ${totalLectures} lectures`
-										: `${studyCurricula.length} weeks - ${totalCurriculumClasses} classes`}
+										: activeContentView === 'curriculum'
+											? `${studyCurricula.length} weeks - ${totalCurriculumClasses} classes`
+											: `${quizSections.length} quiz sections - ${quizSections.reduce((acc, s) => acc + s.banks.length, 0)} quiz banks`}
 								</Typography>
 
-								{activeContentView === 'recorded' ? (
+								{activeContentView === 'recorded' && (
 									<Box
 										sx={{
 											border: '1px solid',
@@ -814,7 +847,7 @@ export default function CourseDetailPage() {
 														sx={{ mr: 1, alignSelf: 'center' }}
 													>
 														{section.lectures.length} lecture
-														{section.lectures.length !== 1 ? 's' : ''} â€¢{' '}
+														{section.lectures.length !== 1 ? 's' : ''} •{' '}
 														{formatSectionDuration(getSectionDuration(section))}
 													</Typography>
 												</AccordionSummary>
@@ -895,7 +928,9 @@ export default function CourseDetailPage() {
 											</Accordion>
 										))}
 									</Box>
-								) : (
+								)}
+
+								{activeContentView === 'curriculum' && (
 									<Box
 										sx={{
 											display: 'grid',
@@ -1148,6 +1183,100 @@ export default function CourseDetailPage() {
 										))}
 									</Box>
 								)}
+
+								{activeContentView === 'quizzes' && (
+									<Box
+										sx={{
+											border: '1px solid',
+											borderColor: 'divider',
+											borderRadius: 2,
+											overflow: 'hidden',
+										}}
+									>
+										{quizSections.map((section, si) => (
+											<Accordion
+												key={section._id}
+												elevation={0}
+												disableGutters
+												defaultExpanded={si === 0}
+												sx={{
+													borderBottom:
+														si < quizSections.length - 1
+															? '1px solid'
+															: 'none',
+													borderColor: 'divider',
+													'&::before': { display: 'none' },
+												}}
+											>
+												<AccordionSummary
+													expandIcon={<ExpandMoreIcon />}
+													sx={{
+														bgcolor: 'grey.50',
+														minHeight: 48,
+														'&.Mui-expanded': { minHeight: 48 },
+													}}
+												>
+													<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+														<Typography sx={{ fontWeight: 800, fontSize: '0.95rem' }}>
+															{section.title}
+														</Typography>
+														{section.isFreePreview && (
+															<Chip 
+																label="Free Preview" 
+																size="small" 
+																sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, bgcolor: 'success.main', color: 'white' }} 
+															/>
+														)}
+													</Box>
+												</AccordionSummary>
+												<AccordionDetails sx={{ p: 0 }}>
+													<List disablePadding>
+														{section.banks.map((bank, bi) => (
+															<ListItemButton
+																key={bank._id}
+																component={RouterLink}
+																to={`/practice-quiz?courseId=${id}&bankId=${bank._id}`}
+																sx={{
+																	px: 3,
+																	py: 1.5,
+																	borderBottom:
+																		bi < section.banks.length - 1
+																			? '1px solid'
+																			: 'none',
+																	borderColor: 'divider',
+																	display: 'flex',
+																	justifyContent: 'space-between',
+																}}
+															>
+																<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+																	<QuizOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+																	<Typography variant='body2' sx={{ fontWeight: 600 }}>
+																		{bank.title}
+																	</Typography>
+																</Box>
+																{(section.isFreePreview || bank.isFreePreview) && (
+																	<Chip 
+																		label="Free Preview" 
+																		size="small" 
+																		variant="outlined"
+																		sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, borderColor: 'success.main', color: 'success.main' }} 
+															/>
+																)}
+															</ListItemButton>
+														))}
+													</List>
+												</AccordionDetails>
+											</Accordion>
+										))}
+										{quizSections.length === 0 && (
+											<Box sx={{ p: 4, textAlign: 'center' }}>
+												<Typography variant='body2' color='text.secondary'>
+													No quizzes available for this course yet.
+												</Typography>
+											</Box>
+										)}
+									</Box>
+								)}
 							</Box>
 						)}
 
@@ -1251,7 +1380,7 @@ export default function CourseDetailPage() {
 															sx={{ mb: 1.5, lineHeight: 1.5 }}
 														>
 															{teacher.bio.length > 80
-																? `${teacher.bio.slice(0, 80)}â€¦`
+																? `${teacher.bio.slice(0, 80)}…`
 																: teacher.bio}
 														</Typography>
 													)}

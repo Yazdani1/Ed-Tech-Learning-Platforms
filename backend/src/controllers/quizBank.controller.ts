@@ -299,7 +299,9 @@ export const resetAttempt = asyncHandler(async (req: Request, res: Response) => 
 // ── Public (no auth) ────────────────────────────────────────────────────────
 
 export const getPublicCoursesWithQuizzes = asyncHandler(
-  async (_req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
+    const { search, categories, courseTypes, pricing } = req.query as Record<string, string>;
+
     const freeSectionCourses = await QuizSection.find(
       { isFreePreview: true },
       'course',
@@ -316,10 +318,44 @@ export const getPublicCoursesWithQuizzes = asyncHandler(
       ]),
     ];
 
+    const filter: Record<string, any> = {
+      _id: { $in: courseIds },
+    };
+
+    if (search?.trim()) {
+      filter.title = { $regex: search.trim(), $options: 'i' };
+    }
+
+    if (categories) {
+      const ids = categories
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => Types.ObjectId.isValid(s))
+        .map((s) => new Types.ObjectId(s));
+      if (ids.length > 0) filter.category = { $in: ids };
+    }
+
+    if (courseTypes) {
+      const ids = courseTypes
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => Types.ObjectId.isValid(s))
+        .map((s) => new Types.ObjectId(s));
+      if (ids.length > 0) filter.courseType = { $in: ids };
+    }
+
+    if (pricing) {
+      const values = pricing
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => ['Free', 'Paid'].includes(s));
+      if (values.length > 0) filter.pricing = { $in: values };
+    }
+
     const courses = await Course.find(
-      { _id: { $in: courseIds } },
+      filter,
       'title subtitle coverImage pricing price listPrice discountPrice discountPercent includedInSubscription',
-    );
+    ).sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, data: courses });
   },

@@ -82,6 +82,7 @@ import StudentChatPage from '../chat/StudentChatPage';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined';
 import QuizBankTab from '../../components/course/QuizBankTab';
+import AppPagination from '../../components/common/AppPagination';
 import { useAuth } from '../../context/useAuth';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
@@ -169,6 +170,8 @@ export default function StudentCourseLearningPage() {
 	const [courseStudents, setCourseStudents] = useState<ICourseStudentEnrollment[]>([]);
 	const [studentsLoading, setStudentsLoading] = useState(false);
 	const [studentsExporting, setStudentsExporting] = useState(false);
+	const [studentsPage, setStudentsPage] = useState(1);
+	const STUDENTS_PAGE_SIZE = 15;
 	const [qaCount, setQaCount] = useState<number>(0);
 
 	const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
@@ -2139,50 +2142,82 @@ export default function StudentCourseLearningPage() {
 										</Typography>
 									</Box>
 								) : (
-									<TableContainer>
-										<Table size='small'>
-											<TableHead>
-												<TableRow>
-													<TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-													{user?.role !== 'Teacher' && (
-														<TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-													)}
-													<TableCell sx={{ fontWeight: 700 }}>Enroll Date</TableCell>
-												</TableRow>
-											</TableHead>
-											<TableBody>
-												{courseStudents.map((enrollment) => (
-													<TableRow key={enrollment._id} hover>
-														<TableCell>
-															<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-																<Avatar
-																	src={enrollment.student.avatar}
-																	sx={{ width: 32, height: 32, fontSize: 13 }}
-																>
-																	{enrollment.student.name?.[0]}
-																</Avatar>
-																<Typography variant='body2' sx={{ fontWeight: 600 }}>
-																	{enrollment.student.name}
-																</Typography>
-															</Box>
-														</TableCell>
+									<Box>
+										<TableContainer>
+											<Table size='small'>
+												<TableHead>
+													<TableRow>
+														<TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
 														{user?.role !== 'Teacher' && (
-															<TableCell>
-																<Typography variant='body2' color='text.secondary'>
-																	{enrollment.student.email ?? '-'}
-																</Typography>
-															</TableCell>
+															<TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
 														)}
-														<TableCell>
-															<Typography variant='body2' color='text.secondary'>
-																{formatDateTime(enrollment.createdAt)}
-															</Typography>
-														</TableCell>
+														<TableCell sx={{ fontWeight: 700 }}>Enroll Date</TableCell>
 													</TableRow>
-												))}
-											</TableBody>
-										</Table>
-									</TableContainer>
+												</TableHead>
+												<TableBody>
+													{courseStudents
+														.slice(
+															(studentsPage - 1) * STUDENTS_PAGE_SIZE,
+															studentsPage * STUDENTS_PAGE_SIZE
+														)
+														.map((enrollment) => (
+															<TableRow key={enrollment._id} hover>
+																<TableCell>
+																	<Box
+																		sx={{
+																			display: 'flex',
+																			alignItems: 'center',
+																			gap: 1.5,
+																		}}
+																	>
+																		<Avatar
+																			src={enrollment.student.avatar}
+																			sx={{ width: 32, height: 32, fontSize: 13 }}
+																		>
+																			{enrollment.student.name?.[0]}
+																		</Avatar>
+																		<Typography
+																			variant='body2'
+																			sx={{ fontWeight: 600 }}
+																		>
+																			{enrollment.student.name}
+																		</Typography>
+																	</Box>
+																</TableCell>
+																{user?.role !== 'Teacher' && (
+																	<TableCell>
+																		<Typography
+																			variant='body2'
+																			color='text.secondary'
+																		>
+																			{enrollment.student.email ?? '-'}
+																		</Typography>
+																	</TableCell>
+																)}
+																<TableCell>
+																	<Typography
+																		variant='body2'
+																		color='text.secondary'
+																	>
+																		{formatDateTime(enrollment.createdAt)}
+																	</Typography>
+																</TableCell>
+															</TableRow>
+														))}
+												</TableBody>
+											</Table>
+										</TableContainer>
+										<AppPagination
+											page={studentsPage}
+											totalPages={Math.ceil(
+												courseStudents.length / STUDENTS_PAGE_SIZE
+											)}
+											totalItems={courseStudents.length}
+											pageSize={STUDENTS_PAGE_SIZE}
+											onChange={setStudentsPage}
+											align='center'
+										/>
+									</Box>
 								)}
 							</Paper>
 						</Box>

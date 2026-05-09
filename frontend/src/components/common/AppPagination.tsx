@@ -10,6 +10,7 @@ interface AppPaginationProps {
 	boundaryCount?: number;
 	middleCount?: number;
 	align?: 'space-between' | 'center';
+	getItemSx?: (page: number) => any;
 }
 
 export default function AppPagination({
@@ -22,6 +23,7 @@ export default function AppPagination({
 	boundaryCount = 1,
 	middleCount = 3,
 	align = 'space-between',
+	getItemSx,
 }: AppPaginationProps) {
 	if (totalPages <= 1) return null;
 
@@ -117,7 +119,7 @@ export default function AppPagination({
 				justifyContent: isCentered ? 'center' : 'space-between',
 				gap: isCentered ? 1.5 : 2,
 				flexWrap: 'wrap',
-				mt: 4,
+				mt: 2,
 				px: isCentered ? 1.5 : 0,
 				py: isCentered ? 1.5 : 0,
 				borderTop: isCentered ? '1px solid' : 'none',
@@ -178,7 +180,7 @@ export default function AppPagination({
 							selected={item === page}
 							disabled={disabled}
 							onClick={() => onChange(item)}
-							sx={itemSx}
+							sx={{ ...itemSx, ...(getItemSx ? getItemSx(item) : {}) }}
 						/>
 					) : (
 						<PaginationItem
