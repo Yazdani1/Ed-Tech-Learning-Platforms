@@ -709,68 +709,51 @@ export default function PracticeQuizPage() {
               </Box>
 
               {/* Progress bar */}
-              {(isLoggedIn ? !attemptLoading : correctCount + incorrectCount > 0) && (
-                <Paper variant='outlined' sx={{ p: 2, mb: 3, borderRadius: 1 }}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      gap: 2.5,
-                      mb: 1.5,
-                      flexWrap: 'wrap',
-                      alignItems: 'center',
-                    }}
-                  >
-                    {isLoggedIn && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                        <Box
-                          sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'text.disabled' }}
-                        />
-                        <Typography variant='body2' color='text.secondary'>
-                          Total: {totalQ}
-                        </Typography>
-                      </Box>
-                    )}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <Box
-                        sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'success.main' }}
-                      />
-                      <Typography variant='body2' color='success.main' sx={{ fontWeight: 700 }}>
-                        Correct: {correctCount}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <Box
-                        sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'error.main' }}
-                      />
-                      <Typography variant='body2' color='error.main' sx={{ fontWeight: 700 }}>
-                        Incorrect: {incorrectCount}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ ml: 'auto' }}>
-                      <Tooltip title='Reset answers'>
-                        <IconButton
-                          size='small'
-                          onClick={() => void handleResetAttempt()}
-                          sx={{ opacity: 0.5 }}
-                        >
-                          <RefreshIcon fontSize='small' />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
+              {selectedBank && (isLoggedIn ? !attemptLoading : correctCount + incorrectCount > 0) && (
+              <Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 2, bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
+                <Box sx={{ display: 'flex', gap: { xs: 2, md: 4 }, mb: 2, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total</Typography>
+                    <Typography variant='h6' sx={{ fontWeight: 800 }}>{totalQ}</Typography>
                   </Box>
-                  <Box sx={{ height: 8, borderRadius: 4, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
-                    <Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.3s ease' }} />
-                    <Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.3s ease' }} />
+                  <Box>
+                    <Typography variant='caption' color='primary.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Answered</Typography>
+                    <Typography variant='h6' sx={{ fontWeight: 800, color: 'primary.main' }}>{correctCount + incorrectCount}</Typography>
                   </Box>
-                  <Typography
-                    variant='caption'
-                    sx={{ mt: 0.5, display: 'block', color: isLoggedIn ? 'text.secondary' : 'warning.dark' }}
-                  >
-                    {isLoggedIn
-                      ? `${progressPct}% correct (${correctCount}/${totalQ})`
-                      : 'Sign in to save your progress across sessions.'}
+                  <Box>
+                    <Typography variant='caption' color='success.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Correct</Typography>
+                    <Typography variant='h6' sx={{ fontWeight: 800, color: 'success.main' }}>{correctCount}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant='caption' color='error.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Incorrect</Typography>
+                    <Typography variant='h6' sx={{ fontWeight: 800, color: 'error.main' }}>{incorrectCount}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant='caption' color='warning.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Remaining</Typography>
+                    <Typography variant='h6' sx={{ fontWeight: 800, color: 'warning.main' }}>{totalQ - (correctCount + incorrectCount)}</Typography>
+                  </Box>
+                  <Box sx={{ ml: 'auto', alignSelf: 'flex-start' }}>
+                    <Tooltip title='Reset answers'>
+                      <IconButton size='small' onClick={() => void handleResetAttempt()} sx={{ bgcolor: 'action.hover', '&:hover': { bgcolor: 'action.selected' } }}>
+                        <RefreshIcon fontSize='small' />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Box>
+                
+                <Box sx={{ height: 10, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
+                  <Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
+                  <Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                  <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+                    {isLoggedIn ? `${progressPct}% Accuracy` : 'Accuracy Tracking'}
                   </Typography>
-                </Paper>
+                  <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+                    {correctCount + incorrectCount} of {totalQ} questions completed
+                  </Typography>
+                </Box>
+              </Paper>
               )}
               {isLoggedIn && attemptLoading && (
                 <Box sx={{ mb: 3 }}>
@@ -860,7 +843,7 @@ export default function PracticeQuizPage() {
                             };
                           }
 
-                          return <PaginationItem {...item} sx={itemSx} />;
+                          return <PaginationItem {...item} sx={finalSx} />;
                         }}
                       />
                     </Box>
