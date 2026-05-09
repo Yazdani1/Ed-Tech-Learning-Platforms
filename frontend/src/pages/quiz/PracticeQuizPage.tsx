@@ -38,6 +38,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import toast from 'react-hot-toast';
+import AppPagination from '../../components/common/AppPagination';
 import { quizBankService } from '../../services/quizBank.service';
 import type {
   IPublicQuizSection,
@@ -1195,63 +1196,40 @@ export default function PracticeQuizPage() {
                     />
                   )}
 
-                  {activeQuestions.length > 1 && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                      <Pagination
-                        count={activeQuestions.length}
+                      <AppPagination
                         page={currentPage + 1}
-                        onChange={handlePageChange}
-                        size='small'
-                        siblingCount={3}
-                        renderItem={(item) => {
-                          if (item.type !== 'page' || typeof item.page !== 'number') return <PaginationItem {...item} />;
-                          const qIndex = item.page - 1;
+                        totalPages={activeQuestions.length}
+                        totalItems={activeQuestions.length}
+                        pageSize={1}
+                        onChange={(p) => setCurrentPage(p - 1)}
+                        align='center'
+                        getItemSx={(pageNo) => {
+                          const qIndex = pageNo - 1;
                           const q = activeQuestions[qIndex];
-                          if (!q) return <PaginationItem {...item} />;
+                          if (!q) return {};
                           
                           const ans = courseAnswers.get(q._id);
                           const isAnswered = ans && ans.selectedOptionIndices.length > 0;
                           
-                          let finalSx: any = { 
-                            fontWeight: 800,
-                            transition: 'all 0.2s ease',
-                          };
-
                           if (isAnswered) {
                             const baseColor = ans.isCorrect ? '#22c55e' : '#ef4444';
                             const hoverColor = ans.isCorrect ? '#16a34a' : '#dc2626';
-                            finalSx = {
-                              ...finalSx,
+                            return {
                               bgcolor: `${baseColor} !important`,
                               color: 'white !important',
                               '&:hover': { bgcolor: `${hoverColor} !important` },
-                              '&.Mui-selected': { 
-                                bgcolor: `${baseColor} !important`,
+                              ...(pageNo === currentPage + 1 && {
                                 border: '3px solid',
                                 borderColor: 'primary.main',
                                 boxShadow: '0 0 0 1px white inset',
-                              }
-                            };
-                          } else if (item.selected) {
-                            finalSx = {
-                              ...finalSx,
-                              bgcolor: 'primary.main !important',
-                              color: 'white !important',
-                              border: '3px solid',
-                              borderColor: 'primary.main',
-                              boxShadow: '0 0 0 1px white inset',
-                              ...(!ans?.selectedOptionIndices.length && { 
-                                bgcolor: 'primary.main !important', 
-                                color: 'white !important' 
                               })
                             };
                           }
-
-                          return <PaginationItem {...item} sx={finalSx} />;
+                          return {};
                         }}
                       />
                     </Box>
-                  )}
                 </>
               )}
             </Box>
