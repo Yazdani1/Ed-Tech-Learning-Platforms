@@ -118,6 +118,7 @@ export default function QuizBankTab({
 	const [expandedSections, setExpandedSections] = useState<string[]>([]);
 	const [expandedBanks, setExpandedBanks] = useState<string[]>([]);
 	const [courseStatsOpen, setCourseStatsOpen] = useState(true);
+	const [bankStatsOpen, setBankStatsOpen] = useState(true);
 
 	const [currentPage, setCurrentPage] = useState(0);
 	const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
@@ -1411,52 +1412,83 @@ export default function QuizBankTab({
 
 						{/* Progress */}
 						{attemptLoading ? (
-							<Box sx={{ mb: 3 }}>
+							<Box sx={{ mb: 1.5 }}>
 								<CircularProgress size={20} />
 							</Box>
 						) : (
-							<Paper variant='outlined' sx={{ p: 2, mb: 2, borderRadius: 0.5, bgcolor: 'background.paper', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-								<Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, mb: 2, flexWrap: 'wrap', justifyContent: 'space-between' }}>
-									<Box>
-										<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total</Typography>
-										<Typography variant='h6' sx={{ fontWeight: 800 }}>{totalQ}</Typography>
+							<Paper
+								variant='outlined'
+								sx={{
+									mb: 2,
+									borderRadius: 0.5,
+									bgcolor: 'background.paper',
+									boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+									overflow: 'hidden',
+								}}
+							>
+								<Box
+									onClick={() => setBankStatsOpen((p) => !p)}
+									sx={{
+										p: 1.5,
+										display: 'flex',
+										alignItems: 'center',
+										gap: 2,
+										cursor: 'pointer',
+										'&:hover': { bgcolor: 'action.hover' },
+										borderBottom: bankStatsOpen ? '1px solid' : 'none',
+										borderColor: 'divider',
+									}}
+								>
+									<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, flexWrap: 'wrap' }}>
+										{[
+											{ label: 'Total', value: totalQ, color: 'text.primary' },
+											{ label: 'Answered', value: correctCount + incorrectCount, color: 'primary.main' },
+											{ label: 'Correct', value: correctCount, color: 'success.main' },
+											{ label: 'Incorrect', value: incorrectCount, color: 'error.main' },
+											{ label: 'Not Answered Yet', value: totalQ - (correctCount + incorrectCount), color: 'warning.main' },
+										].map(({ label, value, color }, i, arr) => (
+											<Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+												<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+													{label}:
+												</Typography>
+												<Typography variant='caption' sx={{ fontWeight: 800, color }}>
+													{value}
+												</Typography>
+												{i < arr.length - 1 && (
+													<Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'action.disabled', ml: 0.5 }} />
+												)}
+											</Box>
+										))}
 									</Box>
-									<Box>
-										<Typography variant='caption' color='primary.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Answered</Typography>
-										<Typography variant='h6' sx={{ fontWeight: 800, color: 'primary.main' }}>{correctCount + incorrectCount}</Typography>
-									</Box>
-									<Box>
-										<Typography variant='caption' color='success.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Correct</Typography>
-										<Typography variant='h6' sx={{ fontWeight: 800, color: 'success.main' }}>{correctCount}</Typography>
-									</Box>
-									<Box>
-										<Typography variant='caption' color='error.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Incorrect</Typography>
-										<Typography variant='h6' sx={{ fontWeight: 800, color: 'error.main' }}>{incorrectCount}</Typography>
-									</Box>
-									<Box>
-										<Typography variant='caption' color='warning.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Not Answered Yet</Typography>
-										<Typography variant='h6' sx={{ fontWeight: 800, color: 'warning.main' }}>{totalQ - (correctCount + incorrectCount)}</Typography>
-									</Box>
-									<Box sx={{ ml: 'auto', alignSelf: 'flex-start' }}>
-										<Tooltip title='Reset answers'>
-											<IconButton size='small' onClick={() => void handleResetAttempt()} sx={{ bgcolor: 'action.hover', '&:hover': { bgcolor: 'action.selected' } }}>
-												<RefreshIcon fontSize='small' />
-											</IconButton>
-										</Tooltip>
-									</Box>
-								</Box>
-								<Box sx={{ height: 10, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
-									<Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
-									<Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
-								</Box>
-								<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-									<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+									<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 700, flexShrink: 0 }}>
 										{progressPct}% Accuracy
 									</Typography>
-									<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
-										{correctCount + incorrectCount} of {totalQ} questions completed
-									</Typography>
+									<ExpandMoreIcon
+										sx={{
+											fontSize: 18,
+											color: 'text.secondary',
+											transition: 'transform 0.2s',
+											transform: bankStatsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+										}}
+									/>
 								</Box>
+
+								<Collapse in={bankStatsOpen}>
+									<Box sx={{ p: 2 }}>
+										<Box sx={{ height: 10, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
+											<Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
+											<Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
+										</Box>
+										<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+											<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+												{progressPct}% Accuracy
+											</Typography>
+											<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+												{correctCount + incorrectCount} of {totalQ} questions completed
+											</Typography>
+										</Box>
+									</Box>
+								</Collapse>
 							</Paper>
 						)}
 
