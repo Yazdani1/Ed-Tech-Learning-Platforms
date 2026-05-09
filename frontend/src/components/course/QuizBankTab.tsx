@@ -211,14 +211,18 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
     const activeQs = getFilteredQuestions(bank, selectedSubsection);
     const q = activeQs[currentPage];
     if (!q) return;
-    const existing = courseAnswers.get(q._id);
-    if (existing && existing.selectedOptionIndices.length > 0) {
-      setSelectedOptions(existing.selectedOptionIndices);
-      setIsChecked(true);
-    } else {
-      setSelectedOptions([]);
-      setIsChecked(false);
+
+    if (selectedSubsection === 'all') {
+      const existing = courseAnswers.get(q._id);
+      if (existing && existing.selectedOptionIndices.length > 0) {
+        setSelectedOptions(existing.selectedOptionIndices);
+        setIsChecked(true);
+        return;
+      }
     }
+
+    setSelectedOptions([]);
+    setIsChecked(false);
   }, [currentPage, selectedBankId, selectedSubsection]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedBank = quizBanks.find((b) => b._id === selectedBankId) ?? null;

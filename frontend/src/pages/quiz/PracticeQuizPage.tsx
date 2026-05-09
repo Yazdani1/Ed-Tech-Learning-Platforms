@@ -220,7 +220,7 @@ export default function PracticeQuizPage() {
       setSelectedOptions([]);
       setIsChecked(false);
     }
-  }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentPage, selectedBankId, selectedSubsection, isLoggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   const allBanks = sections.flatMap((s) => s.banks);
