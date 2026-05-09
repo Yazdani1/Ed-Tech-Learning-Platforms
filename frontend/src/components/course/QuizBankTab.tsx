@@ -458,7 +458,10 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                   <Typography variant='body2' color='error.main' sx={{ fontWeight: 700 }}>Incorrect: {incorrectCount}</Typography>
                   <Tooltip title='Reset all answers'><IconButton size='small' onClick={() => void handleResetAttempt()} sx={{ ml: 'auto', opacity: 0.5 }}><RefreshIcon fontSize='small' /></IconButton></Tooltip>
                 </Box>
-                <LinearProgress variant='determinate' value={progressPct} color='success' sx={{ height: 8, borderRadius: 4 }} />
+                <Box sx={{ height: 8, borderRadius: 4, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
+                  <Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.3s ease' }} />
+                  <Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.3s ease' }} />
+                </Box>
                 <Typography variant='caption' color='text.secondary' sx={{ mt: 0.5, display: 'block' }}>{progressPct}% correct ({correctCount}/{totalQ})</Typography>
               </Paper>
             )}

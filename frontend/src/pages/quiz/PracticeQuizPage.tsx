@@ -757,12 +757,10 @@ export default function PracticeQuizPage() {
                       </Tooltip>
                     </Box>
                   </Box>
-                  <LinearProgress
-                    variant='determinate'
-                    value={progressPct}
-                    color='success'
-                    sx={{ height: 8, borderRadius: 4 }}
-                  />
+                  <Box sx={{ height: 8, borderRadius: 4, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
+                    <Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.3s ease' }} />
+                    <Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.3s ease' }} />
+                  </Box>
                   <Typography
                     variant='caption'
                     sx={{ mt: 0.5, display: 'block', color: isLoggedIn ? 'text.secondary' : 'warning.dark' }}
