@@ -97,6 +97,9 @@ export default function PracticeQuizPage() {
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [isChecked, setIsChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [expandedBanks, setExpandedBanks] = useState<string[]>([]);
+
 
   // Unified effective answers
   const effectiveAnswers: Map<string, LocalAnswer> = isLoggedIn
@@ -133,13 +136,26 @@ export default function PracticeQuizPage() {
     quizBankService
       .getPublicCourseTree(selectedCourseId)
       .then((r) => {
-        setSections(r.data?.sections ?? []);
+        const fetchedSections = r.data?.sections ?? [];
+        setSections(fetchedSections);
         setLockedBankCount(r.data?.lockedBankCount ?? 0);
         setLockedQuestionCount(r.data?.lockedQuestionCount ?? 0);
+
+        // Expand first section and its first bank by default
+        if (fetchedSections.length > 0) {
+          setExpandedSections([fetchedSections[0]._id]);
+          if (fetchedSections[0].banks.length > 0) {
+            setExpandedBanks([fetchedSections[0].banks[0]._id]);
+          }
+        } else {
+          setExpandedSections([]);
+          setExpandedBanks([]);
+        }
       })
       .catch(() => {})
       .finally(() => setTreeLoading(false));
   }, [selectedCourseId]);
+
 
   // Load API attempt when bank selected (logged-in only)
   useEffect(() => {
@@ -302,7 +318,25 @@ export default function PracticeQuizPage() {
   const handleSelectBank = (bankId: string, sub: Subsection) => {
     setSelectedBankId(bankId);
     setSelectedSubsection(sub);
+    // Ensure the bank is expanded when selected
+    if (!expandedBanks.includes(bankId)) {
+      setExpandedBanks((prev) => [...prev, bankId]);
+    }
   };
+
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) =>
+      prev.includes(sectionId) ? prev.filter((id) => id !== sectionId) : [...prev, sectionId],
+    );
+  };
+
+  const toggleBank = (bankId: string) => {
+    setExpandedBanks((prev) =>
+      prev.includes(bankId) ? prev.filter((id) => id !== bankId) : [...prev, bankId],
+    );
+  };
+
 
   const handleToggleOption = (idx: number) => {
     if (isChecked) return;
@@ -847,7 +881,8 @@ export default function PracticeQuizPage() {
               return (
               <Accordion
                 key={section._id}
-                defaultExpanded
+                expanded={expandedSections.includes(section._id)}
+                onChange={() => toggleSection(section._id)}
                 elevation={0}
                 disableGutters
                 sx={{
@@ -867,6 +902,7 @@ export default function PracticeQuizPage() {
                     minHeight: 44,
                   }}
                 >
+
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, overflow: 'hidden' }}>
                     <Typography
                       sx={{
@@ -895,6 +931,7 @@ export default function PracticeQuizPage() {
                 <AccordionDetails sx={{ p: 0 }}>
                   {section.banks.map((bank) => {
                     const isSelected = selectedBankId === bank._id;
+                    const isBankExpanded = expandedBanks.includes(bank._id);
                     const bAnswers = isSelected
                       ? effectiveAnswers
                       : new Map<string, LocalAnswer>();
@@ -907,39 +944,72 @@ export default function PracticeQuizPage() {
                     }).length;
 
                     return (
-                      <Box
+                      <Accordion
                         key={bank._id}
+                        expanded={isBankExpanded}
+                        onChange={() => toggleBank(bank._id)}
+                        elevation={0}
+                        disableGutters
                         sx={{
                           borderTop: '1px solid',
                           borderColor: 'divider',
                           bgcolor: isSelected ? 'primary.50' : 'background.paper',
+                          '&::before': { display: 'none' },
+                          ml: 1.5, // Indent from section
+                          borderLeft: '1px solid',
+                          borderLeftColor: 'divider',
                         }}
                       >
-                        <Box sx={{ px: 2, pt: 1.25, pb: 0 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: '0.82rem',
-                                lineHeight: 1.3,
-                                color: isSelected ? 'primary.main' : 'text.primary',
-                                flex: 1,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {bank.title}
-                            </Typography>
-                            {bank.isFreePreview && !section.isFreePreview && (
-                              <Chip
-                                label='Free'
-                                size='small'
+
+                        <AccordionSummary
+                          expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />}
+                          sx={{
+                            px: 2,
+                            py: 0.5,
+                            minHeight: 0,
+                            '& .MuiAccordionSummary-content': {
+                              my: 1,
+                              display: 'block',
+                              overflow: 'hidden',
+                            },
+                          }}
+                        >
+                          <Box sx={{ width: '100%', mr: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                              <Typography
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: '0.82rem',
+                                  lineHeight: 1.3,
+                                  color: isSelected ? 'primary.main' : 'text.primary',
+                                  flex: 1,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {bank.title}
+                              </Typography>
+                              {bank.isFreePreview && !section.isFreePreview && (
+                                <Chip
+                                  label='Free'
+                                  size='small'
+                                  color='success'
+                                  sx={{ fontSize: '0.6rem', height: 15, flexShrink: 0 }}
+                                />
+                              )}
+                            </Box>
+                            {/* Subtle overall progress line in summary */}
+                            {!isBankExpanded && (
+                              <LinearProgress
+                                variant='determinate'
+                                value={bank.questions.length > 0 ? (bCorrect / bank.questions.length) * 100 : 0}
                                 color='success'
-                                sx={{ fontSize: '0.6rem', height: 15, flexShrink: 0 }}
+                                sx={{ height: 2, mt: 0.5, borderRadius: 1, opacity: 0.5 }}
                               />
                             )}
                           </Box>
+
                           {bank.description && (
                             <Typography
                               variant='caption'
@@ -957,49 +1027,52 @@ export default function PracticeQuizPage() {
                               {bank.description}
                             </Typography>
                           )}
-                        </Box>
+                        </AccordionSummary>
 
-                        <Stack sx={{ px: 2, pb: 1.25, gap: 0.75, mt: 0.75 }}>
-                          <SubsectionProgressButton
-                            label='All'
-                            count={bank.questions.length}
-                            total={bank.questions.length}
-                            correct={bCorrect}
-                            incorrect={bIncorrect}
-                            progressValue={bCorrect + bIncorrect}
-                            progressText={`${bCorrect + bIncorrect}/${bank.questions.length} answered`}
-                            color='primary'
-                            selected={isSelected && selectedSubsection === 'all'}
-                            onClick={() => handleSelectBank(bank._id, 'all')}
-                          />
-                          <SubsectionProgressButton
-                            label='Wrong'
-                            count={bIncorrect}
-                            total={bank.questions.length}
-                            correct={bCorrect}
-                            incorrect={bIncorrect}
-                            progressValue={bIncorrect}
-                            progressText={`${bIncorrect}/${bank.questions.length} wrong`}
-                            color='error'
-                            selected={isSelected && selectedSubsection === 'incorrect'}
-                            onClick={() => handleSelectBank(bank._id, 'incorrect')}
-                          />
-                          <SubsectionProgressButton
-                            label='Correct'
-                            count={bCorrect}
-                            total={bank.questions.length}
-                            correct={bCorrect}
-                            incorrect={bIncorrect}
-                            progressValue={bCorrect}
-                            progressText={`${bCorrect}/${bank.questions.length} correct`}
-                            color='success'
-                            selected={isSelected && selectedSubsection === 'correct'}
-                            onClick={() => handleSelectBank(bank._id, 'correct')}
-                          />
-                        </Stack>
-                      </Box>
+                        <AccordionDetails sx={{ px: 2, pb: 1.25, pt: 0 }}>
+                          <Stack sx={{ gap: 0.75 }}>
+                            <SubsectionProgressButton
+                              label='All'
+                              count={bank.questions.length}
+                              total={bank.questions.length}
+                              correct={bCorrect}
+                              incorrect={bIncorrect}
+                              progressValue={bCorrect + bIncorrect}
+                              progressText={`${bCorrect + bIncorrect}/${bank.questions.length} answered`}
+                              color='primary'
+                              selected={isSelected && selectedSubsection === 'all'}
+                              onClick={() => handleSelectBank(bank._id, 'all')}
+                            />
+                            <SubsectionProgressButton
+                              label='Wrong'
+                              count={bIncorrect}
+                              total={bank.questions.length}
+                              correct={bCorrect}
+                              incorrect={bIncorrect}
+                              progressValue={bIncorrect}
+                              progressText={`${bIncorrect}/${bank.questions.length} wrong`}
+                              color='error'
+                              selected={isSelected && selectedSubsection === 'incorrect'}
+                              onClick={() => handleSelectBank(bank._id, 'incorrect')}
+                            />
+                            <SubsectionProgressButton
+                              label='Correct'
+                              count={bCorrect}
+                              total={bank.questions.length}
+                              correct={bCorrect}
+                              incorrect={bIncorrect}
+                              progressValue={bCorrect}
+                              progressText={`${bCorrect}/${bank.questions.length} correct`}
+                              color='success'
+                              selected={isSelected && selectedSubsection === 'correct'}
+                              onClick={() => handleSelectBank(bank._id, 'correct')}
+                            />
+                          </Stack>
+                        </AccordionDetails>
+                      </Accordion>
                     );
                   })}
+
                 </AccordionDetails>
               </Accordion>
               );
