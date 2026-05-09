@@ -14,6 +14,7 @@ import {
   List,
   ListItemButton,
   Pagination,
+  PaginationItem,
   Paper,
   Stack,
   Tooltip,
@@ -813,9 +814,54 @@ export default function PracticeQuizPage() {
                         count={activeQuestions.length}
                         page={currentPage + 1}
                         onChange={handlePageChange}
-                        color='primary'
                         size='small'
                         siblingCount={3}
+                        renderItem={(item) => {
+                          if (item.type !== 'page' || typeof item.page !== 'number') return <PaginationItem {...item} />;
+                          const qIndex = item.page - 1;
+                          const q = activeQuestions[qIndex];
+                          if (!q) return <PaginationItem {...item} />;
+                          
+                          const ans = courseAnswers.get(q._id);
+                          const isAnswered = ans && ans.selectedOptionIndices.length > 0;
+                          
+                          let finalSx: any = { 
+                            fontWeight: 800,
+                            transition: 'all 0.2s ease',
+                          };
+
+                          if (isAnswered) {
+                            const baseColor = ans.isCorrect ? '#22c55e' : '#ef4444';
+                            const hoverColor = ans.isCorrect ? '#16a34a' : '#dc2626';
+                            finalSx = {
+                              ...finalSx,
+                              bgcolor: `${baseColor} !important`,
+                              color: 'white !important',
+                              '&:hover': { bgcolor: `${hoverColor} !important` },
+                              '&.Mui-selected': { 
+                                bgcolor: `${baseColor} !important`,
+                                border: '3px solid',
+                                borderColor: 'primary.main',
+                                boxShadow: '0 0 0 1px white inset',
+                              }
+                            };
+                          } else if (item.selected) {
+                            finalSx = {
+                              ...finalSx,
+                              bgcolor: 'primary.main !important',
+                              color: 'white !important',
+                              border: '3px solid',
+                              borderColor: 'primary.main',
+                              boxShadow: '0 0 0 1px white inset',
+                              ...(!ans?.selectedOptionIndices.length && { 
+                                bgcolor: 'primary.main !important', 
+                                color: 'white !important' 
+                              })
+                            };
+                          }
+
+                          return <PaginationItem {...item} sx={itemSx} />;
+                        }}
                       />
                     </Box>
                   )}
