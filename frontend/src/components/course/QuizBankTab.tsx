@@ -18,6 +18,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  Avatar,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddIcon from '@mui/icons-material/Add';
@@ -590,7 +591,7 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                         </AccordionSummary>
                         <AccordionDetails sx={{ px: 2, pb: 1.25, pt: 0 }}>
                           <Stack spacing={0.75}>
-                            {canPost && <Button size='small' variant='outlined' color='warning' fullWidth onClick={() => handleManage(bank._id)} sx={{ mb: 1, fontSize: '0.7rem' }}>Manage Bank</Button>}
+                            {canPost && <Button size='small' variant='outlined' color='warning' fullWidth onClick={() => handleManage(bank._id)} sx={{ mb: 1.5, fontSize: '0.7rem' }}>Manage Bank</Button>}
                             <SubsectionProgressButton
                               label='All'
                               count={bank.questions.length}
@@ -726,32 +727,253 @@ function SubsectionProgressButton({
   );
 }
 
-function QuestionPracticeCard({ question, questionNumber, totalQuestions, selectedOptions, isChecked, submitting, onToggleOption, onCheck, onNext, onSkip, isLastQuestion }: any) {
+function QuestionPracticeCard({
+  question,
+  questionNumber,
+  totalQuestions,
+  selectedOptions,
+  isChecked,
+  submitting,
+  onToggleOption,
+  onCheck,
+  onNext,
+  onSkip,
+  isLastQuestion,
+}: any) {
   const isCorrectAnswer = isChecked && arraysEqualSorted(selectedOptions, question.correctOptionIndices);
+  const multipleCorrect = question.correctOptionIndices.length > 1;
+
   return (
-    <Paper variant='outlined' sx={{ p: 3, borderRadius: 1 }}>
-      <Box sx={{ mb: 2 }}><Chip label={`Q ${questionNumber} of ${totalQuestions}`} size='small' sx={{ fontWeight: 700 }} /></Box>
-      <Typography variant='h6' sx={{ fontWeight: 600, mb: 3 }}>{question.question}</Typography>
+    <Paper variant='outlined' sx={{ p: 3, borderRadius: 1.5 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+        <Chip
+          label={`Q ${questionNumber} of ${totalQuestions}`}
+          size='small'
+          sx={{ fontWeight: 700 }}
+        />
+        {multipleCorrect && (
+          <Chip
+            label='Select all that apply'
+            size='small'
+            color='info'
+            variant='outlined'
+            sx={{ fontSize: '0.7rem' }}
+          />
+        )}
+      </Box>
+
+      <Typography
+        variant='h6'
+        sx={{ fontWeight: 600, mb: 3, lineHeight: 1.55, fontSize: '1.05rem' }}
+      >
+        {question.question}
+      </Typography>
+
       <Stack spacing={1.25}>
         {question.options.map((opt: any, idx: number) => {
           const isSelected = selectedOptions.includes(idx);
           const isCorrect = question.correctOptionIndices.includes(idx);
-          let borderColor = isChecked ? (isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'divider') : (isSelected ? 'primary.main' : 'divider');
-          let bgColor = isChecked ? (isCorrect ? 'rgba(34,197,94,0.1)' : isSelected ? 'rgba(239,68,68,0.1)' : 'white') : (isSelected ? 'primary.50' : 'white');
+
+          let borderColor = 'divider';
+          let bgColor = 'background.paper';
+          if (isChecked) {
+            if (isCorrect) { borderColor = '#22c55e'; bgColor = 'rgba(34,197,94,0.1)'; }
+            else if (isSelected) { borderColor = '#ef4444'; bgColor = 'rgba(239,68,68,0.1)'; }
+          } else if (isSelected) {
+            borderColor = 'primary.main';
+            bgColor = 'primary.50';
+          }
+
           return (
-            <Box key={idx} onClick={() => onToggleOption(idx)} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderRadius: 1, border: '1.5px solid', borderColor, bgcolor: bgColor, cursor: isChecked ? 'default' : 'pointer' }}>
-              <Box sx={{ width: 24, height: 24, borderRadius: '50%', border: '1.5px solid', borderColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem' }}>{OPTION_LABELS[idx]}</Box>
-              <Typography variant='body2' sx={{ flex: 1 }}>{opt.text}</Typography>
-              {isChecked && isCorrect && <CheckCircleIcon sx={{ color: 'success.main', fontSize: 20 }} />}
-              {isChecked && isSelected && !isCorrect && <CancelIcon sx={{ color: 'error.main', fontSize: 20 }} />}
+            <Box
+              key={idx}
+              onClick={() => onToggleOption(idx)}
+              sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1.5,
+                p: 1.5,
+                borderRadius: 1,
+                border: '1.5px solid',
+                borderColor,
+                bgcolor: bgColor,
+                cursor: isChecked ? 'default' : 'pointer',
+                transition: 'all 0.15s ease',
+                ...(!isChecked && {
+                  '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.50' },
+                }),
+              }}
+            >
+              {/* Checkbox indicator */}
+              <Box
+                sx={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 0.75,
+                  border: '1.5px solid',
+                  mt: 0.15,
+                  flexShrink: 0,
+                  borderColor: isChecked
+                    ? isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'divider'
+                    : isSelected ? 'primary.main' : 'action.disabled',
+                  bgcolor: isChecked
+                    ? isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'transparent'
+                    : isSelected ? 'primary.main' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {(isSelected || (isChecked && isCorrect)) && (
+                  <Box
+                    component='span'
+                    sx={{ color: 'white', fontSize: '0.65rem', fontWeight: 900, lineHeight: 1 }}
+                  >
+                    ✓
+                  </Box>
+                )}
+              </Box>
+
+              {/* Letter circle */}
+              <Box
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1.5px solid',
+                  flexShrink: 0,
+                  borderColor: isChecked
+                    ? isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'divider'
+                    : isSelected ? 'primary.main' : 'action.disabled',
+                  bgcolor: isChecked
+                    ? isCorrect ? '#22c55e' : isSelected ? '#ef4444' : 'transparent'
+                    : isSelected ? 'primary.main' : 'transparent',
+                  color:
+                    (isChecked && (isCorrect || isSelected)) || (!isChecked && isSelected)
+                      ? 'white'
+                      : 'text.secondary',
+                  fontWeight: 800,
+                  fontSize: '0.78rem',
+                }}
+              >
+                {OPTION_LABELS[idx]}
+              </Box>
+
+              <Box sx={{ flex: 1 }}>
+                <Typography
+                  variant='body2'
+                  sx={{
+                    fontWeight: isSelected ? 600 : 400,
+                    lineHeight: 1.55,
+                    color: isChecked
+                      ? isCorrect ? 'success.dark' : isSelected ? 'error.dark' : 'text.secondary'
+                      : isSelected ? 'primary.main' : 'text.primary',
+                  }}
+                >
+                  {opt.text}
+                </Typography>
+                {isChecked && opt.explanation && (
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      display: 'block',
+                      mt: 0.5,
+                      fontStyle: 'italic',
+                      lineHeight: 1.4,
+                      color: isCorrect
+                        ? 'success.dark'
+                        : isSelected
+                        ? 'error.dark'
+                        : 'text.secondary',
+                      opacity: 0.85,
+                    }}
+                  >
+                    {opt.explanation}
+                  </Typography>
+                )}
+              </Box>
+
+              {isChecked && isCorrect && (
+                <CheckCircleIcon sx={{ fontSize: 20, color: 'success.main', flexShrink: 0 }} />
+              )}
+              {isChecked && isSelected && !isCorrect && (
+                <CancelIcon sx={{ fontSize: 20, color: 'error.main', flexShrink: 0 }} />
+              )}
             </Box>
           );
         })}
       </Stack>
-      {isChecked && <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, bgcolor: isCorrectAnswer ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border: '1px solid', borderColor: isCorrectAnswer ? '#22c55e' : '#ef4444' }}><Typography variant='body2' sx={{ fontWeight: 700, color: isCorrectAnswer ? 'success.dark' : 'error.dark' }}>{isCorrectAnswer ? '✓ Correct!' : '✗ Incorrect'}</Typography></Box>}
-      <Box sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'flex-end' }}>
-        {!isChecked && <Button variant='outlined' onClick={onSkip} disabled={isLastQuestion}>Skip</Button>}
-        {!isChecked ? <Button variant='contained' onClick={onCheck} disabled={selectedOptions.length === 0 || submitting}>Check Answer</Button> : <Button variant='contained' onClick={onNext} disabled={isLastQuestion}>Next</Button>}
+
+      {isChecked && (
+        <Box
+          sx={{
+            mt: 2,
+            p: 1.5,
+            borderRadius: 1,
+            bgcolor: isCorrectAnswer ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+            border: '1px solid',
+            borderColor: isCorrectAnswer ? '#22c55e' : '#ef4444',
+          }}
+        >
+          <Typography
+            variant='body2'
+            sx={{ fontWeight: 700, color: isCorrectAnswer ? 'success.dark' : 'error.dark' }}
+          >
+            {isCorrectAnswer
+              ? '✓ Correct!'
+              : '✗ Incorrect — correct answer(s) are highlighted above.'}
+          </Typography>
+        </Box>
+      )}
+
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          mt: 2.5,
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+        }}
+      >
+        {!isChecked && (
+          <Button
+            variant='outlined'
+            startIcon={<SkipNextIcon />}
+            onClick={onSkip}
+            disabled={isLastQuestion}
+          >
+            Skip
+          </Button>
+        )}
+        {!isChecked ? (
+          <Button
+            variant='contained'
+            onClick={onCheck}
+            disabled={selectedOptions.length === 0 || submitting}
+          >
+            Check Answer
+          </Button>
+        ) : (
+          <Button
+            variant='contained'
+            endIcon={<ArrowForwardIcon />}
+            onClick={onNext}
+            disabled={isLastQuestion}
+            sx={{
+              bgcolor: 'primary.main',
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              fontWeight: 700,
+              boxShadow: '0 4px 14px 0 rgba(25, 118, 210, 0.39)',
+            }}
+          >
+            Next
+          </Button>
+        )}
       </Box>
     </Paper>
   );
