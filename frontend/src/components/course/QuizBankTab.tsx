@@ -101,6 +101,7 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
   const [selectedSubsection, setSelectedSubsection] = useState<Subsection>('all');
   const [managingBankId, setManagingBankId] = useState<string | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
 
   const [attempt, setAttempt] = useState<IQuizAttempt | null>(null);
   const [attemptLoading, setAttemptLoading] = useState(false);
@@ -575,25 +576,28 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
             const hasActiveBank = banks.some(
               (b) => b._id === selectedBankId || b._id === managingBankId,
             );
+            const isActiveSection = selectedSectionId === section._id || hasActiveBank;
             return (
               <Accordion
                 key={section._id}
-                defaultExpanded
                 elevation={0}
                 disableGutters
+                onChange={() => setSelectedSectionId(section._id)}
                 sx={{
-                  bgcolor: hasActiveBank ? 'rgba(25,118,210,0.03)' : 'transparent',
+                  bgcolor: 'transparent',
                   borderBottom: '1px solid',
-                  borderColor: hasActiveBank ? 'primary.200' : 'divider',
+                  borderColor: isActiveSection ? 'primary.300' : 'divider',
+                  borderLeft: isActiveSection ? '3px solid' : 'none',
+                  borderLeftColor: 'primary.main',
                   '&::before': { display: 'none' },
                 }}
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon sx={{ fontSize: 18 }} />}
                   sx={{
-                    px: 2,
+                    px: isActiveSection ? 1.5 : 2,
                     py: 0.75,
-                    bgcolor: hasActiveBank ? 'rgba(25,118,210,0.09)' : 'grey.50',
+                    bgcolor: isActiveSection ? 'primary.50' : 'grey.50',
                     minHeight: 44,
                   }}
                 >
@@ -640,18 +644,17 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                     {canPost && editingSecId !== section._id && (
                       <Box
                         onClick={(e) => e.stopPropagation()}
-                        sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}
+                        sx={{ display: 'flex', alignItems: 'center' }}
                       >
-                        <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.68rem' }}>
-                          Free
-                        </Typography>
-                        <Switch
-                          size='small'
-                          checked={section.isFreePreview}
-                          onChange={() => void handleToggleSectionPreview(section._id, section.isFreePreview)}
-                          color='success'
-                          sx={{ transform: 'scale(0.8)', mx: -0.5 }}
-                        />
+                        <Tooltip title='Free Preview'>
+                          <Switch
+                            size='small'
+                            checked={section.isFreePreview}
+                            onChange={() => void handleToggleSectionPreview(section._id, section.isFreePreview)}
+                            color='success'
+                            sx={{ transform: 'scale(0.75)' }}
+                          />
+                        </Tooltip>
                         <ItemActionMenu
                           actions={[
                             {
@@ -709,11 +712,13 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                         key={bank._id}
                         sx={{
                           borderTop: '1px solid',
-                          borderColor: 'divider',
+                          borderColor: isActiveSection ? 'rgba(25,118,210,0.15)' : 'divider',
                           bgcolor: isManaging
                             ? 'rgba(245,158,11,0.08)'
                             : isSelected
-                            ? 'primary.50'
+                            ? 'rgba(25,118,210,0.1)'
+                            : isActiveSection
+                            ? 'rgba(25,118,210,0.04)'
                             : 'background.paper',
                         }}
                       >
@@ -759,19 +764,18 @@ export default function QuizBankTab({ courseId, canPost, userId: _userId }: Prop
                           {/* Admin/Teacher: Free toggle + menu inline */}
                           {canPost && (
                             <Box
-                              sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0, mt: 0.1 }}
+                              sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, mt: 0.1 }}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.68rem' }}>
-                                Free
-                              </Typography>
-                              <Switch
-                                size='small'
-                                checked={bank.isFreePreview}
-                                onChange={() => void handleToggleBankPreview(bank._id, bank.isFreePreview)}
-                                color='success'
-                                sx={{ transform: 'scale(0.8)', mx: -0.5 }}
-                              />
+                              <Tooltip title='Free Preview'>
+                                <Switch
+                                  size='small'
+                                  checked={bank.isFreePreview}
+                                  onChange={() => void handleToggleBankPreview(bank._id, bank.isFreePreview)}
+                                  color='success'
+                                  sx={{ transform: 'scale(0.75)' }}
+                                />
+                              </Tooltip>
                               <ItemActionMenu
                                 actions={[
                                   {

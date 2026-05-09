@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IconButton, Menu, MenuItem } from '@mui/material';
+import { IconButton, Menu, MenuItem, Switch } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 export interface ItemAction {
@@ -7,6 +7,7 @@ export interface ItemAction {
 	icon?: React.ReactNode;
 	color?: 'inherit' | 'error';
 	onClick: () => void;
+	checked?: boolean;
 }
 
 export default function ItemActionMenu({ actions }: { actions: ItemAction[] }) {
@@ -65,13 +66,23 @@ export default function ItemActionMenu({ actions }: { actions: ItemAction[] }) {
 							fontSize: '0.875rem',
 							fontWeight: 650,
 							color: action.color === 'error' ? 'error.main' : 'inherit',
-							'& .MuiSvgIcon-root': {
-								fontSize: 18,
-							},
+							'& .MuiSvgIcon-root': { fontSize: 18 },
+							...(action.checked !== undefined && { justifyContent: 'space-between' }),
 						}}
 					>
-						{action.icon}
-						{action.label}
+						<span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+							{action.icon}
+							{action.label}
+						</span>
+						{action.checked !== undefined && (
+							<Switch
+								size='small'
+								checked={action.checked}
+								color='success'
+								tabIndex={-1}
+								sx={{ pointerEvents: 'none', ml: 1 }}
+							/>
+						)}
 					</MenuItem>
 				))}
 			</Menu>
