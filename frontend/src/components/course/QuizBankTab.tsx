@@ -12,8 +12,6 @@ import {
 	FormControlLabel,
 	IconButton,
 	LinearProgress,
-	Pagination,
-	PaginationItem,
 	Paper,
 	Stack,
 	Switch,
@@ -364,11 +362,6 @@ export default function QuizBankTab({
 		if (currentPage < activeQuestions.length - 1) setCurrentPage((p) => p + 1);
 	};
 
-	const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) => {
-		setCurrentPage(page - 1);
-		setSelectedOptions([]);
-		setIsChecked(false);
-	};
 
 	const handleToggleOption = (idx: number) => {
 		if (isChecked) return;

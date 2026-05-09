@@ -14,8 +14,6 @@ import {
   LinearProgress,
   List,
   ListItemButton,
-  Pagination,
-  PaginationItem,
   Paper,
   Stack,
   Tooltip,
@@ -605,11 +603,7 @@ export default function PracticeQuizPage() {
     if (currentPage < activeQuestions.length - 1) setCurrentPage((p) => p + 1);
   };
 
-  const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) => {
-    setCurrentPage(page - 1);
-    setSelectedOptions([]);
-    setIsChecked(false);
-  };
+
 
   const handleResetAttempt = async (bankId?: string) => {
     const targetId = bankId ?? selectedBankId;
