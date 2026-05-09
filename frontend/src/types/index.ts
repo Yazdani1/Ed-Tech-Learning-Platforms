@@ -430,3 +430,85 @@ export interface IPaginationMeta {
   hasNextPage: boolean;
   hasPrevPage: boolean;
 }
+
+export interface IQuizOption {
+  _id?: string;
+  text: string;
+  explanation?: string;
+}
+
+export interface IQuizQuestion {
+  _id: string;
+  question: string;
+  options: IQuizOption[];
+  correctOptionIndices: number[];
+  order: number;
+}
+
+export interface IQuizSection {
+  _id: string;
+  course: string;
+  title: string;
+  order: number;
+  isFreePreview: boolean;
+  createdBy: Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type QuizContextType = 'Section' | 'Announcement' | 'Course';
+
+export interface IQuizBank {
+  _id: string;
+  course: string;
+  quizSection?: string;
+  contextType?: QuizContextType;
+  contextId?: string;
+  title: string;
+  description?: string;
+  isFreePreview: boolean;
+  questions: IQuizQuestion[];
+  createdBy: {
+    _id: string;
+    name: string;
+    avatar?: string;
+    role: UserRole;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IPublicQuizSection {
+  _id: string;
+  title: string;
+  isFreePreview: boolean;
+  banks: IQuizBank[];
+}
+
+export type IPublicCourse = Pick<
+  ICourse,
+  '_id' | 'title' | 'subtitle' | 'coverImage' | 'pricing' | 'price' | 'listPrice' | 'discountPrice' | 'discountPercent' | 'includedInSubscription'
+>;
+
+export interface IPublicCourseQuizTree {
+  course: IPublicCourse;
+  sections: IPublicQuizSection[];
+  lockedBankCount: number;
+  lockedQuestionCount: number;
+}
+
+export interface IAttemptAnswer {
+  questionId: string;
+  selectedOptionIndices: number[];
+  isCorrect: boolean;
+}
+
+export interface IQuizAttempt {
+  _id: string;
+  student: string;
+  quizBank: string;
+  course: string;
+  answers: IAttemptAnswer[];
+  createdAt: string;
+  updatedAt: string;
+}

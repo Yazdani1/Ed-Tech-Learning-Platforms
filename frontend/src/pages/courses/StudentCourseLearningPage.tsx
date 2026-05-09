@@ -80,6 +80,8 @@ import StudentSidebar from '../../components/layout/StudentLayout/StudentSidebar
 import ChatWidget from '../../components/chat/ChatWidget';
 import StudentChatPage from '../chat/StudentChatPage';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined';
+import QuizBankTab from '../../components/course/QuizBankTab';
 import { useAuth } from '../../context/useAuth';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import ItemActionMenu from '../../components/common/ItemActionMenu';
@@ -95,6 +97,7 @@ type NavSection =
 	| 'study_materials'
 	| 'students'
 	| 'qa'
+	| 'quiz_bank'
 	| 'support_chat';
 
 const getYouTubeId = (url: string) => {
@@ -145,6 +148,7 @@ const NAV_ITEMS: { key: NavSection; label: string; icon: React.ReactNode }[] = [
 	},
 	{ key: 'students', label: 'Students', icon: <PeopleOutlinedIcon /> },
 	{ key: 'qa', label: 'Q & A', icon: <QuestionAnswerOutlinedIcon /> },
+	{ key: 'quiz_bank', label: 'Quiz Bank', icon: <QuizOutlinedIcon /> },
 	{ key: 'support_chat', label: 'Support Chat', icon: <SupportAgentIcon /> },
 ];
 
@@ -807,7 +811,7 @@ export default function StudentCourseLearningPage() {
 							flex: 1,
 							display: 'flex',
 							flexDirection: 'column',
-							overflow: activeNav === 'support_chat' ? 'hidden' : 'auto',
+							overflow: (activeNav === 'support_chat' || activeNav === 'quiz_bank') ? 'hidden' : 'auto',
 							minWidth: 0,
 						}}
 					>
@@ -2194,6 +2198,15 @@ export default function StudentCourseLearningPage() {
 								initialQuestionId={initialQuestionId}
 							/>
 						</Box>
+					)}
+
+					{/* ── Quiz Bank ──────────────────────────────── */}
+					{activeNav === 'quiz_bank' && (
+						<QuizBankTab
+							courseId={courseId!}
+							canPost={canPost}
+							userId={user?._id ?? ''}
+						/>
 					)}
 
 					{/* ── Support Chat ───────────────────────────── */}

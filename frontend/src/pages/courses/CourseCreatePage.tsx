@@ -62,6 +62,7 @@ import type {
 	IStudyMaterial,
 	SubscriptionPlan,
 } from '../../types/index';
+import QuizBankTab from '../../components/course/QuizBankTab';
 
 const blankLiveClassLecture = (): IStudyCurriculumLecture => ({
 	title: '',
@@ -580,6 +581,7 @@ export default function CourseCreatePage() {
 		'Live Class',
 		'Announcements',
 		'Study Materials',
+		'Quiz Bank',
 	];
 
 	useEffect(() => {
@@ -2184,6 +2186,27 @@ export default function CourseCreatePage() {
 											</Box>
 										</Paper>
 									))}
+								</Box>
+							)}
+						</Box>
+					)}
+
+					{/* Tab 7 – Quiz Bank */}
+					{tab === 7 && (
+						<Box>
+							{!courseId ? (
+								<Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+									<Typography variant='body2'>
+										Save the course first to manage quiz banks.
+									</Typography>
+								</Box>
+							) : (
+								<Box sx={{ height: 600 }}>
+									<QuizBankTab
+										courseId={courseId}
+										canPost
+										userId={user?._id ?? ''}
+									/>
 								</Box>
 							)}
 						</Box>

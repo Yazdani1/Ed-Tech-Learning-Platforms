@@ -22,6 +22,7 @@ const prefetchPublicRoutes = () => {
 	void import('../../pages/courses/FreeCoursesPage');
 	void import('../../pages/pricing/PricingPage');
 	void import('../../pages/teachers/PublicTeachersPage');
+	void import('../../pages/quiz/PracticeQuizPage');
 };
 
 export default function PublicNavbar() {
@@ -169,6 +170,16 @@ export default function PublicNavbar() {
             sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
           >
             Teachers
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/practice-quiz"
+            color="inherit"
+            onMouseEnter={prefetchPublicRoutes}
+            onFocus={prefetchPublicRoutes}
+            sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
+          >
+            Practice Quiz
           </Button>
 
           {user ? (
