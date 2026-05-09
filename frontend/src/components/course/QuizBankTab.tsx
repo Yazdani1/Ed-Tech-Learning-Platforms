@@ -1321,7 +1321,7 @@ export default function QuizBankTab({
 							<Box sx={{ mb: 3 }}>
 								<CircularProgress size={20} />
 							</Box>
-						) : (correctCount + incorrectCount > 0) && (
+						) : (
 							<Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 2, bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
 								<Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, mb: 2, flexWrap: 'wrap', justifyContent: 'space-between' }}>
 									<Box>
