@@ -13,6 +13,7 @@ import {
 	IconButton,
 	LinearProgress,
 	Pagination,
+	PaginationItem,
 	Paper,
 	Stack,
 	Switch,
@@ -45,6 +46,7 @@ import { useConfirmModal } from '../../context/ConfirmModalContext';
 const OPTION_LABELS = ['A', 'B', 'C', 'D'] as const;
 
 type Subsection = 'all' | 'incorrect' | 'correct';
+type LocalAnswer = { selectedOptionIndices: number[]; isCorrect: boolean };
 
 interface Props {
 	courseId: string;
@@ -78,17 +80,16 @@ function arraysEqualSorted(a: number[], b: number[]): boolean {
 
 function getSubsectionQuestions(
 	bank: IQuizBank,
-	attempt: IQuizAttempt | null,
+	answers: Map<string, LocalAnswer>,
 	sub: Subsection,
 ): IQuizQuestion[] {
 	if (sub === 'all') return bank.questions;
-	const map = new Map(attempt?.answers.map((a) => [a.questionId, a]) ?? []);
 	if (sub === 'incorrect')
 		return bank.questions.filter((q) => {
-			const a = map.get(q._id);
+			const a = answers.get(q._id);
 			return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
 		});
-	return bank.questions.filter((q) => map.get(q._id)?.isCorrect === true);
+	return bank.questions.filter((q) => answers.get(q._id)?.isCorrect === true);
 }
 
 export default function QuizBankTab({
@@ -110,6 +111,11 @@ export default function QuizBankTab({
 	const [attempt, setAttempt] = useState<IQuizAttempt | null>(null);
 	const [attemptLoading, setAttemptLoading] = useState(false);
 	const attemptRef = useRef<IQuizAttempt | null>(null);
+
+	const [courseAnswers, setCourseAnswers] = useState<Map<string, LocalAnswer>>(new Map());
+	const courseAnswersRef = useRef<Map<string, LocalAnswer>>(new Map());
+	const [expandedSections, setExpandedSections] = useState<string[]>([]);
+	const [expandedBanks, setExpandedBanks] = useState<string[]>([]);
 
 	const [currentPage, setCurrentPage] = useState(0);
 	const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
@@ -159,14 +165,25 @@ export default function QuizBankTab({
 	}, [attempt]);
 
 	useEffect(() => {
+		courseAnswersRef.current = courseAnswers;
+	}, [courseAnswers]);
+
+	useEffect(() => {
 		setLoading(true);
 		Promise.all([
 			quizSectionService.getByCourse(courseId),
 			quizBankService.getByCourse(courseId),
 		])
 			.then(([secRes, bankRes]) => {
-				setQuizSections(secRes.data ?? []);
-				setQuizBanks(bankRes.data ?? []);
+				const sections = secRes.data ?? [];
+				const banks = bankRes.data ?? [];
+				setQuizSections(sections);
+				setQuizBanks(banks);
+				if (!canPost && sections.length > 0) {
+					setExpandedSections([sections[0]._id]);
+					const firstBanks = banks.filter((b) => b.quizSection === sections[0]._id);
+					if (firstBanks.length > 0) setExpandedBanks([firstBanks[0]._id]);
+				}
 			})
 			.catch(() => {})
 			.finally(() => setLoading(false));
@@ -185,6 +202,44 @@ export default function QuizBankTab({
 			.finally(() => setAttemptLoading(false));
 	}, [selectedBankId]);
 
+	// Load all course attempts for student sidebar progress
+	useEffect(() => {
+		if (canPost) return;
+		quizBankService
+			.getCourseAttempts(courseId)
+			.then((res) => {
+				const attempts = res.data ?? [];
+				setCourseAnswers((prev) => {
+					const next = new Map(prev);
+					attempts.forEach((att) =>
+						att.answers.forEach((ans) => {
+							next.set(ans.questionId, {
+								selectedOptionIndices: ans.selectedOptionIndices,
+								isCorrect: ans.isCorrect,
+							});
+						}),
+					);
+					return next;
+				});
+			})
+			.catch(() => {});
+	}, [courseId, canPost]);
+
+	// Merge loaded attempt into courseAnswers
+	useEffect(() => {
+		if (!attempt) return;
+		setCourseAnswers((prev) => {
+			const next = new Map(prev);
+			attempt.answers.forEach((a) => {
+				next.set(a.questionId, {
+					selectedOptionIndices: a.selectedOptionIndices,
+					isCorrect: a.isCorrect,
+				});
+			});
+			return next;
+		});
+	}, [attempt]);
+
 	// Reset practice state on bank/subsection change
 	useEffect(() => {
 		setCurrentPage(0);
@@ -192,7 +247,7 @@ export default function QuizBankTab({
 		setIsChecked(false);
 	}, [selectedBankId, selectedSubsection]);
 
-	// Pre-populate from existing attempt when page changes — only in 'all' subsection
+	// Pre-populate from existing answers when page changes — only in 'all' subsection
 	useEffect(() => {
 		if (selectedSubsection !== 'all') {
 			setSelectedOptions([]);
@@ -201,12 +256,10 @@ export default function QuizBankTab({
 		}
 		const bank = quizBanks.find((b) => b._id === selectedBankId);
 		if (!bank) return;
-		const qs = getSubsectionQuestions(bank, attemptRef.current, 'all');
+		const qs = getSubsectionQuestions(bank, courseAnswersRef.current, 'all');
 		const q = qs[currentPage];
 		if (!q) return;
-		const existing = attemptRef.current?.answers.find(
-			(a) => a.questionId === q._id,
-		);
+		const existing = courseAnswersRef.current.get(q._id);
 		if (existing && existing.selectedOptionIndices.length > 0) {
 			setSelectedOptions(existing.selectedOptionIndices);
 			setIsChecked(true);
@@ -219,20 +272,17 @@ export default function QuizBankTab({
 	const selectedBank = quizBanks.find((b) => b._id === selectedBankId) ?? null;
 	const managingBank = quizBanks.find((b) => b._id === managingBankId) ?? null;
 	const activeQuestions = selectedBank
-		? getSubsectionQuestions(selectedBank, attempt, selectedSubsection)
+		? getSubsectionQuestions(selectedBank, courseAnswers, selectedSubsection)
 		: [];
 	const currentQuestion = activeQuestions[currentPage] ?? null;
 
-	const answeredMap = new Map(
-		attempt?.answers.map((a) => [a.questionId, a]) ?? [],
-	);
 	const totalQ = selectedBank?.questions.length ?? 0;
 	const correctCount =
-		selectedBank?.questions.filter((q) => answeredMap.get(q._id)?.isCorrect)
+		selectedBank?.questions.filter((q) => courseAnswers.get(q._id)?.isCorrect)
 			.length ?? 0;
 	const incorrectCount =
 		selectedBank?.questions.filter((q) => {
-			const a = answeredMap.get(q._id);
+			const a = courseAnswers.get(q._id);
 			return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
 		}).length ?? 0;
 	const progressPct =
@@ -244,7 +294,20 @@ export default function QuizBankTab({
 		setSelectedBankId(bankId);
 		setSelectedSubsection(sub);
 		setManagingBankId(null);
+		if (!expandedBanks.includes(bankId)) {
+			setExpandedBanks((prev) => [...prev, bankId]);
+		}
 	};
+
+	const toggleSection = (id: string) =>
+		setExpandedSections((prev) =>
+			prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+		);
+
+	const toggleBank = (id: string) =>
+		setExpandedBanks((prev) =>
+			prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+		);
 
 	const handleManage = (bankId: string) => {
 		setManagingBankId(bankId);
@@ -304,6 +367,11 @@ export default function QuizBankTab({
 		if (!ok) return;
 		await quizBankService.resetAttempt(selectedBankId);
 		setAttempt(null);
+		setCourseAnswers((prev) => {
+			const next = new Map(prev);
+			selectedBank?.questions.forEach((q) => next.delete(q._id));
+			return next;
+		});
 		setCurrentPage(0);
 		setSelectedOptions([]);
 		setIsChecked(false);
@@ -667,10 +735,14 @@ export default function QuizBankTab({
 						const hasActiveBank = banks.some(
 							(b) => b._id === selectedBankId || b._id === managingBankId,
 						);
+						const isSectionExpanded = canPost
+							? true
+							: expandedSections.includes(section._id);
 						return (
 							<Accordion
 								key={section._id}
-								defaultExpanded
+								expanded={isSectionExpanded}
+								onChange={canPost ? undefined : () => toggleSection(section._id)}
 								elevation={0}
 								disableGutters
 								sx={{
@@ -679,6 +751,10 @@ export default function QuizBankTab({
 										: 'transparent',
 									borderBottom: '1px solid',
 									borderColor: hasActiveBank ? 'primary.200' : 'divider',
+									...(!canPost && hasActiveBank && {
+										borderLeft: '3px solid',
+										borderLeftColor: 'primary.main',
+									}),
 									'&::before': { display: 'none' },
 								}}
 							>
@@ -840,30 +916,133 @@ export default function QuizBankTab({
 										const isSelected = selectedBankId === bank._id;
 										const isManaging = managingBankId === bank._id;
 
-										// For student subsection counts (only show when not canPost)
-										const bMap = !canPost
-											? new Map(
-													(isSelected ? attempt : null)?.answers.map((a) => [
-														a.questionId,
-														a,
-													]) ?? [],
-												)
-											: null;
-										const bCorrect = bMap
-											? bank.questions.filter((q) => bMap.get(q._id)?.isCorrect)
-													.length
-											: 0;
-										const bIncorrect = bMap
-											? bank.questions.filter((q) => {
-													const a = bMap.get(q._id);
-													return (
-														a &&
-														a.selectedOptionIndices.length > 0 &&
-														!a.isCorrect
-													);
-												}).length
-											: 0;
+										if (!canPost) {
+											// ── Student view: nested accordion + SubsectionProgressButton ──
+											const isBankExpanded = expandedBanks.includes(bank._id);
+											const bCorrect = bank.questions.filter(
+												(q) => courseAnswers.get(q._id)?.isCorrect,
+											).length;
+											const bIncorrect = bank.questions.filter((q) => {
+												const a = courseAnswers.get(q._id);
+												return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
+											}).length;
 
+											return (
+												<Accordion
+													key={bank._id}
+													expanded={isBankExpanded}
+													onChange={() => toggleBank(bank._id)}
+													elevation={0}
+													disableGutters
+													sx={{
+														mb: 1.25,
+														mx: 1.5,
+														borderRadius: '8px !important',
+														border: '1.5px solid',
+														borderColor: isSelected ? 'primary.main' : 'divider',
+														bgcolor: isSelected ? 'primary.50' : 'background.paper',
+														overflow: 'hidden',
+														'&::before': { display: 'none' },
+														transition: 'all 0.15s ease',
+														'&:hover': { borderColor: 'primary.main' },
+													}}
+												>
+													<AccordionSummary
+														expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />}
+														sx={{
+															px: 2,
+															py: 0.5,
+															minHeight: 0,
+															'& .MuiAccordionSummary-content': {
+																my: 1,
+																display: 'block',
+																overflow: 'hidden',
+															},
+														}}
+													>
+														<Box sx={{ width: '100%', mr: 1 }}>
+															<Typography
+																sx={{
+																	fontWeight: 600,
+																	fontSize: '0.82rem',
+																	lineHeight: 1.3,
+																	color: isSelected ? 'primary.main' : 'text.primary',
+																	overflow: 'hidden',
+																	textOverflow: 'ellipsis',
+																	whiteSpace: 'nowrap',
+																}}
+															>
+																{bank.title}
+															</Typography>
+															{!isBankExpanded && (bCorrect > 0 || bIncorrect > 0) && (
+																<Box sx={{ mt: 0.75, display: 'flex', alignItems: 'center', gap: 1.25 }}>
+																	<Box sx={{ flex: 1, height: 4, bgcolor: 'action.hover', borderRadius: 2, overflow: 'hidden', display: 'flex' }}>
+																		<Box sx={{ width: `${(bCorrect / bank.questions.length) * 100}%`, bgcolor: 'success.main' }} />
+																		<Box sx={{ width: `${(bIncorrect / bank.questions.length) * 100}%`, bgcolor: 'error.main' }} />
+																	</Box>
+																	<Typography variant='caption' sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', whiteSpace: 'nowrap', display: 'flex', gap: 0.75 }}>
+																		<Box component='span' sx={{ color: 'success.main' }}>C:{bCorrect}</Box>
+																		<Box component='span' sx={{ color: 'error.main' }}>W:{bIncorrect}</Box>
+																	</Typography>
+																</Box>
+															)}
+															{bank.description && (
+																<Typography
+																	variant='caption'
+																	color='text.secondary'
+																	sx={{ display: 'block', mt: 0.25, fontSize: '0.72rem', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+																>
+																	{bank.description}
+																</Typography>
+															)}
+														</Box>
+													</AccordionSummary>
+
+													<AccordionDetails sx={{ px: 2, pb: 1.25, pt: 0 }}>
+														<Stack sx={{ gap: 0.75 }}>
+															<SubsectionProgressButton
+																label='All'
+																count={bank.questions.length}
+																total={bank.questions.length}
+																correct={bCorrect}
+																incorrect={bIncorrect}
+																progressValue={bCorrect + bIncorrect}
+																progressText={`${bCorrect + bIncorrect}/${bank.questions.length} answered`}
+																color='primary'
+																selected={isSelected && selectedSubsection === 'all'}
+																onClick={() => handleSelectBank(bank._id, 'all')}
+															/>
+															<SubsectionProgressButton
+																label='Wrong'
+																count={bIncorrect}
+																total={bank.questions.length}
+																correct={bCorrect}
+																incorrect={bIncorrect}
+																progressValue={bIncorrect}
+																progressText={`${bIncorrect}/${bank.questions.length} wrong`}
+																color='error'
+																selected={isSelected && selectedSubsection === 'incorrect'}
+																onClick={() => handleSelectBank(bank._id, 'incorrect')}
+															/>
+															<SubsectionProgressButton
+																label='Correct'
+																count={bCorrect}
+																total={bank.questions.length}
+																correct={bCorrect}
+																incorrect={bIncorrect}
+																progressValue={bCorrect}
+																progressText={`${bCorrect}/${bank.questions.length} correct`}
+																color='success'
+																selected={isSelected && selectedSubsection === 'correct'}
+																onClick={() => handleSelectBank(bank._id, 'correct')}
+															/>
+														</Stack>
+													</AccordionDetails>
+												</Accordion>
+											);
+										}
+
+										// ── Admin/Teacher view: flat box with manage controls ──
 										return (
 											<Box
 												key={bank._id}
@@ -877,20 +1056,17 @@ export default function QuizBankTab({
 															: 'background.paper',
 												}}
 											>
-												{/* Title row — clickable for canPost, inline actions on right */}
 												<Box
 													sx={{
 														px: 2,
 														pt: 1.25,
 														pb: 0.75,
-														cursor: canPost ? 'pointer' : 'default',
+														cursor: 'pointer',
 														display: 'flex',
 														alignItems: 'flex-start',
 														gap: 0.5,
 													}}
-													onClick={
-														canPost ? () => handleManage(bank._id) : undefined
-													}
+													onClick={() => handleManage(bank._id)}
 												>
 													<Box sx={{ flex: 1, minWidth: 0 }}>
 														<Typography
@@ -923,128 +1099,70 @@ export default function QuizBankTab({
 														)}
 													</Box>
 
-													{/* Admin/Teacher: Free toggle + menu inline */}
-													{canPost && (
-														<Box
-															sx={{
-																display: 'flex',
-																alignItems: 'center',
-																gap: 0.25,
-																flexShrink: 0,
-																mt: 0.1,
-															}}
-															onClick={(e) => e.stopPropagation()}
-														>
-															<Typography
-																variant='caption'
-																color='text.secondary'
-																sx={{ fontSize: '0.68rem' }}
-															>
-																Free
-															</Typography>
-															<Switch
-																size='small'
-																checked={bank.isFreePreview}
-																onChange={() =>
-																	void handleToggleBankPreview(
-																		bank._id,
-																		bank.isFreePreview,
-																	)
-																}
-																color='success'
-																sx={{ transform: 'scale(0.8)', mx: -0.5 }}
-															/>
-															<ItemActionMenu
-																actions={[
-																	{
-																		label: 'Edit',
-																		icon: (
-																			<EditOutlinedIcon
-																				fontSize='small'
-																				sx={{ mr: 1 }}
-																			/>
-																		),
-																		onClick: () => {
-																			setEditingBankId(bank._id);
-																			setEditBankForm({
-																				title: bank.title,
-																				description: bank.description ?? '',
-																			});
-																			handleManage(bank._id);
-																		},
-																	},
-																	{
-																		label: 'Delete',
-																		color: 'error',
-																		icon: (
-																			<DeleteOutlinedIcon
-																				fontSize='small'
-																				sx={{ mr: 1 }}
-																			/>
-																		),
-																		onClick: () =>
-																			void handleDeleteBank(bank._id),
-																	},
-																]}
-															/>
-														</Box>
-													)}
-												</Box>
-
-												{/* Subsection chips — student view only */}
-												{!canPost && (
-													<Stack
-														direction='row'
+													<Box
 														sx={{
-															px: 2,
-															pb: 0.75,
-															flexWrap: 'wrap',
-															gap: 0.5,
-															mt: 0.5,
+															display: 'flex',
+															alignItems: 'center',
+															gap: 0.25,
+															flexShrink: 0,
+															mt: 0.1,
 														}}
+														onClick={(e) => e.stopPropagation()}
 													>
-														<Chip
-															label={`All ${bank.questions.length}`}
+														<Typography
+															variant='caption'
+															color='text.secondary'
+															sx={{ fontSize: '0.68rem' }}
+														>
+															Free
+														</Typography>
+														<Switch
 															size='small'
-															clickable
-															color={
-																isSelected && selectedSubsection === 'all'
-																	? 'primary'
-																	: 'default'
+															checked={bank.isFreePreview}
+															onChange={() =>
+																void handleToggleBankPreview(
+																	bank._id,
+																	bank.isFreePreview,
+																)
 															}
-															onClick={() => handleSelectBank(bank._id, 'all')}
-															sx={{ fontSize: '0.72rem', height: 22 }}
+															color='success'
+															sx={{ transform: 'scale(0.8)', mx: -0.5 }}
 														/>
-														<Chip
-															label={`Wrong ${bIncorrect}`}
-															size='small'
-															clickable
-															color={
-																isSelected && selectedSubsection === 'incorrect'
-																	? 'error'
-																	: 'default'
-															}
-															onClick={() =>
-																handleSelectBank(bank._id, 'incorrect')
-															}
-															sx={{ fontSize: '0.72rem', height: 22 }}
+														<ItemActionMenu
+															actions={[
+																{
+																	label: 'Edit',
+																	icon: (
+																		<EditOutlinedIcon
+																			fontSize='small'
+																			sx={{ mr: 1 }}
+																		/>
+																	),
+																	onClick: () => {
+																		setEditingBankId(bank._id);
+																		setEditBankForm({
+																			title: bank.title,
+																			description: bank.description ?? '',
+																		});
+																		handleManage(bank._id);
+																	},
+																},
+																{
+																	label: 'Delete',
+																	color: 'error',
+																	icon: (
+																		<DeleteOutlinedIcon
+																			fontSize='small'
+																			sx={{ mr: 1 }}
+																		/>
+																	),
+																	onClick: () =>
+																		void handleDeleteBank(bank._id),
+																},
+															]}
 														/>
-														<Chip
-															label={`Correct ${bCorrect}`}
-															size='small'
-															clickable
-															color={
-																isSelected && selectedSubsection === 'correct'
-																	? 'success'
-																	: 'default'
-															}
-															onClick={() =>
-																handleSelectBank(bank._id, 'correct')
-															}
-															sx={{ fontSize: '0.72rem', height: 22 }}
-														/>
-													</Stack>
-												)}
+													</Box>
+												</Box>
 											</Box>
 										);
 									})}
@@ -1201,95 +1319,49 @@ export default function QuizBankTab({
 							<Box sx={{ mb: 3 }}>
 								<CircularProgress size={20} />
 							</Box>
-						) : (
-							<Paper variant='outlined' sx={{ p: 2, mb: 3, borderRadius: 1 }}>
-								<Box
-									sx={{
-										display: 'flex',
-										gap: 2.5,
-										mb: 1.5,
-										flexWrap: 'wrap',
-										alignItems: 'center',
-									}}
-								>
-									<Box
-										sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}
-									>
-										<Box
-											sx={{
-												width: 9,
-												height: 9,
-												borderRadius: '50%',
-												bgcolor: 'text.disabled',
-											}}
-										/>
-										<Typography variant='body2' color='text.secondary'>
-											Total: {totalQ}
-										</Typography>
+						) : (correctCount + incorrectCount > 0) && (
+							<Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 2, bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
+								<Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, mb: 2, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+									<Box>
+										<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total</Typography>
+										<Typography variant='h6' sx={{ fontWeight: 800 }}>{totalQ}</Typography>
 									</Box>
-									<Box
-										sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}
-									>
-										<Box
-											sx={{
-												width: 9,
-												height: 9,
-												borderRadius: '50%',
-												bgcolor: 'success.main',
-											}}
-										/>
-										<Typography
-											variant='body2'
-											color='success.main'
-											sx={{ fontWeight: 700 }}
-										>
-											Correct: {correctCount}
-										</Typography>
+									<Box>
+										<Typography variant='caption' color='primary.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Answered</Typography>
+										<Typography variant='h6' sx={{ fontWeight: 800, color: 'primary.main' }}>{correctCount + incorrectCount}</Typography>
 									</Box>
-									<Box
-										sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}
-									>
-										<Box
-											sx={{
-												width: 9,
-												height: 9,
-												borderRadius: '50%',
-												bgcolor: 'error.main',
-											}}
-										/>
-										<Typography
-											variant='body2'
-											color='error.main'
-											sx={{ fontWeight: 700 }}
-										>
-											Incorrect: {incorrectCount}
-										</Typography>
+									<Box>
+										<Typography variant='caption' color='success.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Correct</Typography>
+										<Typography variant='h6' sx={{ fontWeight: 800, color: 'success.main' }}>{correctCount}</Typography>
 									</Box>
-									<Box sx={{ ml: 'auto' }}>
-										<Tooltip title='Reset all answers'>
-											<IconButton
-												size='small'
-												onClick={() => void handleResetAttempt()}
-												sx={{ opacity: 0.5 }}
-											>
+									<Box>
+										<Typography variant='caption' color='error.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Incorrect</Typography>
+										<Typography variant='h6' sx={{ fontWeight: 800, color: 'error.main' }}>{incorrectCount}</Typography>
+									</Box>
+									<Box>
+										<Typography variant='caption' color='warning.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Remaining</Typography>
+										<Typography variant='h6' sx={{ fontWeight: 800, color: 'warning.main' }}>{totalQ - (correctCount + incorrectCount)}</Typography>
+									</Box>
+									<Box sx={{ ml: 'auto', alignSelf: 'flex-start' }}>
+										<Tooltip title='Reset answers'>
+											<IconButton size='small' onClick={() => void handleResetAttempt()} sx={{ bgcolor: 'action.hover', '&:hover': { bgcolor: 'action.selected' } }}>
 												<RefreshIcon fontSize='small' />
 											</IconButton>
 										</Tooltip>
 									</Box>
 								</Box>
-								<LinearProgress
-									variant='determinate'
-									value={progressPct}
-									color='success'
-									sx={{ height: 8, borderRadius: 4 }}
-								/>
-								<Typography
-									variant='caption'
-									color='text.secondary'
-									sx={{ mt: 0.5, display: 'block' }}
-								>
-									{progressPct}% correct ({correctCount}/{totalQ})
-								</Typography>
+								<Box sx={{ height: 10, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
+									<Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
+									<Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
+								</Box>
+								<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+									<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+										{progressPct}% Accuracy
+									</Typography>
+									<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+										{correctCount + incorrectCount} of {totalQ} questions completed
+									</Typography>
+								</Box>
 							</Paper>
 						)}
 
@@ -1324,16 +1396,49 @@ export default function QuizBankTab({
 								)}
 
 								{activeQuestions.length > 1 && (
-									<Box
-										sx={{ display: 'flex', justifyContent: 'center', mt: 2.5 }}
-									>
+									<Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
 										<Pagination
 											count={activeQuestions.length}
 											page={currentPage + 1}
 											onChange={handlePageChange}
-											color='primary'
 											size='small'
 											siblingCount={3}
+											renderItem={(item) => {
+												if (item.type !== 'page' || typeof item.page !== 'number')
+													return <PaginationItem {...item} />;
+												const qIndex = item.page - 1;
+												const q = activeQuestions[qIndex];
+												if (!q) return <PaginationItem {...item} />;
+												const ans = courseAnswers.get(q._id);
+												const isAnswered = ans && ans.selectedOptionIndices.length > 0;
+												let finalSx: any = { fontWeight: 800, transition: 'all 0.2s ease' };
+												if (isAnswered) {
+													const baseColor = ans.isCorrect ? '#22c55e' : '#ef4444';
+													const hoverColor = ans.isCorrect ? '#16a34a' : '#dc2626';
+													finalSx = {
+														...finalSx,
+														bgcolor: `${baseColor} !important`,
+														color: 'white !important',
+														'&:hover': { bgcolor: `${hoverColor} !important` },
+														'&.Mui-selected': {
+															bgcolor: `${baseColor} !important`,
+															border: '3px solid',
+															borderColor: 'primary.main',
+															boxShadow: '0 0 0 1px white inset',
+														},
+													};
+												} else if (item.selected) {
+													finalSx = {
+														...finalSx,
+														bgcolor: 'primary.main !important',
+														color: 'white !important',
+														border: '3px solid',
+														borderColor: 'primary.main',
+														boxShadow: '0 0 0 1px white inset',
+													};
+												}
+												return <PaginationItem {...item} sx={finalSx} />;
+											}}
 										/>
 									</Box>
 								)}
@@ -1628,6 +1733,88 @@ export default function QuizBankTab({
 				)}
 			</Box>
 		</Box>
+	);
+}
+
+// ── Subsection progress button ─────────────────────────────────────────────
+
+function SubsectionProgressButton({
+	label,
+	count,
+	total,
+	correct,
+	incorrect,
+	progressValue,
+	progressText,
+	color,
+	selected,
+	onClick,
+}: {
+	label: string;
+	count: number;
+	total: number;
+	correct: number;
+	incorrect: number;
+	progressValue: number;
+	progressText: string;
+	color: 'primary' | 'success' | 'error';
+	selected: boolean;
+	onClick: () => void;
+}) {
+	const percent = total > 0 ? Math.round((progressValue / total) * 100) : 0;
+	const selectedBg =
+		color === 'error'
+			? 'rgba(239,68,68,0.08)'
+			: color === 'success'
+			? 'rgba(34,197,94,0.08)'
+			: 'rgba(25,118,210,0.08)';
+
+	return (
+		<Button
+			fullWidth
+			onClick={onClick}
+			color={color}
+			variant='text'
+			sx={{
+				justifyContent: 'stretch',
+				p: 1,
+				borderRadius: 1,
+				border: '1px solid',
+				borderColor: selected ? `${color}.main` : 'divider',
+				bgcolor: selected ? selectedBg : 'background.default',
+				textTransform: 'none',
+				color: 'text.primary',
+				'&:hover': {
+					bgcolor: selected ? selectedBg : 'action.hover',
+					borderColor: `${color}.main`,
+				},
+			}}
+		>
+			<Box sx={{ width: '100%', minWidth: 0 }}>
+				<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+					<Typography sx={{ fontSize: '0.76rem', fontWeight: selected ? 900 : 700, flex: 1, textAlign: 'left' }}>
+						{label}
+					</Typography>
+					<Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: `${color}.main` }}>
+						{count}
+					</Typography>
+				</Box>
+				<LinearProgress
+					variant='determinate'
+					value={percent}
+					color={color}
+					sx={{ height: 5, borderRadius: 5, my: 0.65, bgcolor: 'action.selected' }}
+				/>
+				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+					<Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.65rem', lineHeight: 1.2 }}>
+						{progressText}
+					</Typography>
+					<Typography variant='caption' sx={{ fontSize: '0.65rem', lineHeight: 1.2, color: 'text.secondary', whiteSpace: 'nowrap' }}>
+						Wrong {incorrect} / Correct {correct}
+					</Typography>
+				</Box>
+			</Box>
+		</Button>
 	);
 }
 
