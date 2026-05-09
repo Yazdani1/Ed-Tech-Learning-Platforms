@@ -9,7 +9,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Divider,
   IconButton,
   LinearProgress,
   List,
@@ -201,6 +200,102 @@ export default function PracticeQuizPage() {
   const progressPct = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0;
 
   const selectedCourse = courses.find((c) => c._id === selectedCourseId) ?? null;
+  const lockedCourseCard =
+    selectedCourseId && !treeLoading && lockedBankCount > 0 && selectedCourse ? (
+      <Paper
+        variant='outlined'
+        sx={{
+          m: { xs: 2, md: 2.5 },
+          mb: 0,
+          p: 2,
+          borderRadius: 1,
+          borderStyle: 'dashed',
+          borderColor: 'warning.main',
+          bgcolor: 'rgba(245,158,11,0.05)',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            gap: 1.5,
+            flexDirection: { xs: 'column', sm: 'row' },
+          }}
+        >
+          <Box
+            sx={{
+              width: 42,
+              height: 42,
+              borderRadius: 1,
+              bgcolor: 'rgba(245,158,11,0.14)',
+              color: 'warning.dark',
+              display: 'grid',
+              placeItems: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <LockOutlinedIcon fontSize='small' />
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
+              {lockedBankCount} more quiz bank{lockedBankCount !== 1 ? 's' : ''} locked
+            </Typography>
+            <Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>
+              {lockedQuestionCount} question{lockedQuestionCount !== 1 ? 's' : ''} available
+              with full course access
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75, mt: 0.75, flexWrap: 'wrap' }}>
+              {selectedCourse.pricing === 'Free' ? (
+                <Chip label='Free' color='success' size='small' />
+              ) : (
+                <>
+                  <Typography variant='subtitle1' sx={{ fontWeight: 900, color: 'warning.dark', lineHeight: 1 }}>
+                    ${selectedCourse.discountPrice ?? selectedCourse.price ?? selectedCourse.listPrice ?? 0}
+                  </Typography>
+                  {selectedCourse.discountPrice != null &&
+                    (selectedCourse.listPrice ?? selectedCourse.price) != null && (
+                      <Typography
+                        variant='caption'
+                        sx={{ textDecoration: 'line-through', color: 'text.disabled' }}
+                      >
+                        ${selectedCourse.listPrice ?? selectedCourse.price}
+                      </Typography>
+                    )}
+                  {(selectedCourse.discountPercent ?? 0) > 0 && (
+                    <Chip
+                      label={`-${selectedCourse.discountPercent}%`}
+                      size='small'
+                      color='error'
+                      sx={{ fontSize: '0.65rem', height: 18 }}
+                    />
+                  )}
+                </>
+              )}
+              {selectedCourse.includedInSubscription && (
+                <Chip
+                  label='Subscription'
+                  color='info'
+                  variant='outlined'
+                  size='small'
+                  sx={{ height: 20, fontSize: '0.68rem' }}
+                />
+              )}
+            </Box>
+          </Box>
+          <Button
+            variant='contained'
+            color='warning'
+            size='small'
+            component={RouterLink}
+            to={`/courses/${selectedCourseId}`}
+            startIcon={<SchoolOutlinedIcon sx={{ fontSize: 16 }} />}
+            sx={{ fontWeight: 800, borderRadius: 5, flexShrink: 0 }}
+          >
+            Buy Course
+          </Button>
+        </Box>
+      </Paper>
+    ) : null;
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -458,6 +553,7 @@ export default function PracticeQuizPage() {
 
         {/* ── Column 2: Practice panel ──────────────────────────────── */}
         <Box sx={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+          {lockedCourseCard}
           {!selectedBankId ? (
             <Box
               sx={{
@@ -746,29 +842,38 @@ export default function PracticeQuizPage() {
               </Typography>
             </Box>
           ) : (
-            sections.map((section) => (
+            sections.map((section) => {
+              const isSectionSelected = section.banks.some((bank) => bank._id === selectedBankId);
+              return (
               <Accordion
                 key={section._id}
                 defaultExpanded
                 elevation={0}
                 disableGutters
                 sx={{
-                  bgcolor: 'transparent',
+                  bgcolor: isSectionSelected ? 'primary.50' : 'transparent',
                   borderBottom: '1px solid',
-                  borderColor: 'divider',
+                  borderColor: isSectionSelected ? 'primary.light' : 'divider',
+                  borderLeft: isSectionSelected ? '3px solid' : '3px solid transparent',
                   '&::before': { display: 'none' },
                 }}
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon sx={{ fontSize: 18 }} />}
-                  sx={{ px: 2, py: 0.75, bgcolor: 'grey.50', minHeight: 44 }}
+                  sx={{
+                    px: 2,
+                    py: 0.75,
+                    bgcolor: isSectionSelected ? 'rgba(25,118,210,0.1)' : 'grey.50',
+                    minHeight: 44,
+                  }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, overflow: 'hidden' }}>
                     <Typography
                       sx={{
-                        fontWeight: 600,
+                        fontWeight: isSectionSelected ? 800 : 600,
                         fontSize: '0.82rem',
                         lineHeight: 1.3,
+                        color: isSectionSelected ? 'primary.main' : 'text.primary',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -854,131 +959,54 @@ export default function PracticeQuizPage() {
                           )}
                         </Box>
 
-                        {/* Subsection chips */}
-                        <Stack
-                          direction='row'
-                          sx={{ px: 2, pb: 1, flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}
-                        >
-                          <Chip
-                            label={`All ${bank.questions.length}`}
-                            size='small'
-                            clickable
-                            color={
-                              isSelected && selectedSubsection === 'all'
-                                ? 'primary'
-                                : 'default'
-                            }
+                        <Stack sx={{ px: 2, pb: 1.25, gap: 0.75, mt: 0.75 }}>
+                          <SubsectionProgressButton
+                            label='All'
+                            count={bank.questions.length}
+                            total={bank.questions.length}
+                            correct={bCorrect}
+                            incorrect={bIncorrect}
+                            progressValue={bCorrect + bIncorrect}
+                            progressText={`${bCorrect + bIncorrect}/${bank.questions.length} answered`}
+                            color='primary'
+                            selected={isSelected && selectedSubsection === 'all'}
                             onClick={() => handleSelectBank(bank._id, 'all')}
-                            sx={{ fontSize: '0.72rem', height: 22 }}
                           />
-                          {isLoggedIn && (
-                            <>
-                              <Chip
-                                label={`Wrong ${bIncorrect}`}
-                                size='small'
-                                clickable
-                                color={
-                                  isSelected && selectedSubsection === 'incorrect'
-                                    ? 'error'
-                                    : 'default'
-                                }
-                                onClick={() => handleSelectBank(bank._id, 'incorrect')}
-                                sx={{ fontSize: '0.72rem', height: 22 }}
-                              />
-                              <Chip
-                                label={`Correct ${bCorrect}`}
-                                size='small'
-                                clickable
-                                color={
-                                  isSelected && selectedSubsection === 'correct'
-                                    ? 'success'
-                                    : 'default'
-                                }
-                                onClick={() => handleSelectBank(bank._id, 'correct')}
-                                sx={{ fontSize: '0.72rem', height: 22 }}
-                              />
-                            </>
-                          )}
+                          <SubsectionProgressButton
+                            label='Wrong'
+                            count={bIncorrect}
+                            total={bank.questions.length}
+                            correct={bCorrect}
+                            incorrect={bIncorrect}
+                            progressValue={bIncorrect}
+                            progressText={`${bIncorrect}/${bank.questions.length} wrong`}
+                            color='error'
+                            selected={isSelected && selectedSubsection === 'incorrect'}
+                            onClick={() => handleSelectBank(bank._id, 'incorrect')}
+                          />
+                          <SubsectionProgressButton
+                            label='Correct'
+                            count={bCorrect}
+                            total={bank.questions.length}
+                            correct={bCorrect}
+                            incorrect={bIncorrect}
+                            progressValue={bCorrect}
+                            progressText={`${bCorrect}/${bank.questions.length} correct`}
+                            color='success'
+                            selected={isSelected && selectedSubsection === 'correct'}
+                            onClick={() => handleSelectBank(bank._id, 'correct')}
+                          />
                         </Stack>
                       </Box>
                     );
                   })}
                 </AccordionDetails>
               </Accordion>
-            ))
+              );
+            })
           )}
 
           {/* Buy card — shown when there are locked banks */}
-          {selectedCourseId && !treeLoading && lockedBankCount > 0 && selectedCourse && (
-            <>
-              <Divider />
-              <Box
-                sx={{
-                  m: 1.5,
-                  p: 2,
-                  borderRadius: 2,
-                  border: '1.5px dashed',
-                  borderColor: 'warning.main',
-                  bgcolor: 'rgba(245,158,11,0.05)',
-                  textAlign: 'center',
-                }}
-              >
-                <LockOutlinedIcon sx={{ fontSize: 26, color: 'warning.main', mb: 0.5 }} />
-                <Typography variant='subtitle2' sx={{ fontWeight: 700, mb: 0.25 }}>
-                  {lockedBankCount} more quiz bank{lockedBankCount !== 1 ? 's' : ''} locked
-                </Typography>
-                <Typography
-                  variant='caption'
-                  color='text.secondary'
-                  sx={{ display: 'block', mb: 1.25, lineHeight: 1.4 }}
-                >
-                  {lockedQuestionCount} question{lockedQuestionCount !== 1 ? 's' : ''} available
-                  with full course access
-                </Typography>
-
-                {/* Price display */}
-                {selectedCourse.pricing === 'Free' ? (
-                  <Chip label='Free' color='success' size='small' sx={{ mb: 1.25 }} />
-                ) : (
-                  <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 0.75, mb: 1.25, flexWrap: 'wrap' }}>
-                    <Typography variant='h6' sx={{ fontWeight: 800, color: 'warning.dark', lineHeight: 1 }}>
-                      ${selectedCourse.discountPrice ?? selectedCourse.price ?? selectedCourse.listPrice ?? 0}
-                    </Typography>
-                    {selectedCourse.discountPrice != null && (selectedCourse.listPrice ?? selectedCourse.price) != null && (
-                      <Typography variant='body2' sx={{ textDecoration: 'line-through', color: 'text.disabled' }}>
-                        ${selectedCourse.listPrice ?? selectedCourse.price}
-                      </Typography>
-                    )}
-                    {(selectedCourse.discountPercent ?? 0) > 0 && (
-                      <Chip
-                        label={`-${selectedCourse.discountPercent}%`}
-                        size='small'
-                        color='error'
-                        sx={{ fontSize: '0.65rem', height: 18 }}
-                      />
-                    )}
-                  </Box>
-                )}
-                {selectedCourse.includedInSubscription && (
-                  <Typography variant='caption' color='info.main' sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
-                    Also included in subscription
-                  </Typography>
-                )}
-
-                <Button
-                  variant='contained'
-                  color='warning'
-                  size='small'
-                  component={RouterLink}
-                  to={`/courses/${selectedCourseId}`}
-                  startIcon={<SchoolOutlinedIcon sx={{ fontSize: 16 }} />}
-                  sx={{ fontWeight: 700, borderRadius: 5 }}
-                >
-                  Buy Course
-                </Button>
-              </Box>
-            </>
-          )}
         </Box>
       </Box>
     </Box>
@@ -986,6 +1014,89 @@ export default function PracticeQuizPage() {
 }
 
 // ── Practice card ──────────────────────────────────────────────────────────
+
+function SubsectionProgressButton({
+  label,
+  count,
+  total,
+  correct,
+  incorrect,
+  progressValue,
+  progressText,
+  color,
+  selected,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  total: number;
+  correct: number;
+  incorrect: number;
+  progressValue: number;
+  progressText: string;
+  color: 'primary' | 'success' | 'error';
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const percent = total > 0 ? Math.round((progressValue / total) * 100) : 0;
+  const selectedBg =
+    color === 'error'
+      ? 'rgba(239,68,68,0.08)'
+      : color === 'success'
+      ? 'rgba(34,197,94,0.08)'
+      : 'rgba(25,118,210,0.08)';
+
+  return (
+    <Button
+      fullWidth
+      onClick={onClick}
+      color={color}
+      variant='text'
+      sx={{
+        justifyContent: 'stretch',
+        p: 1,
+        borderRadius: 1,
+        border: '1px solid',
+        borderColor: selected ? `${color}.main` : 'divider',
+        bgcolor: selected ? selectedBg : 'background.default',
+        textTransform: 'none',
+        color: 'text.primary',
+        '&:hover': {
+          bgcolor: selected ? selectedBg : 'action.hover',
+          borderColor: `${color}.main`,
+        },
+      }}
+    >
+      <Box sx={{ width: '100%', minWidth: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography sx={{ fontSize: '0.76rem', fontWeight: selected ? 900 : 700, flex: 1, textAlign: 'left' }}>
+            {label}
+          </Typography>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: `${color}.main` }}>
+            {count}
+          </Typography>
+        </Box>
+        <LinearProgress
+          variant='determinate'
+          value={percent}
+          color={color}
+          sx={{ height: 5, borderRadius: 5, my: 0.65, bgcolor: 'action.selected' }}
+        />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+          <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.65rem', lineHeight: 1.2 }}>
+            {progressText}
+          </Typography>
+          <Typography
+            variant='caption'
+            sx={{ fontSize: '0.65rem', lineHeight: 1.2, color: 'text.secondary', whiteSpace: 'nowrap' }}
+          >
+            Wrong {incorrect} / Correct {correct}
+          </Typography>
+        </Box>
+      </Box>
+    </Button>
+  );
+}
 
 function PracticeCard({
   question,
