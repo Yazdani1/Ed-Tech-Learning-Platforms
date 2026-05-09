@@ -288,6 +288,24 @@ export default function QuizBankTab({
 	const progressPct =
 		totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0;
 
+	// Course-level stats (student view only) — only banks tied to a quiz section
+	const sectionIds = new Set(quizSections.map((s) => s._id));
+	const allCourseQuestions = quizBanks
+		.filter((b) => b.quizSection && sectionIds.has(b.quizSection))
+		.flatMap((b) => b.questions);
+	const courseTotalQ = allCourseQuestions.length;
+	const courseTotalCorrect = allCourseQuestions.filter(
+		(q) => courseAnswers.get(q._id)?.isCorrect,
+	).length;
+	const courseTotalIncorrect = allCourseQuestions.filter((q) => {
+		const a = courseAnswers.get(q._id);
+		return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
+	}).length;
+	const courseTotalAnswered = courseTotalCorrect + courseTotalIncorrect;
+	const courseTotalRemaining = courseTotalQ - courseTotalAnswered;
+	const courseProgressPct =
+		courseTotalQ > 0 ? Math.round((courseTotalCorrect / courseTotalQ) * 100) : 0;
+
 	// ── Handlers ──────────────────────────────────────────────────────────────
 
 	const handleSelectBank = (bankId: string, sub: Subsection) => {
@@ -1247,6 +1265,57 @@ export default function QuizBankTab({
 
 			{/* ── Right panel ─────────────────────────────────────────────────── */}
 			<Box sx={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+				{/* ── Course-level summary (student only) ─────────────────────── */}
+				{!canPost && courseTotalQ > 0 && (
+					<Paper
+						variant='outlined'
+						sx={{
+							mx: { xs: 2, md: 3 },
+							mt: { xs: 2, md: 3 },
+							mb: 0,
+							p: 2.5,
+							borderRadius: 2,
+							bgcolor: 'background.paper',
+							boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+						}}
+					>
+						<Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, mb: 2, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+							<Box>
+								<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total</Typography>
+								<Typography variant='h6' sx={{ fontWeight: 800 }}>{courseTotalQ}</Typography>
+							</Box>
+							<Box>
+								<Typography variant='caption' color='primary.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Answered</Typography>
+								<Typography variant='h6' sx={{ fontWeight: 800, color: 'primary.main' }}>{courseTotalAnswered}</Typography>
+							</Box>
+							<Box>
+								<Typography variant='caption' color='success.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Correct</Typography>
+								<Typography variant='h6' sx={{ fontWeight: 800, color: 'success.main' }}>{courseTotalCorrect}</Typography>
+							</Box>
+							<Box>
+								<Typography variant='caption' color='error.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Incorrect</Typography>
+								<Typography variant='h6' sx={{ fontWeight: 800, color: 'error.main' }}>{courseTotalIncorrect}</Typography>
+							</Box>
+							<Box>
+								<Typography variant='caption' color='warning.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Remaining</Typography>
+								<Typography variant='h6' sx={{ fontWeight: 800, color: 'warning.main' }}>{courseTotalRemaining}</Typography>
+							</Box>
+						</Box>
+						<Box sx={{ height: 10, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
+							<Box sx={{ width: `${(courseTotalCorrect / courseTotalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
+							<Box sx={{ width: `${(courseTotalIncorrect / courseTotalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
+						</Box>
+						<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+							<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+								{courseProgressPct}% Accuracy
+							</Typography>
+							<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+								{courseTotalAnswered} of {courseTotalQ} questions completed
+							</Typography>
+						</Box>
+					</Paper>
+				)}
+
 				{/* Empty state */}
 				{!selectedBankId && !managingBankId && (
 					<Box
