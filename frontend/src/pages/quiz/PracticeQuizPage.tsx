@@ -611,35 +611,31 @@ export default function PracticeQuizPage() {
     setIsChecked(false);
   };
 
-  const handleResetAttempt = async () => {
-    if (!selectedBankId) return;
+  const handleResetAttempt = async (bankId?: string) => {
+    const targetId = bankId ?? selectedBankId;
+    if (!targetId) return;
+    const targetBank = allBanks.find((b) => b._id === targetId) ?? selectedBank;
+    const ok = await confirm({
+      title: 'Reset Practice',
+      message: 'Clear all your saved answers for this quiz bank?',
+      confirmText: 'Reset',
+      cancelText: 'Cancel',
+    });
+    if (!ok) return;
     if (isLoggedIn) {
-      const ok = await confirm({
-        title: 'Reset Practice',
-        message: 'Clear all your saved answers for this quiz bank?',
-        confirmText: 'Reset',
-        cancelText: 'Cancel',
-      });
-      if (!ok) return;
-      await quizBankService.resetAttempt(selectedBankId);
-      setAttempt(null);
-      // Remove answers for this specific bank from courseAnswers
-      setCourseAnswers(prev => {
-        const next = new Map(prev);
-        selectedBank?.questions.forEach(q => next.delete(q._id));
-        return next;
-      });
-    } else {
-      setCourseAnswers(prev => {
-        const next = new Map(prev);
-        selectedBank?.questions.forEach(q => next.delete(q._id));
-        return next;
-      });
+      await quizBankService.resetAttempt(targetId);
+      if (selectedBankId === targetId) setAttempt(null);
     }
-    setCurrentPage(0);
-
-    setSelectedOptions([]);
-    setIsChecked(false);
+    setCourseAnswers((prev) => {
+      const next = new Map(prev);
+      targetBank?.questions.forEach((q) => next.delete(q._id));
+      return next;
+    });
+    if (selectedBankId === targetId) {
+      setCurrentPage(0);
+      setSelectedOptions([]);
+      setIsChecked(false);
+    }
     toast.success('Practice reset');
   };
 
@@ -1078,14 +1074,27 @@ export default function PracticeQuizPage() {
           ) : (
             <Box sx={{ p: { xs: 1.5, md: 2 }, maxWidth: 760, mx: 'auto' }}>
               {/* Bank title + subsection badge */}
-              <Box sx={{ mb: 1.5 }}>
-                <Typography variant='h5' sx={{ fontWeight: 700, mb: 0.5 }}>
-                  {selectedBank?.title}
-                </Typography>
-                {selectedBank?.description && (
-                  <Typography variant='body2' color='text.secondary'>
-                    {selectedBank.description}
+              <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                <Box>
+                  <Typography variant='h5' sx={{ fontWeight: 700, mb: 0.5 }}>
+                    {selectedBank?.title}
                   </Typography>
+                  {selectedBank?.description && (
+                    <Typography variant='body2' color='text.secondary'>
+                      {selectedBank.description}
+                    </Typography>
+                  )}
+                </Box>
+                {(correctCount + incorrectCount) > 0 && (
+                  <Tooltip title='Reset all answers for this quiz bank' placement='left'>
+                    <IconButton
+                      size='small'
+                      onClick={() => void handleResetAttempt()}
+                      sx={{ flexShrink: 0, mt: 0.5, color: 'text.primary', '&:hover': { color: 'error.main', bgcolor: 'error.50' } }}
+                    >
+                      <RefreshIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
                 )}
               </Box>
 
@@ -1598,6 +1607,19 @@ export default function PracticeQuizPage() {
                               onClick={() => handleSelectBank(bank._id, 'correct')}
                             />
                           </Stack>
+                          {(bCorrect + bIncorrect) > 0 && (
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5, pt: 0.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                              <Tooltip title='Reset progress for this quiz bank' placement='top'>
+                                <IconButton
+                                  size='small'
+                                  onClick={(e) => { e.stopPropagation(); void handleResetAttempt(bank._id); }}
+                                  sx={{ color: 'text.primary', '&:hover': { color: 'error.main', bgcolor: 'error.50' } }}
+                                >
+                                  <RefreshIcon sx={{ fontSize: 15 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          )}
                         </AccordionDetails>
 
 
