@@ -310,7 +310,7 @@ export default function CourseDetailPage() {
 								{course.category?.name && (
 									<>
 										<Typography variant='caption' sx={{ color: 'grey.500' }}>
-											â€º
+											»
 										</Typography>
 										<Typography variant='caption' sx={{ color: '#a78bfa' }}>
 											{course.category.name}
@@ -320,7 +320,7 @@ export default function CourseDetailPage() {
 								{course.courseType?.name && (
 									<>
 										<Typography variant='caption' sx={{ color: 'grey.500' }}>
-											â€º
+											»
 										</Typography>
 										<Typography variant='caption' sx={{ color: '#a78bfa' }}>
 											{course.courseType.name}
@@ -847,7 +847,7 @@ export default function CourseDetailPage() {
 														sx={{ mr: 1, alignSelf: 'center' }}
 													>
 														{section.lectures.length} lecture
-														{section.lectures.length !== 1 ? 's' : ''} â€¢{' '}
+														{section.lectures.length !== 1 ? 's' : ''} •{' '}
 														{formatSectionDuration(getSectionDuration(section))}
 													</Typography>
 												</AccordionSummary>
@@ -1380,7 +1380,7 @@ export default function CourseDetailPage() {
 															sx={{ mb: 1.5, lineHeight: 1.5 }}
 														>
 															{teacher.bio.length > 80
-																? `${teacher.bio.slice(0, 80)}â€¦`
+																? `${teacher.bio.slice(0, 80)}…`
 																: teacher.bio}
 														</Typography>
 													)}
