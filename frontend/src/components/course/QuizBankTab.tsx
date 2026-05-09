@@ -116,6 +116,7 @@ export default function QuizBankTab({
 	const courseAnswersRef = useRef<Map<string, LocalAnswer>>(new Map());
 	const [expandedSections, setExpandedSections] = useState<string[]>([]);
 	const [expandedBanks, setExpandedBanks] = useState<string[]>([]);
+	const [courseStatsOpen, setCourseStatsOpen] = useState(true);
 
 	const [currentPage, setCurrentPage] = useState(0);
 	const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
@@ -1273,40 +1274,68 @@ export default function QuizBankTab({
 							mx: { xs: 2, md: 3 },
 							mt: { xs: 2, md: 3 },
 							mb: 0,
-							px: 2,
-							py: 1.25,
-							borderRadius: 2,
+							borderRadius: 0.5,
 							bgcolor: 'background.paper',
+							overflow: 'hidden',
 						}}
 					>
-						<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, flexWrap: 'wrap' }}>
-							{[
-								{ label: 'Total', value: courseTotalQ, color: 'text.primary' },
-								{ label: 'Answered', value: courseTotalAnswered, color: 'primary.main' },
-								{ label: 'Correct', value: courseTotalCorrect, color: 'success.main' },
-								{ label: 'Incorrect', value: courseTotalIncorrect, color: 'error.main' },
-								{ label: 'Remaining', value: courseTotalRemaining, color: 'warning.main' },
-							].map(({ label, value, color }, i, arr) => (
-								<Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-									<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
-										{label}:
-									</Typography>
-									<Typography variant='caption' sx={{ fontWeight: 800, color }}>
-										{value}
-									</Typography>
-									{i < arr.length - 1 && (
-										<Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'divider', ml: 0.5 }} />
-									)}
-								</Box>
-							))}
-							<Typography variant='caption' color='text.secondary' sx={{ ml: 'auto', fontWeight: 600 }}>
+						{/* Header row — always visible */}
+						<Box
+							onClick={() => setCourseStatsOpen((p) => !p)}
+							sx={{
+								px: 2,
+								py: 1,
+								display: 'flex',
+								alignItems: 'center',
+								gap: 2,
+								cursor: 'pointer',
+								'&:hover': { bgcolor: 'action.hover' },
+							}}
+						>
+							<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, flexWrap: 'wrap' }}>
+								{[
+									{ label: 'Total', value: courseTotalQ, color: 'text.primary' },
+									{ label: 'Answered', value: courseTotalAnswered, color: 'primary.main' },
+									{ label: 'Correct', value: courseTotalCorrect, color: 'success.main' },
+									{ label: 'Incorrect', value: courseTotalIncorrect, color: 'error.main' },
+									{ label: 'Not Answered Yet', value: courseTotalRemaining, color: 'warning.main' },
+								].map(({ label, value, color }, i, arr) => (
+									<Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+										<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+											{label}:
+										</Typography>
+										<Typography variant='caption' sx={{ fontWeight: 800, color }}>
+											{value}
+										</Typography>
+										{i < arr.length - 1 && (
+											<Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'action.disabled', ml: 0.5 }} />
+										)}
+									</Box>
+								))}
+							</Box>
+							<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>
 								{courseProgressPct}% accuracy
 							</Typography>
+							<ExpandMoreIcon
+								sx={{
+									fontSize: 18,
+									color: 'text.secondary',
+									flexShrink: 0,
+									transition: 'transform 0.2s',
+									transform: courseStatsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+								}}
+							/>
 						</Box>
-						<Box sx={{ height: 6, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
-							<Box sx={{ width: `${(courseTotalCorrect / courseTotalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
-							<Box sx={{ width: `${(courseTotalIncorrect / courseTotalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
-						</Box>
+
+						{/* Collapsible progress bar */}
+						<Collapse in={courseStatsOpen}>
+							<Box sx={{ px: 2, pb: 1.25 }}>
+								<Box sx={{ height: 6, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
+									<Box sx={{ width: `${(courseTotalCorrect / courseTotalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
+									<Box sx={{ width: `${(courseTotalIncorrect / courseTotalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
+								</Box>
+							</Box>
+						</Collapse>
 					</Paper>
 				)}
 
@@ -1404,7 +1433,7 @@ export default function QuizBankTab({
 										<Typography variant='h6' sx={{ fontWeight: 800, color: 'error.main' }}>{incorrectCount}</Typography>
 									</Box>
 									<Box>
-										<Typography variant='caption' color='warning.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Remaining</Typography>
+										<Typography variant='caption' color='warning.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Not Answered Yet</Typography>
 										<Typography variant='h6' sx={{ fontWeight: 800, color: 'warning.main' }}>{totalQ - (correctCount + incorrectCount)}</Typography>
 									</Box>
 									<Box sx={{ ml: 'auto', alignSelf: 'flex-start' }}>

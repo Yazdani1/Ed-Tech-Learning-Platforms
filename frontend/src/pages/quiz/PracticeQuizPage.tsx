@@ -729,7 +729,7 @@ export default function PracticeQuizPage() {
                     <Typography variant='h6' sx={{ fontWeight: 800, color: 'error.main' }}>{incorrectCount}</Typography>
                   </Box>
                   <Box>
-                    <Typography variant='caption' color='warning.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Remaining</Typography>
+                    <Typography variant='caption' color='warning.main' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Not Answered Yet</Typography>
                     <Typography variant='h6' sx={{ fontWeight: 800, color: 'warning.main' }}>{totalQ - (correctCount + incorrectCount)}</Typography>
                   </Box>
                   <Box sx={{ ml: 'auto', alignSelf: 'flex-start' }}>
