@@ -1415,7 +1415,7 @@ export default function QuizBankTab({
 								<CircularProgress size={20} />
 							</Box>
 						) : (
-							<Paper variant='outlined' sx={{ p: 2.5, mb: 3, borderRadius: 2, bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
+							<Paper variant='outlined' sx={{ p: 2, mb: 2, borderRadius: 0.5, bgcolor: 'background.paper', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
 								<Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, mb: 2, flexWrap: 'wrap', justifyContent: 'space-between' }}>
 									<Box>
 										<Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total</Typography>
@@ -1474,6 +1474,30 @@ export default function QuizBankTab({
 							</Box>
 						) : (
 							<>
+								<Box
+									sx={{
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'space-between',
+										mb: 1.5,
+									}}
+								>
+									<Typography variant='h6' sx={{ fontWeight: 800 }}>
+										{selectedSubsection === 'all'
+											? 'All Questions'
+											: selectedSubsection === 'incorrect'
+											? 'Incorrect Questions'
+											: 'Correct Questions'}
+									</Typography>
+									<Typography
+										variant='h6'
+										color='text.secondary'
+										sx={{ fontWeight: 700 }}
+									>
+										{activeQuestions.length} question
+										{activeQuestions.length !== 1 ? 's' : ''}
+									</Typography>
+								</Box>
 								{currentQuestion && (
 									<QuestionPracticeCard
 										question={currentQuestion}
@@ -1491,42 +1515,40 @@ export default function QuizBankTab({
 								)}
 
 								{activeQuestions.length > 1 && (
-									<Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-										<AppPagination
-											page={currentPage + 1}
-											totalPages={activeQuestions.length}
-											totalItems={activeQuestions.length}
-											pageSize={1}
-											onChange={(p) => {
-												setCurrentPage(p - 1);
-												setSelectedOptions([]);
-												setIsChecked(false);
-											}}
-											align='center'
-											getItemSx={(pageNo) => {
-												const qIndex = pageNo - 1;
-												const q = activeQuestions[qIndex];
-												if (!q) return {};
-												const ans = courseAnswers.get(q._id);
-												const isAnswered = ans && ans.selectedOptionIndices.length > 0;
-												if (isAnswered) {
-													const baseColor = ans.isCorrect ? '#22c55e' : '#ef4444';
-													const hoverColor = ans.isCorrect ? '#16a34a' : '#dc2626';
-													return {
-														bgcolor: `${baseColor} !important`,
-														color: 'white !important',
-														'&:hover': { bgcolor: `${hoverColor} !important` },
-														...(pageNo === currentPage + 1 && {
-															border: '3px solid',
-															borderColor: 'primary.main',
-															boxShadow: '0 0 0 1px white inset',
-														}),
-													};
-												}
-												return {};
-											}}
-										/>
-									</Box>
+									<AppPagination
+										page={currentPage + 1}
+										totalPages={activeQuestions.length}
+										totalItems={activeQuestions.length}
+										pageSize={1}
+										onChange={(p) => {
+											setCurrentPage(p - 1);
+											setSelectedOptions([]);
+											setIsChecked(false);
+										}}
+										align='space-between'
+										getItemSx={(pageNo) => {
+											const qIndex = pageNo - 1;
+											const q = activeQuestions[qIndex];
+											if (!q) return {};
+											const ans = courseAnswers.get(q._id);
+											const isAnswered = ans && ans.selectedOptionIndices.length > 0;
+											if (isAnswered) {
+												const baseColor = ans.isCorrect ? '#22c55e' : '#ef4444';
+												const hoverColor = ans.isCorrect ? '#16a34a' : '#dc2626';
+												return {
+													bgcolor: `${baseColor} !important`,
+													color: 'white !important',
+													'&:hover': { bgcolor: `${hoverColor} !important` },
+													...(pageNo === currentPage + 1 && {
+														border: '3px solid',
+														borderColor: 'primary.main',
+														boxShadow: '0 0 0 1px white inset',
+													}),
+												};
+											}
+											return {};
+										}}
+									/>
 								)}
 							</>
 						)}
@@ -1937,7 +1959,7 @@ function QuestionPracticeCard({
 	const multipleCorrect = question.correctOptionIndices.length > 1;
 
 	return (
-		<Paper variant='outlined' sx={{ p: 3, borderRadius: 1 }}>
+		<Paper variant='outlined' sx={{ p: 2.5, borderRadius: 0.5 }}>
 			{/* Question number */}
 			<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
 				<Chip

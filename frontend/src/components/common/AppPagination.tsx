@@ -119,7 +119,7 @@ export default function AppPagination({
 				justifyContent: isCentered ? 'center' : 'space-between',
 				gap: isCentered ? 1.5 : 2,
 				flexWrap: 'wrap',
-				mt: 4,
+				mt: 2,
 				px: isCentered ? 1.5 : 0,
 				py: isCentered ? 1.5 : 0,
 				borderTop: isCentered ? '1px solid' : 'none',
