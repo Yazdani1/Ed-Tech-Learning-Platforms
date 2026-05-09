@@ -10,6 +10,7 @@ import {
   Chip,
   CircularProgress,
   Collapse,
+  Divider,
   IconButton,
   LinearProgress,
   List,
@@ -257,101 +258,222 @@ export default function PracticeQuizPage() {
   const courseProgressPct = courseTotalQ > 0 ? Math.round((courseTotalCorrect / courseTotalQ) * 100) : 0;
 
   const selectedCourse = courses.find((c) => c._id === selectedCourseId) ?? null;
-  const lockedCourseCard =
-    selectedCourseId && !treeLoading && lockedBankCount > 0 && selectedCourse ? (
-      <Paper
-        variant='outlined'
+  const selectedCourseSidebar =
+    selectedCourseId && !treeLoading && selectedCourse ? (
+      <Box
         sx={{
-          m: { xs: 2, md: 2.5 },
-          mb: 0,
-          p: 2,
-          borderRadius: 1,
-          borderStyle: 'dashed',
-          borderColor: 'warning.main',
-          bgcolor: 'rgba(245,158,11,0.05)',
+          width: 360,
+          flexShrink: 0,
+          p: { xs: 2, md: 2.5 },
+          overflow: 'auto',
         }}
       >
-        <Box
+        <Paper
+          variant='outlined'
           sx={{
+            p: 3,
+            borderRadius: 0.5,
+            bgcolor: 'background.paper',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.06)',
             display: 'flex',
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            gap: 1.5,
-            flexDirection: { xs: 'column', sm: 'row' },
+            flexDirection: 'column',
           }}
         >
+          <Box sx={{ mb: 3 }}>
+            <Box
+              component='img'
+              src={selectedCourse.coverImage || 'https://via.placeholder.com/340x200?text=Course+Cover'}
+              sx={{
+                width: '100%',
+                aspectRatio: '16/9',
+                objectFit: 'cover',
+                borderRadius: 0.5,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                mb: 2.5,
+              }}
+            />
+            <Typography
+              variant='h6'
+              sx={{ fontWeight: 900, mb: 1, lineHeight: 1.25, letterSpacing: '-0.01em' }}
+            >
+              {selectedCourse.title}
+            </Typography>
+            {selectedCourse.subtitle && (
+              <Typography
+                variant='caption'
+                color='text.secondary'
+                sx={{ display: 'block', mb: 2, lineHeight: 1.5 }}
+              >
+                {selectedCourse.subtitle}
+              </Typography>
+            )}
+          </Box>
+
+          <Divider sx={{ mb: 3 }} />
+
+          <Stack spacing={2.5} sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 0.5,
+                  bgcolor: lockedBankCount > 0 ? 'warning.50' : 'success.50',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid',
+                  borderColor: lockedBankCount > 0 ? 'warning.100' : 'success.100',
+                }}
+              >
+                {lockedBankCount > 0 ? (
+                  <LockOutlinedIcon sx={{ fontSize: 18, color: 'warning.main' }} />
+                ) : (
+                  <LockOpenOutlinedIcon sx={{ fontSize: 18, color: 'success.main' }} />
+                )}
+              </Box>
+              <Box>
+                <Typography
+                  variant='caption'
+                  color='text.secondary'
+                  sx={{
+                    fontWeight: 700,
+                    display: 'block',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontSize: '0.65rem',
+                  }}
+                >
+                  Access Status
+                </Typography>
+                <Typography
+                  variant='body2'
+                  sx={{
+                    fontWeight: 800,
+                    color: lockedBankCount > 0 ? 'warning.dark' : 'success.dark',
+                  }}
+                >
+                  {lockedBankCount} Quiz Bank{lockedBankCount !== 1 ? 's' : ''} Locked
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 0.5,
+                  bgcolor: 'primary.50',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid',
+                  borderColor: 'primary.100',
+                }}
+              >
+                <QuizOutlinedIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant='caption'
+                  color='text.secondary'
+                  sx={{
+                    fontWeight: 700,
+                    display: 'block',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontSize: '0.65rem',
+                  }}
+                >
+                  Course Content
+                </Typography>
+                <Typography variant='body2' sx={{ fontWeight: 800, color: 'text.primary' }}>
+                  {lockedQuestionCount + courseTotalQ} Total Questions
+                </Typography>
+              </Box>
+            </Box>
+          </Stack>
+
           <Box
             sx={{
-              width: 42,
-              height: 42,
-              borderRadius: 1,
-              bgcolor: 'rgba(245,158,11,0.14)',
-              color: 'warning.dark',
-              display: 'grid',
-              placeItems: 'center',
-              flexShrink: 0,
+              p: 2,
+              bgcolor: 'background.default',
+              borderRadius: 0.5,
+              border: '1px solid',
+              borderColor: 'divider',
             }}
           >
-            <LockOutlinedIcon fontSize='small' />
-          </Box>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
-              {lockedBankCount} more quiz bank{lockedBankCount !== 1 ? 's' : ''} locked
-            </Typography>
-            <Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>
-              {lockedQuestionCount} question{lockedQuestionCount !== 1 ? 's' : ''} available
-              with full course access
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75, mt: 0.75, flexWrap: 'wrap' }}>
+            <Box sx={{ mb: 2 }}>
               {selectedCourse.pricing === 'Free' ? (
-                <Chip label='Free' color='success' size='small' />
+                <Typography variant='h6' sx={{ fontWeight: 900, color: 'success.main' }}>
+                  Free Enrollment
+                </Typography>
               ) : (
                 <>
-                  <Typography variant='subtitle1' sx={{ fontWeight: 900, color: 'warning.dark', lineHeight: 1 }}>
-                    ${selectedCourse.discountPrice ?? selectedCourse.price ?? selectedCourse.listPrice ?? 0}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                    <Typography variant='h5' sx={{ fontWeight: 900, color: 'text.primary' }}>
+                      $
+                      {selectedCourse.discountPrice ??
+                        selectedCourse.price ??
+                        selectedCourse.listPrice ??
+                        0}
+                    </Typography>
+                    {(selectedCourse.discountPercent ?? 0) > 0 && (
+                      <Chip
+                        label={`-${selectedCourse.discountPercent}%`}
+                        size='small'
+                        color='error'
+                        sx={{
+                          fontWeight: 900,
+                          borderRadius: 0.5,
+                          height: 20,
+                          fontSize: '0.65rem',
+                        }}
+                      />
+                    )}
+                  </Box>
                   {selectedCourse.discountPrice != null &&
                     (selectedCourse.listPrice ?? selectedCourse.price) != null && (
                       <Typography
                         variant='caption'
-                        sx={{ textDecoration: 'line-through', color: 'text.disabled' }}
+                        sx={{
+                          textDecoration: 'line-through',
+                          color: 'text.disabled',
+                          fontWeight: 600,
+                        }}
                       >
-                        ${selectedCourse.listPrice ?? selectedCourse.price}
+                        Original: ${selectedCourse.listPrice ?? selectedCourse.price}
                       </Typography>
                     )}
-                  {(selectedCourse.discountPercent ?? 0) > 0 && (
-                    <Chip
-                      label={`-${selectedCourse.discountPercent}%`}
-                      size='small'
-                      color='error'
-                      sx={{ fontSize: '0.65rem', height: 18 }}
-                    />
-                  )}
                 </>
               )}
-              {selectedCourse.includedInSubscription && (
-                <Chip
-                  label='Subscription'
-                  color='info'
-                  variant='outlined'
-                  size='small'
-                  sx={{ height: 20, fontSize: '0.68rem' }}
-                />
-              )}
             </Box>
+
+            <Button
+              variant='contained'
+              fullWidth
+              color={lockedBankCount > 0 ? 'warning' : 'primary'}
+              component={RouterLink}
+              to={`/courses/${selectedCourseId}`}
+              startIcon={lockedBankCount > 0 ? <LockOpenOutlinedIcon /> : <SchoolOutlinedIcon />}
+              sx={{
+                fontWeight: 900,
+                borderRadius: 0.5,
+                py: 1.5,
+                boxShadow:
+                  lockedBankCount > 0
+                    ? '0 10px 25px rgba(245,158,11,0.2)'
+                    : '0 10px 25px rgba(25, 118, 210, 0.2)',
+                textTransform: 'none',
+                fontSize: '0.95rem',
+              }}
+            >
+              {lockedBankCount > 0 ? 'Unlock Course' : 'View Details'}
+            </Button>
           </Box>
-          <Button
-            variant='contained'
-            color='warning'
-            size='small'
-            component={RouterLink}
-            to={`/courses/${selectedCourseId}`}
-            startIcon={<SchoolOutlinedIcon sx={{ fontSize: 16 }} />}
-            sx={{ fontWeight: 800, borderRadius: 5, flexShrink: 0 }}
-          >
-            Buy Course
-          </Button>
-        </Box>
-      </Paper>
+        </Paper>
+      </Box>
     ) : null;
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -487,12 +609,12 @@ export default function PracticeQuizPage() {
         {/* ── Column 1: Course list ─────────────────────────────────── */}
         <Box
           sx={{
-            width: 320,
+            width: 380,
             flexShrink: 0,
             borderRight: '1px solid',
             borderColor: 'divider',
             overflow: 'auto',
-            bgcolor: 'background.paper',
+            bgcolor: 'background.default',
             display: 'flex',
             flexDirection: 'column',
           }}
@@ -529,63 +651,92 @@ export default function PracticeQuizPage() {
               </Typography>
             </Box>
           ) : (
-            <List disablePadding>
+            <List disablePadding sx={{ py: 2 }}>
               {courses.map((course) => {
                 const isSelected = selectedCourseId === course._id;
-                const initials = course.title
-                  .split(' ')
-                  .slice(0, 2)
-                  .map((w) => w[0])
-                  .join('')
-                  .toUpperCase();
                 return (
                   <ListItemButton
                     key={course._id}
                     selected={isSelected}
                     onClick={() => setSelectedCourseId(course._id)}
                     sx={{
-                      py: 1.25,
-                      px: 2,
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
+                      p: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      mb: 2,
+                      mx: 2,
+                      borderRadius: 0.5,
+                      border: '1px solid',
+                      borderColor: isSelected ? 'primary.main' : 'divider',
+                      boxShadow: isSelected ? '0 8px 24px rgba(0,0,0,0.08)' : '0 2px 4px rgba(0,0,0,0.02)',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      bgcolor: isSelected ? 'rgba(245, 158, 11, 0.06)' : 'background.paper',
+                      background: isSelected ? 'linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.02) 100%)' : 'background.paper',
+                      position: 'relative',
+                      overflow: 'hidden',
                       '&.Mui-selected': {
-                        bgcolor: 'primary.50',
-                        borderLeft: '3px solid',
-                        borderLeftColor: 'primary.main',
-                        pl: '13px',
+                        background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.04) 100%)',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: 4,
+                          bgcolor: 'warning.main',
+                        },
                       },
-                      '&.Mui-selected:hover': { bgcolor: 'primary.50' },
-                      alignItems: 'flex-start',
-                      gap: 1.25,
+                      '&:hover': {
+                        borderColor: 'warning.light',
+                        transform: 'translateX(4px)',
+                        boxShadow: '0 12px 30px rgba(0,0,0,0.08)',
+                        bgcolor: isSelected ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.04)',
+                      },
                     }}
                   >
-                    <Avatar
-                      src={course.coverImage}
-                      variant='rounded'
+                    <Box
                       sx={{
-                        width: 38,
-                        height: 38,
-                        bgcolor: isSelected ? 'primary.main' : 'grey.200',
-                        color: isSelected ? 'white' : 'text.secondary',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
+                        width: 90,
+                        height: 90,
                         flexShrink: 0,
-                        mt: 0.25,
+                        borderRadius: 0.5,
+                        overflow: 'hidden',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                       }}
                     >
-                      {!course.coverImage && initials}
-                    </Avatar>
+                      <Box
+                        component='img'
+                        src={course.coverImage || 'https://via.placeholder.com/90x90?text=Course'}
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          transition: 'transform 0.5s ease',
+                          '.MuiListItemButton-root:hover &': {
+                            transform: 'scale(1.1)',
+                          },
+                        }}
+                      />
+                    </Box>
+
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography
                         sx={{
-                          fontWeight: isSelected ? 700 : 500,
-                          fontSize: '0.82rem',
-                          lineHeight: 1.35,
-                          color: isSelected ? 'primary.main' : 'text.primary',
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
+                          lineHeight: 1.3,
+                          mb: 0.5,
+                          color: isSelected ? 'warning.dark' : 'text.primary',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
                         }}
                       >
                         {course.title}
                       </Typography>
+
                       {course.subtitle && (
                         <Typography
                           variant='caption'
@@ -595,39 +746,74 @@ export default function PracticeQuizPage() {
                             WebkitLineClamp: 1,
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
-                            mt: 0.2,
-                            fontSize: '0.71rem',
+                            mb: 1,
+                            fontSize: '0.72rem',
                           }}
                         >
                           {course.subtitle}
                         </Typography>
                       )}
-                      {/* Price row */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
+
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, flexWrap: 'wrap' }}
+                      >
                         {course.pricing === 'Free' ? (
-                          <Chip label='Free' size='small' color='success' sx={{ fontSize: '0.62rem', height: 16 }} />
+                          <Typography
+                            sx={{ fontWeight: 800, color: 'success.main', fontSize: '0.85rem' }}
+                          >
+                            Free
+                          </Typography>
                         ) : (
                           <>
-                            <Typography variant='caption' sx={{ fontWeight: 800, color: 'text.primary', fontSize: '0.78rem' }}>
-                              ${course.discountPrice ?? course.price ?? course.listPrice ?? 0}
+                            <Typography
+                              sx={{ fontWeight: 900, color: 'text.primary', fontSize: '0.9rem' }}
+                            >
+                              $
+                              {course.discountPrice ??
+                                course.price ??
+                                course.listPrice ??
+                                0}
                             </Typography>
-                            {course.discountPrice != null && (course.listPrice ?? course.price) != null && (
-                              <Typography variant='caption' sx={{ textDecoration: 'line-through', color: 'text.disabled', fontSize: '0.7rem' }}>
-                                ${course.listPrice ?? course.price}
-                              </Typography>
-                            )}
-                            {(course.discountPercent ?? 0) > 0 && (
-                              <Chip
-                                label={`-${course.discountPercent}%`}
-                                size='small'
-                                color='error'
-                                sx={{ fontSize: '0.6rem', height: 16 }}
-                              />
-                            )}
+                            {course.discountPrice != null &&
+                              (course.listPrice ?? course.price) != null && (
+                                <Typography
+                                  variant='caption'
+                                  sx={{
+                                    textDecoration: 'line-through',
+                                    color: 'text.disabled',
+                                    fontSize: '0.7rem',
+                                  }}
+                                >
+                                  ${course.listPrice ?? course.price}
+                                </Typography>
+                              )}
                           </>
                         )}
                         {course.includedInSubscription && (
-                          <Chip label='Sub' size='small' color='info' variant='outlined' sx={{ fontSize: '0.6rem', height: 16 }} />
+                          <Chip
+                            label='Sub'
+                            size='small'
+                            color='info'
+                            variant='outlined'
+                            sx={{
+                              fontSize: '0.6rem',
+                              height: 16,
+                              borderRadius: 0.5,
+                              fontWeight: 700,
+                            }}
+                          />
+                        )}
+                        {isSelected && (
+                          <Box
+                            sx={{
+                              ml: 'auto',
+                              display: 'flex',
+                              alignItems: 'center',
+                              color: 'success.main',
+                            }}
+                          >
+                            <CheckCircleIcon sx={{ fontSize: 20 }} />
+                          </Box>
                         )}
                       </Box>
                     </Box>
@@ -638,10 +824,11 @@ export default function PracticeQuizPage() {
           )}
         </Box>
 
-        {/* ── Column 2: Practice panel ──────────────────────────────── */}
-        <Box sx={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-          {lockedCourseCard}
+        {/* ── Column 2: Selected Course Details (Vertical Sidebar) ───── */}
+        {selectedCourseSidebar}
 
+        {/* ── Column 3: Practice panel ──────────────────────────────── */}
+        <Box sx={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
           {/* Course-level stats */}
           {selectedCourseId && !treeLoading && courseTotalQ > 0 && (
             <Paper
