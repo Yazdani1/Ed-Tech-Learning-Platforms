@@ -61,8 +61,8 @@ export const quizBankService = {
   resetAttempt: (id: string) => api.delete(`/quiz-bank/${id}/attempt`),
 
   // Public (no auth required)
-  getPublicCourses: () =>
-    api.get<IPublicCourse[]>('/quiz-bank/public/courses'),
+  getPublicCourses: (params?: { search?: string; categories?: string; courseTypes?: string; pricing?: string }) =>
+    api.get<IPublicCourse[]>('/quiz-bank/public/courses', { params }),
 
   getPublicCourseTree: (courseId: string) =>
     api.get<IPublicCourseQuizTree>(`/quiz-bank/public/course/${courseId}`),

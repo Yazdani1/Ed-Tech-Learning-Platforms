@@ -4,7 +4,6 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Avatar,
   Box,
   Button,
   Chip,
@@ -45,6 +44,17 @@ import type {
 import { useAuth } from '../../context/useAuth';
 import PublicNavbar from '../../components/layout/PublicNavbar';
 import { useConfirmModal } from '../../context/ConfirmModalContext';
+import { categoryService } from '../../services/category.service';
+import { courseTypeService } from '../../services/courseType.service';
+import SearchIcon from '@mui/icons-material/Search';
+import {
+  FormControl,
+  MenuItem,
+  Select,
+  TextField,
+  InputAdornment,
+} from '@mui/material';
+import type { ICategory, ICourseType } from '../../types/index';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'] as const;
 type Subsection = 'all' | 'incorrect' | 'correct';
@@ -82,6 +92,31 @@ export default function PracticeQuizPage() {
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [expandedBanks, setExpandedBanks] = useState<string[]>([]);
+
+  // ── Filters ──────────────────────────────────────────────────────────────
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCourseType, setSelectedCourseType] = useState('');
+  const [selectedPricing, setSelectedPricing] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  const clearFilters = () => {
+    setSearch('');
+    setSelectedCategory('');
+    setSelectedCourseType('');
+    setSelectedPricing('');
+  };
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   // ── Section/bank tree ────────────────────────────────────────────────────
   const [sections, setSections] = useState<IPublicQuizSection[]>([]);
   const [treeLoading, setTreeLoading] = useState(false);
@@ -95,8 +130,6 @@ export default function PracticeQuizPage() {
   const [attemptLoading, setAttemptLoading] = useState(false);
   const attemptRef = useRef<IQuizAttempt | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<string[]>([]);
-  const [expandedBanks, setExpandedBanks] = useState<string[]>([]);
 
   // Unified answers map for the entire course session (questionId -> LocalAnswer)
   const [courseAnswers, setCourseAnswers] = useState<Map<string, LocalAnswer>>(new Map());
@@ -126,14 +159,27 @@ export default function PracticeQuizPage() {
   }, [attempt]);
 
 
-  // Fetch courses with free preview quizzes
+  // Fetch categories and course types on mount
   useEffect(() => {
+    categoryService.getAll().then((r) => setCategories(r.data ?? []));
+    courseTypeService.getAll().then((r) => setCourseTypes(r.data ?? []));
+  }, []);
+
+  // Fetch courses with free preview quizzes based on filters
+  useEffect(() => {
+    setCoursesLoading(true);
+    const params = {
+      search: debouncedSearch || undefined,
+      categories: selectedCategory || undefined,
+      courseTypes: selectedCourseType || undefined,
+      pricing: selectedPricing || undefined,
+    };
     quizBankService
-      .getPublicCourses()
+      .getPublicCourses(params)
       .then((r) => setCourses(r.data ?? []))
       .catch(() => {})
       .finally(() => setCoursesLoading(false));
-  }, []);
+  }, [debouncedSearch, selectedCategory, selectedCourseType, selectedPricing]);
 
   // Fetch section/bank tree when course changes
   useEffect(() => {
@@ -619,11 +665,11 @@ export default function PracticeQuizPage() {
             flexDirection: 'column',
           }}
         >
-          {/* Header */}
+          {/* Header & Filters */}
           <Box
             sx={{
               px: 2,
-              py: 1.5,
+              py: 2.5,
               borderBottom: '1px solid',
               borderColor: 'divider',
               position: 'sticky',
@@ -632,12 +678,88 @@ export default function PracticeQuizPage() {
               zIndex: 1,
             }}
           >
-            <Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
-              Courses
-            </Typography>
-            <Typography variant='caption' color='text.secondary'>
-              Free preview quizzes
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
+                Browse Free Quizzes
+              </Typography>
+              {(search || selectedCategory || selectedCourseType || selectedPricing) && (
+                <Button 
+                  size="small" 
+                  onClick={clearFilters}
+                  sx={{ p: 0, minWidth: 0, fontSize: '0.7rem', fontWeight: 700, textTransform: 'none' }}
+                >
+                  Clear All
+                </Button>
+              )}
+            </Box>
+
+            <Stack spacing={1.5}>
+              <TextField
+                size='small'
+                placeholder='Search courses...'
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position='start'>
+                        <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': { borderRadius: 0.5, bgcolor: 'background.default' },
+                }}
+              />
+
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <FormControl fullWidth size='small'>
+                  <Select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    displayEmpty
+                    sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
+                  >
+                    <MenuItem value=''>All Categories</MenuItem>
+                    {categories.map((c) => (
+                      <MenuItem key={c._id} value={c._id}>
+                        {c.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth size='small'>
+                  <Select
+                    value={selectedPricing}
+                    onChange={(e) => setSelectedPricing(e.target.value)}
+                    displayEmpty
+                    sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
+                  >
+                    <MenuItem value=''>All Pricing</MenuItem>
+                    <MenuItem value='Free'>Free Only</MenuItem>
+                    <MenuItem value='Paid'>Paid Only</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+
+              <FormControl fullWidth size='small'>
+                <Select
+                  value={selectedCourseType}
+                  onChange={(e) => setSelectedCourseType(e.target.value)}
+                  displayEmpty
+                  sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
+                >
+                  <MenuItem value=''>All Course Types</MenuItem>
+                  {courseTypes.map((t) => (
+                    <MenuItem key={t._id} value={t._id}>
+                      {t.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
           </Box>
 
           {coursesLoading ? (
