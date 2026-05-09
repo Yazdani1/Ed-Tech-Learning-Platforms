@@ -91,28 +91,35 @@ export default function PracticeQuizPage() {
   const [attempt, setAttempt] = useState<IQuizAttempt | null>(null);
   const [attemptLoading, setAttemptLoading] = useState(false);
   const attemptRef = useRef<IQuizAttempt | null>(null);
-  const [localAnswers, setLocalAnswers] = useState<Map<string, LocalAnswer>>(new Map());
-  const localAnswersRef = useRef<Map<string, LocalAnswer>>(new Map());
-  const [currentPage, setCurrentPage] = useState(0);
-  const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
-  const [isChecked, setIsChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [expandedBanks, setExpandedBanks] = useState<string[]>([]);
 
+  // Unified answers map for the entire course session (questionId -> LocalAnswer)
+  const [courseAnswers, setCourseAnswers] = useState<Map<string, LocalAnswer>>(new Map());
 
-  // Unified effective answers
-  const effectiveAnswers: Map<string, LocalAnswer> = isLoggedIn
-    ? new Map(
-        attempt?.answers.map((a) => [
-          a.questionId,
-          { selectedOptionIndices: a.selectedOptionIndices, isCorrect: a.isCorrect },
-        ]) ?? [],
-      )
-    : localAnswers;
+  const [currentPage, setCurrentPage] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
+  const [isChecked, setIsChecked] = useState(false);
 
   useEffect(() => { attemptRef.current = attempt; }, [attempt]);
-  useEffect(() => { localAnswersRef.current = localAnswers; }, [localAnswers]);
+
+  // Merge attempt answers into courseAnswers when a new attempt is loaded
+  useEffect(() => {
+    if (attempt) {
+      setCourseAnswers((prev) => {
+        const next = new Map(prev);
+        attempt.answers.forEach((a) => {
+          next.set(a.questionId, {
+            selectedOptionIndices: a.selectedOptionIndices,
+            isCorrect: a.isCorrect,
+          });
+        });
+        return next;
+      });
+    }
+  }, [attempt]);
+
 
   // Fetch courses with free preview quizzes
   useEffect(() => {
@@ -133,8 +140,10 @@ export default function PracticeQuizPage() {
     }
     setTreeLoading(true);
     setSelectedBankId(null);
+    setCourseAnswers(new Map()); // Reset answers when course changes
     quizBankService
       .getPublicCourseTree(selectedCourseId)
+
       .then((r) => {
         const fetchedSections = r.data?.sections ?? [];
         setSections(fetchedSections);
@@ -173,8 +182,8 @@ export default function PracticeQuizPage() {
     setCurrentPage(0);
     setSelectedOptions([]);
     setIsChecked(false);
-    if (!isLoggedIn) setLocalAnswers(new Map());
   }, [selectedBankId, selectedSubsection, isLoggedIn]);
+
 
   // Pre-populate from existing attempt ('all' + logged-in only)
   useEffect(() => {
@@ -185,10 +194,10 @@ export default function PracticeQuizPage() {
     }
     const bank = allBanks.find((b) => b._id === selectedBankId);
     if (!bank) return;
-    const qs = getSubsectionQuestions(bank, effectiveAnswers, 'all');
+    const qs = getSubsectionQuestions(bank, courseAnswers, 'all');
     const q = qs[currentPage];
     if (!q) return;
-    const existing = attemptRef.current?.answers.find((a) => a.questionId === q._id);
+    const existing = courseAnswers.get(q._id);
     if (existing && existing.selectedOptionIndices.length > 0) {
       setSelectedOptions(existing.selectedOptionIndices);
       setIsChecked(true);
@@ -198,22 +207,24 @@ export default function PracticeQuizPage() {
     }
   }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
+
   const allBanks = sections.flatMap((s) => s.banks);
   const selectedBank = allBanks.find((b) => b._id === selectedBankId) ?? null;
   const activeQuestions = selectedBank
-    ? getSubsectionQuestions(selectedBank, effectiveAnswers, selectedSubsection)
+    ? getSubsectionQuestions(selectedBank, courseAnswers, selectedSubsection)
     : [];
   const currentQuestion = activeQuestions[currentPage] ?? null;
 
   const totalQ = selectedBank?.questions.length ?? 0;
   const correctCount =
-    selectedBank?.questions.filter((q) => effectiveAnswers.get(q._id)?.isCorrect).length ?? 0;
+    selectedBank?.questions.filter((q) => courseAnswers.get(q._id)?.isCorrect).length ?? 0;
   const incorrectCount =
     selectedBank?.questions.filter((q) => {
-      const a = effectiveAnswers.get(q._id);
+      const a = courseAnswers.get(q._id);
       return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
     }).length ?? 0;
   const progressPct = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0;
+
 
   const selectedCourse = courses.find((c) => c._id === selectedCourseId) ?? null;
   const lockedCourseCard =
@@ -366,7 +377,7 @@ export default function PracticeQuizPage() {
         selectedOptions,
         currentQuestion.correctOptionIndices,
       );
-      setLocalAnswers((prev) => {
+      setCourseAnswers((prev) => {
         const next = new Map(prev);
         next.set(currentQuestion._id, { selectedOptionIndices: selectedOptions, isCorrect });
         return next;
@@ -374,6 +385,7 @@ export default function PracticeQuizPage() {
       setIsChecked(true);
     }
   };
+
 
   const handleNext = () => {
     if (currentPage < activeQuestions.length - 1) setCurrentPage((p) => p + 1);
@@ -401,10 +413,21 @@ export default function PracticeQuizPage() {
       if (!ok) return;
       await quizBankService.resetAttempt(selectedBankId);
       setAttempt(null);
+      // Remove answers for this specific bank from courseAnswers
+      setCourseAnswers(prev => {
+        const next = new Map(prev);
+        selectedBank?.questions.forEach(q => next.delete(q._id));
+        return next;
+      });
     } else {
-      setLocalAnswers(new Map());
+      setCourseAnswers(prev => {
+        const next = new Map(prev);
+        selectedBank?.questions.forEach(q => next.delete(q._id));
+        return next;
+      });
     }
     setCurrentPage(0);
+
     setSelectedOptions([]);
     setIsChecked(false);
     toast.success('Practice reset');
@@ -932,40 +955,39 @@ export default function PracticeQuizPage() {
                   {section.banks.map((bank) => {
                     const isSelected = selectedBankId === bank._id;
                     const isBankExpanded = expandedBanks.includes(bank._id);
-                    const bAnswers = isSelected
-                      ? effectiveAnswers
-                      : new Map<string, LocalAnswer>();
                     const bCorrect = bank.questions.filter(
-                      (q) => bAnswers.get(q._id)?.isCorrect,
+                      (q) => courseAnswers.get(q._id)?.isCorrect,
                     ).length;
                     const bIncorrect = bank.questions.filter((q) => {
-                      const a = bAnswers.get(q._id);
+                      const a = courseAnswers.get(q._id);
                       return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
                     }).length;
+
 
                     return (
                       <Accordion
                         key={bank._id}
                         expanded={isBankExpanded}
                         onChange={() => toggleBank(bank._id)}
-                        elevation={isSelected ? 2 : 0}
+                        elevation={0}
                         disableGutters
                         sx={{
                           mb: 1.25,
                           mx: 1.5,
                           borderRadius: '8px !important',
-                          border: '1px solid',
-                          borderColor: isSelected ? 'primary.light' : 'divider',
+                          border: '1.5px solid',
+                          borderColor: isSelected ? 'primary.main' : 'divider',
                           bgcolor: isSelected ? 'primary.50' : 'background.paper',
                           overflow: 'hidden',
                           '&::before': { display: 'none' },
-                          transition: 'all 0.2s ease',
+                          transition: 'all 0.15s ease',
                           '&:hover': {
-                            borderColor: isSelected ? 'primary.main' : 'primary.light',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                            borderColor: 'primary.main',
+                            bgcolor: isSelected ? 'primary.50' : 'rgba(0,0,0,0.01)',
                           },
                         }}
                       >
+
 
 
                         <AccordionSummary
@@ -1006,16 +1028,54 @@ export default function PracticeQuizPage() {
                                 />
                               )}
                             </Box>
-                            {/* Subtle overall progress line in summary */}
-                            {!isBankExpanded && (
-                              <LinearProgress
-                                variant='determinate'
-                                value={bank.questions.length > 0 ? (bCorrect / bank.questions.length) * 100 : 0}
-                                color='success'
-                                sx={{ height: 2, mt: 0.5, borderRadius: 1, opacity: 0.5 }}
-                              />
+                            {/* Detailed progress when collapsed */}
+                            {!isBankExpanded && (bCorrect > 0 || bIncorrect > 0) && (
+                              <Box sx={{ mt: 0.75, display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                <Box
+                                  sx={{
+                                    flex: 1,
+                                    height: 4,
+                                    bgcolor: 'action.hover',
+                                    borderRadius: 2,
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      width: `${(bCorrect / bank.questions.length) * 100}%`,
+                                      bgcolor: 'success.main',
+                                    }}
+                                  />
+                                  <Box
+                                    sx={{
+                                      width: `${(bIncorrect / bank.questions.length) * 100}%`,
+                                      bgcolor: 'error.main',
+                                    }}
+                                  />
+                                </Box>
+                                <Typography
+                                  variant='caption'
+                                  sx={{
+                                    fontSize: '0.68rem',
+                                    fontWeight: 700,
+                                    color: 'text.secondary',
+                                    whiteSpace: 'nowrap',
+                                    display: 'flex',
+                                    gap: 0.75,
+                                  }}
+                                >
+                                  <Box component='span' sx={{ color: 'success.main' }}>
+                                    C:{bCorrect}
+                                  </Box>
+                                  <Box component='span' sx={{ color: 'error.main' }}>
+                                    W:{bIncorrect}
+                                  </Box>
+                                </Typography>
+                              </Box>
                             )}
                           </Box>
+
 
                           {bank.description && (
                             <Typography
