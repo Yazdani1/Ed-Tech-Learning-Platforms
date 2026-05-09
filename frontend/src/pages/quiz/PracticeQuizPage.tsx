@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import {
   Accordion,
   AccordionDetails,
@@ -103,6 +103,15 @@ export default function PracticeQuizPage() {
   const [selectedCourseType, setSelectedCourseType] = useState('');
   const [selectedPricing, setSelectedPricing] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const cid = searchParams.get('courseId');
+    const bid = searchParams.get('bankId');
+    if (cid) setSelectedCourseId(cid);
+    if (bid) setSelectedBankId(bid);
+  }, [searchParams]);
 
   const clearFilters = () => {
     setSearch('');
