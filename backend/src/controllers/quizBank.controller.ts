@@ -219,6 +219,14 @@ export const deleteQuestion = asyncHandler(async (req: Request, res: Response) =
   res.status(200).json({ success: true, message: 'Question deleted', data: bank });
 });
 
+export const getCourseAttempts = asyncHandler(async (req: Request, res: Response) => {
+  const attempts = await QuizAttempt.find({
+    student: req.user._id,
+    course: req.params.courseId,
+  });
+  res.status(200).json({ success: true, data: attempts });
+});
+
 export const getMyAttempt = asyncHandler(async (req: Request, res: Response) => {
   const attempt = await QuizAttempt.findOne({
     student: req.user._id,

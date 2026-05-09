@@ -5,6 +5,9 @@ export const quizBankService = {
   getByCourse: (courseId: string) =>
     api.get<IQuizBank[]>(`/quiz-bank/course/${courseId}`),
 
+  getCourseAttempts: (courseId: string) =>
+    api.get<IQuizAttempt[]>(`/quiz-bank/course/${courseId}/my-attempts`),
+
   getByContext: (contextType: string, contextId: string) =>
     api.get<IQuizBank[]>(`/quiz-bank/context/${contextType}/${contextId}`),
 

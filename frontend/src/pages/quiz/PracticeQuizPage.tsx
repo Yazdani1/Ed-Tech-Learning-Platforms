@@ -138,17 +138,32 @@ export default function PracticeQuizPage() {
       setLockedQuestionCount(0);
       return;
     }
-    setTreeLoading(true);
-    setSelectedBankId(null);
-    setCourseAnswers(new Map()); // Reset answers when course changes
-    quizBankService
-      .getPublicCourseTree(selectedCourseId)
-
-      .then((r) => {
-        const fetchedSections = r.data?.sections ?? [];
+    Promise.all([
+      quizBankService.getPublicCourseTree(selectedCourseId),
+      isLoggedIn
+        ? quizBankService.getCourseAttempts(selectedCourseId)
+        : Promise.resolve({ data: [] as IQuizAttempt[] }),
+    ])
+      .then(([treeRes, attemptRes]) => {
+        const fetchedSections = treeRes.data?.sections ?? [];
         setSections(fetchedSections);
-        setLockedBankCount(r.data?.lockedBankCount ?? 0);
-        setLockedQuestionCount(r.data?.lockedQuestionCount ?? 0);
+        setLockedBankCount(treeRes.data?.lockedBankCount ?? 0);
+        setLockedQuestionCount(treeRes.data?.lockedQuestionCount ?? 0);
+
+        // Populate courseAnswers from all fetched attempts
+        const fetchedAttempts = attemptRes.data ?? [];
+        setCourseAnswers((prev) => {
+          const next = new Map(prev);
+          fetchedAttempts.forEach((att) => {
+            att.answers.forEach((ans) => {
+              next.set(ans.questionId, {
+                selectedOptionIndices: ans.selectedOptionIndices,
+                isCorrect: ans.isCorrect,
+              });
+            });
+          });
+          return next;
+        });
 
         // Expand first section and its first bank by default
         if (fetchedSections.length > 0) {
