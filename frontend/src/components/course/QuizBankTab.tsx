@@ -1506,28 +1506,38 @@ export default function QuizBankTab({
 							</Box>
 						) : (
 							<>
-								<Box
-									sx={{
-										display: 'flex',
-										alignItems: 'center',
-										justifyContent: 'space-between',
-										mb: 1.5,
-									}}
-								>
-									<Typography variant='h6' sx={{ fontWeight: 800 }}>
-										{selectedSubsection === 'all'
-											? 'All Questions'
-											: selectedSubsection === 'incorrect'
-											? 'Incorrect Questions'
-											: 'Correct Questions'}
-									</Typography>
-									<Typography
-										variant='h6'
-										color='text.secondary'
-										sx={{ fontWeight: 700 }}
-									>
-										{activeQuestions.length} question
-										{activeQuestions.length !== 1 ? 's' : ''}
+								<Box sx={{ mb: 1.5 }}>
+									<Typography variant='h6' sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+										<Box
+											component='span'
+											sx={{
+												px: 1.25,
+												py: 0.25,
+												borderRadius: 0.5,
+												fontSize: '0.85rem',
+												fontWeight: 900,
+												color: 'white',
+												bgcolor:
+													selectedSubsection === 'all'
+														? 'common.black'
+														: selectedSubsection === 'incorrect'
+														? 'error.main'
+														: 'success.main',
+											}}
+										>
+											{selectedSubsection === 'all'
+												? 'All Questions'
+												: selectedSubsection === 'incorrect'
+												? 'Incorrect Questions'
+												: 'Correct Questions'}
+										</Box>
+										<Typography
+											component='span'
+											variant='h6'
+											sx={{ fontWeight: 800, color: 'text.secondary', ml: 0.5 }}
+										>
+											({activeQuestions.length})
+										</Typography>
 									</Typography>
 								</Box>
 								{currentQuestion && (
