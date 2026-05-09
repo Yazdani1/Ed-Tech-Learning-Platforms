@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import {
   Accordion,
@@ -20,6 +20,11 @@ import {
   Stack,
   Tooltip,
   Typography,
+  FormControl,
+  MenuItem,
+  Select,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined';
@@ -40,6 +45,8 @@ import type {
   IQuizBank,
   IQuizAttempt,
   IQuizQuestion,
+  ICategory,
+  ICourseType,
 } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
 import PublicNavbar from '../../components/layout/PublicNavbar';
@@ -47,14 +54,6 @@ import { useConfirmModal } from '../../context/ConfirmModalContext';
 import { categoryService } from '../../services/category.service';
 import { courseTypeService } from '../../services/courseType.service';
 import SearchIcon from '@mui/icons-material/Search';
-import {
-  FormControl,
-  MenuItem,
-  Select,
-  TextField,
-  InputAdornment,
-} from '@mui/material';
-import type { ICategory, ICourseType } from '../../types/index';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'] as const;
 type Subsection = 'all' | 'incorrect' | 'correct';
@@ -148,6 +147,8 @@ export default function PracticeQuizPage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [isChecked, setIsChecked] = useState(false);
+
+  const allBanks = useMemo(() => sections.flatMap((s) => s.banks), [sections]);
 
   useEffect(() => { attemptRef.current = attempt; }, [attempt]);
 
@@ -283,7 +284,7 @@ export default function PracticeQuizPage() {
   }, [currentPage, selectedBankId, selectedSubsection, isLoggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
-  const allBanks = sections.flatMap((s) => s.banks);
+
   const selectedBank = allBanks.find((b) => b._id === selectedBankId) ?? null;
   const activeQuestions = selectedBank
     ? getSubsectionQuestions(selectedBank, courseAnswers, selectedSubsection)
