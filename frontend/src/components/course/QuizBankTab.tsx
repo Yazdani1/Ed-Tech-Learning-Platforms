@@ -634,11 +634,13 @@ export default function QuizBankTab({
 
 	return (
 		<Box sx={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
-			{/* ── Left panel ──────────────────────────────────────────────────── */}
+			{/* ── Sidebar (left for admin, right for student) ─────────────── */}
 			<Box
 				sx={{
-					width: 270,
-					borderRight: '1px solid',
+					width: canPost ? 270 : 380,
+					...(canPost
+						? { borderRight: '1px solid' }
+						: { borderLeft: '1px solid', order: 2 }),
 					borderColor: 'divider',
 					overflow: 'auto',
 					flexShrink: 0,
