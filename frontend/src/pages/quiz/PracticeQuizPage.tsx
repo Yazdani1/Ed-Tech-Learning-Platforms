@@ -126,7 +126,6 @@ export default function PracticeQuizPage() {
   const [sections, setSections] = useState<IPublicQuizSection[]>([]);
   const [treeLoading, setTreeLoading] = useState(false);
   const [lockedBankCount, setLockedBankCount] = useState(0);
-  const [lockedQuestionCount, setLockedQuestionCount] = useState(0);
 
   // ── Practice state ───────────────────────────────────────────────────────
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
@@ -191,7 +190,6 @@ export default function PracticeQuizPage() {
     if (!selectedCourseId) {
       setSections([]);
       setLockedBankCount(0);
-      setLockedQuestionCount(0);
       return;
     }
     Promise.all([
@@ -204,7 +202,6 @@ export default function PracticeQuizPage() {
         const fetchedSections = treeRes.data?.sections ?? [];
         setSections(fetchedSections);
         setLockedBankCount(treeRes.data?.lockedBankCount ?? 0);
-        setLockedQuestionCount(treeRes.data?.lockedQuestionCount ?? 0);
 
         // Populate courseAnswers from all fetched attempts
         const fetchedAttempts = attemptRes.data ?? [];
@@ -766,14 +763,14 @@ export default function PracticeQuizPage() {
 
               <Box sx={{ width: '1px', height: 28, bgcolor: 'divider', flexShrink: 0 }} />
 
-              {/* Quiz bank counts */}
+              {/* Total quiz count */}
               <Box sx={{ flexShrink: 0 }}>
                 <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', mb: 0.25 }}>
-                  Quiz Banks
+                  Total Quiz
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                   <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: 'text.primary', whiteSpace: 'nowrap' }}>
-                    {allBanks.length + lockedBankCount} total
+                    {allBanks.length + lockedBankCount}
                   </Typography>
                   {lockedBankCount > 0 && (
                     <Chip
@@ -791,25 +788,6 @@ export default function PracticeQuizPage() {
                         '& .MuiChip-label': { px: 0.75 },
                       }}
                     />
-                  )}
-                </Box>
-              </Box>
-
-              <Box sx={{ width: '1px', height: 28, bgcolor: 'divider', flexShrink: 0 }} />
-
-              {/* Total questions (accessible + locked) */}
-              <Box sx={{ flexShrink: 0 }}>
-                <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', mb: 0.25 }}>
-                  Questions
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                  <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: 'text.primary', whiteSpace: 'nowrap' }}>
-                    {courseTotalQ + lockedQuestionCount} total
-                  </Typography>
-                  {lockedQuestionCount > 0 && (
-                    <Typography sx={{ fontWeight: 700, fontSize: '0.72rem', color: 'error.main', whiteSpace: 'nowrap' }}>
-                      ({lockedQuestionCount} locked)
-                    </Typography>
                   )}
                 </Box>
               </Box>
