@@ -50,28 +50,12 @@ jobs:
     name: Deploy Frontend → Vercel
     runs-on: ubuntu-latest
     needs: ci-frontend
-    defaults:
-      run:
-        working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - run: npm ci
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@32
-
-      - name: Deploy to Vercel (production)
-        run: vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Trigger Vercel deploy
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" \
+          | grep -q "^2" && echo "Vercel deploy triggered" || (echo "Vercel deploy hook failed" && exit 1)
 
   # ── 3. Trigger backend deploy on Render ────────────────────────────────────
   deploy-backend:
