@@ -8,7 +8,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Collapse,
   Divider,
   IconButton,
   LinearProgress,
@@ -34,7 +33,6 @@ import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
-import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import toast from 'react-hot-toast';
 import AppPagination from '../../components/common/AppPagination';
 import { quizBankService } from '../../services/quizBank.service';
@@ -128,7 +126,6 @@ export default function PracticeQuizPage() {
   const [sections, setSections] = useState<IPublicQuizSection[]>([]);
   const [treeLoading, setTreeLoading] = useState(false);
   const [lockedBankCount, setLockedBankCount] = useState(0);
-  const [lockedQuestionCount, setLockedQuestionCount] = useState(0);
 
   // ── Practice state ───────────────────────────────────────────────────────
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
@@ -140,9 +137,6 @@ export default function PracticeQuizPage() {
 
   // Unified answers map for the entire course session (questionId -> LocalAnswer)
   const [courseAnswers, setCourseAnswers] = useState<Map<string, LocalAnswer>>(new Map());
-
-  const [courseStatsOpen, setCourseStatsOpen] = useState(true);
-  const [bankStatsOpen, setBankStatsOpen] = useState(true);
 
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
@@ -196,7 +190,6 @@ export default function PracticeQuizPage() {
     if (!selectedCourseId) {
       setSections([]);
       setLockedBankCount(0);
-      setLockedQuestionCount(0);
       return;
     }
     Promise.all([
@@ -209,7 +202,6 @@ export default function PracticeQuizPage() {
         const fetchedSections = treeRes.data?.sections ?? [];
         setSections(fetchedSections);
         setLockedBankCount(treeRes.data?.lockedBankCount ?? 0);
-        setLockedQuestionCount(treeRes.data?.lockedQuestionCount ?? 0);
 
         // Populate courseAnswers from all fetched attempts
         const fetchedAttempts = attemptRes.data ?? [];
@@ -314,223 +306,6 @@ export default function PracticeQuizPage() {
   const courseProgressPct = courseTotalQ > 0 ? Math.round((courseTotalCorrect / courseTotalQ) * 100) : 0;
 
   const selectedCourse = courses.find((c) => c._id === selectedCourseId) ?? null;
-  const selectedCourseSidebar =
-    selectedCourseId && !treeLoading && selectedCourse ? (
-      <Box
-        sx={{
-          width: 360,
-          flexShrink: 0,
-          p: { xs: 2, md: 2.5 },
-          overflow: 'auto',
-        }}
-      >
-        <Paper
-          variant='outlined'
-          sx={{
-            p: 3,
-            borderRadius: 0.5,
-            bgcolor: 'background.paper',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.06)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <Box sx={{ mb: 3 }}>
-            <Box
-              component='img'
-              src={selectedCourse.coverImage || 'https://via.placeholder.com/340x200?text=Course+Cover'}
-              sx={{
-                width: '100%',
-                aspectRatio: '16/9',
-                objectFit: 'cover',
-                borderRadius: 0.5,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                mb: 2.5,
-              }}
-            />
-            <Typography
-              variant='h6'
-              sx={{ fontWeight: 900, mb: 1, lineHeight: 1.25, letterSpacing: '-0.01em' }}
-            >
-              {selectedCourse.title}
-            </Typography>
-            {selectedCourse.subtitle && (
-              <Typography
-                variant='caption'
-                color='text.secondary'
-                sx={{ display: 'block', mb: 2, lineHeight: 1.5 }}
-              >
-                {selectedCourse.subtitle}
-              </Typography>
-            )}
-          </Box>
-
-          <Divider sx={{ mb: 3 }} />
-
-          <Stack spacing={2.5} sx={{ mb: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box
-                sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 0.5,
-                  bgcolor: lockedBankCount > 0 ? 'warning.50' : 'success.50',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid',
-                  borderColor: lockedBankCount > 0 ? 'warning.100' : 'success.100',
-                }}
-              >
-                {lockedBankCount > 0 ? (
-                  <LockOutlinedIcon sx={{ fontSize: 18, color: 'warning.main' }} />
-                ) : (
-                  <LockOpenOutlinedIcon sx={{ fontSize: 18, color: 'success.main' }} />
-                )}
-              </Box>
-              <Box>
-                <Typography
-                  variant='caption'
-                  color='text.secondary'
-                  sx={{
-                    fontWeight: 700,
-                    display: 'block',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    fontSize: '0.65rem',
-                  }}
-                >
-                  Access Status
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    fontWeight: 800,
-                    color: lockedBankCount > 0 ? 'warning.dark' : 'success.dark',
-                  }}
-                >
-                  {lockedBankCount} Quiz Bank{lockedBankCount !== 1 ? 's' : ''} Locked
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box
-                sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 0.5,
-                  bgcolor: 'primary.50',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid',
-                  borderColor: 'primary.100',
-                }}
-              >
-                <QuizOutlinedIcon sx={{ fontSize: 18, color: 'primary.main' }} />
-              </Box>
-              <Box>
-                <Typography
-                  variant='caption'
-                  color='text.secondary'
-                  sx={{
-                    fontWeight: 700,
-                    display: 'block',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    fontSize: '0.65rem',
-                  }}
-                >
-                  Course Content
-                </Typography>
-                <Typography variant='body2' sx={{ fontWeight: 800, color: 'text.primary' }}>
-                  {lockedQuestionCount + courseTotalQ} Total Questions
-                </Typography>
-              </Box>
-            </Box>
-          </Stack>
-
-          <Box
-            sx={{
-              p: 2,
-              bgcolor: 'background.default',
-              borderRadius: 0.5,
-              border: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            <Box sx={{ mb: 2 }}>
-              {selectedCourse.pricing === 'Free' ? (
-                <Typography variant='h6' sx={{ fontWeight: 900, color: 'success.main' }}>
-                  Free Enrollment
-                </Typography>
-              ) : (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                    <Typography variant='h5' sx={{ fontWeight: 900, color: 'text.primary' }}>
-                      $
-                      {selectedCourse.discountPrice ??
-                        selectedCourse.price ??
-                        selectedCourse.listPrice ??
-                        0}
-                    </Typography>
-                    {(selectedCourse.discountPercent ?? 0) > 0 && (
-                      <Chip
-                        label={`-${selectedCourse.discountPercent}%`}
-                        size='small'
-                        color='error'
-                        sx={{
-                          fontWeight: 900,
-                          borderRadius: 0.5,
-                          height: 20,
-                          fontSize: '0.65rem',
-                        }}
-                      />
-                    )}
-                  </Box>
-                  {selectedCourse.discountPrice != null &&
-                    (selectedCourse.listPrice ?? selectedCourse.price) != null && (
-                      <Typography
-                        variant='caption'
-                        sx={{
-                          textDecoration: 'line-through',
-                          color: 'text.disabled',
-                          fontWeight: 600,
-                        }}
-                      >
-                        Original: ${selectedCourse.listPrice ?? selectedCourse.price}
-                      </Typography>
-                    )}
-                </>
-              )}
-            </Box>
-
-            <Button
-              variant='contained'
-              fullWidth
-              color={lockedBankCount > 0 ? 'warning' : 'primary'}
-              component={RouterLink}
-              to={`/courses/${selectedCourseId}`}
-              startIcon={lockedBankCount > 0 ? <LockOpenOutlinedIcon /> : <SchoolOutlinedIcon />}
-              sx={{
-                fontWeight: 900,
-                borderRadius: 0.5,
-                py: 1.5,
-                boxShadow:
-                  lockedBankCount > 0
-                    ? '0 10px 25px rgba(245,158,11,0.2)'
-                    : '0 10px 25px rgba(25, 118, 210, 0.2)',
-                textTransform: 'none',
-                fontSize: '0.95rem',
-              }}
-            >
-              {lockedBankCount > 0 ? 'Unlock Course' : 'View Details'}
-            </Button>
-          </Box>
-        </Paper>
-      </Box>
-    ) : null;
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -657,7 +432,7 @@ export default function PracticeQuizPage() {
         {/* ── Column 1: Course list ─────────────────────────────────── */}
         <Box
           sx={{
-            width: 380,
+            width: 300,
             flexShrink: 0,
             borderRight: '1px solid',
             borderColor: 'divider',
@@ -948,81 +723,195 @@ export default function PracticeQuizPage() {
           )}
         </Box>
 
-        {/* ── Column 2: Selected Course Details (Vertical Sidebar) ───── */}
-        {selectedCourseSidebar}
-
         {/* ── Column 3: Practice panel ──────────────────────────────── */}
-        <Box sx={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-          {/* Course-level stats */}
-          {selectedCourseId && !treeLoading && courseTotalQ > 0 && (
-            <Paper
-              variant='outlined'
+        <Box sx={{ flex: 1, overflow: 'hidden', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+
+          {/* Horizontal course info bar — shown whenever a course is selected */}
+          {selectedCourseId && (
+            <Box
               sx={{
-                mx: { xs: 2, md: 2.5 },
-                mt: { xs: 1.5, md: 1.5 },
-                mb: 0,
-                borderRadius: 0.5,
+                px: 2,
+                py: 0.75,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
                 bgcolor: 'background.paper',
-                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                flexShrink: 0,
+                minHeight: 56,
               }}
             >
+              {/* Cover image */}
               <Box
-                onClick={() => setCourseStatsOpen((p) => !p)}
+                component='img'
+                src={selectedCourse?.coverImage || 'https://via.placeholder.com/72x44?text=Course'}
+                sx={{ width: 72, height: 44, objectFit: 'cover', borderRadius: 0.5, flexShrink: 0, border: '1px solid', borderColor: 'divider' }}
+              />
+
+              {/* Course title + subtitle */}
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {selectedCourse?.title ?? 'Loading...'}
+                </Typography>
+                {selectedCourse?.subtitle && (
+                  <Typography variant='caption' color='text.secondary' sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>
+                    {selectedCourse.subtitle}
+                  </Typography>
+                )}
+              </Box>
+
+              <Box sx={{ width: '1px', height: 28, bgcolor: 'divider', flexShrink: 0 }} />
+
+              {/* Total quiz count */}
+              <Box sx={{ flexShrink: 0 }}>
+                <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', mb: 0.25 }}>
+                  Total Quiz
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: 'text.primary', whiteSpace: 'nowrap' }}>
+                    {allBanks.length + lockedBankCount}
+                  </Typography>
+                  {lockedBankCount > 0 && (
+                    <Chip
+                      label={`${lockedBankCount} locked`}
+                      size='small'
+                      sx={{
+                        height: 18,
+                        fontSize: '0.62rem',
+                        fontWeight: 700,
+                        bgcolor: 'error.50',
+                        color: 'error.main',
+                        border: '1px solid',
+                        borderColor: 'error.200',
+                        borderRadius: 0.5,
+                        '& .MuiChip-label': { px: 0.75 },
+                      }}
+                    />
+                  )}
+                </Box>
+              </Box>
+
+              <Box sx={{ width: '1px', height: 28, bgcolor: 'divider', flexShrink: 0 }} />
+
+              {/* Price */}
+              <Box sx={{ flexShrink: 0 }}>
+                <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', mb: 0.25 }}>
+                  Price
+                </Typography>
+                {selectedCourse?.pricing === 'Free' ? (
+                  <Typography sx={{ fontWeight: 900, fontSize: '0.9rem', color: 'success.main' }}>Free</Typography>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: '0.9rem', color: 'text.primary' }}>
+                      ${selectedCourse?.discountPrice ?? selectedCourse?.price ?? selectedCourse?.listPrice ?? '—'}
+                    </Typography>
+                    {(selectedCourse?.discountPercent ?? 0) > 0 && (
+                      <Chip
+                        label={`-${selectedCourse?.discountPercent}%`}
+                        size='small'
+                        color='error'
+                        sx={{ fontWeight: 900, borderRadius: 0.5, height: 16, fontSize: '0.58rem', '& .MuiChip-label': { px: 0.6 } }}
+                      />
+                    )}
+                  </Box>
+                )}
+              </Box>
+
+              {/* Unlock / View Course button */}
+              <Button
+                variant='contained'
+                size='small'
+                color={lockedBankCount > 0 ? 'warning' : 'primary'}
+                component={RouterLink}
+                to={`/courses/${selectedCourseId}`}
+                startIcon={lockedBankCount > 0
+                  ? <LockOutlinedIcon sx={{ fontSize: '14px !important' }} />
+                  : <LockOpenOutlinedIcon sx={{ fontSize: '14px !important' }} />}
+                sx={{ fontWeight: 800, borderRadius: 0.5, textTransform: 'none', fontSize: '0.78rem', py: 0.5, px: 1.5, whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                {lockedBankCount > 0 ? 'Unlock Course' : 'View Course'}
+              </Button>
+            </Box>
+          )}
+
+          {/* Body: progress card (auto height) + quiz content */}
+          <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+
+            {/* Progress Stats Card — auto height, sits at top */}
+            {selectedCourseId && courseTotalQ > 0 && (
+              <Box
                 sx={{
-                  px: 2,
-                  py: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  cursor: 'pointer',
-                  '&:hover': { bgcolor: 'action.hover' },
+                  width: 148,
+                  flexShrink: 0,
+                  alignSelf: 'flex-start',
+                  borderRight: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, flexWrap: 'wrap' }}>
+                {/* Course stats */}
+                <Box sx={{ px: 1.5, py: 1.75, borderBottom: '1px solid', borderColor: 'divider' }}>
+                  <Typography sx={{ fontWeight: 800, fontSize: '0.58rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary', mb: 1 }}>
+                    Course
+                  </Typography>
+                  <Box sx={{ height: 4, borderRadius: 3, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex', mb: 1.25 }}>
+                    <Box sx={{ width: `${(courseTotalCorrect / courseTotalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
+                    <Box sx={{ width: `${(courseTotalIncorrect / courseTotalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
+                  </Box>
                   {[
                     { label: 'Total', value: courseTotalQ, color: 'text.primary' },
                     { label: 'Answered', value: courseTotalAnswered, color: 'primary.main' },
                     { label: 'Correct', value: courseTotalCorrect, color: 'success.main' },
                     { label: 'Incorrect', value: courseTotalIncorrect, color: 'error.main' },
-                    { label: 'Not Answered Yet', value: courseTotalRemaining, color: 'warning.main' },
-                  ].map(({ label, value, color }, i, arr) => (
-                    <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
-                        {label}:
-                      </Typography>
-                      <Typography variant='caption' sx={{ fontWeight: 800, color }}>
-                        {value}
-                      </Typography>
-                      {i < arr.length - 1 && (
-                        <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'action.disabled', ml: 0.5 }} />
-                      )}
+                    { label: 'Remaining', value: courseTotalRemaining, color: 'warning.main' },
+                  ].map(({ label, value, color }) => (
+                    <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                      <Typography sx={{ fontWeight: 600, fontSize: '0.63rem', color: 'text.secondary' }}>{label}</Typography>
+                      <Typography sx={{ fontWeight: 800, fontSize: '0.72rem', color }}>{value}</Typography>
                     </Box>
                   ))}
-                </Box>
-                <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>
-                  {courseProgressPct}% accuracy
-                </Typography>
-                <ExpandMoreIcon
-                  sx={{
-                    fontSize: 18,
-                    color: 'text.secondary',
-                    flexShrink: 0,
-                    transition: 'transform 0.2s',
-                    transform: courseStatsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  }}
-                />
-              </Box>
-              <Collapse in={courseStatsOpen}>
-                <Box sx={{ px: 2, pb: 1.25 }}>
-                  <Box sx={{ height: 6, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
-                    <Box sx={{ width: `${(courseTotalCorrect / courseTotalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
-                    <Box sx={{ width: `${(courseTotalIncorrect / courseTotalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
+                  <Divider sx={{ my: 0.75 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <Typography sx={{ fontWeight: 600, fontSize: '0.63rem', color: 'text.secondary' }}>Accuracy</Typography>
+                    <Typography sx={{ fontWeight: 900, fontSize: '0.85rem', color: 'primary.main' }}>{courseProgressPct}%</Typography>
                   </Box>
                 </Box>
-              </Collapse>
-            </Paper>
-          )}
 
+                {/* Bank stats */}
+                {selectedBankId && selectedBank && totalQ > 0 && (
+                  <Box sx={{ px: 1.5, py: 1.75 }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.58rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary', mb: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      Quiz Bank
+                    </Typography>
+                    <Box sx={{ height: 4, borderRadius: 3, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex', mb: 1.25 }}>
+                      <Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
+                      <Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
+                    </Box>
+                    {[
+                      { label: 'Total', value: totalQ, color: 'text.primary' },
+                      { label: 'Answered', value: correctCount + incorrectCount, color: 'primary.main' },
+                      { label: 'Correct', value: correctCount, color: 'success.main' },
+                      { label: 'Incorrect', value: incorrectCount, color: 'error.main' },
+                      { label: 'Remaining', value: totalQ - (correctCount + incorrectCount), color: 'warning.main' },
+                    ].map(({ label, value, color }) => (
+                      <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.63rem', color: 'text.secondary' }}>{label}</Typography>
+                        <Typography sx={{ fontWeight: 800, fontSize: '0.72rem', color }}>{value}</Typography>
+                      </Box>
+                    ))}
+                    <Divider sx={{ my: 0.75 }} />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <Typography sx={{ fontWeight: 600, fontSize: '0.63rem', color: 'text.secondary' }}>Accuracy</Typography>
+                      <Typography sx={{ fontWeight: 900, fontSize: '0.85rem', color: 'success.main' }}>{progressPct}%</Typography>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {/* Scrollable quiz content */}
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
           {!selectedBankId ? (
             <Box
               sx={{
@@ -1092,83 +981,6 @@ export default function PracticeQuizPage() {
                 )}
               </Box>
 
-              {/* Progress bar */}
-              {selectedBank && (isLoggedIn ? !attemptLoading : correctCount + incorrectCount > 0) && (
-               <Paper
-                 variant='outlined'
-                 sx={{
-                   mb: 1.5,
-                   borderRadius: 0.5,
-                   bgcolor: 'background.paper',
-                   boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                   overflow: 'hidden',
-                 }}
-               >
-                 <Box
-                   onClick={() => setBankStatsOpen((p) => !p)}
-                   sx={{
-                     p: 1.5,
-                     display: 'flex',
-                     alignItems: 'center',
-                     gap: 2,
-                     cursor: 'pointer',
-                     '&:hover': { bgcolor: 'action.hover' },
-                     borderBottom: bankStatsOpen ? '1px solid' : 'none',
-                     borderColor: 'divider',
-                   }}
-                 >
-                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, flexWrap: 'wrap' }}>
-                     {[
-                       { label: 'Total', value: totalQ, color: 'text.primary' },
-                       { label: 'Answered', value: correctCount + incorrectCount, color: 'primary.main' },
-                       { label: 'Correct', value: correctCount, color: 'success.main' },
-                       { label: 'Incorrect', value: incorrectCount, color: 'error.main' },
-                       { label: 'Not Answered Yet', value: totalQ - (correctCount + incorrectCount), color: 'warning.main' },
-                     ].map(({ label, value, color }, i, arr) => (
-                       <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                         <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
-                           {label}:
-                         </Typography>
-                         <Typography variant='caption' sx={{ fontWeight: 800, color }}>
-                           {value}
-                         </Typography>
-                         {i < arr.length - 1 && (
-                           <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'action.disabled', ml: 0.5 }} />
-                         )}
-                       </Box>
-                     ))}
-                   </Box>
-                   <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 700, flexShrink: 0 }}>
-                     {progressPct}% Accuracy
-                   </Typography>
-                   <ExpandMoreIcon
-                     sx={{
-                       fontSize: 18,
-                       color: 'text.secondary',
-                       transition: 'transform 0.2s',
-                       transform: bankStatsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                     }}
-                   />
-                 </Box>
-
-                 <Collapse in={bankStatsOpen}>
-                   <Box sx={{ p: 2 }}>
-                     <Box sx={{ height: 10, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
-                       <Box sx={{ width: `${(correctCount / totalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
-                       <Box sx={{ width: `${(incorrectCount / totalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
-                     </Box>
-                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                       <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
-                         {isLoggedIn ? `${progressPct}% Accuracy` : 'Accuracy Tracking'}
-                       </Typography>
-                       <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
-                         {correctCount + incorrectCount} of {totalQ} questions completed
-                       </Typography>
-                     </Box>
-                   </Box>
-                 </Collapse>
-               </Paper>
-              )}
               {isLoggedIn && attemptLoading && (
                 <Box sx={{ mb: 1.5 }}>
                   <CircularProgress size={20} />
@@ -1276,12 +1088,14 @@ export default function PracticeQuizPage() {
               )}
             </Box>
           )}
+            </Box>
+          </Box>
         </Box>
 
         {/* ── Column 3: Section / bank tree (right) ─────────────────── */}
         <Box
           sx={{
-            width: 380,
+            width: 280,
             flexShrink: 0,
             borderLeft: '1px solid',
             borderColor: 'divider',
