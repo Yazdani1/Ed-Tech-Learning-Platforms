@@ -9,6 +9,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Collapse,
   IconButton,
   LinearProgress,
   List,
@@ -98,6 +99,8 @@ export default function PracticeQuizPage() {
 
   // Unified answers map for the entire course session (questionId -> LocalAnswer)
   const [courseAnswers, setCourseAnswers] = useState<Map<string, LocalAnswer>>(new Map());
+
+  const [courseStatsOpen, setCourseStatsOpen] = useState(true);
 
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
@@ -241,6 +244,17 @@ export default function PracticeQuizPage() {
     }).length ?? 0;
   const progressPct = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0;
 
+  // Course-level stats
+  const allCourseQuestions = allBanks.flatMap((b) => b.questions);
+  const courseTotalQ = allCourseQuestions.length;
+  const courseTotalCorrect = allCourseQuestions.filter((q) => courseAnswers.get(q._id)?.isCorrect).length;
+  const courseTotalIncorrect = allCourseQuestions.filter((q) => {
+    const a = courseAnswers.get(q._id);
+    return a && a.selectedOptionIndices.length > 0 && !a.isCorrect;
+  }).length;
+  const courseTotalAnswered = courseTotalCorrect + courseTotalIncorrect;
+  const courseTotalRemaining = courseTotalQ - courseTotalAnswered;
+  const courseProgressPct = courseTotalQ > 0 ? Math.round((courseTotalCorrect / courseTotalQ) * 100) : 0;
 
   const selectedCourse = courses.find((c) => c._id === selectedCourseId) ?? null;
   const lockedCourseCard =
@@ -627,6 +641,77 @@ export default function PracticeQuizPage() {
         {/* ── Column 2: Practice panel ──────────────────────────────── */}
         <Box sx={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
           {lockedCourseCard}
+
+          {/* Course-level stats */}
+          {selectedCourseId && !treeLoading && courseTotalQ > 0 && (
+            <Paper
+              variant='outlined'
+              sx={{
+                mx: { xs: 2, md: 2.5 },
+                mt: { xs: 2, md: 2.5 },
+                mb: 0,
+                borderRadius: 0.5,
+                bgcolor: 'background.paper',
+                overflow: 'hidden',
+              }}
+            >
+              <Box
+                onClick={() => setCourseStatsOpen((p) => !p)}
+                sx={{
+                  px: 2,
+                  py: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  cursor: 'pointer',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, flexWrap: 'wrap' }}>
+                  {[
+                    { label: 'Total', value: courseTotalQ, color: 'text.primary' },
+                    { label: 'Answered', value: courseTotalAnswered, color: 'primary.main' },
+                    { label: 'Correct', value: courseTotalCorrect, color: 'success.main' },
+                    { label: 'Incorrect', value: courseTotalIncorrect, color: 'error.main' },
+                    { label: 'Not Answered Yet', value: courseTotalRemaining, color: 'warning.main' },
+                  ].map(({ label, value, color }, i, arr) => (
+                    <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 600 }}>
+                        {label}:
+                      </Typography>
+                      <Typography variant='caption' sx={{ fontWeight: 800, color }}>
+                        {value}
+                      </Typography>
+                      {i < arr.length - 1 && (
+                        <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'action.disabled', ml: 0.5 }} />
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+                <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  {courseProgressPct}% accuracy
+                </Typography>
+                <ExpandMoreIcon
+                  sx={{
+                    fontSize: 18,
+                    color: 'text.secondary',
+                    flexShrink: 0,
+                    transition: 'transform 0.2s',
+                    transform: courseStatsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                />
+              </Box>
+              <Collapse in={courseStatsOpen}>
+                <Box sx={{ px: 2, pb: 1.25 }}>
+                  <Box sx={{ height: 6, borderRadius: 5, bgcolor: 'action.hover', overflow: 'hidden', display: 'flex' }}>
+                    <Box sx={{ width: `${(courseTotalCorrect / courseTotalQ) * 100}%`, bgcolor: 'success.main', transition: 'width 0.4s ease' }} />
+                    <Box sx={{ width: `${(courseTotalIncorrect / courseTotalQ) * 100}%`, bgcolor: 'error.main', transition: 'width 0.4s ease' }} />
+                  </Box>
+                </Box>
+              </Collapse>
+            </Paper>
+          )}
+
           {!selectedBankId ? (
             <Box
               sx={{
