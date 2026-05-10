@@ -438,11 +438,36 @@ export default function CourseCard({
 									<Chip label={course.category.name} size='small' />
 								)}
 								{course.courseType && (
-									<Chip
-										label={course.courseType.name}
-										size='small'
-										variant='outlined'
-									/>
+									<Box
+										sx={{
+											px: 1.25,
+											py: 0.5,
+											borderRadius: 1,
+											background:
+												'linear-gradient(90deg, #0f766e 0%, #7c3aed 40%, #0ea5e9 70%, #0f766e 100%)',
+											backgroundSize: '250% auto',
+											boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+											transform: 'translateZ(0)',
+											display: 'inline-flex',
+											alignItems: 'center',
+											gap: 0.5,
+										}}
+									>
+										<VerifiedIcon sx={{ fontSize: 13, color: 'white' }} />
+										<Typography
+											variant='caption'
+											sx={{
+												fontSize: '0.65rem',
+												fontWeight: 800,
+												color: 'white',
+												letterSpacing: 0.75,
+												lineHeight: 1,
+												textTransform: 'uppercase',
+											}}
+										>
+											{course.courseType.name}
+										</Typography>
+									</Box>
 								)}
 							</Box>
 

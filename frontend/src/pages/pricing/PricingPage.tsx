@@ -242,7 +242,7 @@ function PlanCoursesModal({
 					{loading ? (
 						<Grid container spacing={2.5}>
 							{PLAN_COURSE_SKELETONS.map((_, index) => (
-								<Grid key={index} size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+								<Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
 									<CourseCardSkeleton showAction={user?.role === 'Student'} />
 								</Grid>
 							))}
@@ -261,7 +261,7 @@ function PlanCoursesModal({
 					) : (
 						<Grid container spacing={2.5}>
 							{courses.map((course) => (
-								<Grid key={course._id} size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+								<Grid key={course._id} size={{ xs: 12, sm: 6, md: 4 }}>
 									<CourseCard
 										course={course}
 										basePath='/courses'
