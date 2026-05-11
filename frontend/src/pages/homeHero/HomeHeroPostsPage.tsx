@@ -20,6 +20,7 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import AppModal from '../../components/common/AppModal';
@@ -63,6 +64,7 @@ export default function HomeHeroPostsPage() {
 	const [logoFile, setLogoFile] = useState<File | null>(null);
 	const [logoLoading, setLogoLoading] = useState(true);
 	const [logoSaving, setLogoSaving] = useState(false);
+	const [viewingPost, setViewingPost] = useState<IHomeHeroPost | null>(null);
 
 	const sortedPosts = useMemo(
 		() => [...posts].sort((a, b) => a.order - b.order || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
@@ -103,7 +105,7 @@ export default function HomeHeroPostsPage() {
 		setEditingPost(post);
 		setFiles([]);
 		setForm({
-			visibility: post.visibility,
+			visibility: post.scheduledVisibility ?? post.visibility,
 			publishAt: toInputDateTime(post.publishAt),
 			order: String(post.order),
 		});
@@ -161,7 +163,7 @@ export default function HomeHeroPostsPage() {
 		const data = new FormData();
 		data.append('visibility', post.visibility === 'Public' ? 'Private' : 'Public');
 		data.append('order', String(post.order));
-		if (post.publishAt) data.append('publishAt', post.publishAt);
+		data.append('publishAt', '');
 		await homeHeroPostService.update(post._id, data);
 		loadPosts();
 	};
@@ -275,19 +277,29 @@ export default function HomeHeroPostsPage() {
 					<Grid container spacing={2} sx={{ p: 2 }}>
 						{sortedPosts.map((post, index) => {
 							const isScheduled = post.publishAt && new Date(post.publishAt).getTime() > Date.now();
+							const scheduleLabel = isScheduled && post.scheduledVisibility ? `Scheduled to ${post.scheduledVisibility}` : 'Scheduled';
 							return (
 								<Grid key={post._id} size={{ xs: 12, md: 6, lg: 4 }}>
 									<Paper variant='outlined' sx={{ borderRadius: 1, overflow: 'hidden', height: '100%' }}>
-										<Box sx={{ position: 'relative', aspectRatio: '16 / 5', bgcolor: 'grey.100' }}>
+										<Box
+											onClick={() => setViewingPost(post)}
+											sx={{
+												position: 'relative',
+												aspectRatio: '16 / 5',
+												bgcolor: 'grey.100',
+												cursor: 'zoom-in',
+											}}
+										>
 											<Box component='img' src={post.imageUrl} alt='' loading='lazy' sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
 											<Box sx={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 0.75 }}>
 												<Chip label={`#${index + 1}`} size='small' sx={{ fontWeight: 900, bgcolor: 'common.white' }} />
 												<Chip label={post.visibility} size='small' color={post.visibility === 'Public' ? 'success' : 'default'} sx={{ fontWeight: 800 }} />
-												{isScheduled && <Chip label='Scheduled' size='small' color='warning' sx={{ fontWeight: 800 }} />}
+												{isScheduled && <Chip label={scheduleLabel} size='small' color='warning' sx={{ fontWeight: 800 }} />}
 											</Box>
 											<Box sx={{ position: 'absolute', top: 6, right: 6, bgcolor: 'rgba(255,255,255,0.88)', borderRadius: 1 }}>
 												<ItemActionMenu
 													actions={[
+														{ label: 'View Details', icon: <InfoOutlinedIcon />, onClick: () => setViewingPost(post) },
 														{ label: 'Edit', icon: <EditIcon />, onClick: () => openEdit(post) },
 														{ label: post.visibility === 'Public' ? 'Make Private' : 'Make Public', icon: post.visibility === 'Public' ? <VisibilityOffIcon /> : <VisibilityIcon />, onClick: () => void toggleVisibility(post) },
 														{ label: 'Move Up', icon: <ArrowUpwardIcon />, onClick: () => void movePost(post, -1) },
@@ -301,8 +313,12 @@ export default function HomeHeroPostsPage() {
 											<Typography variant='body2' sx={{ fontWeight: 800 }}>
 												{post.imageWidth && post.imageHeight ? `${post.imageWidth} x ${post.imageHeight}px` : 'Image dimensions unavailable'}
 											</Typography>
-											<Typography variant='caption' color='text.secondary'>
-												{post.publishAt ? `Publishes ${new Date(post.publishAt).toLocaleString()}` : 'Publishes immediately when public'}
+											<Typography variant='body2' sx={{ color: '#b45309', fontWeight: 800, mt: 0.25 }}>
+												{isScheduled && post.scheduledVisibility
+													? `Changes to ${post.scheduledVisibility} ${new Date(post.publishAt as string).toLocaleString()}`
+													: post.publishAt
+														? `Publishes ${new Date(post.publishAt).toLocaleString()}`
+														: 'Publishes immediately when public'}
 											</Typography>
 										</Box>
 									</Paper>
@@ -312,6 +328,82 @@ export default function HomeHeroPostsPage() {
 					</Grid>
 				)}
 			</Paper>
+
+			<AppModal
+				open={Boolean(viewingPost)}
+				title='Header Image Details'
+				onClose={() => setViewingPost(null)}
+				maxWidth='md'
+				cancelText='Close'
+				contentSx={{ p: 0 }}
+				cancelButtonSx={{
+					border: '1px solid',
+					borderColor: 'error.main',
+					color: 'error.main',
+					borderRadius: 999,
+					px: 3,
+					fontWeight: 800,
+					textTransform: 'none',
+					'&:hover': {
+						borderColor: 'error.dark',
+						bgcolor: 'error.50',
+					},
+				}}
+			>
+				{viewingPost && (
+					<Box>
+						<Box sx={{ bgcolor: 'grey.100', p: { xs: 1.5, md: 2 } }}>
+							<Box
+								component='img'
+								src={viewingPost.imageUrl}
+								alt='Homepage header preview'
+								sx={{
+									width: '100%',
+									maxHeight: { xs: 360, md: 520 },
+									objectFit: 'contain',
+									display: 'block',
+									borderRadius: 1,
+									bgcolor: 'common.white',
+								}}
+							/>
+						</Box>
+						<Grid container spacing={1.5} sx={{ p: 2 }}>
+							<Grid size={{ xs: 12, sm: 4 }}>
+								<Typography variant='caption' color='text.secondary'>
+									Visibility
+								</Typography>
+								<Typography sx={{ fontWeight: 800 }}>{viewingPost.visibility}</Typography>
+							</Grid>
+							<Grid size={{ xs: 12, sm: 4 }}>
+								<Typography variant='caption' color='text.secondary'>
+									Image Size
+								</Typography>
+								<Typography sx={{ fontWeight: 800 }}>
+									{viewingPost.imageWidth && viewingPost.imageHeight ? `${viewingPost.imageWidth} x ${viewingPost.imageHeight}px` : 'Unavailable'}
+								</Typography>
+							</Grid>
+							<Grid size={{ xs: 12, sm: 4 }}>
+								<Typography variant='caption' color='text.secondary'>
+									Position
+								</Typography>
+								<Typography sx={{ fontWeight: 800 }}>{viewingPost.order}</Typography>
+							</Grid>
+							<Grid size={{ xs: 12 }}>
+								<Typography variant='caption' color='text.secondary'>
+									Publish Schedule
+								</Typography>
+								<Typography sx={{ color: '#b45309', fontWeight: 900, fontSize: '1rem' }}>
+									{viewingPost.publishAt && viewingPost.scheduledVisibility
+										? `Changes to ${viewingPost.scheduledVisibility} ${new Date(viewingPost.publishAt).toLocaleString()}`
+										: viewingPost.publishAt
+											? new Date(viewingPost.publishAt).toLocaleString()
+											: 'Publishes immediately when public'}
+								</Typography>
+							</Grid>
+						</Grid>
+					</Box>
+				)}
+			</AppModal>
 
 			<AppModal
 				open={dialogOpen}

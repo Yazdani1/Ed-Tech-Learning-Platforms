@@ -14,11 +14,45 @@ const parsePublishAt = (value: unknown): Date | undefined => {
 	return date;
 };
 
+const applyDueHeroSchedules = async () => {
+	const now = new Date();
+	const duePosts = await HomeHeroPost.find({
+		scheduledVisibility: { $in: ['Public', 'Private'] },
+		publishAt: { $lte: now },
+	});
+
+	await Promise.all(
+		duePosts.map((post) => {
+			post.visibility = post.scheduledVisibility as HomeHeroPostVisibility;
+			post.scheduledVisibility = undefined;
+			post.publishAt = undefined;
+			return post.save();
+		}),
+	);
+};
+
 export const getPublicHomeHeroPosts = asyncHandler(async (_req: Request, res: Response) => {
+	await applyDueHeroSchedules();
 	const now = new Date();
 	const posts = await HomeHeroPost.find({
-		visibility: 'Public',
-		$or: [{ publishAt: { $exists: false } }, { publishAt: null }, { publishAt: { $lte: now } }],
+		$or: [
+			{
+				visibility: 'Public',
+				scheduledVisibility: 'Private',
+				publishAt: { $gt: now },
+			},
+			{
+				visibility: 'Public',
+				$and: [
+					{ $or: [{ scheduledVisibility: { $exists: false } }, { scheduledVisibility: null }] },
+					{ $or: [{ publishAt: { $exists: false } }, { publishAt: null }, { publishAt: { $lte: now } }] },
+				],
+			},
+			{
+				scheduledVisibility: 'Public',
+				publishAt: { $lte: now },
+			},
+		],
 	})
 		.sort({ order: 1, createdAt: -1 })
 		.select('imageUrl imageWidth imageHeight order')
@@ -76,6 +110,7 @@ export const updateSiteLogo = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const getAdminHomeHeroPosts = asyncHandler(async (_req: Request, res: Response) => {
+	await applyDueHeroSchedules();
 	const posts = await HomeHeroPost.find()
 		.sort({ order: 1, createdAt: -1 })
 		.populate('createdBy', 'name role')
@@ -96,6 +131,7 @@ export const createHomeHeroPosts = asyncHandler(async (req: Request, res: Respon
 
 	const visibility = parseVisibility(req.body.visibility);
 	const publishAt = parsePublishAt(req.body.publishAt);
+	const hasFutureSchedule = Boolean(publishAt && publishAt.getTime() > Date.now());
 	const maxOrder = await HomeHeroPost.findOne().sort({ order: -1 }).select('order').lean();
 	let nextOrder = Number(req.body.order ?? maxOrder?.order ?? 0);
 
@@ -107,7 +143,8 @@ export const createHomeHeroPosts = asyncHandler(async (req: Request, res: Respon
 			imagePublicId: uploaded.publicId,
 			imageWidth: uploaded.width,
 			imageHeight: uploaded.height,
-			visibility,
+			visibility: hasFutureSchedule ? 'Private' : visibility,
+			scheduledVisibility: hasFutureSchedule ? visibility : undefined,
 			publishAt,
 			order: nextOrder,
 			createdBy: req.user._id,
@@ -133,8 +170,23 @@ export const updateHomeHeroPost = asyncHandler(async (req: Request, res: Respons
 		post.imageHeight = uploaded.height;
 	}
 
-	if (req.body.visibility !== undefined) post.visibility = parseVisibility(req.body.visibility);
-	if (req.body.publishAt !== undefined) post.publishAt = parsePublishAt(req.body.publishAt);
+	const requestedVisibility = req.body.visibility !== undefined ? parseVisibility(req.body.visibility) : undefined;
+	const requestedPublishAt = req.body.publishAt !== undefined ? parsePublishAt(req.body.publishAt) : undefined;
+	const hasFutureSchedule = Boolean(requestedPublishAt && requestedPublishAt.getTime() > Date.now());
+
+	if (requestedVisibility !== undefined) {
+		if (hasFutureSchedule) {
+			post.scheduledVisibility = requestedVisibility;
+			post.publishAt = requestedPublishAt;
+		} else {
+			post.visibility = requestedVisibility;
+			post.scheduledVisibility = undefined;
+			post.publishAt = undefined;
+		}
+	} else if (req.body.publishAt !== undefined) {
+		post.publishAt = requestedPublishAt;
+		if (!hasFutureSchedule) post.scheduledVisibility = undefined;
+	}
 	if (req.body.order !== undefined) post.order = Number(req.body.order) || 0;
 
 	await post.save();

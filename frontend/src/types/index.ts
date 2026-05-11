@@ -439,6 +439,7 @@ export interface IHomeHeroPost {
   imageWidth?: number;
   imageHeight?: number;
   visibility: HomeHeroPostVisibility;
+  scheduledVisibility?: HomeHeroPostVisibility;
   publishAt?: string;
   order: number;
   createdBy?: Pick<IUser, '_id' | 'name' | 'role'>;
