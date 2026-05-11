@@ -59,12 +59,19 @@ export default function TeachersPage() {
 	const [detailsCourses, setDetailsCourses] = useState<ICourse[]>([]);
 	const [detailsLoading, setDetailsLoading] = useState(false);
 	const [form, setForm] = useState(EMPTY_FORM);
+	const [profilePreviewUrl, setProfilePreviewUrl] = useState('');
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
 		loadTeachers();
 		loadTeacherUsers();
 	}, []);
+
+	useEffect(() => {
+		return () => {
+			if (profilePreviewUrl.startsWith('blob:')) URL.revokeObjectURL(profilePreviewUrl);
+		};
+	}, [profilePreviewUrl]);
 
 	const loadTeachers = () => {
 		teacherService
@@ -119,9 +126,11 @@ export default function TeachersPage() {
 				profileImage: null,
 				userId: teacher.userId ?? '',
 			});
+			setProfilePreviewUrl(teacher.profileImage ?? '');
 		} else {
 			setEditingTeacher(null);
 			setForm(EMPTY_FORM);
+			setProfilePreviewUrl('');
 		}
 		setDialogOpen(true);
 	};
@@ -130,6 +139,14 @@ export default function TeachersPage() {
 		setDialogOpen(false);
 		setEditingTeacher(null);
 		setForm(EMPTY_FORM);
+		setProfilePreviewUrl('');
+	};
+
+	const handleProfileImageSelect = (file?: File) => {
+		if (!file) return;
+		if (profilePreviewUrl.startsWith('blob:')) URL.revokeObjectURL(profilePreviewUrl);
+		setForm((current) => ({ ...current, profileImage: file }));
+		setProfilePreviewUrl(URL.createObjectURL(file));
 	};
 
 	const handleOpenDetails = async (teacher: ITeacher) => {
@@ -493,28 +510,50 @@ export default function TeachersPage() {
 								))}
 							</Select>
 						</FormControl>
-						<Button
+						<Paper
 							variant='outlined'
-							component='label'
-							startIcon={<CloudUploadIcon />}
-							sx={{ alignSelf: 'flex-start' }}
+							sx={{
+								p: 2,
+								borderRadius: 1,
+								display: 'flex',
+								alignItems: 'center',
+								gap: 2,
+								flexWrap: 'wrap',
+							}}
 						>
-							Upload Profile Image
-							<input
-								type='file'
-								accept='image/*'
-								hidden
-								onChange={(e) => {
-									const file = e.target.files?.[0];
-									if (file) setForm((p) => ({ ...p, profileImage: file }));
-								}}
-							/>
-						</Button>
-						{form.profileImage && (
-							<Typography variant='body2' color='text.secondary'>
-								Selected: {form.profileImage.name}
-							</Typography>
-						)}
+							<Avatar
+								src={profilePreviewUrl}
+								alt={form.name || 'Teacher profile preview'}
+								sx={{ width: 88, height: 88, fontSize: 30, fontWeight: 900 }}
+							>
+								{form.name.trim().charAt(0).toUpperCase() || 'T'}
+							</Avatar>
+							<Box sx={{ flex: 1, minWidth: 220 }}>
+								<Typography sx={{ fontWeight: 800 }}>Teacher profile image</Typography>
+								<Typography variant='body2' color='text.secondary' sx={{ mb: 1.25 }}>
+									Upload a clear square JPG, PNG, or WebP image. A new upload replaces the current profile image.
+								</Typography>
+								<Button
+									variant='outlined'
+									component='label'
+									startIcon={<CloudUploadIcon />}
+									sx={{ borderRadius: 0.5, fontWeight: 800 }}
+								>
+									{editingTeacher?.profileImage ? 'Replace Profile Image' : 'Upload Profile Image'}
+									<input
+										type='file'
+										accept='image/*'
+										hidden
+										onChange={(event) => handleProfileImageSelect(event.target.files?.[0])}
+									/>
+								</Button>
+								{form.profileImage && (
+									<Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 1 }}>
+										Selected: {form.profileImage.name} ({Math.round(form.profileImage.size / 1024)} KB)
+									</Typography>
+								)}
+							</Box>
+						</Paper>
 					</Box>
 			</AppModal>
 		</Box>
