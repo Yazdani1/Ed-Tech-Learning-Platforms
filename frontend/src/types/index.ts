@@ -430,6 +430,33 @@ export interface ICourseFilterCounts {
   subscriptionPlans: Partial<Record<SubscriptionPlan, number>>;
 }
 
+export type HomeHeroPostVisibility = 'Public' | 'Private';
+
+export interface IHomeHeroPost {
+  _id: string;
+  imageUrl: string;
+  imagePublicId?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  visibility: HomeHeroPostVisibility;
+  publishAt?: string;
+  order: number;
+  createdBy?: Pick<IUser, '_id' | 'name' | 'role'>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ISiteLogo {
+  _id: string;
+  imageUrl: string;
+  imagePublicId?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  updatedBy?: Pick<IUser, '_id' | 'name' | 'role'>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface IPaginationMeta {
   page: number;
   limit: number;

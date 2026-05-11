@@ -19,6 +19,7 @@ import chatRouter from './chat.routes';
 import notificationRouter from './notification.routes';
 import quizBankRouter from './quizBank.routes';
 import quizSectionRouter from './quizSection.routes';
+import homeHeroPostRouter from './homeHeroPost.routes';
 
 const router = Router();
 
@@ -42,5 +43,6 @@ router.use('/chat', chatRouter);
 router.use('/notifications', notificationRouter);
 router.use('/quiz-bank', quizBankRouter);
 router.use('/quiz-sections', quizSectionRouter);
+router.use('/home-hero-posts', homeHeroPostRouter);
 
 export default router;
