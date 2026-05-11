@@ -91,6 +91,7 @@ export default function PracticeQuizPage() {
   const [courses, setCourses] = useState<IPublicCourse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedCourseSnapshot, setSelectedCourseSnapshot] = useState<IPublicCourse | null>(null);
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
 
@@ -206,6 +207,7 @@ export default function PracticeQuizPage() {
     if (!selectedCourseId) {
       setSections([]);
       setLockedBankCount(0);
+      setSelectedCourseSnapshot(null);
       return;
     }
     Promise.all([
@@ -218,6 +220,7 @@ export default function PracticeQuizPage() {
         const fetchedSections = treeRes.data?.sections ?? [];
         setSections(fetchedSections);
         setLockedBankCount(treeRes.data?.lockedBankCount ?? 0);
+        setSelectedCourseSnapshot(treeRes.data?.course ?? null);
 
         // Populate courseAnswers from all fetched attempts
         const fetchedAttempts = attemptRes.data ?? [];
@@ -331,7 +334,9 @@ export default function PracticeQuizPage() {
   const courseTotalRemaining = courseTotalQ - courseTotalAnswered;
   const courseProgressPct = courseTotalQ > 0 ? Math.round((courseTotalCorrect / courseTotalQ) * 100) : 0;
 
-  const selectedCourse = courses.find((c) => c._id === selectedCourseId) ?? null;
+  const selectedCourse =
+    courses.find((c) => c._id === selectedCourseId) ??
+    (selectedCourseSnapshot?._id === selectedCourseId ? selectedCourseSnapshot : null);
   const activeFilterCount = [
     search.trim(),
     selectedCategory,
@@ -706,7 +711,10 @@ export default function PracticeQuizPage() {
                   <ListItemButton
                     key={course._id}
                     selected={isSelected}
-                    onClick={() => setSelectedCourseId(course._id)}
+                    onClick={() => {
+                      setSelectedCourseId(course._id);
+                      setSelectedCourseSnapshot(course);
+                    }}
                     sx={{
                       p: 1.5,
                       display: 'flex',
