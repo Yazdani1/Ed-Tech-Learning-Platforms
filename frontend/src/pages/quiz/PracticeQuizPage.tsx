@@ -101,6 +101,8 @@ export default function PracticeQuizPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const [searchParams] = useSearchParams();
+  const hasCourseParam = searchParams.has('courseId');
+  const hasBankParam = searchParams.has('bankId');
 
   useEffect(() => {
     const cid = searchParams.get('courseId');
@@ -180,10 +182,17 @@ export default function PracticeQuizPage() {
     };
     quizBankService
       .getPublicCourses(params)
-      .then((r) => setCourses(r.data ?? []))
+      .then((r) => {
+        const fetchedCourses = r.data ?? [];
+        setCourses(fetchedCourses);
+
+        if (!hasCourseParam && fetchedCourses.length > 0) {
+          setSelectedCourseId((currentCourseId) => currentCourseId ?? fetchedCourses[0]._id);
+        }
+      })
       .catch(() => {})
       .finally(() => setCoursesLoading(false));
-  }, [debouncedSearch, selectedCategory, selectedCourseType, selectedPricing]);
+  }, [debouncedSearch, selectedCategory, selectedCourseType, selectedPricing, hasCourseParam]);
 
   // Fetch section/bank tree when course changes
   useEffect(() => {
@@ -218,20 +227,30 @@ export default function PracticeQuizPage() {
           return next;
         });
 
-        // Expand first section and its first bank by default
+        const firstSectionWithBank = fetchedSections.find((section) => section.banks.length > 0);
+        const firstBank = firstSectionWithBank?.banks[0] ?? null;
+        const currentBankExists = fetchedSections.some((section) =>
+          section.banks.some((bank) => bank._id === selectedBankId),
+        );
+
+        // Expand and select the first quiz bank by default.
         if (fetchedSections.length > 0) {
-          setExpandedSections([fetchedSections[0]._id]);
-          if (fetchedSections[0].banks.length > 0) {
-            setExpandedBanks([fetchedSections[0].banks[0]._id]);
+          setExpandedSections([firstSectionWithBank?._id ?? fetchedSections[0]._id]);
+          setExpandedBanks(firstBank ? [firstBank._id] : []);
+
+          if (!hasBankParam && firstBank && !currentBankExists) {
+            setSelectedBankId(firstBank._id);
+            setSelectedSubsection('all');
           }
         } else {
           setExpandedSections([]);
           setExpandedBanks([]);
+          if (!hasBankParam) setSelectedBankId(null);
         }
       })
       .catch(() => {})
       .finally(() => setTreeLoading(false));
-  }, [selectedCourseId]);
+  }, [selectedCourseId, isLoggedIn, hasBankParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // Load API attempt when bank selected (logged-in only)
