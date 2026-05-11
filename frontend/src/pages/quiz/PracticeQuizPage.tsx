@@ -35,6 +35,8 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import toast from 'react-hot-toast';
 import AppPagination from '../../components/common/AppPagination';
 import { quizBankService } from '../../services/quizBank.service';
@@ -89,6 +91,8 @@ export default function PracticeQuizPage() {
   const [courses, setCourses] = useState<IPublicCourse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
 
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [expandedBanks, setExpandedBanks] = useState<string[]>([]);
@@ -450,6 +454,18 @@ export default function PracticeQuizPage() {
       <PublicNavbar />
 
       <Box
+        component='style'
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes sidebarTogglePulse {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.08); }
+            }
+          `,
+        }}
+      />
+
+      <Box
         sx={{
           display: 'flex',
           flex: 1,
@@ -460,16 +476,59 @@ export default function PracticeQuizPage() {
         {/* ── Column 1: Course list ─────────────────────────────────── */}
         <Box
           sx={{
-            width: 300,
+            width: leftSidebarCollapsed ? 44 : 300,
             flexShrink: 0,
             borderRight: '1px solid',
             borderColor: 'divider',
-            overflow: 'auto',
+            overflow: 'visible',
             bgcolor: 'background.default',
             display: 'flex',
             flexDirection: 'column',
+            position: 'relative',
+            zIndex: 3,
+            transition: 'width 0.2s ease',
           }}
         >
+          <Tooltip
+            title={leftSidebarCollapsed ? 'Expand course list sidebar' : 'Collapse course list sidebar'}
+            placement='right'
+          >
+            <IconButton
+              size='small'
+              onClick={() => setLeftSidebarCollapsed((collapsed) => !collapsed)}
+              sx={{
+                position: 'absolute',
+                top: 72,
+                right: -18,
+                zIndex: 6,
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                color: 'common.white',
+                bgcolor: 'warning.main',
+                boxShadow: '0 8px 22px rgba(245, 158, 11, 0.42)',
+                border: '2px solid',
+                borderColor: 'background.paper',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+                '&:hover': {
+                  bgcolor: 'warning.dark',
+                  transform: 'translateX(2px) scale(1.12)',
+                  boxShadow: '0 12px 28px rgba(245, 158, 11, 0.52)',
+                },
+                animation: 'sidebarTogglePulse 2.4s ease-in-out infinite',
+              }}
+            >
+              {leftSidebarCollapsed ? (
+                <ChevronRightIcon sx={{ fontSize: 22 }} />
+              ) : (
+                <ChevronLeftIcon sx={{ fontSize: 22 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+          {leftSidebarCollapsed ? (
+            <Box sx={{ flex: 1 }} />
+          ) : (
+          <>
           {/* Header & Filters */}
           <Box
             sx={{
@@ -485,9 +544,11 @@ export default function PracticeQuizPage() {
           >
             <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2, gap: 1 }}>
               <Box sx={{ minWidth: 0 }}>
-                <Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
-                  Browse Free Quizzes
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
+                    Browse Free Quizzes
+                  </Typography>
+                </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', mt: 0.1 }}>
                   <Typography
                     variant='caption'
@@ -626,18 +687,19 @@ export default function PracticeQuizPage() {
             </Collapse>
           </Box>
 
-          {coursesLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={22} />
-            </Box>
-          ) : courses.length === 0 ? (
-            <Box sx={{ px: 2, py: 3 }}>
-              <Typography variant='caption' color='text.secondary'>
-                No free preview quizzes available yet.
-              </Typography>
-            </Box>
-          ) : (
-            <List disablePadding sx={{ py: 2 }}>
+            <Box sx={{ overflow: 'auto', minHeight: 0, flex: 1 }}>
+            {coursesLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress size={22} />
+              </Box>
+            ) : courses.length === 0 ? (
+              <Box sx={{ px: 2, py: 3 }}>
+                <Typography variant='caption' color='text.secondary'>
+                  No free preview quizzes available yet.
+                </Typography>
+              </Box>
+            ) : (
+              <List disablePadding sx={{ py: 2 }}>
               {courses.map((course) => {
                 const isSelected = selectedCourseId === course._id;
                 return (
@@ -806,7 +868,10 @@ export default function PracticeQuizPage() {
                   </ListItemButton>
                 );
               })}
-            </List>
+              </List>
+            )}
+            </Box>
+          </>
           )}
         </Box>
 
@@ -932,9 +997,15 @@ export default function PracticeQuizPage() {
                   width: 148,
                   flexShrink: 0,
                   alignSelf: 'flex-start',
-                  borderRight: '1px solid',
+                  mt: 1.5,
+                  ml: 1.5,
+                  mr: 1.25,
+                  border: '1px solid',
                   borderColor: 'divider',
+                  borderRadius: 1,
                   bgcolor: 'background.paper',
+                  boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
+                  overflow: 'hidden',
                 }}
               >
                 {/* Course stats */}
@@ -1182,14 +1253,57 @@ export default function PracticeQuizPage() {
         {/* ── Column 3: Section / bank tree (right) ─────────────────── */}
         <Box
           sx={{
-            width: 280,
+            width: rightSidebarCollapsed ? 44 : 280,
             flexShrink: 0,
             borderLeft: '1px solid',
             borderColor: 'divider',
-            overflow: 'auto',
+            overflow: 'visible',
             bgcolor: 'background.paper',
+            position: 'relative',
+            zIndex: 3,
+            transition: 'width 0.2s ease',
           }}
         >
+          <Tooltip
+            title={rightSidebarCollapsed ? 'Expand quiz bank sidebar' : 'Collapse quiz bank sidebar'}
+            placement='left'
+          >
+            <IconButton
+              size='small'
+              onClick={() => setRightSidebarCollapsed((collapsed) => !collapsed)}
+              sx={{
+                position: 'absolute',
+                top: 72,
+                left: -38,
+                zIndex: 6,
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                color: 'common.white',
+                bgcolor: 'primary.main',
+                boxShadow: '0 8px 22px rgba(25, 118, 210, 0.36)',
+                border: '2px solid',
+                borderColor: 'background.paper',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                  transform: 'translateX(-2px) scale(1.12)',
+                  boxShadow: '0 12px 28px rgba(25, 118, 210, 0.46)',
+                },
+                animation: 'sidebarTogglePulse 2.4s ease-in-out infinite',
+              }}
+            >
+              {rightSidebarCollapsed ? (
+                <ChevronLeftIcon sx={{ fontSize: 22 }} />
+              ) : (
+                <ChevronRightIcon sx={{ fontSize: 22 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+          {rightSidebarCollapsed ? (
+            <Box sx={{ flex: 1 }} />
+          ) : (
+          <>
           {/* Header */}
           <Box
             sx={{
@@ -1205,18 +1319,22 @@ export default function PracticeQuizPage() {
           >
             {selectedCourse ? (
               <>
-                <Typography
-                  variant='subtitle2'
-                  sx={{
-                    fontWeight: 700,
-                    lineHeight: 1.3,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {selectedCourse.title}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Typography
+                    variant='subtitle2'
+                    sx={{
+                      fontWeight: 700,
+                      lineHeight: 1.3,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    {selectedCourse.title}
+                  </Typography>
+                </Box>
                 <Typography variant='caption' color='text.secondary'>
                   {sections.reduce((acc, s) => acc + s.banks.length, 0)} quiz bank
                   {sections.reduce((acc, s) => acc + s.banks.length, 0) !== 1 ? 's' : ''}
@@ -1224,9 +1342,11 @@ export default function PracticeQuizPage() {
               </>
             ) : (
               <>
-                <Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
-                  Sections
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Typography variant='subtitle2' sx={{ fontWeight: 700, flex: 1 }}>
+                    Sections
+                  </Typography>
+                </Box>
                 <Typography variant='caption' color='text.secondary'>
                   Select a course
                 </Typography>
@@ -1234,6 +1354,7 @@ export default function PracticeQuizPage() {
             )}
           </Box>
 
+          <Box sx={{ overflow: 'auto', height: 'calc(100% - 58px)' }}>
           {!selectedCourseId ? (
             <Box
               sx={{
@@ -1529,6 +1650,10 @@ export default function PracticeQuizPage() {
           )}
 
           {/* Buy card — shown when there are locked banks */}
+          </Box>
+
+          </>
+          )}
         </Box>
       </Box>
     </Box>
