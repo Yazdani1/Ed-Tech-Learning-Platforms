@@ -51,6 +51,7 @@ const CATEGORY_GRADIENTS = [
 
 const HOME_HERO_FALLBACK_IMAGE =
 	"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2048 460'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%230b1f4d'/%3E%3Cstop offset='0.56' stop-color='%231b6dc8'/%3E%3Cstop offset='1' stop-color='%2308a5dd'/%3E%3C/linearGradient%3E%3CradialGradient id='b' cx='0.14' cy='0.42' r='0.45'%3E%3Cstop offset='0' stop-color='%23ffffff' stop-opacity='0.18'/%3E%3Cstop offset='1' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='c' cx='0.83' cy='0.48' r='0.2'%3E%3Cstop offset='0' stop-color='%237dd3fc' stop-opacity='0.22'/%3E%3Cstop offset='1' stop-color='%237dd3fc' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='2048' height='460' fill='url(%23a)'/%3E%3Ccircle cx='1960' cy='88' r='164' fill='%23ffffff' opacity='0.1'/%3E%3Ccircle cx='58' cy='278' r='132' fill='%23ffffff' opacity='0.1'/%3E%3Crect width='2048' height='460' fill='url(%23b)'/%3E%3Crect width='2048' height='460' fill='url(%23c)'/%3E%3C/svg%3E";
+const SHOW_LEGACY_HERO_COPY = Boolean(import.meta.env.VITE_SHOW_LEGACY_HERO_COPY);
 
 const HOME_COURSES_PAGE_SIZE = 8;
 const HOME_COURSE_SKELETONS = Array.from({ length: HOME_COURSES_PAGE_SIZE });
@@ -384,7 +385,7 @@ export default function HomePage() {
 							display: 'block',
 						}}
 					/>
-					{false && (
+					{SHOW_LEGACY_HERO_COPY && (
 						<>
 				<Box
 					sx={{

@@ -112,13 +112,6 @@ export default function PracticeQuizPage() {
   const hasCourseParam = searchParams.has('courseId');
   const hasBankParam = searchParams.has('bankId');
 
-  useEffect(() => {
-    const cid = searchParams.get('courseId');
-    const bid = searchParams.get('bankId');
-    if (cid) setSelectedCourseId(cid);
-    if (bid) setSelectedBankId(bid);
-  }, [searchParams]);
-
   const clearFilters = () => {
     setSearch('');
     setSelectedCategory('');
@@ -151,6 +144,13 @@ export default function PracticeQuizPage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [isChecked, setIsChecked] = useState(false);
+
+  useEffect(() => {
+    const cid = searchParams.get('courseId');
+    const bid = searchParams.get('bankId');
+    if (cid) setSelectedCourseId(cid);
+    if (bid) setSelectedBankId(bid);
+  }, [searchParams]);
 
   const allBanks = useMemo(() => sections.flatMap((s) => s.banks), [sections]);
 
