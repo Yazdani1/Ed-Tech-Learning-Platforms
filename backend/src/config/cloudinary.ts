@@ -12,12 +12,12 @@ export default cloudinary;
 export const uploadToCloudinary = (
   buffer: Buffer,
   folder: string
-): Promise<{ url: string; publicId: string }> =>
+): Promise<{ url: string; publicId: string; width?: number; height?: number }> =>
   new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream({ folder, resource_type: 'image' }, (error, result) => {
         if (error || !result) return reject(error ?? new Error('Cloudinary upload failed'));
-        resolve({ url: result.secure_url, publicId: result.public_id });
+        resolve({ url: result.secure_url, publicId: result.public_id, width: result.width, height: result.height });
       })
       .end(buffer);
   });

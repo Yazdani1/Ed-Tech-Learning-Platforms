@@ -12,9 +12,17 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
-import type { ICategory, ICourseType, CoursePricing, SubscriptionPlan } from '../../types/index';
+import type { ICategory, ICourseType, CoursePricing, ICourseFilterCounts, SubscriptionPlan } from '../../types/index';
 
 const PRICING: CoursePricing[] = ['Free', 'Paid'];
+const filterOptionSx = {
+	mr: 0,
+	width: '100%',
+	'& .MuiFormControlLabel-label': {
+		flex: 1,
+		minWidth: 0,
+	},
+};
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
 	return (
@@ -26,6 +34,19 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 				{label}
 			</Typography>
 			{children}
+		</Box>
+	);
+}
+
+function CountLabel({ label, count }: { label: string; count?: number }) {
+	return (
+		<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%' }}>
+			<Typography variant='body2' sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+				{label}
+			</Typography>
+			<Typography variant='caption' color='text.secondary' sx={{ flexShrink: 0, fontWeight: 700 }}>
+				({count ?? 0})
+			</Typography>
 		</Box>
 	);
 }
@@ -44,6 +65,7 @@ interface Props {
 	selectedPlans: SubscriptionPlan[];
 	onTogglePlan: (plan: SubscriptionPlan) => void;
 	subscriptionPlanOptions?: SubscriptionPlan[];
+	filterCounts?: ICourseFilterCounts;
 	activeFilterCount: number;
 	onClearAll: () => void;
 }
@@ -62,6 +84,7 @@ export default function CourseFilterSidebar({
 	selectedPlans,
 	onTogglePlan,
 	subscriptionPlanOptions,
+	filterCounts,
 	activeFilterCount,
 	onClearAll,
 }: Props) {
@@ -154,8 +177,8 @@ export default function CourseFilterSidebar({
 													onChange={() => onToggleCourseType(ct._id)}
 												/>
 											}
-											label={<Typography variant='body2'>{ct.name}</Typography>}
-											sx={{ mr: 0 }}
+											label={<CountLabel label={ct.name} count={filterCounts?.courseTypes[ct._id]} />}
+											sx={filterOptionSx}
 										/>
 									))}
 								</FormGroup>
@@ -180,8 +203,8 @@ export default function CourseFilterSidebar({
 													onChange={() => onToggleCategory(cat._id)}
 												/>
 											}
-											label={<Typography variant='body2'>{cat.name}</Typography>}
-											sx={{ mr: 0 }}
+											label={<CountLabel label={cat.name} count={filterCounts?.categories[cat._id]} />}
+											sx={filterOptionSx}
 										/>
 									))}
 								</FormGroup>
@@ -204,8 +227,8 @@ export default function CourseFilterSidebar({
 											onChange={() => onTogglePricing(pricing)}
 										/>
 									}
-									label={<Typography variant='body2'>{pricing}</Typography>}
-									sx={{ mr: 0 }}
+									label={<CountLabel label={pricing} count={filterCounts?.pricing[pricing]} />}
+									sx={filterOptionSx}
 								/>
 							))}
 						</FormGroup>
@@ -230,8 +253,8 @@ export default function CourseFilterSidebar({
 												onChange={() => onTogglePlan(plan)}
 											/>
 										}
-										label={<Typography variant='body2'>{plan}</Typography>}
-										sx={{ mr: 0 }}
+										label={<CountLabel label={plan} count={filterCounts?.subscriptionPlans[plan]} />}
+										sx={filterOptionSx}
 									/>
 								))}
 							</FormGroup>

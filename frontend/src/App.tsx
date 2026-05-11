@@ -37,6 +37,7 @@ const PublicTeachersPage = lazy(() => import('./pages/teachers/PublicTeachersPag
 const StaffChatPage = lazy(() => import('./pages/chat/StaffChatPage'));
 const StudentChatPage = lazy(() => import('./pages/chat/StudentChatPage'));
 const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage'));
+const HomeHeroPostsPage = lazy(() => import('./pages/homeHero/HomeHeroPostsPage'));
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
@@ -72,6 +73,7 @@ export default function App() {
 					<Route element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']} />}>
 						<Route path='/admin/categories' element={<CategoriesPage />} />
 						<Route path='/admin/course-types' element={<CourseTypesPage />} />
+						<Route path='/admin/homepage-showcase' element={<HomeHeroPostsPage />} />
 					</Route>
 					<Route path='/admin/teachers' element={<TeachersPage />} />
 					<Route path='/admin/users' element={<UsersPage />} />

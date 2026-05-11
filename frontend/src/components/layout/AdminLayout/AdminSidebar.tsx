@@ -27,6 +27,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ChatIcon from '@mui/icons-material/Chat';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import CollectionsIcon from '@mui/icons-material/Collections';
 import Badge from '@mui/material/Badge';
 import { useAuth } from '../../../context/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -79,6 +80,12 @@ const navItems = [
 		icon: <NotificationsIcon />,
 		path: '/admin/notifications',
 		roles: ['Super Admin', 'Admin', 'Moderator'],
+	},
+	{
+		label: 'Homepage Showcase',
+		icon: <CollectionsIcon />,
+		path: '/admin/homepage-showcase',
+		roles: ['Super Admin', 'Admin'],
 	},
 	{
 		label: 'nav.teachers',

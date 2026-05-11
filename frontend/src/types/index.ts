@@ -420,6 +420,42 @@ export interface ApiResponse<T = unknown> {
   limit?: number;
   totalUsers?: number;
   pagination?: IPaginationMeta;
+  filterCounts?: ICourseFilterCounts;
+}
+
+export interface ICourseFilterCounts {
+  courseTypes: Record<string, number>;
+  categories: Record<string, number>;
+  pricing: Partial<Record<CoursePricing, number>>;
+  subscriptionPlans: Partial<Record<SubscriptionPlan, number>>;
+}
+
+export type HomeHeroPostVisibility = 'Public' | 'Private';
+
+export interface IHomeHeroPost {
+  _id: string;
+  imageUrl: string;
+  imagePublicId?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  visibility: HomeHeroPostVisibility;
+  scheduledVisibility?: HomeHeroPostVisibility;
+  publishAt?: string;
+  order: number;
+  createdBy?: Pick<IUser, '_id' | 'name' | 'role'>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ISiteLogo {
+  _id: string;
+  imageUrl: string;
+  imagePublicId?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  updatedBy?: Pick<IUser, '_id' | 'name' | 'role'>;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface IPaginationMeta {

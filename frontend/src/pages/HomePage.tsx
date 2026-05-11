@@ -8,15 +8,19 @@ import {
 	Container,
 	Divider,
 	Grid,
+	IconButton,
 	Typography,
 } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
 import CategoryIcon from '@mui/icons-material/Category';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { courseService } from '../services/course.service';
 import { categoryService } from '../services/category.service';
 import { courseTypeService } from '../services/courseType.service';
 import { teacherService } from '../services/teacher.service';
+import { homeHeroPostService } from '../services/homeHeroPost.service';
 import CourseCard, { CourseCardSkeleton } from '../components/ui/CourseCard';
 import PublicNavbar from '../components/layout/PublicNavbar';
 import CourseFilterSidebar from '../components/course/CourseFilterSidebar';
@@ -31,6 +35,8 @@ import type {
 	ITeacher,
 	IPaginationMeta,
 	CoursePricing,
+	ICourseFilterCounts,
+	IHomeHeroPost,
 	SubscriptionPlan,
 } from '../types/index';
 
@@ -42,6 +48,10 @@ const CATEGORY_GRADIENTS = [
 	'linear-gradient(135deg, #166534 0%, #84cc16 100%)',
 	'linear-gradient(135deg, #4338ca 0%, #a78bfa 100%)',
 ];
+
+const HOME_HERO_FALLBACK_IMAGE =
+	"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2048 460'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%230b1f4d'/%3E%3Cstop offset='0.56' stop-color='%231b6dc8'/%3E%3Cstop offset='1' stop-color='%2308a5dd'/%3E%3C/linearGradient%3E%3CradialGradient id='b' cx='0.14' cy='0.42' r='0.45'%3E%3Cstop offset='0' stop-color='%23ffffff' stop-opacity='0.18'/%3E%3Cstop offset='1' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='c' cx='0.83' cy='0.48' r='0.2'%3E%3Cstop offset='0' stop-color='%237dd3fc' stop-opacity='0.22'/%3E%3Cstop offset='1' stop-color='%237dd3fc' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='2048' height='460' fill='url(%23a)'/%3E%3Ccircle cx='1960' cy='88' r='164' fill='%23ffffff' opacity='0.1'/%3E%3Ccircle cx='58' cy='278' r='132' fill='%23ffffff' opacity='0.1'/%3E%3Crect width='2048' height='460' fill='url(%23b)'/%3E%3Crect width='2048' height='460' fill='url(%23c)'/%3E%3C/svg%3E";
+const SHOW_LEGACY_HERO_COPY = Boolean(import.meta.env.VITE_SHOW_LEGACY_HERO_COPY);
 
 const HOME_COURSES_PAGE_SIZE = 8;
 const HOME_COURSE_SKELETONS = Array.from({ length: HOME_COURSES_PAGE_SIZE });
@@ -82,6 +92,8 @@ export default function HomePage() {
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
+	const [heroPosts, setHeroPosts] = useState<IHomeHeroPost[]>([]);
+	const [heroSlide, setHeroSlide] = useState(0);
 	const { user, isLoading: authLoading } = useAuth();
 	const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
 
@@ -90,6 +102,7 @@ export default function HomePage() {
 		key: string;
 		courses: ICourse[];
 		pagination: IPaginationMeta | null;
+		filterCounts?: ICourseFilterCounts;
 	}>({
 		key: '__init__',
 		courses: [],
@@ -112,6 +125,21 @@ export default function HomePage() {
 			setTeachers(teacherRes.data ?? []);
 		});
 	}, []);
+
+	useEffect(() => {
+		homeHeroPostService
+			.getPublic()
+			.then((res) => setHeroPosts(res.data ?? []))
+			.catch(() => setHeroPosts([]));
+	}, []);
+
+	useEffect(() => {
+		if (heroPosts.length <= 1) return;
+		const timer = setInterval(() => {
+			setHeroSlide((current) => (current + 1) % heroPosts.length);
+		}, 5000);
+		return () => clearInterval(timer);
+	}, [heroPosts.length]);
 
 	useEffect(() => {
 		if (authLoading) return;
@@ -148,6 +176,7 @@ export default function HomePage() {
 						? data.filter((c): c is ICourse => Boolean(c?._id))
 						: [],
 					pagination: res.pagination ?? null,
+					filterCounts: res.filterCounts,
 				});
 			})
 			.catch(() =>
@@ -227,13 +256,137 @@ export default function HomePage() {
 				sx={{
 					position: 'relative',
 					overflow: 'hidden',
-					background:
-						'linear-gradient(135deg, #0d1b4b 0%, #1565c0 55%, #0288d1 100%)',
+					background: 'background.default',
 					color: 'white',
-					py: { xs: 8, md: 13 },
-					px: 2,
 				}}
 			>
+				{heroPosts.length > 0 ? (
+					<Box
+						sx={{
+							position: 'relative',
+							height: { xs: 320, sm: 380, md: 446 },
+							bgcolor: 'grey.100',
+							'&:hover .hero-slider-arrow, &:focus-within .hero-slider-arrow': {
+								opacity: 1,
+								pointerEvents: 'auto',
+							},
+						}}
+					>
+						{heroPosts.map((post, index) => (
+							<Box
+								key={post._id}
+								component='img'
+								src={post.imageUrl}
+								alt=''
+								loading={index === 0 ? 'eager' : 'lazy'}
+								sx={{
+									position: 'absolute',
+									inset: 0,
+									width: '100%',
+									height: '100%',
+									objectFit: 'cover',
+									opacity: index === heroSlide ? 1 : 0,
+									transform: index === heroSlide ? 'scale(1)' : 'scale(1.04)',
+									filter: index === heroSlide ? 'none' : 'saturate(0.9)',
+									transition: 'opacity 0.65s ease, transform 1.1s ease, filter 0.65s ease',
+								}}
+							/>
+						))}
+						{heroPosts.length > 1 && (
+							<>
+								<IconButton
+									className='hero-slider-arrow'
+									aria-label='Previous header image'
+									onClick={() => setHeroSlide((current) => (current - 1 + heroPosts.length) % heroPosts.length)}
+									sx={{
+										position: 'absolute',
+										left: { xs: 12, md: 24 },
+										top: '50%',
+										transform: 'translateY(-50%)',
+										width: { xs: 42, md: 50 },
+										height: { xs: 42, md: 50 },
+										opacity: 0,
+										pointerEvents: 'none',
+										bgcolor: '#0ea5e9',
+										color: 'common.white',
+										border: '2px solid rgba(255,255,255,0.8)',
+										boxShadow: '0 14px 34px rgba(14, 165, 233, 0.38)',
+										transition: 'opacity 0.22s ease, transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease',
+										'&:hover': {
+											bgcolor: '#0369a1',
+											transform: 'translateY(-50%) scale(1.08)',
+											boxShadow: '0 18px 42px rgba(14, 165, 233, 0.48)',
+										},
+									}}
+								>
+									<ChevronLeftIcon sx={{ fontSize: 30 }} />
+								</IconButton>
+								<IconButton
+									className='hero-slider-arrow'
+									aria-label='Next header image'
+									onClick={() => setHeroSlide((current) => (current + 1) % heroPosts.length)}
+									sx={{
+										position: 'absolute',
+										right: { xs: 12, md: 24 },
+										top: '50%',
+										transform: 'translateY(-50%)',
+										width: { xs: 42, md: 50 },
+										height: { xs: 42, md: 50 },
+										opacity: 0,
+										pointerEvents: 'none',
+										bgcolor: '#0ea5e9',
+										color: 'common.white',
+										border: '2px solid rgba(255,255,255,0.8)',
+										boxShadow: '0 14px 34px rgba(14, 165, 233, 0.38)',
+										transition: 'opacity 0.22s ease, transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease',
+										'&:hover': {
+											bgcolor: '#0369a1',
+											transform: 'translateY(-50%) scale(1.08)',
+											boxShadow: '0 18px 42px rgba(14, 165, 233, 0.48)',
+										},
+									}}
+								>
+									<ChevronRightIcon sx={{ fontSize: 30 }} />
+								</IconButton>
+								<Box sx={{ position: 'absolute', left: 0, right: 0, bottom: 18, display: 'flex', justifyContent: 'center', gap: 1 }}>
+									{heroPosts.map((post, index) => (
+										<Box
+											key={post._id}
+											component='button'
+											aria-label={`Show header image ${index + 1}`}
+											onClick={() => setHeroSlide(index)}
+											sx={{
+												width: index === heroSlide ? 22 : 8,
+												height: 8,
+												border: 0,
+												borderRadius: 8,
+												p: 0,
+												cursor: 'pointer',
+												bgcolor: index === heroSlide ? '#facc15' : 'rgba(250,204,21,0.48)',
+												boxShadow: index === heroSlide ? '0 0 16px rgba(250,204,21,0.55)' : 'none',
+												transition: 'width 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease',
+											}}
+										/>
+									))}
+								</Box>
+							</>
+						)}
+					</Box>
+				) : (
+				<>
+					<Box
+						component='img'
+						src={HOME_HERO_FALLBACK_IMAGE}
+						alt=''
+						sx={{
+							width: '100%',
+							height: { xs: 320, sm: 380, md: 446 },
+							objectFit: 'cover',
+							display: 'block',
+						}}
+					/>
+					{SHOW_LEGACY_HERO_COPY && (
+						<>
 				<Box
 					sx={{
 						position: 'absolute',
@@ -345,6 +498,10 @@ export default function HomePage() {
 						</Box>
 					</Box>
 				</Container>
+						</>
+					)}
+				</>
+				)}
 			</Box>
 
 			{/* ── Stats bar ────────────────────────────────────────────── */}
@@ -614,6 +771,7 @@ export default function HomePage() {
 								onTogglePricing={togglePricing}
 								selectedPlans={urlPlans}
 								onTogglePlan={togglePlan}
+								filterCounts={fetchState.filterCounts}
 								activeFilterCount={activeFilterCount}
 								onClearAll={clearAll}
 							/>

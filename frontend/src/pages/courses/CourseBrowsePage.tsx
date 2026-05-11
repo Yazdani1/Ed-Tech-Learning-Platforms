@@ -22,6 +22,7 @@ import type {
 	ICategory,
 	ICourseType,
 	CoursePricing,
+	ICourseFilterCounts,
 	SubscriptionPlan,
 } from '../../types/index';
 
@@ -58,6 +59,7 @@ export default function CourseBrowsePage() {
 	const [fetchState, setFetchState] = useState<{
 		key: string;
 		courses: ICourse[];
+		filterCounts?: ICourseFilterCounts;
 	}>({
 		key: '__init__',
 		courses: [],
@@ -110,6 +112,7 @@ export default function CourseBrowsePage() {
 					courses: Array.isArray(data)
 						? data.filter((c): c is ICourse => Boolean(c?._id))
 						: [],
+					filterCounts: res.filterCounts,
 				});
 			})
 			.catch(() => setFetchState({ key: paramsKey, courses: [] }));
@@ -231,6 +234,7 @@ export default function CourseBrowsePage() {
 							onTogglePricing={togglePricing}
 							selectedPlans={urlPlans}
 							onTogglePlan={togglePlan}
+							filterCounts={fetchState.filterCounts}
 							activeFilterCount={activeFilterCount}
 							onClearAll={clearAll}
 						/>

@@ -236,9 +236,12 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 	const { search, courseTypes, categories, subscriptionPlans, pricing, page, limit } = req.query as Record<string, string>;
 
 	// Security: hard-coded — public users only ever see Published + Public courses
-	const filter: Record<string, unknown> = {
+	const baseFilter = {
 		status: 'Published',
 		visibility: 'Public',
+	};
+	const filter: Record<string, unknown> = {
+		...baseFilter,
 	};
 
 	if (search?.trim())
@@ -281,11 +284,40 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		})
 		.sort({ createdAt: -1 });
 
+	const [courseTypeCounts, categoryCounts, pricingCounts, subscriptionPlanCounts] = await Promise.all([
+		Course.aggregate<{ _id: Types.ObjectId; count: number }>([
+			{ $match: baseFilter },
+			{ $match: { courseType: { $exists: true, $ne: null } } },
+			{ $group: { _id: '$courseType', count: { $sum: 1 } } },
+		]),
+		Course.aggregate<{ _id: Types.ObjectId; count: number }>([
+			{ $match: baseFilter },
+			{ $match: { category: { $exists: true, $ne: null } } },
+			{ $group: { _id: '$category', count: { $sum: 1 } } },
+		]),
+		Course.aggregate<{ _id: string; count: number }>([
+			{ $match: baseFilter },
+			{ $group: { _id: '$pricing', count: { $sum: 1 } } },
+		]),
+		Course.aggregate<{ _id: SubscriptionPlan; count: number }>([
+			{ $match: { ...baseFilter, includedInSubscription: true } },
+			{ $unwind: '$allowedSubscriptionPlans' },
+			{ $group: { _id: '$allowedSubscriptionPlans', count: { $sum: 1 } } },
+		]),
+	]);
+
+	const filterCounts = {
+		courseTypes: Object.fromEntries(courseTypeCounts.map((item) => [String(item._id), item.count])),
+		categories: Object.fromEntries(categoryCounts.map((item) => [String(item._id), item.count])),
+		pricing: Object.fromEntries(pricingCounts.map((item) => [item._id, item.count])),
+		subscriptionPlans: Object.fromEntries(subscriptionPlanCounts.map((item) => [item._id, item.count])),
+	};
+
 	const shouldPaginate = Boolean(page || limit);
 
 	if (!shouldPaginate) {
 		const courses = await query;
-		res.status(200).json({ success: true, data: courses, total: courses.length });
+		res.status(200).json({ success: true, data: courses, total: courses.length, filterCounts });
 		return;
 	}
 
@@ -301,6 +333,7 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		success: true,
 		data: courses,
 		total,
+		filterCounts,
 		pagination: {
 			page: safePage,
 			limit: perPage,

@@ -8,6 +8,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Collapse,
   Divider,
   IconButton,
   LinearProgress,
@@ -33,6 +34,9 @@ import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import toast from 'react-hot-toast';
 import AppPagination from '../../components/common/AppPagination';
 import { quizBankService } from '../../services/quizBank.service';
@@ -87,6 +91,9 @@ export default function PracticeQuizPage() {
   const [courses, setCourses] = useState<IPublicCourse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedCourseSnapshot, setSelectedCourseSnapshot] = useState<IPublicCourse | null>(null);
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
 
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [expandedBanks, setExpandedBanks] = useState<string[]>([]);
@@ -99,15 +106,11 @@ export default function PracticeQuizPage() {
   const [selectedCourseType, setSelectedCourseType] = useState('');
   const [selectedPricing, setSelectedPricing] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [searchParams] = useSearchParams();
-
-  useEffect(() => {
-    const cid = searchParams.get('courseId');
-    const bid = searchParams.get('bankId');
-    if (cid) setSelectedCourseId(cid);
-    if (bid) setSelectedBankId(bid);
-  }, [searchParams]);
+  const hasCourseParam = searchParams.has('courseId');
+  const hasBankParam = searchParams.has('bankId');
 
   const clearFilters = () => {
     setSearch('');
@@ -141,6 +144,13 @@ export default function PracticeQuizPage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [isChecked, setIsChecked] = useState(false);
+
+  useEffect(() => {
+    const cid = searchParams.get('courseId');
+    const bid = searchParams.get('bankId');
+    if (cid) setSelectedCourseId(cid);
+    if (bid) setSelectedBankId(bid);
+  }, [searchParams]);
 
   const allBanks = useMemo(() => sections.flatMap((s) => s.banks), [sections]);
 
@@ -180,16 +190,24 @@ export default function PracticeQuizPage() {
     };
     quizBankService
       .getPublicCourses(params)
-      .then((r) => setCourses(r.data ?? []))
+      .then((r) => {
+        const fetchedCourses = r.data ?? [];
+        setCourses(fetchedCourses);
+
+        if (!hasCourseParam && fetchedCourses.length > 0) {
+          setSelectedCourseId((currentCourseId) => currentCourseId ?? fetchedCourses[0]._id);
+        }
+      })
       .catch(() => {})
       .finally(() => setCoursesLoading(false));
-  }, [debouncedSearch, selectedCategory, selectedCourseType, selectedPricing]);
+  }, [debouncedSearch, selectedCategory, selectedCourseType, selectedPricing, hasCourseParam]);
 
   // Fetch section/bank tree when course changes
   useEffect(() => {
     if (!selectedCourseId) {
       setSections([]);
       setLockedBankCount(0);
+      setSelectedCourseSnapshot(null);
       return;
     }
     Promise.all([
@@ -202,6 +220,7 @@ export default function PracticeQuizPage() {
         const fetchedSections = treeRes.data?.sections ?? [];
         setSections(fetchedSections);
         setLockedBankCount(treeRes.data?.lockedBankCount ?? 0);
+        setSelectedCourseSnapshot(treeRes.data?.course ?? null);
 
         // Populate courseAnswers from all fetched attempts
         const fetchedAttempts = attemptRes.data ?? [];
@@ -218,20 +237,30 @@ export default function PracticeQuizPage() {
           return next;
         });
 
-        // Expand first section and its first bank by default
+        const firstSectionWithBank = fetchedSections.find((section) => section.banks.length > 0);
+        const firstBank = firstSectionWithBank?.banks[0] ?? null;
+        const currentBankExists = fetchedSections.some((section) =>
+          section.banks.some((bank) => bank._id === selectedBankId),
+        );
+
+        // Expand and select the first quiz bank by default.
         if (fetchedSections.length > 0) {
-          setExpandedSections([fetchedSections[0]._id]);
-          if (fetchedSections[0].banks.length > 0) {
-            setExpandedBanks([fetchedSections[0].banks[0]._id]);
+          setExpandedSections([firstSectionWithBank?._id ?? fetchedSections[0]._id]);
+          setExpandedBanks(firstBank ? [firstBank._id] : []);
+
+          if (!hasBankParam && firstBank && !currentBankExists) {
+            setSelectedBankId(firstBank._id);
+            setSelectedSubsection('all');
           }
         } else {
           setExpandedSections([]);
           setExpandedBanks([]);
+          if (!hasBankParam) setSelectedBankId(null);
         }
       })
       .catch(() => {})
       .finally(() => setTreeLoading(false));
-  }, [selectedCourseId]);
+  }, [selectedCourseId, isLoggedIn, hasBankParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // Load API attempt when bank selected (logged-in only)
@@ -305,7 +334,15 @@ export default function PracticeQuizPage() {
   const courseTotalRemaining = courseTotalQ - courseTotalAnswered;
   const courseProgressPct = courseTotalQ > 0 ? Math.round((courseTotalCorrect / courseTotalQ) * 100) : 0;
 
-  const selectedCourse = courses.find((c) => c._id === selectedCourseId) ?? null;
+  const selectedCourse =
+    courses.find((c) => c._id === selectedCourseId) ??
+    (selectedCourseSnapshot?._id === selectedCourseId ? selectedCourseSnapshot : null);
+  const activeFilterCount = [
+    search.trim(),
+    selectedCategory,
+    selectedCourseType,
+    selectedPricing,
+  ].filter(Boolean).length;
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -422,6 +459,18 @@ export default function PracticeQuizPage() {
       <PublicNavbar />
 
       <Box
+        component='style'
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes sidebarTogglePulse {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.08); }
+            }
+          `,
+        }}
+      />
+
+      <Box
         sx={{
           display: 'flex',
           flex: 1,
@@ -432,16 +481,59 @@ export default function PracticeQuizPage() {
         {/* ── Column 1: Course list ─────────────────────────────────── */}
         <Box
           sx={{
-            width: 300,
+            width: leftSidebarCollapsed ? 44 : 300,
             flexShrink: 0,
             borderRight: '1px solid',
             borderColor: 'divider',
-            overflow: 'auto',
+            overflow: 'visible',
             bgcolor: 'background.default',
             display: 'flex',
             flexDirection: 'column',
+            position: 'relative',
+            zIndex: 3,
+            transition: 'width 0.2s ease',
           }}
         >
+          <Tooltip
+            title={leftSidebarCollapsed ? 'Expand course list sidebar' : 'Collapse course list sidebar'}
+            placement='right'
+          >
+            <IconButton
+              size='small'
+              onClick={() => setLeftSidebarCollapsed((collapsed) => !collapsed)}
+              sx={{
+                position: 'absolute',
+                top: 72,
+                right: -18,
+                zIndex: 6,
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                color: 'common.white',
+                bgcolor: 'warning.main',
+                boxShadow: '0 8px 22px rgba(245, 158, 11, 0.42)',
+                border: '2px solid',
+                borderColor: 'background.paper',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+                '&:hover': {
+                  bgcolor: 'warning.dark',
+                  transform: 'translateX(2px) scale(1.12)',
+                  boxShadow: '0 12px 28px rgba(245, 158, 11, 0.52)',
+                },
+                animation: 'sidebarTogglePulse 2.4s ease-in-out infinite',
+              }}
+            >
+              {leftSidebarCollapsed ? (
+                <ChevronRightIcon sx={{ fontSize: 22 }} />
+              ) : (
+                <ChevronLeftIcon sx={{ fontSize: 22 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+          {leftSidebarCollapsed ? (
+            <Box sx={{ flex: 1 }} />
+          ) : (
+          <>
           {/* Header & Filters */}
           <Box
             sx={{
@@ -455,109 +547,174 @@ export default function PracticeQuizPage() {
               zIndex: 1,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
-                Browse Free Quizzes
-              </Typography>
-              {(search || selectedCategory || selectedCourseType || selectedPricing) && (
-                <Button 
-                  size="small" 
-                  onClick={clearFilters}
-                  sx={{ p: 0, minWidth: 0, fontSize: '0.7rem', fontWeight: 700, textTransform: 'none' }}
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2, gap: 1 }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
+                    Browse Free Quizzes
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', mt: 0.1 }}>
+                  <Typography
+                    variant='caption'
+                    sx={{ fontSize: '0.68rem', lineHeight: 1.35, fontWeight: 700, color: 'primary.main' }}
+                  >
+                    {coursesLoading
+                      ? 'Loading courses...'
+                      : `${courses.length} course${courses.length === 1 ? '' : 's'}`}
+                  </Typography>
+                  <Typography variant='caption' sx={{ fontSize: '0.68rem', lineHeight: 1.35, color: 'text.disabled' }}>
+                    •
+                  </Typography>
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      fontSize: '0.68rem',
+                      lineHeight: 1.35,
+                      fontWeight: 700,
+                      color: activeFilterCount > 0 ? 'warning.dark' : 'text.secondary',
+                    }}
+                  >
+                    {activeFilterCount > 0
+                      ? `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}`
+                      : 'No active filters'}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25 }}>
+                <Button
+                  size='small'
+                  variant={filtersOpen ? 'contained' : 'outlined'}
+                  color='warning'
+                  startIcon={<FilterListIcon sx={{ fontSize: '16px !important' }} />}
+                  endIcon={
+                    <ExpandMoreIcon
+                      sx={{
+                        fontSize: '17px !important',
+                        transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                      }}
+                    />
+                  }
+                  onClick={() => setFiltersOpen((open) => !open)}
+                  sx={{
+                    borderRadius: 0.5,
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    textTransform: 'none',
+                    minWidth: 0,
+                    px: 1,
+                    py: 0.35,
+                  }}
                 >
-                  Clear All
+                  Filter
                 </Button>
-              )}
+                {activeFilterCount > 0 && (
+                  <Button 
+                    size="small" 
+                    onClick={clearFilters}
+                    sx={{ p: 0, minWidth: 0, fontSize: '0.68rem', fontWeight: 700, textTransform: 'none' }}
+                  >
+                    Clear All
+                  </Button>
+                )}
+              </Box>
             </Box>
 
-            <Stack spacing={1.5}>
-              <TextField
-                size='small'
-                placeholder='Search courses...'
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position='start'>
-                        <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': { borderRadius: 0.5, bgcolor: 'background.default' },
-                }}
-              />
+            <Collapse in={filtersOpen} timeout='auto' unmountOnExit>
+              <Stack spacing={1.5}>
+                <TextField
+                  size='small'
+                  placeholder='Search courses...'
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position='start'>
+                          <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': { borderRadius: 0.5, bgcolor: 'background.default' },
+                  }}
+                />
 
-              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <FormControl fullWidth size='small'>
+                    <Select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      displayEmpty
+                      sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
+                    >
+                      <MenuItem value=''>All Categories</MenuItem>
+                      {categories.map((c) => (
+                        <MenuItem key={c._id} value={c._id}>
+                          {c.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth size='small'>
+                    <Select
+                      value={selectedPricing}
+                      onChange={(e) => setSelectedPricing(e.target.value)}
+                      displayEmpty
+                      sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
+                    >
+                      <MenuItem value=''>All Pricing</MenuItem>
+                      <MenuItem value='Free'>Free Only</MenuItem>
+                      <MenuItem value='Paid'>Paid Only</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+
                 <FormControl fullWidth size='small'>
                   <Select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    value={selectedCourseType}
+                    onChange={(e) => setSelectedCourseType(e.target.value)}
                     displayEmpty
                     sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
                   >
-                    <MenuItem value=''>All Categories</MenuItem>
-                    {categories.map((c) => (
-                      <MenuItem key={c._id} value={c._id}>
-                        {c.name}
+                    <MenuItem value=''>All Course Types</MenuItem>
+                    {courseTypes.map((t) => (
+                      <MenuItem key={t._id} value={t._id}>
+                        {t.name}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-
-                <FormControl fullWidth size='small'>
-                  <Select
-                    value={selectedPricing}
-                    onChange={(e) => setSelectedPricing(e.target.value)}
-                    displayEmpty
-                    sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
-                  >
-                    <MenuItem value=''>All Pricing</MenuItem>
-                    <MenuItem value='Free'>Free Only</MenuItem>
-                    <MenuItem value='Paid'>Paid Only</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-
-              <FormControl fullWidth size='small'>
-                <Select
-                  value={selectedCourseType}
-                  onChange={(e) => setSelectedCourseType(e.target.value)}
-                  displayEmpty
-                  sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
-                >
-                  <MenuItem value=''>All Course Types</MenuItem>
-                  {courseTypes.map((t) => (
-                    <MenuItem key={t._id} value={t._id}>
-                      {t.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Stack>
+              </Stack>
+            </Collapse>
           </Box>
 
-          {coursesLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={22} />
-            </Box>
-          ) : courses.length === 0 ? (
-            <Box sx={{ px: 2, py: 3 }}>
-              <Typography variant='caption' color='text.secondary'>
-                No free preview quizzes available yet.
-              </Typography>
-            </Box>
-          ) : (
-            <List disablePadding sx={{ py: 2 }}>
+            <Box sx={{ overflow: 'auto', minHeight: 0, flex: 1 }}>
+            {coursesLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress size={22} />
+              </Box>
+            ) : courses.length === 0 ? (
+              <Box sx={{ px: 2, py: 3 }}>
+                <Typography variant='caption' color='text.secondary'>
+                  No free preview quizzes available yet.
+                </Typography>
+              </Box>
+            ) : (
+              <List disablePadding sx={{ py: 2 }}>
               {courses.map((course) => {
                 const isSelected = selectedCourseId === course._id;
                 return (
                   <ListItemButton
                     key={course._id}
                     selected={isSelected}
-                    onClick={() => setSelectedCourseId(course._id)}
+                    onClick={() => {
+                      setSelectedCourseId(course._id);
+                      setSelectedCourseSnapshot(course);
+                    }}
                     sx={{
                       p: 1.5,
                       display: 'flex',
@@ -719,7 +876,10 @@ export default function PracticeQuizPage() {
                   </ListItemButton>
                 );
               })}
-            </List>
+              </List>
+            )}
+            </Box>
+          </>
           )}
         </Box>
 
@@ -845,9 +1005,15 @@ export default function PracticeQuizPage() {
                   width: 148,
                   flexShrink: 0,
                   alignSelf: 'flex-start',
-                  borderRight: '1px solid',
+                  mt: 1.5,
+                  ml: 1.5,
+                  mr: 1.25,
+                  border: '1px solid',
                   borderColor: 'divider',
+                  borderRadius: 1,
                   bgcolor: 'background.paper',
+                  boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
+                  overflow: 'hidden',
                 }}
               >
                 {/* Course stats */}
@@ -1095,14 +1261,57 @@ export default function PracticeQuizPage() {
         {/* ── Column 3: Section / bank tree (right) ─────────────────── */}
         <Box
           sx={{
-            width: 280,
+            width: rightSidebarCollapsed ? 44 : 280,
             flexShrink: 0,
             borderLeft: '1px solid',
             borderColor: 'divider',
-            overflow: 'auto',
+            overflow: 'visible',
             bgcolor: 'background.paper',
+            position: 'relative',
+            zIndex: 3,
+            transition: 'width 0.2s ease',
           }}
         >
+          <Tooltip
+            title={rightSidebarCollapsed ? 'Expand quiz bank sidebar' : 'Collapse quiz bank sidebar'}
+            placement='left'
+          >
+            <IconButton
+              size='small'
+              onClick={() => setRightSidebarCollapsed((collapsed) => !collapsed)}
+              sx={{
+                position: 'absolute',
+                top: 72,
+                left: -38,
+                zIndex: 6,
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                color: 'common.white',
+                bgcolor: 'primary.main',
+                boxShadow: '0 8px 22px rgba(25, 118, 210, 0.36)',
+                border: '2px solid',
+                borderColor: 'background.paper',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                  transform: 'translateX(-2px) scale(1.12)',
+                  boxShadow: '0 12px 28px rgba(25, 118, 210, 0.46)',
+                },
+                animation: 'sidebarTogglePulse 2.4s ease-in-out infinite',
+              }}
+            >
+              {rightSidebarCollapsed ? (
+                <ChevronLeftIcon sx={{ fontSize: 22 }} />
+              ) : (
+                <ChevronRightIcon sx={{ fontSize: 22 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+          {rightSidebarCollapsed ? (
+            <Box sx={{ flex: 1 }} />
+          ) : (
+          <>
           {/* Header */}
           <Box
             sx={{
@@ -1118,18 +1327,22 @@ export default function PracticeQuizPage() {
           >
             {selectedCourse ? (
               <>
-                <Typography
-                  variant='subtitle2'
-                  sx={{
-                    fontWeight: 700,
-                    lineHeight: 1.3,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {selectedCourse.title}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Typography
+                    variant='subtitle2'
+                    sx={{
+                      fontWeight: 700,
+                      lineHeight: 1.3,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    {selectedCourse.title}
+                  </Typography>
+                </Box>
                 <Typography variant='caption' color='text.secondary'>
                   {sections.reduce((acc, s) => acc + s.banks.length, 0)} quiz bank
                   {sections.reduce((acc, s) => acc + s.banks.length, 0) !== 1 ? 's' : ''}
@@ -1137,9 +1350,11 @@ export default function PracticeQuizPage() {
               </>
             ) : (
               <>
-                <Typography variant='subtitle2' sx={{ fontWeight: 700 }}>
-                  Sections
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Typography variant='subtitle2' sx={{ fontWeight: 700, flex: 1 }}>
+                    Sections
+                  </Typography>
+                </Box>
                 <Typography variant='caption' color='text.secondary'>
                   Select a course
                 </Typography>
@@ -1147,6 +1362,7 @@ export default function PracticeQuizPage() {
             )}
           </Box>
 
+          <Box sx={{ overflow: 'auto', height: 'calc(100% - 58px)' }}>
           {!selectedCourseId ? (
             <Box
               sx={{
@@ -1442,6 +1658,10 @@ export default function PracticeQuizPage() {
           )}
 
           {/* Buy card — shown when there are locked banks */}
+          </Box>
+
+          </>
+          )}
         </Box>
       </Box>
     </Box>

@@ -14,6 +14,8 @@ import {
 import SchoolIcon from '@mui/icons-material/School';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../../context/useAuth';
+import { homeHeroPostService } from '../../services/homeHeroPost.service';
+import type { ISiteLogo } from '../../types/index';
 import { encodeParam, decodeParam } from '../../utils/urlParams';
 import PublicDiscountBanner from './PublicDiscountBanner';
 
@@ -34,10 +36,18 @@ export default function PublicNavbar() {
   // types in the browse-page sidebar, the navbar bar should reflect it too)
   const currentQ = decodeParam(searchParams.get('q') ?? '');
   const [query, setQuery] = useState(currentQ);
+  const [siteLogo, setSiteLogo] = useState<ISiteLogo | null>(null);
 
   useEffect(() => {
     setQuery(currentQ);
   }, [currentQ]);
+
+  useEffect(() => {
+    homeHeroPostService
+      .getPublicLogo()
+      .then((res) => setSiteLogo(res.data ?? null))
+      .catch(() => setSiteLogo(null));
+  }, []);
 
   useEffect(() => {
     const win = window as Window & {
@@ -93,13 +103,24 @@ export default function PublicNavbar() {
             flexShrink: 0,
           }}
         >
-          <SchoolIcon sx={{ fontSize: 28 }} />
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 800, display: { xs: 'none', sm: 'block' }, letterSpacing: -0.5 }}
-          >
-            MedhaBee
-          </Typography>
+          {siteLogo ? (
+            <Box
+              component='img'
+              src={siteLogo.imageUrl}
+              alt='MedhaBee'
+              sx={{ height: { xs: 36, sm: 42 }, maxWidth: { xs: 132, sm: 176 }, objectFit: 'contain', display: 'block' }}
+            />
+          ) : (
+            <>
+              <SchoolIcon sx={{ fontSize: 28 }} />
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 800, display: { xs: 'none', sm: 'block' }, letterSpacing: -0.5 }}
+              >
+                MedhaBee
+              </Typography>
+            </>
+          )}
         </Box>
 
         {/* Search */}
