@@ -31,6 +31,7 @@ import type {
 	ITeacher,
 	IPaginationMeta,
 	CoursePricing,
+	ICourseFilterCounts,
 	SubscriptionPlan,
 } from '../types/index';
 
@@ -90,6 +91,7 @@ export default function HomePage() {
 		key: string;
 		courses: ICourse[];
 		pagination: IPaginationMeta | null;
+		filterCounts?: ICourseFilterCounts;
 	}>({
 		key: '__init__',
 		courses: [],
@@ -148,6 +150,7 @@ export default function HomePage() {
 						? data.filter((c): c is ICourse => Boolean(c?._id))
 						: [],
 					pagination: res.pagination ?? null,
+					filterCounts: res.filterCounts,
 				});
 			})
 			.catch(() =>
@@ -614,6 +617,7 @@ export default function HomePage() {
 								onTogglePricing={togglePricing}
 								selectedPlans={urlPlans}
 								onTogglePlan={togglePlan}
+								filterCounts={fetchState.filterCounts}
 								activeFilterCount={activeFilterCount}
 								onClearAll={clearAll}
 							/>

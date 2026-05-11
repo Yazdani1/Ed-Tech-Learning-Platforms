@@ -420,6 +420,14 @@ export interface ApiResponse<T = unknown> {
   limit?: number;
   totalUsers?: number;
   pagination?: IPaginationMeta;
+  filterCounts?: ICourseFilterCounts;
+}
+
+export interface ICourseFilterCounts {
+  courseTypes: Record<string, number>;
+  categories: Record<string, number>;
+  pricing: Partial<Record<CoursePricing, number>>;
+  subscriptionPlans: Partial<Record<SubscriptionPlan, number>>;
 }
 
 export interface IPaginationMeta {

@@ -28,7 +28,7 @@ import { courseService } from '../../services/course.service';
 import { courseTypeService } from '../../services/courseType.service';
 import { subscriptionPlanConfigService } from '../../services/subscriptionPlanConfig.service';
 import { subscriptionService } from '../../services/subscription.service';
-import type { ICategory, ICourse, ICourseType, ISubscriptionPlanConfig, CoursePricing, SubscriptionPlan } from '../../types/index';
+import type { ICategory, ICourse, ICourseType, ICourseFilterCounts, ISubscriptionPlanConfig, CoursePricing, SubscriptionPlan } from '../../types/index';
 import { useAuth } from '../../context/useAuth';
 import { formatDate } from '../../utils/dateTime';
 
@@ -89,6 +89,7 @@ function PlanCoursesModal({
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
 	const [courses, setCourses] = useState<ICourse[]>([]);
+	const [filterCounts, setFilterCounts] = useState<ICourseFilterCounts | undefined>();
 	const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
 	const [loading, setLoading] = useState(false);
 
@@ -130,8 +131,12 @@ function PlanCoursesModal({
 			.then((res) => {
 				const data = res.data;
 				setCourses(Array.isArray(data) ? data.filter((course): course is ICourse => Boolean(course?._id)) : []);
+				setFilterCounts(res.filterCounts);
 			})
-			.catch(() => setCourses([]))
+			.catch(() => {
+				setCourses([]);
+				setFilterCounts(undefined);
+			})
 			.finally(() => setLoading(false));
 	}, [open, plan, searchInput, selectedCategories, selectedCourseTypes, selectedPricing]);
 
@@ -206,6 +211,7 @@ function PlanCoursesModal({
 						selectedPlans={plan ? [plan.plan] : []}
 						onTogglePlan={() => {}}
 						subscriptionPlanOptions={plan ? [plan.plan] : []}
+						filterCounts={filterCounts}
 						activeFilterCount={activeFilterCount}
 						onClearAll={clearAll}
 					/>
@@ -227,6 +233,7 @@ function PlanCoursesModal({
 							selectedPlans={plan ? [plan.plan] : []}
 							onTogglePlan={() => {}}
 							subscriptionPlanOptions={plan ? [plan.plan] : []}
+							filterCounts={filterCounts}
 							activeFilterCount={activeFilterCount}
 							onClearAll={clearAll}
 						/>
