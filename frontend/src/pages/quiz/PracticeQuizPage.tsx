@@ -8,6 +8,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Collapse,
   Divider,
   IconButton,
   LinearProgress,
@@ -33,6 +34,7 @@ import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import toast from 'react-hot-toast';
 import AppPagination from '../../components/common/AppPagination';
 import { quizBankService } from '../../services/quizBank.service';
@@ -99,6 +101,7 @@ export default function PracticeQuizPage() {
   const [selectedCourseType, setSelectedCourseType] = useState('');
   const [selectedPricing, setSelectedPricing] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [searchParams] = useSearchParams();
   const hasCourseParam = searchParams.has('courseId');
@@ -325,6 +328,12 @@ export default function PracticeQuizPage() {
   const courseProgressPct = courseTotalQ > 0 ? Math.round((courseTotalCorrect / courseTotalQ) * 100) : 0;
 
   const selectedCourse = courses.find((c) => c._id === selectedCourseId) ?? null;
+  const activeFilterCount = [
+    search.trim(),
+    selectedCategory,
+    selectedCourseType,
+    selectedPricing,
+  ].filter(Boolean).length;
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -474,88 +483,147 @@ export default function PracticeQuizPage() {
               zIndex: 1,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
-                Browse Free Quizzes
-              </Typography>
-              {(search || selectedCategory || selectedCourseType || selectedPricing) && (
-                <Button 
-                  size="small" 
-                  onClick={clearFilters}
-                  sx={{ p: 0, minWidth: 0, fontSize: '0.7rem', fontWeight: 700, textTransform: 'none' }}
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2, gap: 1 }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant='subtitle2' sx={{ fontWeight: 800 }}>
+                  Browse Free Quizzes
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', mt: 0.1 }}>
+                  <Typography
+                    variant='caption'
+                    sx={{ fontSize: '0.68rem', lineHeight: 1.35, fontWeight: 700, color: 'primary.main' }}
+                  >
+                    {coursesLoading
+                      ? 'Loading courses...'
+                      : `${courses.length} course${courses.length === 1 ? '' : 's'}`}
+                  </Typography>
+                  <Typography variant='caption' sx={{ fontSize: '0.68rem', lineHeight: 1.35, color: 'text.disabled' }}>
+                    •
+                  </Typography>
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      fontSize: '0.68rem',
+                      lineHeight: 1.35,
+                      fontWeight: 700,
+                      color: activeFilterCount > 0 ? 'warning.dark' : 'text.secondary',
+                    }}
+                  >
+                    {activeFilterCount > 0
+                      ? `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}`
+                      : 'No active filters'}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25 }}>
+                <Button
+                  size='small'
+                  variant={filtersOpen ? 'contained' : 'outlined'}
+                  color='warning'
+                  startIcon={<FilterListIcon sx={{ fontSize: '16px !important' }} />}
+                  endIcon={
+                    <ExpandMoreIcon
+                      sx={{
+                        fontSize: '17px !important',
+                        transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                      }}
+                    />
+                  }
+                  onClick={() => setFiltersOpen((open) => !open)}
+                  sx={{
+                    borderRadius: 0.5,
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    textTransform: 'none',
+                    minWidth: 0,
+                    px: 1,
+                    py: 0.35,
+                  }}
                 >
-                  Clear All
+                  Filter
                 </Button>
-              )}
+                {activeFilterCount > 0 && (
+                  <Button 
+                    size="small" 
+                    onClick={clearFilters}
+                    sx={{ p: 0, minWidth: 0, fontSize: '0.68rem', fontWeight: 700, textTransform: 'none' }}
+                  >
+                    Clear All
+                  </Button>
+                )}
+              </Box>
             </Box>
 
-            <Stack spacing={1.5}>
-              <TextField
-                size='small'
-                placeholder='Search courses...'
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position='start'>
-                        <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': { borderRadius: 0.5, bgcolor: 'background.default' },
-                }}
-              />
+            <Collapse in={filtersOpen} timeout='auto' unmountOnExit>
+              <Stack spacing={1.5}>
+                <TextField
+                  size='small'
+                  placeholder='Search courses...'
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position='start'>
+                          <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': { borderRadius: 0.5, bgcolor: 'background.default' },
+                  }}
+                />
 
-              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <FormControl fullWidth size='small'>
+                    <Select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      displayEmpty
+                      sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
+                    >
+                      <MenuItem value=''>All Categories</MenuItem>
+                      {categories.map((c) => (
+                        <MenuItem key={c._id} value={c._id}>
+                          {c.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth size='small'>
+                    <Select
+                      value={selectedPricing}
+                      onChange={(e) => setSelectedPricing(e.target.value)}
+                      displayEmpty
+                      sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
+                    >
+                      <MenuItem value=''>All Pricing</MenuItem>
+                      <MenuItem value='Free'>Free Only</MenuItem>
+                      <MenuItem value='Paid'>Paid Only</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+
                 <FormControl fullWidth size='small'>
                   <Select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    value={selectedCourseType}
+                    onChange={(e) => setSelectedCourseType(e.target.value)}
                     displayEmpty
                     sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
                   >
-                    <MenuItem value=''>All Categories</MenuItem>
-                    {categories.map((c) => (
-                      <MenuItem key={c._id} value={c._id}>
-                        {c.name}
+                    <MenuItem value=''>All Course Types</MenuItem>
+                    {courseTypes.map((t) => (
+                      <MenuItem key={t._id} value={t._id}>
+                        {t.name}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-
-                <FormControl fullWidth size='small'>
-                  <Select
-                    value={selectedPricing}
-                    onChange={(e) => setSelectedPricing(e.target.value)}
-                    displayEmpty
-                    sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
-                  >
-                    <MenuItem value=''>All Pricing</MenuItem>
-                    <MenuItem value='Free'>Free Only</MenuItem>
-                    <MenuItem value='Paid'>Paid Only</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-
-              <FormControl fullWidth size='small'>
-                <Select
-                  value={selectedCourseType}
-                  onChange={(e) => setSelectedCourseType(e.target.value)}
-                  displayEmpty
-                  sx={{ borderRadius: 0.5, fontSize: '0.8rem', bgcolor: 'background.default' }}
-                >
-                  <MenuItem value=''>All Course Types</MenuItem>
-                  {courseTypes.map((t) => (
-                    <MenuItem key={t._id} value={t._id}>
-                      {t.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Stack>
+              </Stack>
+            </Collapse>
           </Box>
 
           {coursesLoading ? (
