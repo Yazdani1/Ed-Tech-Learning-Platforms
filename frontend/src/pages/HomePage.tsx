@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+﻿import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import {
 	Box,
@@ -8,14 +8,10 @@ import {
 	Container,
 	Divider,
 	Grid,
-	IconButton,
 	Typography,
 } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
-import CategoryIcon from '@mui/icons-material/Category';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { courseService } from '../services/course.service';
 import { categoryService } from '../services/category.service';
 import { courseTypeService } from '../services/courseType.service';
@@ -28,6 +24,8 @@ import AppPagination from '../components/common/AppPagination';
 import RenderWhenNearViewport from '../components/common/RenderWhenNearViewport';
 import { useAuth } from '../context/useAuth';
 import { encodeParam, decodeParam } from '../utils/urlParams';
+import HomeHeroSlider from './home/HomeHeroSlider';
+import HomeCategoryGrid from './home/HomeCategoryGrid';
 import type {
 	ICourse,
 	ICategory,
@@ -49,12 +47,6 @@ const CATEGORY_GRADIENTS = [
 	'linear-gradient(135deg, #4338ca 0%, #a78bfa 100%)',
 ];
 
-const HOME_HERO_FALLBACK_IMAGE =
-	"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2048 460'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%230b1f4d'/%3E%3Cstop offset='0.56' stop-color='%231b6dc8'/%3E%3Cstop offset='1' stop-color='%2308a5dd'/%3E%3C/linearGradient%3E%3CradialGradient id='b' cx='0.14' cy='0.42' r='0.45'%3E%3Cstop offset='0' stop-color='%23ffffff' stop-opacity='0.18'/%3E%3Cstop offset='1' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='c' cx='0.83' cy='0.48' r='0.2'%3E%3Cstop offset='0' stop-color='%237dd3fc' stop-opacity='0.22'/%3E%3Cstop offset='1' stop-color='%237dd3fc' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='2048' height='460' fill='url(%23a)'/%3E%3Ccircle cx='1960' cy='88' r='164' fill='%23ffffff' opacity='0.1'/%3E%3Ccircle cx='58' cy='278' r='132' fill='%23ffffff' opacity='0.1'/%3E%3Crect width='2048' height='460' fill='url(%23b)'/%3E%3Crect width='2048' height='460' fill='url(%23c)'/%3E%3C/svg%3E";
-const SHOW_LEGACY_HERO_COPY = Boolean(
-	import.meta.env.VITE_SHOW_LEGACY_HERO_COPY,
-);
-
 const HOME_COURSES_PAGE_SIZE = 8;
 const HOME_COURSE_SKELETONS = Array.from({ length: HOME_COURSES_PAGE_SIZE });
 const ThreeLearningScene = lazy(
@@ -68,7 +60,7 @@ const HomePage = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const paramsKey = searchParams.toString();
 
-	// All filter values derived from URL (decoded) ───
+	// All filter values derived from URL (decoded) â”€â”€â”€
 
 	const urlSearch = decodeParam(searchParams.get('q') ?? '');
 	const urlCourseTypes = decodeParam(searchParams.get('courseTypes') ?? '')
@@ -94,7 +86,7 @@ const HomePage = () => {
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isDebouncing = useRef(false);
 
-	// ── Reference data
+	// â”€â”€ Reference data
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
@@ -103,7 +95,7 @@ const HomePage = () => {
 	const { user, isLoading: authLoading } = useAuth();
 	const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
 
-	// ── Fetch state: derived loading ─────────────────────────────
+	// â”€â”€ Fetch state: derived loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	const [fetchState, setFetchState] = useState<{
 		key: string;
 		courses: ICourse[];
@@ -190,7 +182,7 @@ const HomePage = () => {
 			);
 	}, [paramsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	// ── URL helpers ──────────────────────────────────────────────
+	// â”€â”€ URL helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	const updateParams = (patch: Record<string, string | null>) => {
 		setSearchParams(
 			(prev) => {
@@ -260,522 +252,13 @@ const HomePage = () => {
 		<Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
 			<PublicNavbar />
 
-			{/* ── Hero ─────────────────────────────────────────────────── */}
-			<Box
-				sx={{
-					position: 'relative',
-					overflow: 'hidden',
-					background: 'background.default',
-					color: 'white',
-				}}
-			>
-				{heroPosts.length > 0 ? (
-					<Box
-						sx={{
-							position: 'relative',
-							height: { xs: 320, sm: 380, md: 446 },
-							bgcolor: 'grey.100',
-							'&:hover .hero-slider-arrow, &:focus-within .hero-slider-arrow': {
-								opacity: 1,
-								pointerEvents: 'auto',
-							},
-						}}
-					>
-						{heroPosts.map((post, index) => (
-							<Box
-								key={post._id}
-								component='img'
-								src={post.imageUrl}
-								alt=''
-								loading={index === 0 ? 'eager' : 'lazy'}
-								sx={{
-									position: 'absolute',
-									inset: 0,
-									width: '100%',
-									height: '100%',
-									objectFit: 'cover',
-									opacity: index === heroSlide ? 1 : 0,
-									transform: index === heroSlide ? 'scale(1)' : 'scale(1.04)',
-									filter: index === heroSlide ? 'none' : 'saturate(0.9)',
-									transition:
-										'opacity 0.65s ease, transform 1.1s ease, filter 0.65s ease',
-								}}
-							/>
-						))}
-						{heroPosts.length > 1 && (
-							<>
-								<IconButton
-									className='hero-slider-arrow'
-									aria-label='Previous header image'
-									onClick={() =>
-										setHeroSlide(
-											(current) =>
-												(current - 1 + heroPosts.length) % heroPosts.length,
-										)
-									}
-									sx={{
-										position: 'absolute',
-										left: { xs: 12, md: 24 },
-										top: '50%',
-										transform: 'translateY(-50%)',
-										width: { xs: 42, md: 50 },
-										height: { xs: 42, md: 50 },
-										opacity: 0,
-										pointerEvents: 'none',
-										bgcolor: '#0ea5e9',
-										color: 'common.white',
-										border: '2px solid rgba(255,255,255,0.8)',
-										boxShadow: '0 14px 34px rgba(14, 165, 233, 0.38)',
-										transition:
-											'opacity 0.22s ease, transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease',
-										'&:hover': {
-											bgcolor: '#0369a1',
-											transform: 'translateY(-50%) scale(1.08)',
-											boxShadow: '0 18px 42px rgba(14, 165, 233, 0.48)',
-										},
-									}}
-								>
-									<ChevronLeftIcon sx={{ fontSize: 30 }} />
-								</IconButton>
-								<IconButton
-									className='hero-slider-arrow'
-									aria-label='Next header image'
-									onClick={() =>
-										setHeroSlide((current) => (current + 1) % heroPosts.length)
-									}
-									sx={{
-										position: 'absolute',
-										right: { xs: 12, md: 24 },
-										top: '50%',
-										transform: 'translateY(-50%)',
-										width: { xs: 42, md: 50 },
-										height: { xs: 42, md: 50 },
-										opacity: 0,
-										pointerEvents: 'none',
-										bgcolor: '#0ea5e9',
-										color: 'common.white',
-										border: '2px solid rgba(255,255,255,0.8)',
-										boxShadow: '0 14px 34px rgba(14, 165, 233, 0.38)',
-										transition:
-											'opacity 0.22s ease, transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease',
-										'&:hover': {
-											bgcolor: '#0369a1',
-											transform: 'translateY(-50%) scale(1.08)',
-											boxShadow: '0 18px 42px rgba(14, 165, 233, 0.48)',
-										},
-									}}
-								>
-									<ChevronRightIcon sx={{ fontSize: 30 }} />
-								</IconButton>
-								<Box
-									sx={{
-										position: 'absolute',
-										left: 0,
-										right: 0,
-										bottom: 18,
-										display: 'flex',
-										justifyContent: 'center',
-										gap: 1,
-									}}
-								>
-									{heroPosts.map((post, index) => (
-										<Box
-											key={post._id}
-											component='button'
-											aria-label={`Show header image ${index + 1}`}
-											onClick={() => setHeroSlide(index)}
-											sx={{
-												width: index === heroSlide ? 22 : 8,
-												height: 8,
-												border: 0,
-												borderRadius: 8,
-												p: 0,
-												cursor: 'pointer',
-												bgcolor:
-													index === heroSlide
-														? '#facc15'
-														: 'rgba(250,204,21,0.48)',
-												boxShadow:
-													index === heroSlide
-														? '0 0 16px rgba(250,204,21,0.55)'
-														: 'none',
-												transition:
-													'width 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease',
-											}}
-										/>
-									))}
-								</Box>
-							</>
-						)}
-					</Box>
-				) : (
-					<>
-						<Box
-							component='img'
-							src={HOME_HERO_FALLBACK_IMAGE}
-							alt=''
-							sx={{
-								width: '100%',
-								height: { xs: 320, sm: 380, md: 446 },
-								objectFit: 'cover',
-								display: 'block',
-							}}
-						/>
-						{SHOW_LEGACY_HERO_COPY && (
-							<>
-								<Box
-									sx={{
-										position: 'absolute',
-										top: -100,
-										right: -100,
-										width: 400,
-										height: 400,
-										borderRadius: '50%',
-										background: 'rgba(255,255,255,0.06)',
-										pointerEvents: 'none',
-									}}
-								/>
-								<Box
-									sx={{
-										position: 'absolute',
-										bottom: -80,
-										left: -80,
-										width: 320,
-										height: 320,
-										borderRadius: '50%',
-										background: 'rgba(255,255,255,0.05)',
-										pointerEvents: 'none',
-									}}
-								/>
-								<Box
-									sx={{
-										position: 'absolute',
-										top: '30%',
-										right: '15%',
-										width: 180,
-										height: 180,
-										borderRadius: '50%',
-										background: 'rgba(2,136,209,0.25)',
-										pointerEvents: 'none',
-									}}
-								/>
+			<HomeHeroSlider heroPosts={heroPosts} heroSlide={heroSlide} setHeroSlide={setHeroSlide} />
 
-								<Container maxWidth='lg' sx={{ position: 'relative' }}>
-									<Box sx={{ maxWidth: 620 }}>
-										<Typography
-											variant='h2'
-											sx={{
-												fontWeight: 900,
-												lineHeight: 1.15,
-												mb: 2.5,
-												fontSize: { xs: '2.2rem', sm: '2.8rem', md: '3.4rem' },
-												letterSpacing: -1,
-											}}
-										>
-											Learn Without
-											<Box component='span' sx={{ color: '#7ec8f8' }}>
-												{' '}
-												Limits
-											</Box>
-										</Typography>
-
-										<Typography
-											variant='h6'
-											sx={{
-												fontWeight: 400,
-												opacity: 0.88,
-												mb: 4,
-												lineHeight: 1.7,
-												fontSize: { xs: '1rem', md: '1.15rem' },
-											}}
-										>
-											Explore expert-taught courses in technology, design,
-											business, and more. Advance your career at your own pace —
-											anytime, anywhere.
-										</Typography>
-
-										<Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-											<Button
-												size='large'
-												onClick={() =>
-													document
-														.getElementById('courses-section')
-														?.scrollIntoView({ behavior: 'smooth' })
-												}
-												sx={{
-													bgcolor: 'white',
-													color: 'primary.dark',
-													fontWeight: 700,
-													px: 4,
-													borderRadius: 2,
-													'&:hover': { bgcolor: 'grey.100' },
-												}}
-											>
-												Explore Courses
-											</Button>
-											<Button
-												size='large'
-												variant='outlined'
-												component={RouterLink}
-												to='/auth/register'
-												sx={{
-													borderColor: 'rgba(255,255,255,0.7)',
-													color: 'white',
-													fontWeight: 700,
-													px: 4,
-													borderRadius: 2,
-													'&:hover': {
-														borderColor: 'white',
-														bgcolor: 'rgba(255,255,255,0.1)',
-													},
-												}}
-											>
-												Start Free Today
-											</Button>
-										</Box>
-									</Box>
-								</Container>
-							</>
-						)}
-					</>
-				)}
-			</Box>
-
-			{/* ── Stats bar ────────────────────────────────────────────── */}
-			{categories.length > 0 && (
-				<Box sx={{ bgcolor: 'background.paper' }}>
-					<Container maxWidth='xl' sx={{ pt: 7, pb: 6 }}>
-						<Box
-							sx={{
-								display: 'flex',
-								justifyContent: 'space-between',
-								alignItems: { xs: 'flex-start', md: 'flex-end' },
-								gap: 2,
-								mb: 3,
-								flexDirection: { xs: 'column', md: 'row' },
-							}}
-						>
-							<Box>
-								<Typography variant='h4' sx={{ fontWeight: 800 }}>
-									Explore by Category
-								</Typography>
-								<Typography
-									variant='body1'
-									color='text.secondary'
-									sx={{ mt: 0.5 }}
-								>
-									Pick a subject and jump straight into matching courses.
-								</Typography>
-							</Box>
-							<Button
-								component={RouterLink}
-								to='/courses'
-								endIcon={<ArrowForwardIcon />}
-								sx={{ fontWeight: 700 }}
-							>
-								View all courses
-							</Button>
-						</Box>
-
-						<Grid container spacing={2.5}>
-							{categories.map((category, index) => {
-								const gradient =
-									CATEGORY_GRADIENTS[index % CATEGORY_GRADIENTS.length];
-								const initial = category.name.trim().charAt(0).toUpperCase();
-
-								return (
-									<Grid
-										key={category._id}
-										size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-									>
-										<CardActionArea
-											component={RouterLink}
-											to={`/courses?categories=${encodeParam(category._id)}`}
-											sx={{
-												position: 'relative',
-												overflow: 'hidden',
-												display: 'flex',
-												alignItems: 'center',
-												gap: 1.75,
-												minHeight: 118,
-												p: 2,
-												borderRadius: 1,
-												border: '1px solid',
-												borderColor: 'divider',
-												bgcolor: 'background.paper',
-												textDecoration: 'none',
-												boxShadow: '0 10px 28px rgba(15,23,42,0.06)',
-												transition:
-													'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
-												'&::before': {
-													content: '""',
-													position: 'absolute',
-													inset: -1,
-													background: `${gradient}, radial-gradient(circle at 18% 20%, rgba(255,255,255,0.46), transparent 34%), linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.58) 42%, transparent 58%)`,
-													backgroundSize: '260% 260%, 180% 180%, 240% 100%',
-													backgroundPosition: '0% 50%, -160% 0',
-													opacity: 0.26,
-													animation:
-														'categoryGradientShift 4.8s ease-in-out infinite, categoryAmbientShine 3.8s ease-in-out infinite',
-													transition: 'opacity 0.25s ease',
-												},
-												'&::after': {
-													content: '""',
-													position: 'absolute',
-													top: 0,
-													left: '-80%',
-													width: '55%',
-													height: '100%',
-													background:
-														'linear-gradient(90deg, transparent, rgba(255,255,255,0.42), transparent)',
-													transform: 'skewX(-18deg)',
-													opacity: 0,
-													transition: 'opacity 0.2s ease',
-												},
-												'&:hover': {
-													transform: 'translateY(-4px)',
-													boxShadow: '0 16px 38px rgba(15,23,42,0.13)',
-													borderColor: 'primary.light',
-												},
-												'&:hover::before': { opacity: 0.34 },
-												'&:hover::after': {
-													opacity: 1,
-													animation: 'categoryShine 0.85s ease',
-												},
-												'&:hover .category-icon': {
-													transform:
-														'translateY(-2px) rotate(-3deg) scale(1.04)',
-												},
-												'&:hover .category-arrow': {
-													opacity: 1,
-													transform: 'translateX(0)',
-												},
-												'@keyframes categoryGradientShift': {
-													'0%, 100%': {
-														backgroundPosition: '0% 50%, 12% 18%, -160% 0',
-													},
-													'50%': {
-														backgroundPosition: '100% 50%, 86% 72%, 80% 0',
-													},
-												},
-												'@keyframes categoryAmbientShine': {
-													'0%, 30%': {
-														filter: 'saturate(1.08) brightness(1)',
-													},
-													'60%': {
-														filter: 'saturate(1.35) brightness(1.08)',
-													},
-													'100%': {
-														filter: 'saturate(1.08) brightness(1)',
-													},
-												},
-												'@keyframes categoryShine': {
-													'0%': { left: '-80%' },
-													'100%': { left: '125%' },
-												},
-											}}
-										>
-											<Box
-												className='category-icon'
-												sx={{
-													position: 'relative',
-													width: 52,
-													height: 52,
-													borderRadius: 1,
-													flexShrink: 0,
-													display: 'grid',
-													placeItems: 'center',
-													color: 'white',
-													background: gradient,
-													backgroundSize: '260% 260%',
-													boxShadow: '0 10px 22px rgba(15,23,42,0.18)',
-													animation:
-														'categoryIconGradient 4.5s ease-in-out infinite, categoryIconFloat 3.8s ease-in-out infinite',
-													transition: 'transform 0.25s ease',
-													'&::after': {
-														content: '""',
-														position: 'absolute',
-														inset: 6,
-														borderRadius: 0.75,
-														border: '1px solid rgba(255,255,255,0.35)',
-														opacity: 0.75,
-													},
-													'@keyframes categoryIconFloat': {
-														'0%, 100%': {
-															boxShadow: '0 10px 22px rgba(15,23,42,0.18)',
-														},
-														'50%': {
-															boxShadow: '0 14px 28px rgba(15,23,42,0.24)',
-														},
-													},
-													'@keyframes categoryIconGradient': {
-														'0%, 100%': {
-															backgroundPosition: '0% 50%',
-															filter: 'saturate(1.1)',
-														},
-														'50%': {
-															backgroundPosition: '100% 50%',
-															filter: 'saturate(1.45) brightness(1.1)',
-														},
-													},
-												}}
-											>
-												{initial ? (
-													<Typography
-														variant='h5'
-														sx={{ fontWeight: 900, lineHeight: 1 }}
-													>
-														{initial}
-													</Typography>
-												) : (
-													<CategoryIcon />
-												)}
-											</Box>
-
-											<Box sx={{ position: 'relative', minWidth: 0, flex: 1 }}>
-												<Typography
-													variant='subtitle1'
-													sx={{
-														fontWeight: 800,
-														color: 'text.primary',
-														lineHeight: 1.25,
-														overflowWrap: 'anywhere',
-													}}
-												>
-													{category.name}
-												</Typography>
-												<Typography
-													variant='caption'
-													color='text.secondary'
-													sx={{ display: 'block', mt: 0.75, fontWeight: 600 }}
-												>
-													Browse category courses
-												</Typography>
-											</Box>
-
-											<ArrowForwardIcon
-												className='category-arrow'
-												sx={{
-													position: 'relative',
-													color: 'text.secondary',
-													opacity: 0.45,
-													transform: 'translateX(-4px)',
-													transition:
-														'opacity 0.25s ease, transform 0.25s ease',
-												}}
-											/>
-										</CardActionArea>
-									</Grid>
-								);
-							})}
-						</Grid>
-					</Container>
-				</Box>
-			)}
+			<HomeCategoryGrid categories={categories} />
 
 			<Divider sx={{ mx: { xs: 2, md: 'auto' }, maxWidth: 'lg', mt: 2 }} />
 
-			{/* ── Courses + Filter ─────────────────────────────────────── */}
+			{/* â”€â”€ Courses + Filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<Box id='courses-section'>
 				<Container maxWidth='xl' sx={{ pt: 6, pb: 10 }}>
 					<Box sx={{ mb: 4 }}>
@@ -784,7 +267,7 @@ const HomePage = () => {
 						</Typography>
 						<Typography variant='body1' color='text.secondary' sx={{ mt: 0.5 }}>
 							{loading
-								? 'Loading…'
+								? 'Loadingâ€¦'
 								: hasActiveFilter
 									? `${fetchState.courses.length} course${fetchState.courses.length !== 1 ? 's' : ''} found`
 									: 'Hand-picked courses by our expert teachers'}
@@ -890,7 +373,7 @@ const HomePage = () => {
 				</Container>
 			</Box>
 
-			{/* ── Footer ───────────────────────────────────────────────── */}
+			{/* â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<RenderWhenNearViewport minHeight={180} rootMargin='700px'>
 				<Box
 					sx={{
@@ -1248,7 +731,7 @@ const HomePage = () => {
 					</Box>
 					<Divider sx={{ borderColor: 'grey.800', mb: 3 }} />
 					<Typography variant='body2' sx={{ textAlign: 'center' }}>
-						© {new Date().getFullYear()} MedhaBee E-Learning Platform. All
+						Â© {new Date().getFullYear()} MedhaBee E-Learning Platform. All
 						rights reserved.
 					</Typography>
 				</Container>

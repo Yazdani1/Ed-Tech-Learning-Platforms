@@ -1,5 +1,4 @@
-import type { FC} from 'react';
-import { useRef, useState } from 'react';
+import { type FC, useRef, useState } from 'react';
 import {
 	Box,
 	Button,
