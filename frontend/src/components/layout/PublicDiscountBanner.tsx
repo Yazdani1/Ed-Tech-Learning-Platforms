@@ -14,7 +14,7 @@ const formatRemaining = (milliseconds: number) => {
 	return `${hours}h ${minutes}m ${seconds}s`;
 };
 
-export default function PublicDiscountBanner() {
+const PublicDiscountBanner= () => {
 	const [activeDiscount, setActiveDiscount] = useState<IActiveCourseDiscount | null>(null);
 	const [now, setNow] = useState(Date.now());
 
@@ -117,4 +117,6 @@ export default function PublicDiscountBanner() {
 			</Container>
 		</Box>
 	);
-}
+};
+
+export default PublicDiscountBanner;

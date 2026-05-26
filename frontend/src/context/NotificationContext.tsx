@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { type FC, createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { notificationService } from '../services/notification.service';
 import { useAuth } from './useAuth';
 import { useChat } from './ChatContext';
@@ -18,7 +18,11 @@ const NotificationContext = createContext<NotificationContextType>({
 	clearUnreadCount: () => {},
 });
 
-export function NotificationProvider({ children }: { children: React.ReactNode }) {
+interface NotificationProviderProps {
+	children: ReactNode;
+}
+
+export const NotificationProvider: FC<NotificationProviderProps> = ({ children }) => {
 	const { user, isAuthenticated } = useAuth();
 	const { socket } = useChat();
 	const [unreadCount, setUnreadCount] = useState(0);
@@ -61,6 +65,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 			{children}
 		</NotificationContext.Provider>
 	);
-}
+};
 
 export const useNotifications = () => useContext(NotificationContext);

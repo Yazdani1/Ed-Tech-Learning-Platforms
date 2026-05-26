@@ -67,7 +67,7 @@ const memberStatusTabs: Array<{ value: MemberStatusFilter; label: string }> = [
 ];
 const SUBSCRIPTION_MEMBERS_PAGE_SIZE = 10;
 
-export default function SubscriptionsPage() {
+const SubscriptionsPage= () => {
 	const { confirm } = useConfirmModal();
 	const [activeTab, setActiveTab] = useState(0);
 	const [planConfigs, setPlanConfigs] = useState<ISubscriptionPlanConfig[]>([]);
@@ -830,4 +830,6 @@ export default function SubscriptionsPage() {
 			</AppModal>
 		</Box>
 	);
-}
+};
+
+export default SubscriptionsPage;

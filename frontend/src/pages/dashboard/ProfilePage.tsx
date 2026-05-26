@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type FC, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -45,15 +45,17 @@ const ROLE_COLORS: Record<string, string> = {
 	Student: '#16a34a',
 };
 
-function InfoItem({
-	icon,
-	label,
-	value,
-}: {
+interface InfoItemProps {
 	icon: React.ReactNode;
 	label: string;
 	value: React.ReactNode;
-}) {
+}
+
+const InfoItem: FC<InfoItemProps> = ({
+	icon,
+	label,
+	value,
+}) => {
 	return (
 		<Box sx={{ display: 'flex', gap: 1.25, alignItems: 'flex-start' }}>
 			<Box sx={{ color: 'primary.main', display: 'flex', mt: 0.2 }}>{icon}</Box>
@@ -69,17 +71,19 @@ function InfoItem({
 	);
 }
 
-function StatCard({
-	icon,
-	label,
-	value,
-	helper,
-}: {
+interface StatCardProps {
 	icon: React.ReactNode;
 	label: string;
 	value: string;
 	helper: string;
-}) {
+}
+
+const StatCard: FC<StatCardProps> = ({
+	icon,
+	label,
+	value,
+	helper,
+}) => {
 	return (
 		<Paper
 			variant='outlined'
@@ -106,7 +110,7 @@ function StatCard({
 	);
 }
 
-export default function ProfilePage() {
+const ProfilePage= () => {
 	const { user, refreshUser } = useAuth();
 	const { confirm } = useConfirmModal();
 	const navigate = useNavigate();
@@ -602,4 +606,6 @@ export default function ProfilePage() {
 			</AppModal>
 		</Box>
 	);
-}
+};
+
+export default ProfilePage;

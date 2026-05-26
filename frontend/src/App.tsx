@@ -41,7 +41,7 @@ const HomeHeroPostsPage = lazy(() => import('./pages/homeHero/HomeHeroPostsPage'
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
-export default function App() {
+const App= () => {
 	return (
 		<ConfirmModalProvider>
 			<ChatProvider>
@@ -126,4 +126,6 @@ export default function App() {
 			</ChatProvider>
 		</ConfirmModalProvider>
 	);
-}
+};
+
+export default App;

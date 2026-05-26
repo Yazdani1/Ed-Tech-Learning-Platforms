@@ -27,7 +27,7 @@ const prefetchPublicRoutes = () => {
 	void import('../../pages/quiz/PracticeQuizPage');
 };
 
-export default function PublicNavbar() {
+const PublicNavbar= () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -245,4 +245,6 @@ export default function PublicNavbar() {
     </AppBar>
     </>
   );
-}
+};
+
+export default PublicNavbar;

@@ -24,7 +24,7 @@ const ROLE_REDIRECT: Record<UserRole, string> = {
 	Student: '/student/dashboard',
 };
 
-export default function LoginPage() {
+const LoginPage= () => {
 	const { t } = useTranslation();
 	const { login } = useAuth();
 	const navigate = useNavigate();
@@ -131,4 +131,6 @@ export default function LoginPage() {
 			</Typography>
 		</Box>
 	);
-}
+};
+
+export default LoginPage;

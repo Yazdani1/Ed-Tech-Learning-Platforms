@@ -1,10 +1,14 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { type FC, useEffect, useState, type ReactNode } from 'react';
 import toast from 'react-hot-toast';
 import { authService } from '../services/auth.service';
 import type { IUser } from '../types/index';
 import { AuthContext } from './AuthContextCore';
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+interface AuthProviderProps {
+	children: ReactNode;
+}
+
+export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 	const [user, setUser] = useState<IUser | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 
@@ -61,4 +65,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			{children}
 		</AuthContext.Provider>
 	);
-}
+};

@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import { Outlet, useLocation } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 
-export default function AdminLayout() {
+const AdminLayout= () => {
   const location = useLocation();
 
   return (
@@ -15,4 +15,6 @@ export default function AdminLayout() {
       </Box>
     </Box>
   );
-}
+};
+
+export default AdminLayout;

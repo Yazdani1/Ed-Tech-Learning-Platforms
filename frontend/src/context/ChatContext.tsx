@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { type FC, createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { useAuth } from './useAuth';
 import { chatService } from '../services/chat.service';
@@ -23,7 +23,11 @@ const ChatContext = createContext<ChatContextType>({
 	clearUnread: () => {},
 });
 
-export function ChatProvider({ children }: { children: React.ReactNode }) {
+interface ChatProviderProps {
+	children: ReactNode;
+}
+
+export const ChatProvider: FC<ChatProviderProps> = ({ children }) => {
 	const { user, isAuthenticated } = useAuth();
 	const [socket, setSocket] = useState<Socket | null>(null);
 	const [totalUnread, setTotalUnread] = useState(0);
@@ -77,6 +81,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 			{children}
 		</ChatContext.Provider>
 	);
-}
+};
 
 export const useChat = () => useContext(ChatContext);

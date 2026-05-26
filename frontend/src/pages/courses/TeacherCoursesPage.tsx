@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
 	Box,
@@ -17,7 +17,7 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { teacherService } from '../../services/teacher.service';
 import type { ICourse } from '../../types/index';
 
-export default function TeacherCoursesPage() {
+const TeacherCoursesPage= () => {
 	const [courses, setCourses] = useState<ICourse[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [noProfile, setNoProfile] = useState(false);
@@ -74,9 +74,16 @@ export default function TeacherCoursesPage() {
 			)}
 		</Box>
 	);
+};
+
+export default TeacherCoursesPage;
+
+interface TeacherCourseCardProps {
+	course: ICourse;
+	onView: () => void;
 }
 
-function TeacherCourseCard({ course, onView }: { course: ICourse; onView: () => void }) {
+const TeacherCourseCard: FC<TeacherCourseCardProps> = ({ course, onView }) => {
 	const teachers = course.teachers?.map((teacher) => teacher.name).join(', ');
 
 	return (

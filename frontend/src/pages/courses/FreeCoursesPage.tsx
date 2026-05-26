@@ -22,7 +22,7 @@ import type { ICourse, ICourseType } from '../../types/index';
 const FREE_COURSES_PER_TYPE = 6;
 const FREE_COURSE_SKELETONS = Array.from({ length: 8 });
 
-export default function FreeCoursesPage() {
+const FreeCoursesPage= () => {
 	const { user, isLoading: authLoading } = useAuth();
 	const [courses, setCourses] = useState<ICourse[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
@@ -211,4 +211,6 @@ export default function FreeCoursesPage() {
 			</Container>
 		</Box>
 	);
-}
+};
+
+export default FreeCoursesPage;

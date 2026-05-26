@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
 	Avatar,
@@ -52,17 +52,19 @@ const formatCurrency = (amount: number) =>
 		maximumFractionDigits: 0,
 	}).format(amount);
 
-function StatCard({
-	label,
-	value,
-	helper,
-	icon,
-}: {
+interface StatCardProps {
 	label: string;
 	value: string | number;
 	helper?: string;
 	icon: React.ReactNode;
-}) {
+}
+
+const StatCard: FC<StatCardProps> = ({
+	label,
+	value,
+	helper,
+	icon,
+}) => {
 	return (
 		<Paper
 			elevation={0}
@@ -109,13 +111,15 @@ function StatCard({
 	);
 }
 
-function ChartCard({
-	title,
-	children,
-}: {
+interface ChartCardProps {
 	title: string;
 	children: React.ReactNode;
-}) {
+}
+
+const ChartCard: FC<ChartCardProps> = ({
+	title,
+	children,
+}) => {
 	return (
 		<Paper
 			elevation={0}
@@ -129,7 +133,7 @@ function ChartCard({
 	);
 }
 
-export default function DashboardPage() {
+const DashboardPage= () => {
 	const { user } = useAuth();
 	const navigate = useNavigate();
 	const [summary, setSummary] = useState<IDashboardSummary | null>(null);
@@ -431,4 +435,6 @@ export default function DashboardPage() {
 			)}
 		</Box>
 	);
-}
+};
+
+export default DashboardPage;

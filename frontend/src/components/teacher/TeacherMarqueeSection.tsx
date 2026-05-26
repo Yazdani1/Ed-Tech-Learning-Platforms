@@ -1,3 +1,4 @@
+import type { FC} from 'react';
 import { useState } from 'react';
 import {
 	Avatar,
@@ -16,13 +17,12 @@ import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import LanguageIcon from '@mui/icons-material/Language';
 import type { ITeacher } from '../../types/index';
 
-function TeacherMarqueeCard({
-	teacher,
-	staggeredOffset,
-}: {
+interface TeacherMarqueeCardProps {
 	teacher: ITeacher;
 	staggeredOffset: number;
-}) {
+}
+
+const TeacherMarqueeCard: FC<TeacherMarqueeCardProps> = ({ teacher, staggeredOffset }) => {
 	const hasSocials =
 		teacher.socialLinks && Object.values(teacher.socialLinks).some(Boolean);
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -257,9 +257,13 @@ function TeacherMarqueeCard({
 			</Popover>
 		</>
 	);
+};
+
+interface TeacherMarqueeSectionProps {
+	teachers: ITeacher[];
 }
 
-export default function TeacherMarqueeSection({ teachers }: { teachers: ITeacher[] }) {
+const TeacherMarqueeSection: FC<TeacherMarqueeSectionProps> = ({ teachers }) => {
 	if (teachers.length === 0) return null;
 
 	const minCardsNeeded = 15;
@@ -352,4 +356,6 @@ export default function TeacherMarqueeSection({ teachers }: { teachers: ITeacher
 			</Box>
 		</Box>
 	);
-}
+};
+
+export default TeacherMarqueeSection;

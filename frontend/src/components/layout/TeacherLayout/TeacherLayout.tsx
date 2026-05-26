@@ -29,7 +29,7 @@ import { useNotifications } from '../../../context/NotificationContext';
 const DRAWER_OPEN = 220;
 const DRAWER_CLOSED = 64;
 
-export default function TeacherLayout() {
+const TeacherLayout= () => {
 	const { user, logout } = useAuth();
 	const { totalUnread } = useChat();
 	const { unreadCount } = useNotifications();
@@ -249,4 +249,6 @@ export default function TeacherLayout() {
 			</Box>
 		</Box>
 	);
-}
+};
+
+export default TeacherLayout;

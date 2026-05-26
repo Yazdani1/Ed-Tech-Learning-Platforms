@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type FC, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
 	Avatar,
@@ -27,7 +27,7 @@ const questionHasNoStaffAnswer = (question: IQuestion) => !question.hasStaffAnsw
 const questionNeedsStaffAnswer = (question: IQuestion) =>
 	!question.isResolved && questionHasNoStaffAnswer(question);
 
-export default function AdminCourseQAPage() {
+const AdminCourseQAPage= () => {
 	const [groups, setGroups] = useState<ICourseQuestionGroup[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -94,9 +94,15 @@ export default function AdminCourseQAPage() {
 			)}
 		</Box>
 	);
+};
+
+export default AdminCourseQAPage;
+
+interface CourseQuestionCardProps {
+	group: ICourseQuestionGroup;
 }
 
-function CourseQuestionCard({ group }: { group: ICourseQuestionGroup }) {
+const CourseQuestionCard: FC<CourseQuestionCardProps> = ({ group }) => {
 	const navigate = useNavigate();
 	const [filter, setFilter] = useState<QuestionFilter>('unresolved');
 

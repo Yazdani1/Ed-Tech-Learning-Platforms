@@ -1,6 +1,6 @@
 import { Chip } from '@mui/material';
 
-export default function YouBadge() {
+const YouBadge= () => {
 	return (
 		<Chip
 			label='You'
@@ -17,4 +17,6 @@ export default function YouBadge() {
 			}}
 		/>
 	);
-}
+};
+
+export default YouBadge;

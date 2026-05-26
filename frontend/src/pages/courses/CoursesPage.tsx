@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type FC, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
 	Box,
@@ -66,7 +66,7 @@ const EARNING_ACTIVITY_FILTERS: { label: string; value: ActivityFilter }[] = [
 	{ label: 'No earnings previous month', value: 'none_previous_month' },
 ];
 
-export default function CoursesPage() {
+const CoursesPage= () => {
 	const { user, isLoading: authLoading } = useAuth();
 	const { confirm } = useConfirmModal();
 	const navigate = useNavigate();
@@ -695,18 +695,22 @@ export default function CoursesPage() {
 			)}
 		</Box>
 	);
-}
+};
+
+export default CoursesPage;
 
 // ── Thin wrapper: CourseCard + remove button ─────────────────
-function CourseCardWithRemove({
-	course,
-	onRemove,
-	subscriptionBadge = false,
-}: {
+interface CourseCardWithRemoveProps {
 	course: ICourse;
 	onRemove: () => void;
 	subscriptionBadge?: boolean;
-}) {
+}
+
+const CourseCardWithRemove: FC<CourseCardWithRemoveProps> = ({
+	course,
+	onRemove,
+	subscriptionBadge = false,
+}) => {
 	return (
 		<Box sx={{ position: 'relative' }}>
 			<CourseCard
@@ -755,16 +759,18 @@ function CourseCardWithRemove({
 			</Tooltip>
 		</Box>
 	);
-}
+};
 
 // ── Admin course list row ─────────────────────────────────────
-function ModeratorCourseCard({
-	course,
-	onStudentView,
-}: {
+interface ModeratorCourseCardProps {
 	course: ICourse;
 	onStudentView: () => void;
-}) {
+}
+
+const ModeratorCourseCard: FC<ModeratorCourseCardProps> = ({
+	course,
+	onStudentView,
+}) => {
 	const teachers = course.teachers?.map((teacher) => teacher.name).join(', ');
 	const priceLabel =
 		course.pricing === 'Free'
@@ -958,15 +964,17 @@ function ModeratorCourseCard({
 	);
 }
 
-function AdminCourseCard({
-	course,
-	onEdit,
-	onStudentView,
-}: {
+interface AdminCourseCardProps {
 	course: ICourse;
 	onEdit: () => void;
 	onStudentView: () => void;
-}) {
+}
+
+const AdminCourseCard: FC<AdminCourseCardProps> = ({
+	course,
+	onEdit,
+	onStudentView,
+}) => {
 	const navigate = useNavigate();
 	const teachers = course.teachers?.map((teacher) => teacher.name).join(', ');
 	const priceLabel =

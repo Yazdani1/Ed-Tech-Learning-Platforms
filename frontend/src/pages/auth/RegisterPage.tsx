@@ -16,7 +16,7 @@ import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/useAuth';
 
-export default function RegisterPage() {
+const RegisterPage= () => {
 	const { t } = useTranslation();
 	const { register } = useAuth();
 	const navigate = useNavigate();
@@ -139,4 +139,6 @@ export default function RegisterPage() {
 			</Typography>
 		</Box>
 	);
-}
+};
+
+export default RegisterPage;

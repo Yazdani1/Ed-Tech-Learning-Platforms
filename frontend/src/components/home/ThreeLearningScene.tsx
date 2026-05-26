@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import * as THREE from 'three';
 
-export default function ThreeLearningScene() {
+const ThreeLearningScene= () => {
 	const mountRef = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {
@@ -225,4 +225,6 @@ export default function ThreeLearningScene() {
 			}}
 		/>
 	);
-}
+};
+
+export default ThreeLearningScene;

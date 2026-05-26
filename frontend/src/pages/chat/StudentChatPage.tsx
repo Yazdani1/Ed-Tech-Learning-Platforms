@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type FC, useEffect, useRef, useState } from 'react';
 import {
 	Avatar,
 	Box,
@@ -36,7 +36,11 @@ function formatTime(iso: string) {
 	return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function StudentChatPage({ embedded = false }: { embedded?: boolean }) {
+interface StudentChatPageProps {
+	embedded?: boolean;
+}
+
+const StudentChatPage: FC<StudentChatPageProps> = ({ embedded = false }) => {
 	const { user } = useAuth();
 	const { socket, clearUnread } = useChat();
 	const [conversation, setConversation] = useState<IChatConversation | null>(null);
@@ -428,4 +432,6 @@ export default function StudentChatPage({ embedded = false }: { embedded?: boole
 			</Box>
 		</Box>
 	);
-}
+};
+
+export default StudentChatPage;
