@@ -1,3 +1,4 @@
+import type { FC} from 'react';
 import { useState, useEffect, useRef } from 'react';
 import {
 	Accordion,
@@ -47,7 +48,7 @@ const OPTION_LABELS = ['A', 'B', 'C', 'D'] as const;
 type Subsection = 'all' | 'incorrect' | 'correct';
 type LocalAnswer = { selectedOptionIndices: number[]; isCorrect: boolean };
 
-interface Props {
+interface QuizBankTabProps {
 	courseId: string;
 	canPost: boolean;
 	userId: string;
@@ -91,11 +92,11 @@ function getSubsectionQuestions(
 	return bank.questions.filter((q) => answers.get(q._id)?.isCorrect === true);
 }
 
-export default function QuizBankTab({
+const QuizBankTab: FC<QuizBankTabProps> = ({
 	courseId,
 	canPost,
 	userId: _userId,
-}: Props) {
+}) => {
 	const { confirm } = useConfirmModal();
 
 	const [quizSections, setQuizSections] = useState<IQuizSection[]>([]);
@@ -1909,22 +1910,13 @@ export default function QuizBankTab({
 			</Box>
 		</Box>
 	);
-}
+};
+
+export default QuizBankTab;
 
 // ── Subsection progress button ─────────────────────────────────────────────
 
-function SubsectionProgressButton({
-	label,
-	count,
-	total,
-	correct,
-	incorrect,
-	progressValue,
-	progressText,
-	color,
-	selected,
-	onClick,
-}: {
+interface SubsectionProgressButtonProps {
 	label: string;
 	count: number;
 	total: number;
@@ -1935,7 +1927,20 @@ function SubsectionProgressButton({
 	color: 'primary' | 'success' | 'error';
 	selected: boolean;
 	onClick: () => void;
-}) {
+}
+
+const SubsectionProgressButton: FC<SubsectionProgressButtonProps> = ({
+	label,
+	count,
+	total,
+	correct,
+	incorrect,
+	progressValue,
+	progressText,
+	color,
+	selected,
+	onClick,
+}) => {
 	const percent = total > 0 ? Math.round((progressValue / total) * 100) : 0;
 	const selectedBg =
 		color === 'error'
@@ -1991,23 +1996,11 @@ function SubsectionProgressButton({
 			</Box>
 		</Button>
 	);
-}
+};
 
 // ── Question practice card ─────────────────────────────────────────────────
 
-function QuestionPracticeCard({
-	question,
-	questionNumber,
-	totalQuestions,
-	selectedOptions,
-	isChecked,
-	submitting,
-	onToggleOption,
-	onCheck,
-	onNext,
-	onSkip,
-	isLastQuestion,
-}: {
+interface QuestionPracticeCardProps {
 	question: IQuizQuestion;
 	questionNumber: number;
 	totalQuestions: number;
@@ -2019,7 +2012,21 @@ function QuestionPracticeCard({
 	onNext: () => void;
 	onSkip: () => void;
 	isLastQuestion: boolean;
-}) {
+}
+
+const QuestionPracticeCard: FC<QuestionPracticeCardProps> = ({
+	question,
+	questionNumber,
+	totalQuestions,
+	selectedOptions,
+	isChecked,
+	submitting,
+	onToggleOption,
+	onCheck,
+	onNext,
+	onSkip,
+	isLastQuestion,
+}) => {
 	const isCorrectAnswer =
 		isChecked &&
 		arraysEqualSorted(selectedOptions, question.correctOptionIndices);
@@ -2317,25 +2324,27 @@ function QuestionPracticeCard({
 			</Box>
 		</Paper>
 	);
-}
+};
 
 // ── Question form panel ────────────────────────────────────────────────────
 
-function QuestionFormPanel({
-	form,
-	onChange,
-	onSubmit,
-	onCancel,
-	submitting,
-	submitLabel,
-}: {
+interface QuestionFormPanelProps {
 	form: QFormState;
 	onChange: React.Dispatch<React.SetStateAction<QFormState>>;
 	onSubmit: () => void;
 	onCancel: () => void;
 	submitting: boolean;
 	submitLabel: string;
-}) {
+}
+
+const QuestionFormPanel: FC<QuestionFormPanelProps> = ({
+	form,
+	onChange,
+	onSubmit,
+	onCancel,
+	submitting,
+	submitLabel,
+}) => {
 	const toggleCorrect = (idx: number) => {
 		onChange((p) => ({
 			...p,
@@ -2478,4 +2487,4 @@ function QuestionFormPanel({
 			</Box>
 		</Paper>
 	);
-}
+};

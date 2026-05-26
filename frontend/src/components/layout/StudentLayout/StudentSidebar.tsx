@@ -46,7 +46,7 @@ const navItems = [
 	{ label: 'Notifications', icon: <NotificationsIcon />, path: '/student/notifications' },
 ];
 
-export default function StudentSidebar() {
+const StudentSidebar= () => {
 	const { user, logout } = useAuth();
 	const { t } = useTranslation();
 	const { totalUnread } = useChat();
@@ -186,4 +186,6 @@ export default function StudentSidebar() {
 			</Box>
 		</Drawer>
 	);
-}
+};
+
+export default StudentSidebar;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, type FC } from 'react';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import {
   Accordion,
@@ -82,7 +82,7 @@ function getSubsectionQuestions(
   return bank.questions.filter((q) => answers.get(q._id)?.isCorrect === true);
 }
 
-export default function PracticeQuizPage() {
+const PracticeQuizPage= () => {
   const { user } = useAuth();
   const { confirm } = useConfirmModal();
   const isLoggedIn = Boolean(user);
@@ -1666,22 +1666,13 @@ export default function PracticeQuizPage() {
       </Box>
     </Box>
   );
-}
+};
+
+export default PracticeQuizPage;
 
 // ── Practice card ──────────────────────────────────────────────────────────
 
-function SubsectionProgressButton({
-  label,
-  count,
-  total,
-  correct,
-  incorrect,
-  progressValue,
-  progressText,
-  color,
-  selected,
-  onClick,
-}: {
+interface SubsectionProgressButtonProps {
   label: string;
   count: number;
   total: number;
@@ -1692,7 +1683,20 @@ function SubsectionProgressButton({
   color: 'primary' | 'success' | 'error';
   selected: boolean;
   onClick: () => void;
-}) {
+}
+
+const SubsectionProgressButton: FC<SubsectionProgressButtonProps> = ({
+  label,
+  count,
+  total,
+  correct,
+  incorrect,
+  progressValue,
+  progressText,
+  color,
+  selected,
+  onClick,
+}) => {
 
 
   const percent = total > 0 ? Math.round((progressValue / total) * 100) : 0;
@@ -1753,23 +1757,11 @@ function SubsectionProgressButton({
       </Box>
     </Button>
   );
-}
+};
 
 
 
-function PracticeCard({
-  question,
-  questionNumber,
-  totalQuestions,
-  selectedOptions,
-  isChecked,
-  submitting,
-  onToggleOption,
-  onCheck,
-  onNext,
-  onSkip,
-  isLastQuestion,
-}: {
+interface PracticeCardProps {
   question: IQuizQuestion;
   questionNumber: number;
   totalQuestions: number;
@@ -1781,7 +1773,21 @@ function PracticeCard({
   onNext: () => void;
   onSkip: () => void;
   isLastQuestion: boolean;
-}) {
+}
+
+const PracticeCard: FC<PracticeCardProps> = ({
+  question,
+  questionNumber,
+  totalQuestions,
+  selectedOptions,
+  isChecked,
+  submitting,
+  onToggleOption,
+  onCheck,
+  onNext,
+  onSkip,
+  isLastQuestion,
+}) => {
   const isCorrectAnswer =
     isChecked && arraysEqualSorted(selectedOptions, question.correctOptionIndices);
   const multipleCorrect = question.correctOptionIndices.length > 1;
@@ -2015,4 +2021,4 @@ function PracticeCard({
       </Box>
     </Paper>
   );
-}
+};

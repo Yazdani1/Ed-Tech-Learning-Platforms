@@ -3,7 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import StudentSidebar from './StudentSidebar';
 import ChatWidget from '../../chat/ChatWidget';
 
-export default function StudentLayout() {
+const StudentLayout= () => {
   const location = useLocation();
   const isChatPage = location.pathname === '/student/chat';
 
@@ -16,4 +16,6 @@ export default function StudentLayout() {
       {!isChatPage && <ChatWidget />}
     </Box>
   );
-}
+};
+
+export default StudentLayout;

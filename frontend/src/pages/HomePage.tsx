@@ -60,7 +60,7 @@ const TeacherMarqueeSection = lazy(
 	() => import('../components/teacher/TeacherMarqueeSection'),
 );
 
-export default function HomePage() {
+const HomePage= () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const paramsKey = searchParams.toString();
 
@@ -1186,4 +1186,6 @@ export default function HomePage() {
 			</Box>
 		</Box>
 	);
-}
+};
+
+export default HomePage;

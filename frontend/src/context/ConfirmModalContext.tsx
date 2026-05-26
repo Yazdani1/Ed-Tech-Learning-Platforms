@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { type FC, createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import {
 	Box,
 	Button,
@@ -32,7 +32,11 @@ type ConfirmModalContextValue = {
 
 const ConfirmModalContext = createContext<ConfirmModalContextValue | null>(null);
 
-export function ConfirmModalProvider({ children }: { children: ReactNode }) {
+interface ConfirmModalProviderProps {
+	children: ReactNode;
+}
+
+export const ConfirmModalProvider: FC<ConfirmModalProviderProps> = ({ children }) => {
 	const [pending, setPending] = useState<PendingConfirm | null>(null);
 	const [closing, setClosing] = useState(false);
 
@@ -107,7 +111,7 @@ export function ConfirmModalProvider({ children }: { children: ReactNode }) {
 			</Dialog>
 		</ConfirmModalContext.Provider>
 	);
-}
+};
 
 export function useConfirmModal() {
 	const context = useContext(ConfirmModalContext);

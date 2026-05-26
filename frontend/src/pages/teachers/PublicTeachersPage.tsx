@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 import {
 	Avatar,
 	Box,
@@ -20,7 +20,11 @@ import PublicNavbar from '../../components/layout/PublicNavbar';
 import { teacherService } from '../../services/teacher.service';
 import type { ITeacher } from '../../types/index';
 
-function TeacherProfileCard({ teacher }: { teacher: ITeacher }) {
+interface TeacherProfileCardProps {
+	teacher: ITeacher;
+}
+
+const TeacherProfileCard: FC<TeacherProfileCardProps> = ({ teacher }) => {
 	const hasSocials =
 		teacher.socialLinks && Object.values(teacher.socialLinks).some(Boolean);
 
@@ -156,7 +160,7 @@ function TeacherProfileCard({ teacher }: { teacher: ITeacher }) {
 	);
 }
 
-export default function PublicTeachersPage() {
+const PublicTeachersPage= () => {
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -203,4 +207,6 @@ export default function PublicTeachersPage() {
 			</Container>
 		</Box>
 	);
-}
+};
+
+export default PublicTeachersPage;

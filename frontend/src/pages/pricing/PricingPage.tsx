@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FC } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
 	Box,
@@ -72,15 +72,17 @@ const getSavingsInfo = (
 
 const PLAN_COURSE_SKELETONS = Array.from({ length: 8 });
 
-function PlanCoursesModal({
-	plan,
-	open,
-	onClose,
-}: {
+interface PlanCoursesModalProps {
 	plan: ISubscriptionPlanConfig | null;
 	open: boolean;
 	onClose: () => void;
-}) {
+}
+
+const PlanCoursesModal: FC<PlanCoursesModalProps> = ({
+	plan,
+	open,
+	onClose,
+}) => {
 	const { user, isLoading: authLoading } = useAuth();
 	const [searchInput, setSearchInput] = useState('');
 	const [selectedCourseTypes, setSelectedCourseTypes] = useState<string[]>([]);
@@ -283,9 +285,9 @@ function PlanCoursesModal({
 			</Box>
 		</AppModal>
 	);
-}
+};
 
-export default function PricingPage() {
+const PricingPage= () => {
 	const { user, refreshUser } = useAuth();
 	const navigate = useNavigate();
 	const [plans, setPlans] = useState<ISubscriptionPlanConfig[]>([]);
@@ -694,4 +696,6 @@ export default function PricingPage() {
 			/>
 		</Box>
 	);
-}
+};
+
+export default PricingPage;

@@ -29,7 +29,7 @@ import type {
 const COURSE_BROWSE_PAGE_SIZE = 8;
 const COURSE_BROWSE_SKELETONS = Array.from({ length: COURSE_BROWSE_PAGE_SIZE });
 
-export default function CourseBrowsePage() {
+const CourseBrowsePage= () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const paramsKey = searchParams.toString();
 
@@ -294,4 +294,6 @@ export default function CourseBrowsePage() {
 			</Container>
 		</Box>
 	);
-}
+};
+
+export default CourseBrowsePage;

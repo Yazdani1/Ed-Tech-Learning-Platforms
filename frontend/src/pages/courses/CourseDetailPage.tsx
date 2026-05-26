@@ -75,7 +75,7 @@ const CARD_PALETTE = [
 	{ cardBg: '#e8fdfd', photoBg: '#b2ebf2', accent: '#00695c' },
 ];
 
-export default function CourseDetailPage() {
+const CourseDetailPage= () => {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const { user, isLoading: authLoading } = useAuth();
@@ -2527,4 +2527,6 @@ export default function CourseDetailPage() {
 			</AppModal>
 		</Box>
 	);
-}
+};
+
+export default CourseDetailPage;

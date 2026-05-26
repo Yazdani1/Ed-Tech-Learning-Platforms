@@ -1,3 +1,4 @@
+import type { FC } from 'react';
 import { Box, PaginationItem, Typography } from '@mui/material';
 
 interface AppPaginationProps {
@@ -13,7 +14,7 @@ interface AppPaginationProps {
 	getItemSx?: (page: number) => any;
 }
 
-export default function AppPagination({
+const AppPagination: FC<AppPaginationProps> = ({
 	page,
 	totalPages,
 	totalItems,
@@ -24,7 +25,7 @@ export default function AppPagination({
 	middleCount = 3,
 	align = 'space-between',
 	getItemSx,
-}: AppPaginationProps) {
+}) => {
 	if (totalPages <= 1) return null;
 
 	const start =
@@ -207,4 +208,6 @@ export default function AppPagination({
 			</Box>
 		</Box>
 	);
-}
+};
+
+export default AppPagination;

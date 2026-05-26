@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type FC, useEffect, useMemo, useState } from 'react';
 import {
 	Alert,
 	Box,
@@ -67,7 +67,7 @@ interface PaginationState {
 	total: number;
 }
 
-export default function NotificationsPage() {
+const NotificationsPage= () => {
 	const { user } = useAuth();
 	const { socket } = useChat();
 	const { confirm } = useConfirmModal();
@@ -575,15 +575,19 @@ export default function NotificationsPage() {
 			</AppModal>
 		</Box>
 	);
-}
+};
 
-function NotificationItem({
-	notification,
-	onClick,
-}: {
+export default NotificationsPage;
+
+interface NotificationItemProps {
 	notification: INotification;
 	onClick: () => void;
-}) {
+}
+
+const NotificationItem: FC<NotificationItemProps> = ({
+	notification,
+	onClick,
+}) => {
 	const [expanded, setExpanded] = useState(false);
 	const priorityStyle = PRIORITY_STYLES[notification.priority];
 
@@ -685,15 +689,17 @@ function NotificationItem({
 	);
 }
 
-function SentNotificationItem({
-	notification,
-	onEdit,
-	onDelete,
-}: {
+interface SentNotificationItemProps {
 	notification: INotification;
 	onEdit: () => void;
 	onDelete: () => void;
-}) {
+}
+
+const SentNotificationItem: FC<SentNotificationItemProps> = ({
+	notification,
+	onEdit,
+	onDelete,
+}) => {
 	const [expanded, setExpanded] = useState(false);
 	const priorityStyle = PRIORITY_STYLES[notification.priority];
 

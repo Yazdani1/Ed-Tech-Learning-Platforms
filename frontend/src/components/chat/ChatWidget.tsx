@@ -42,7 +42,7 @@ function formatTime(iso: string) {
 	return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function ChatWidget() {
+const ChatWidget= () => {
 	const { user } = useAuth();
 	const { socket, totalUnread, clearUnread } = useChat();
 	const [open, setOpen] = useState(false);
@@ -421,4 +421,6 @@ export default function ChatWidget() {
 			</Badge>
 		</>
 	);
-}
+};
+
+export default ChatWidget;

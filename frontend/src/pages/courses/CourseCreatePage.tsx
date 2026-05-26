@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type FC, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
 	Avatar,
@@ -78,15 +78,17 @@ const blankLiveClassForm = () => ({
 	lectures: [blankLiveClassLecture()],
 });
 
-function ArrayFieldEditor({
-	label,
-	values,
-	onChange,
-}: {
+interface ArrayFieldEditorProps {
 	label: string;
 	values: string[];
 	onChange: (v: string[]) => void;
-}) {
+}
+
+const ArrayFieldEditor: FC<ArrayFieldEditorProps> = ({
+	label,
+	values,
+	onChange,
+}) => {
 	const [newValue, setNewValue] = useState('');
 
 	const add = () => {
@@ -186,12 +188,7 @@ function ArrayFieldEditor({
 	);
 }
 
-function LiveClassLectureFields({
-	lectures,
-	onAdd,
-	onRemove,
-	onChange,
-}: {
+interface LiveClassLectureFieldsProps {
 	lectures: IStudyCurriculumLecture[];
 	onAdd: () => void;
 	onRemove: (index: number) => void;
@@ -200,7 +197,14 @@ function LiveClassLectureFields({
 		field: keyof IStudyCurriculumLecture,
 		value: string,
 	) => void;
-}) {
+}
+
+const LiveClassLectureFields: FC<LiveClassLectureFieldsProps> = ({
+	lectures,
+	onAdd,
+	onRemove,
+	onChange,
+}) => {
 	return (
 		<Box sx={{ mt: 2 }}>
 			<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -238,15 +242,7 @@ function LiveClassLectureFields({
 	);
 }
 
-function LiveClassLectureList({
-	liveClass,
-	quickLecture,
-	isQuickAdding,
-	onStartQuickAdd,
-	onCancelQuickAdd,
-	onQuickChange,
-	onQuickSave,
-}: {
+interface LiveClassLectureListProps {
 	liveClass: IStudyCurriculum;
 	quickLecture: IStudyCurriculumLecture;
 	isQuickAdding: boolean;
@@ -254,7 +250,17 @@ function LiveClassLectureList({
 	onCancelQuickAdd: () => void;
 	onQuickChange: (field: keyof IStudyCurriculumLecture, value: string) => void;
 	onQuickSave: () => void;
-}) {
+}
+
+const LiveClassLectureList: FC<LiveClassLectureListProps> = ({
+	liveClass,
+	quickLecture,
+	isQuickAdding,
+	onStartQuickAdd,
+	onCancelQuickAdd,
+	onQuickChange,
+	onQuickSave,
+}) => {
 	return (
 		<Box>
 			<Box
@@ -343,7 +349,7 @@ function LiveClassLectureList({
 	);
 }
 
-export default function CourseCreatePage() {
+const CourseCreatePage= () => {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const { user } = useAuth();
@@ -2215,5 +2221,7 @@ export default function CourseCreatePage() {
 			</Box>
 		</Box>
 	);
-}
+};
+
+export default CourseCreatePage;
 

@@ -52,7 +52,7 @@ function formatDate(iso: string) {
 	return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-export default function StaffChatPage() {
+const StaffChatPage= () => {
 	const { user } = useAuth();
 	const { socket, clearUnread } = useChat();
 	const [conversations, setConversations] = useState<IChatConversation[]>([]);
@@ -667,4 +667,6 @@ export default function StaffChatPage() {
 			)}
 		</Box>
 	);
-}
+};
+
+export default StaffChatPage;

@@ -51,7 +51,7 @@ const toInputDateTime = (value?: string) => {
 
 const toApiDateTime = (value: string) => (value ? new Date(value).toISOString() : '');
 
-export default function HomeHeroPostsPage() {
+const HomeHeroPostsPage= () => {
 	const { confirm } = useConfirmModal();
 	const [posts, setPosts] = useState<IHomeHeroPost[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -486,4 +486,6 @@ export default function HomeHeroPostsPage() {
 			</AppModal>
 		</Box>
 	);
-}
+};
+
+export default HomeHeroPostsPage;

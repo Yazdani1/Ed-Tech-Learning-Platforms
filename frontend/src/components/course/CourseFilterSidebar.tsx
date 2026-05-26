@@ -1,3 +1,4 @@
+import type { FC} from 'react';
 import { useEffect, useState } from 'react';
 import {
 	Box,
@@ -24,7 +25,12 @@ const filterOptionSx = {
 	},
 };
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+interface SectionProps {
+	label: string;
+	children: React.ReactNode;
+}
+
+const Section: FC<SectionProps> = ({ label, children }) => {
 	return (
 		<Box>
 			<Typography
@@ -36,9 +42,14 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 			{children}
 		</Box>
 	);
+};
+
+interface CountLabelProps {
+	label: string;
+	count?: number;
 }
 
-function CountLabel({ label, count }: { label: string; count?: number }) {
+const CountLabel: FC<CountLabelProps> = ({ label, count }) => {
 	return (
 		<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%' }}>
 			<Typography variant='body2' sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -49,9 +60,9 @@ function CountLabel({ label, count }: { label: string; count?: number }) {
 			</Typography>
 		</Box>
 	);
-}
+};
 
-interface Props {
+interface CourseFilterSidebarProps {
 	searchInput: string;
 	onSearchChange: (value: string) => void;
 	courseTypes: ICourseType[];
@@ -70,7 +81,7 @@ interface Props {
 	onClearAll: () => void;
 }
 
-export default function CourseFilterSidebar({
+const CourseFilterSidebar: FC<CourseFilterSidebarProps> = ({
 	searchInput,
 	onSearchChange,
 	courseTypes,
@@ -87,7 +98,7 @@ export default function CourseFilterSidebar({
 	filterCounts,
 	activeFilterCount,
 	onClearAll,
-}: Props) {
+}) => {
 	const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
 	const displayedSubscriptionPlans = subscriptionPlanOptions ?? subscriptionPlans;
 
@@ -264,4 +275,6 @@ export default function CourseFilterSidebar({
 			</Paper>
 		</Box>
 	);
-}
+};
+
+export default CourseFilterSidebar;

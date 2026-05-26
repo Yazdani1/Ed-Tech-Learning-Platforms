@@ -1,3 +1,5 @@
+import type { FC} from 'react';
+import { useRef, useState } from 'react';
 import {
 	Box,
 	Button,
@@ -11,7 +13,7 @@ import {
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import VerifiedIcon from '@mui/icons-material/Verified';
-import { useRef, useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import type { ICourse } from '../../types/index';
 import { formatBdt, getCoursePriceInfo } from '../../utils/pricing';
@@ -32,11 +34,11 @@ interface CourseCardProps {
 	showPreview?: boolean;
 }
 
-export function CourseCardSkeleton({
-	showAction = false,
-}: {
+interface CourseCardSkeletonProps {
 	showAction?: boolean;
-}) {
+}
+
+export const CourseCardSkeleton: FC<CourseCardSkeletonProps> = ({ showAction = false }) => {
 	return (
 		<Card
 			elevation={0}
@@ -96,16 +98,16 @@ export function CourseCardSkeleton({
 			</Box>
 		</Card>
 	);
-}
+};
 
-export default function CourseCard({
+const CourseCard: FC<CourseCardProps> = ({
 	course,
 	basePath = '/admin/courses',
 	appendPath = '',
 	isEnrolled = false,
 	learningPath,
 	showPreview = true,
-}: CourseCardProps) {
+}) => {
 	const navigate = useNavigate();
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 	const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -576,4 +578,6 @@ export default function CourseCard({
 			)}
 		</>
 	);
-}
+};
+
+export default CourseCard;

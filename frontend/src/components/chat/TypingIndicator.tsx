@@ -1,3 +1,4 @@
+import type { FC } from 'react';
 import { Avatar, Box, Typography } from '@mui/material';
 import type { IChatTypingEvent } from '../../types';
 
@@ -13,13 +14,12 @@ function avatarColor(role: string) {
 	return ROLE_COLORS[role] ?? '#6366f1';
 }
 
-export default function TypingIndicator({
-	typingUser,
-	compact = false,
-}: {
+interface TypingIndicatorProps {
 	typingUser: IChatTypingEvent;
 	compact?: boolean;
-}) {
+}
+
+const TypingIndicator: FC<TypingIndicatorProps> = ({ typingUser, compact = false }) => {
 	const dotSize = compact ? 5 : 6;
 
 	return (
@@ -80,4 +80,6 @@ export default function TypingIndicator({
 			</Box>
 		</Box>
 	);
-}
+};
+
+export default TypingIndicator;

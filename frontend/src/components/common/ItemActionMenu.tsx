@@ -1,3 +1,4 @@
+import type { FC} from 'react';
 import { useState } from 'react';
 import { IconButton, Menu, MenuItem, Switch } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -10,7 +11,11 @@ export interface ItemAction {
 	checked?: boolean;
 }
 
-export default function ItemActionMenu({ actions }: { actions: ItemAction[] }) {
+interface ItemActionMenuProps {
+	actions: ItemAction[];
+}
+
+const ItemActionMenu: FC<ItemActionMenuProps> = ({ actions }) => {
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
 	if (actions.length === 0) return null;
@@ -88,4 +93,6 @@ export default function ItemActionMenu({ actions }: { actions: ItemAction[] }) {
 			</Menu>
 		</>
 	);
-}
+};
+
+export default ItemActionMenu;

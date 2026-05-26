@@ -117,7 +117,7 @@ const superAdminItems = [
 	{ label: 'Performance', icon: <BarChartIcon />, path: '/admin/performance' },
 ];
 
-export default function AdminSidebar() {
+const AdminSidebar= () => {
 	const { user, logout } = useAuth();
 	const { t } = useTranslation();
 	const { totalUnread } = useChat();
@@ -326,4 +326,6 @@ export default function AdminSidebar() {
 			</Box>
 		</Drawer>
 	);
-}
+};
+
+export default AdminSidebar;

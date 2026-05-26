@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FC } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
 	Accordion,
@@ -153,7 +153,7 @@ const NAV_ITEMS: { key: NavSection; label: string; icon: React.ReactNode }[] = [
 	{ key: 'support_chat', label: 'Support Chat', icon: <SupportAgentIcon /> },
 ];
 
-export default function StudentCourseLearningPage() {
+const StudentCourseLearningPage= () => {
 	const { courseId } = useParams<{ courseId: string }>();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
@@ -2415,19 +2415,23 @@ export default function StudentCourseLearningPage() {
 			{!isTeacherOrAdmin && activeNav !== 'support_chat' && <ChatWidget />}
 		</Box>
 	);
-}
+};
+
+export default StudentCourseLearningPage;
 
 
 // ── Stat card ─────────────────────────────────────────────────
-function StatItem({
-	icon,
-	label,
-	value,
-}: {
+interface StatItemProps {
 	icon: React.ReactNode;
 	label: string;
 	value: string;
-}) {
+}
+
+const StatItem: FC<StatItemProps> = ({
+	icon,
+	label,
+	value,
+}) => {
 	return (
 		<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
 			<Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box>
@@ -2443,14 +2447,9 @@ function StatItem({
 			</Box>
 		</Box>
 	);
-}
+};
 
-function CurriculumLectureFields({
-	lectures,
-	onAdd,
-	onRemove,
-	onChange,
-}: {
+interface CurriculumLectureFieldsProps {
 	lectures: IStudyCurriculumLecture[];
 	onAdd: () => void;
 	onRemove: (index: number) => void;
@@ -2459,7 +2458,14 @@ function CurriculumLectureFields({
 		field: keyof IStudyCurriculumLecture,
 		value: string,
 	) => void;
-}) {
+}
+
+const CurriculumLectureFields: FC<CurriculumLectureFieldsProps> = ({
+	lectures,
+	onAdd,
+	onRemove,
+	onChange,
+}) => {
 	return (
 		<Box sx={{ mt: 2 }}>
 			<Box
@@ -2536,6 +2542,6 @@ function CurriculumLectureFields({
 			))}
 		</Box>
 	);
-}
+};
 
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode, type FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
 	Box,
@@ -45,7 +45,7 @@ const EMPTY_FORM = {
 	userId: '',
 };
 
-export default function TeachersPage() {
+const TeachersPage= () => {
 	const { confirm } = useConfirmModal();
 	const navigate = useNavigate();
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
@@ -558,17 +558,11 @@ export default function TeachersPage() {
 			</AppModal>
 		</Box>
 	);
-}
+};
 
-function TeacherDetailsModal({
-	open,
-	teacher,
-	linkedUser,
-	courses,
-	loading,
-	onCourseOpen,
-	onClose,
-}: {
+export default TeachersPage;
+
+interface TeacherDetailsModalProps {
 	open: boolean;
 	teacher: ITeacher | null;
 	linkedUser?: IUser;
@@ -576,7 +570,17 @@ function TeacherDetailsModal({
 	loading: boolean;
 	onCourseOpen: (courseId: string) => void;
 	onClose: () => void;
-}) {
+}
+
+const TeacherDetailsModal: FC<TeacherDetailsModalProps> = ({
+	open,
+	teacher,
+	linkedUser,
+	courses,
+	loading,
+	onCourseOpen,
+	onClose,
+}) => {
 	const socialLinks = teacher?.socialLinks
 		? Object.entries(teacher.socialLinks).filter((entry): entry is [string, string] => Boolean(entry[1]))
 		: [];
@@ -784,9 +788,15 @@ function TeacherDetailsModal({
 			)}
 		</AppModal>
 	);
+};
+
+interface InfoTileProps {
+	icon: ReactNode;
+	label: string;
+	value: string;
 }
 
-function InfoTile({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+const InfoTile: FC<InfoTileProps> = ({ icon, label, value }) => {
 	return (
 		<Paper variant='outlined' sx={{ p: 1.5, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1.25 }}>
 			<Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box>
@@ -800,4 +810,4 @@ function InfoTile({ icon, label, value }: { icon: ReactNode; label: string; valu
 			</Box>
 		</Paper>
 	);
-}
+};

@@ -1,3 +1,4 @@
+import type { FC} from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
 	Avatar,
@@ -43,13 +44,13 @@ type QuestionFilter = 'all' | 'needsStaffAnswer' | 'unresolved' | 'resolved';
 
 const STAFF_ROLES = ['Admin', 'Super Admin', 'Moderator', 'Teacher'];
 
-export default function CourseQASection({
+const CourseQASection: FC<CourseQASectionProps> = ({
 	courseId,
 	canPost,
 	userId,
 	userRole,
 	initialQuestionId,
-}: CourseQASectionProps) {
+}) => {
 	const { confirm } = useConfirmModal();
 	const [questions, setQuestions] = useState<IQuestion[]>([]);
 	const [qaLoading, setQaLoading] = useState(true);
@@ -1439,4 +1440,6 @@ export default function CourseQASection({
 			)}
 		</Box>
 	);
-}
+};
+
+export default CourseQASection;

@@ -1,7 +1,7 @@
 import { Box, Typography, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
-function NotFoundPage() {
+const NotFoundPage= () => {
   const navigate = useNavigate();
   return (
     <Box sx={{ textAlign: 'center', mt: 8 }}>

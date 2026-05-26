@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type FC, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
 	Box,
@@ -52,17 +52,19 @@ const DATE_RANGE_OPTIONS: { label: string; value: DateRange }[] = [
 
 const PIE_COLORS = ['#22c55e', '#3b82f6', '#7c3aed'];
 
-function StatCard({
-	top,
-	topSub,
-	label,
-	underline,
-}: {
+interface StatCardProps {
 	top: string;
 	topSub?: string;
 	label: string;
 	underline?: boolean;
-}) {
+}
+
+const StatCard: FC<StatCardProps> = ({
+	top,
+	topSub,
+	label,
+	underline,
+}) => {
 	return (
 		<Box sx={{ minWidth: 180 }}>
 			<Typography variant='h4' sx={{ fontWeight: 700 }}>
@@ -96,7 +98,7 @@ function StatCard({
 const fmtTooltip = (metric: ChartMetric) => (v: any) =>
 	metric === 'revenue' ? `$${Number(v).toFixed(2)}` : String(v);
 
-export default function PerformancePage() {
+const PerformancePage= () => {
 	const { user } = useAuth();
 	const navigate = useNavigate();
 
@@ -724,4 +726,6 @@ export default function PerformancePage() {
 			</Drawer>
 		</Box>
 	);
-}
+};
+
+export default PerformancePage;

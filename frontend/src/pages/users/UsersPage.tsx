@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type FC, type ReactNode, useEffect, useState } from 'react';
 import {
 	Avatar,
 	Box,
@@ -129,7 +129,12 @@ const getSubscriptionStatus = (user: IUser) => {
 	return new Date(endDate) > new Date() ? 'Active' : 'Expired';
 };
 
-function DetailItem({ label, value }: { label: string; value: ReactNode }) {
+interface DetailItemProps {
+	label: string;
+	value: ReactNode;
+}
+
+const DetailItem: FC<DetailItemProps> = ({ label, value }) => {
 	return (
 		<Box
 			sx={{
@@ -159,7 +164,7 @@ function DetailItem({ label, value }: { label: string; value: ReactNode }) {
 	);
 }
 
-function UserCardSkeleton() {
+const UserCardSkeleton= () => {
 	return (
 		<Card
 			elevation={0}
@@ -208,7 +213,7 @@ function UserCardSkeleton() {
 	);
 }
 
-export default function UsersPage() {
+const UsersPage= () => {
 	const { user: currentUser } = useAuth();
 	const { confirm } = useConfirmModal();
 	const [users, setUsers] = useState<IUser[]>([]);
@@ -1004,4 +1009,6 @@ export default function UsersPage() {
 			</AppModal>
 		</Box>
 	);
-}
+};
+
+export default UsersPage;

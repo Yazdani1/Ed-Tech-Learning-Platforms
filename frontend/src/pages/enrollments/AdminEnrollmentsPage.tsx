@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
 	Avatar,
@@ -47,7 +47,12 @@ const TYPE_COLOR: Record<EnrollmentType, 'default' | 'success' | 'primary' | 'se
 	subscription: 'secondary',
 };
 
-function StatPill({ label, value }: { label: string; value: string | number }) {
+interface StatPillProps {
+	label: string;
+	value: string | number;
+}
+
+const StatPill: FC<StatPillProps> = ({ label, value }) => {
 	return (
 		<Box
 			sx={{
@@ -70,7 +75,7 @@ function StatPill({ label, value }: { label: string; value: string | number }) {
 	);
 }
 
-export default function AdminEnrollmentsPage() {
+const AdminEnrollmentsPage= () => {
 	const { courseId } = useParams<{ courseId: string }>();
 	const navigate = useNavigate();
 
@@ -527,4 +532,6 @@ export default function AdminEnrollmentsPage() {
 			</Box>
 		</Box>
 	);
-}
+};
+
+export default AdminEnrollmentsPage;

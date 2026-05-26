@@ -1,3 +1,4 @@
+import type { FC } from 'react';
 import { Outlet } from 'react-router-dom';
 import {
 	Box,
@@ -15,11 +16,11 @@ import SchoolIcon from '@mui/icons-material/School';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import PublicNavbar from './PublicNavbar';
 
-function CornerArt({
-	position,
-}: {
+interface CornerArtProps {
 	position: 'topLeft' | 'bottomLeft' | 'bottomRight';
-}) {
+}
+
+const CornerArt: FC<CornerArtProps> = ({ position }) => {
 	const placement =
 		position === 'topLeft'
 			? { top: { xs: 82, md: 96 }, left: { xs: 12, md: 28 } }
@@ -148,9 +149,9 @@ function CornerArt({
 			/>
 		</Box>
 	);
-}
+};
 
-export default function AuthLayout() {
+const AuthLayout= () => {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
       <PublicNavbar />
@@ -251,4 +252,6 @@ export default function AuthLayout() {
       </Container>
     </Box>
   );
-}
+};
+
+export default AuthLayout;

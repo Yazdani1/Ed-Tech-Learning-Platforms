@@ -39,7 +39,7 @@ interface DialogState {
 
 const EMPTY_FORM = { name: '', description: '' };
 
-export default function CategoriesPage() {
+const CategoriesPage= () => {
 	const { confirm } = useConfirmModal();
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
@@ -367,4 +367,6 @@ export default function CategoriesPage() {
 			</AppModal>
 		</Box>
 	);
-}
+};
+
+export default CategoriesPage;
