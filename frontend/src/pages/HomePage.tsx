@@ -90,7 +90,6 @@ const HomePage = () => {
 		1,
 	);
 
-	// ── Local state for search input only (smooth typing) ───
 	const [searchInput, setSearchInput] = useState(urlSearch);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isDebouncing = useRef(false);
