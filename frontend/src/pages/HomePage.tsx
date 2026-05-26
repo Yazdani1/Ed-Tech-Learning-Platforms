@@ -68,7 +68,7 @@ const HomePage = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const paramsKey = searchParams.toString();
 
-	// ── All filter values derived from URL (decoded) ───
+	// All filter values derived from URL (decoded) ───
 
 	const urlSearch = decodeParam(searchParams.get('q') ?? '');
 	const urlCourseTypes = decodeParam(searchParams.get('courseTypes') ?? '')
@@ -90,7 +90,7 @@ const HomePage = () => {
 		1,
 	);
 
-	// ── Local state for search input only (smooth typing) ────────
+	// ── Local state for search input only (smooth typing) ───
 	const [searchInput, setSearchInput] = useState(urlSearch);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isDebouncing = useRef(false);
