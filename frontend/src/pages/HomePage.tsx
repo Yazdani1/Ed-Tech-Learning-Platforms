@@ -95,7 +95,7 @@ const HomePage = () => {
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isDebouncing = useRef(false);
 
-	// ── Reference data ───────────────────────────────────────────
+	// ── Reference data
 	const [categories, setCategories] = useState<ICategory[]>([]);
 	const [courseTypes, setCourseTypes] = useState<ICourseType[]>([]);
 	const [teachers, setTeachers] = useState<ITeacher[]>([]);
