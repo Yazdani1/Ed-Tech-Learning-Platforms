@@ -2,19 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## After Every Change
+## After Every Feature Change
 
-After making any code changes, always run both checks before reporting the task as done:
+After completing any feature or fix, run all four checks before reporting the task as done. Fix any errors before finishing — do not skip or defer.
 
 ```bash
-# Backend type check
-cd backend && npx tsc --noEmit
+# 1. Backend — full build (compiles to dist/)
+cd backend && npm run build
 
-# Frontend type check
-cd frontend && npx tsc --noEmit
+# 2. Backend — lint
+cd backend && npm run lint
+
+# 3. Frontend — full build (tsc + Vite bundle)
+cd frontend && npm run build
+
+# 4. Frontend — lint
+cd frontend && npm run lint
 ```
 
-If either reports errors, fix them before finishing. Do not skip this step.
+If lint errors are auto-fixable, run `npm run lint:fix` first, then re-check. Only report the task complete when all four pass with no errors.
+
+> `npm run dev` is a long-running server and cannot be used as a build check. `npm run build` covers everything it would catch at startup.
 
 **Port conflict (`EADDRINUSE :5000`)** — a previous backend process is still running. Fix with:
 ```powershell
