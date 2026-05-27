@@ -1,14 +1,17 @@
 import { Router } from 'express';
 import {
   archiveBadge,
+  archiveAnswerReply,
   archiveChannel,
   archivePost,
   archiveReply,
   createBadge,
+  createAnswerReply,
   createChannel,
   createPost,
   createReply,
   getAdminChannels,
+  getAnswerReplies,
   getCommunityPost,
   getCommunityReplies,
   getCommunitySettingsForAdmin,
@@ -50,6 +53,9 @@ router.patch('/posts/:postId/pin', protect, authorize('Super Admin', 'Admin', 'M
 router.patch('/replies/:replyId/reactions', protect, reactToReply);
 router.patch('/replies/:replyId/accepted', protect, toggleAcceptedReply);
 router.patch('/replies/:replyId/archive', protect, archiveReply);
+router.get('/replies/:replyId/replies', optionalProtect, getAnswerReplies);
+router.post('/replies/:replyId/replies', protect, createAnswerReply);
+router.patch('/answer-replies/:childReplyId/archive', protect, archiveAnswerReply);
 
 router.get('/badges', protect, authorize('Super Admin', 'Admin'), getBadges);
 router.post('/badges', protect, authorize('Super Admin', 'Admin'), upload.single('image'), createBadge);

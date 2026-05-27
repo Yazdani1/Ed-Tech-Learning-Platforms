@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { Types } from 'mongoose';
+import { CommunityAnswerReply } from '../models/CommunityAnswerReply.model';
 import { CommunityBadge } from '../models/CommunityBadge.model';
 import { CommunityChannel } from '../models/CommunityChannel.model';
 import { CommunityPointRule, type CommunityPointRuleKey } from '../models/CommunityPointRule.model';
@@ -34,6 +35,9 @@ const populatePost = [
 const populateReply = [
   { path: 'author', select: 'name avatar role communityPoints' },
   { path: 'reactions.user', select: 'name avatar role' },
+];
+const populateAnswerReply = [
+  { path: 'author', select: 'name avatar role communityPoints' },
 ];
 
 const ensurePointRules = async () => {
@@ -76,6 +80,32 @@ const getPaginationNumber = (value: unknown, fallback: number, max?: number) => 
   if (!Number.isFinite(parsed) || parsed < 0) return fallback;
   const rounded = Math.floor(parsed);
   return max ? Math.min(rounded, max) : rounded;
+};
+
+const attachAnswerReplies = async <T extends { _id: unknown }>(replies: T[]) => {
+  const replyIds = replies.map((reply) => reply._id as Types.ObjectId);
+  if (replyIds.length === 0) return replies.map((reply) => ({ ...reply, childReplies: [], childReplyCount: 0 }));
+
+  const [childReplies, childReplyCounts] = await Promise.all([
+    CommunityAnswerReply.find({ reply: { $in: replyIds }, isArchived: false })
+      .sort({ createdAt: 1 })
+      .populate(populateAnswerReply)
+      .lean(),
+    CommunityAnswerReply.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { reply: { $in: replyIds }, isArchived: false } },
+      { $group: { _id: '$reply', count: { $sum: 1 } } },
+    ]),
+  ]);
+  const counts = childReplyCounts.reduce<Record<string, number>>((items, item) => {
+    items[String(item._id)] = item.count;
+    return items;
+  }, {});
+
+  return replies.map((reply) => ({
+    ...reply,
+    childReplies: childReplies.filter((childReply) => idEquals(childReply.reply, reply._id)),
+    childReplyCount: counts[String(reply._id)] ?? 0,
+  }));
 };
 
 export const getCommunityOverview = asyncHandler(async (req: Request, res: Response) => {
@@ -317,7 +347,7 @@ export const getCommunityPost = asyncHandler(async (req: Request, res: Response)
   res.status(200).json({
     success: true,
     data: {
-      post: { ...post, replies, replyCount: repliesTotal },
+      post: { ...post, replies: await attachAnswerReplies(replies), replyCount: repliesTotal },
       badges,
       channels,
       repliesPagination: {
@@ -349,7 +379,7 @@ export const getCommunityReplies = asyncHandler(async (req: Request, res: Respon
   res.status(200).json({
     success: true,
     data: {
-      replies,
+      replies: await attachAnswerReplies(replies),
       total,
       limit,
       skip,
@@ -399,6 +429,54 @@ export const createReply = asyncHandler(async (req: Request, res: Response) => {
   const reply = await CommunityReply.create({ post: post._id, body, author: req.user._id, images });
   await awardPoints(req.user._id, 'createReply');
   const populated = await CommunityReply.findById(reply._id).populate(populateReply).lean();
+  res.status(201).json({ success: true, message: 'Reply added', data: populated });
+});
+
+export const getAnswerReplies = asyncHandler(async (req: Request, res: Response) => {
+  const skip = getPaginationNumber(req.query.skip, 0);
+  const limit = getPaginationNumber(req.query.limit, 20, 50);
+  const reply = await CommunityReply.findOne({ _id: req.params.replyId, isArchived: false }).select('_id post');
+  if (!reply) throw new AppError('Answer not found', 404);
+  const post = await CommunityPost.findOne({ _id: reply.post, isArchived: false }).select('_id');
+  if (!post) throw new AppError('Discussion not found', 404);
+
+  const [childReplies, total] = await Promise.all([
+    CommunityAnswerReply.find({ reply: reply._id, isArchived: false })
+      .sort({ createdAt: 1 })
+      .skip(skip)
+      .limit(limit)
+      .populate(populateAnswerReply)
+      .lean(),
+    CommunityAnswerReply.countDocuments({ reply: reply._id, isArchived: false }),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      replies: childReplies,
+      total,
+      limit,
+      skip,
+      hasMore: skip + childReplies.length < total,
+    },
+  });
+});
+
+export const createAnswerReply = asyncHandler(async (req: Request, res: Response) => {
+  const { body } = req.body as { body?: string };
+  if (!body?.trim()) throw new AppError('Reply body is required', 400);
+
+  const reply = await CommunityReply.findOne({ _id: req.params.replyId, isArchived: false });
+  if (!reply) throw new AppError('Answer not found', 404);
+  const post = await CommunityPost.findOne({ _id: reply.post, isArchived: false }).select('_id');
+  if (!post) throw new AppError('Discussion not found', 404);
+
+  const childReply = await CommunityAnswerReply.create({
+    reply: reply._id,
+    body,
+    author: req.user._id,
+  });
+  const populated = await CommunityAnswerReply.findById(childReply._id).populate(populateAnswerReply).lean();
   res.status(201).json({ success: true, message: 'Reply added', data: populated });
 });
 
@@ -482,6 +560,24 @@ export const archiveReply = asyncHandler(async (req: Request, res: Response) => 
   reply.archivedAt = new Date();
   await reply.save();
   res.status(200).json({ success: true, message: 'Answer deleted', data: { _id: reply._id } });
+});
+
+export const archiveAnswerReply = asyncHandler(async (req: Request, res: Response) => {
+  const childReply = await CommunityAnswerReply.findOne({ _id: req.params.childReplyId, isArchived: false });
+  if (!childReply) throw new AppError('Reply not found', 404);
+  const reply = await CommunityReply.findOne({ _id: childReply.reply, isArchived: false });
+  if (!reply) throw new AppError('Answer not found', 404);
+  const post = await CommunityPost.findOne({ _id: reply.post, isArchived: false }).select('_id');
+  if (!post) throw new AppError('Discussion not found', 404);
+  if (!canModerate(req.user.role) && !idEquals(childReply.author, req.user._id)) {
+    throw new AppError('You can only delete your own replies', 403);
+  }
+
+  childReply.isArchived = true;
+  childReply.archivedBy = req.user._id;
+  childReply.archivedAt = new Date();
+  await childReply.save();
+  res.status(200).json({ success: true, message: 'Reply deleted', data: { _id: childReply._id } });
 });
 
 export const archivePost = asyncHandler(async (req: Request, res: Response) => {

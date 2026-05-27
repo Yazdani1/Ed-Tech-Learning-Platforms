@@ -10,6 +10,7 @@ import { communityService } from '../../services/community.service';
 import type {
   CommunityReactionType,
   ICommunityBadge,
+  ICommunityAnswerReply,
   ICommunityChannel,
   ICommunityPost,
   ICommunityReply,
@@ -60,7 +61,15 @@ const CommunityDiscussionDetailPage = () => {
       current
         ? {
             ...current,
-            replies: current.replies.map((reply) => (reply._id === updatedReply._id ? updatedReply : reply)),
+            replies: current.replies.map((reply) =>
+              reply._id === updatedReply._id
+                ? {
+                    ...updatedReply,
+                    childReplies: updatedReply.childReplies ?? reply.childReplies,
+                    childReplyCount: updatedReply.childReplyCount ?? reply.childReplyCount,
+                  }
+                : reply
+            ),
           }
         : current
     );
@@ -103,6 +112,47 @@ const CommunityDiscussionDetailPage = () => {
             ...current,
             replies: current.replies.filter((reply) => reply._id !== replyId),
             replyCount: Math.max((current.replyCount ?? current.replies.length) - 1, 0),
+          }
+        : current
+    );
+  };
+
+  const createAnswerReply = async (replyId: string, body: string) => {
+    const res = await communityService.createAnswerReply(replyId, body);
+    if (!res.data) return;
+    setPost((current) =>
+      current
+        ? {
+            ...current,
+            replies: current.replies.map((reply) =>
+              reply._id === replyId
+                ? {
+                    ...reply,
+                    childReplies: [...(reply.childReplies ?? []), res.data as ICommunityAnswerReply],
+                    childReplyCount: (reply.childReplyCount ?? reply.childReplies?.length ?? 0) + 1,
+                  }
+                : reply
+            ),
+          }
+        : current
+    );
+  };
+
+  const archiveAnswerReply = async (replyId: string, childReplyId: string) => {
+    await communityService.archiveAnswerReply(childReplyId);
+    setPost((current) =>
+      current
+        ? {
+            ...current,
+            replies: current.replies.map((reply) =>
+              reply._id === replyId
+                ? {
+                    ...reply,
+                    childReplies: (reply.childReplies ?? []).filter((childReply) => childReply._id !== childReplyId),
+                    childReplyCount: Math.max((reply.childReplyCount ?? reply.childReplies?.length ?? 0) - 1, 0),
+                  }
+                : reply
+            ),
           }
         : current
     );
@@ -262,6 +312,8 @@ const CommunityDiscussionDetailPage = () => {
                   onReactReply={reactToReply}
                   onAcceptReply={acceptReply}
                   onArchiveReply={archiveReply}
+                  onCreateAnswerReply={createAnswerReply}
+                  onArchiveAnswerReply={archiveAnswerReply}
                   onArchivePost={archivePost}
                   onTogglePin={togglePin}
                   onUpdatePost={updatePostDetails}

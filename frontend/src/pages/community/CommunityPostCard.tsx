@@ -30,6 +30,7 @@ import ItemActionMenu, { type ItemAction } from '../../components/common/ItemAct
 import RichTextEditor from '../../components/course/RichTextEditor';
 import type {
   CommunityReactionType,
+  ICommunityAnswerReply,
   ICommunityBadge,
   ICommunityPost,
   ICommunityReply,
@@ -39,7 +40,7 @@ import { canModerateRole, getUserBadges, isRichTextEmpty } from './communityHelp
 import ReactionBar from './ReactionBar';
 
 interface AuthorLineProps {
-  author: ICommunityPost['author'] | ICommunityReply['author'];
+  author: ICommunityPost['author'] | ICommunityReply['author'] | ICommunityAnswerReply['author'];
   badges: ICommunityBadge[];
 }
 
@@ -52,6 +53,8 @@ interface CommunityPostCardProps {
   onReactReply: (replyId: string, type: CommunityReactionType) => Promise<void>;
   onAcceptReply: (replyId: string) => Promise<void>;
   onArchiveReply: (replyId: string) => Promise<void>;
+  onCreateAnswerReply?: (replyId: string, body: string) => Promise<void>;
+  onArchiveAnswerReply?: (replyId: string, childReplyId: string) => Promise<void>;
   onArchivePost: (postId: string) => Promise<void>;
   onTogglePin: (postId: string) => Promise<void>;
   onUpdatePost: (postId: string, data: FormData) => Promise<void>;
@@ -196,6 +199,8 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
   onReactReply,
   onAcceptReply,
   onArchiveReply,
+  onCreateAnswerReply,
+  onArchiveAnswerReply,
   onArchivePost,
   onTogglePin,
   onUpdatePost,
@@ -210,6 +215,10 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
   const [replyImages, setReplyImages] = useState<File[]>([]);
   const [replying, setReplying] = useState(false);
   const [replyFormOpen, setReplyFormOpen] = useState(false);
+  const [answerReplyFormId, setAnswerReplyFormId] = useState<string | null>(null);
+  const [answerReplyBody, setAnswerReplyBody] = useState('');
+  const [answerReplying, setAnswerReplying] = useState(false);
+  const [expandedAnswerReplyIds, setExpandedAnswerReplyIds] = useState<string[]>([]);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     channel: post.channel._id,
@@ -233,6 +242,22 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
     setReplyImages([]);
     setReplyFormOpen(false);
     setReplying(false);
+  };
+
+  const submitAnswerReply = async (replyId: string) => {
+    if (!onCreateAnswerReply || isRichTextEmpty(answerReplyBody)) return;
+    setAnswerReplying(true);
+    await onCreateAnswerReply(replyId, answerReplyBody.trim());
+    setExpandedAnswerReplyIds((current) => (current.includes(replyId) ? current : [...current, replyId]));
+    setAnswerReplyBody('');
+    setAnswerReplyFormId(null);
+    setAnswerReplying(false);
+  };
+
+  const toggleAnswerReplies = (replyId: string) => {
+    setExpandedAnswerReplyIds((current) =>
+      current.includes(replyId) ? current.filter((currentReplyId) => currentReplyId !== replyId) : [...current, replyId]
+    );
   };
 
   const addReplyImages = (files: FileList | null) => {
@@ -455,6 +480,9 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
             const replyActions: ItemAction[] = canArchiveReply
               ? [{ label: 'Delete', icon: <DeleteIcon />, color: 'error' as const, onClick: () => void onArchiveReply(reply._id) }]
               : [];
+            const nestedReplyCount = reply.childReplyCount ?? reply.childReplies?.length ?? 0;
+            const hasNestedReplies = nestedReplyCount > 0;
+            const showNestedReplies = expandedAnswerReplyIds.includes(reply._id);
 
             return (
               <Fragment key={reply._id}>
@@ -485,12 +513,109 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
                       dangerouslySetInnerHTML={{ __html: reply.body }}
                     />
                     <CommunityImageGallery images={reply.images ?? []} title={`Reply by ${reply.author.name}`} detailsMode />
-                    <ReactionBar
-                      reactions={reply.reactions}
-                      disabled={!user}
-                      currentUserId={user?._id}
-                      onReact={(type) => void onReactReply(reply._id, type)}
-                    />
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      spacing={1}
+                      sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap' }}
+                    >
+                      <Box sx={{ flex: 1, minWidth: { sm: 260 } }}>
+                        <ReactionBar
+                          reactions={reply.reactions}
+                          disabled={!user}
+                          currentUserId={user?._id}
+                          onReact={(type) => void onReactReply(reply._id, type)}
+                        />
+                      </Box>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, flexWrap: 'wrap' }}>
+                        {hasNestedReplies && (
+                          <Button
+                            size="small"
+                            variant="text"
+                            onClick={() => toggleAnswerReplies(reply._id)}
+                            sx={{ fontWeight: 900, textTransform: 'none' }}
+                          >
+                            Replies ({nestedReplyCount})
+                          </Button>
+                        )}
+                        {user && onCreateAnswerReply && (
+                          <Button
+                            size="small"
+                            startIcon={<ReplyIcon />}
+                            onClick={() => {
+                              setAnswerReplyFormId(answerReplyFormId === reply._id ? null : reply._id);
+                              setAnswerReplyBody('');
+                            }}
+                          >
+                            Reply
+                          </Button>
+                        )}
+                      </Stack>
+                    </Stack>
+                    {(answerReplyFormId === reply._id || (hasNestedReplies && showNestedReplies)) && (
+                    <Stack spacing={1.25} sx={{ pl: { xs: 2, sm: 4 }, borderLeft: '2px solid', borderColor: 'divider' }}>
+                      {answerReplyFormId === reply._id && (
+                        <Paper elevation={0} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
+                          <Stack spacing={1}>
+                            <RichTextEditor
+                              value={answerReplyBody}
+                              onChange={setAnswerReplyBody}
+                              placeholder="Write a reply to this answer..."
+                              minHeight={120}
+                            />
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                startIcon={<SendIcon />}
+                                disabled={answerReplying || isRichTextEmpty(answerReplyBody)}
+                                onClick={() => void submitAnswerReply(reply._id)}
+                              >
+                                Post Reply
+                              </Button>
+                              <Button
+                                size="small"
+                                onClick={() => {
+                                  setAnswerReplyFormId(null);
+                                  setAnswerReplyBody('');
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </Stack>
+                          </Stack>
+                        </Paper>
+                      )}
+                      {hasNestedReplies && showNestedReplies && (reply.childReplies ?? []).map((childReply, childIndex) => {
+                        const canArchiveChildReply = Boolean(user && (user._id === childReply.author._id || canModerateRole(user.role)));
+                        const childReplyActions: ItemAction[] = canArchiveChildReply && onArchiveAnswerReply
+                          ? [{ label: 'Delete', icon: <DeleteIcon />, color: 'error' as const, onClick: () => void onArchiveAnswerReply(reply._id, childReply._id) }]
+                          : [];
+
+                        return (
+                          <Fragment key={childReply._id}>
+                            <Box sx={{ py: 1 }}>
+                              <Stack spacing={0.75}>
+                                <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                  <Box>
+                                    <AuthorLine author={childReply.author} badges={badges} />
+                                    <Typography variant="caption" color="text.secondary">
+                                      {new Date(childReply.createdAt).toLocaleString()}
+                                    </Typography>
+                                  </Box>
+                                  <ItemActionMenu actions={childReplyActions} />
+                                </Stack>
+                                <Box
+                                  sx={{ typography: 'body2', '& p': { my: 0.75 }, '& ul, & ol': { pl: 3 } }}
+                                  dangerouslySetInnerHTML={{ __html: childReply.body }}
+                                />
+                              </Stack>
+                            </Box>
+                            {childIndex < (reply.childReplies?.length ?? 0) - 1 && <Divider />}
+                          </Fragment>
+                        );
+                      })}
+                    </Stack>
+                    )}
                   </Stack>
                 </Box>
                 {index < post.replies.length - 1 && <Divider />}

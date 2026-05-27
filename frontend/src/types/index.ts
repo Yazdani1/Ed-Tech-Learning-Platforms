@@ -63,12 +63,24 @@ export interface ICommunityReaction {
   createdAt: string;
 }
 
+export interface ICommunityAnswerReply {
+  _id: string;
+  reply: string;
+  body: string;
+  author: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+  isArchived?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ICommunityReply {
   _id: string;
   post: string;
   body: string;
   author: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
   images?: Array<{ url: string }>;
+  childReplies?: ICommunityAnswerReply[];
+  childReplyCount?: number;
   reactions: ICommunityReaction[];
   isAccepted: boolean;
   isArchived?: boolean;
