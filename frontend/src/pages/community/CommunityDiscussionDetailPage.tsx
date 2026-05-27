@@ -66,8 +66,8 @@ const CommunityDiscussionDetailPage = () => {
     );
   };
 
-  const createReply = async (discussionId: string, body: string) => {
-    const res = await communityService.createReply(discussionId, body);
+  const createReply = async (discussionId: string, data: FormData) => {
+    const res = await communityService.createReply(discussionId, data);
     if (!res.data) return;
     setPost((current) =>
       current
@@ -93,6 +93,19 @@ const CommunityDiscussionDetailPage = () => {
   const acceptReply = async (replyId: string) => {
     const res = await communityService.toggleAcceptedReply(replyId);
     if (res.data) updateReply(res.data);
+  };
+
+  const archiveReply = async (replyId: string) => {
+    await communityService.archiveReply(replyId);
+    setPost((current) =>
+      current
+        ? {
+            ...current,
+            replies: current.replies.filter((reply) => reply._id !== replyId),
+            replyCount: Math.max((current.replyCount ?? current.replies.length) - 1, 0),
+          }
+        : current
+    );
   };
 
   const archivePost = async (discussionId: string) => {
@@ -248,6 +261,7 @@ const CommunityDiscussionDetailPage = () => {
                   onReactPost={reactToPost}
                   onReactReply={reactToReply}
                   onAcceptReply={acceptReply}
+                  onArchiveReply={archiveReply}
                   onArchivePost={archivePost}
                   onTogglePin={togglePin}
                   onUpdatePost={updatePostDetails}

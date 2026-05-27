@@ -14,13 +14,18 @@ import {
   TextField,
   Tooltip,
   Typography,
+  IconButton,
 } from '@mui/material';
-import ArchiveIcon from '@mui/icons-material/Archive';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import ReplyIcon from '@mui/icons-material/Reply';
 import SendIcon from '@mui/icons-material/Send';
+import UploadIcon from '@mui/icons-material/Upload';
 import ItemActionMenu, { type ItemAction } from '../../components/common/ItemActionMenu';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import type {
@@ -42,10 +47,11 @@ interface CommunityPostCardProps {
   post: ICommunityPost;
   user: IUser | null;
   badges: ICommunityBadge[];
-  onReply: (postId: string, body: string) => Promise<void>;
+  onReply: (postId: string, data: FormData) => Promise<void>;
   onReactPost: (postId: string, type: CommunityReactionType) => Promise<void>;
   onReactReply: (replyId: string, type: CommunityReactionType) => Promise<void>;
   onAcceptReply: (replyId: string) => Promise<void>;
+  onArchiveReply: (replyId: string) => Promise<void>;
   onArchivePost: (postId: string) => Promise<void>;
   onTogglePin: (postId: string) => Promise<void>;
   onUpdatePost: (postId: string, data: FormData) => Promise<void>;
@@ -55,6 +61,12 @@ interface CommunityPostCardProps {
   hasMoreReplies?: boolean;
   loadingMoreReplies?: boolean;
   onLoadMoreReplies?: () => Promise<void>;
+}
+
+interface CommunityImageGalleryProps {
+  images: Array<{ url: string }>;
+  title: string;
+  detailsMode: boolean;
 }
 
 const AuthorLine: FC<AuthorLineProps> = ({ author, badges }) => {
@@ -92,6 +104,83 @@ const getExcerpt = (html: string, maxLength = 220) => {
   return `${text.slice(0, maxLength).trim()}...`;
 };
 
+const getPostImages = (post: ICommunityPost) => {
+  const images = post.images?.filter((image) => image.url) ?? [];
+  if (images.length > 0) return images;
+  return post.imageUrl ? [{ url: post.imageUrl }] : [];
+};
+
+const CommunityImageGallery: FC<CommunityImageGalleryProps> = ({ images, title, detailsMode }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  if (images.length === 0) return null;
+  const activeImage = images[Math.min(activeIndex, images.length - 1)];
+
+  if (!detailsMode) {
+    return (
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+        {images.slice(0, 4).map((image, index) => (
+          <Box
+            key={`${image.url}-${index}`}
+            component="img"
+            src={image.url}
+            alt={`${title} ${index + 1}`}
+            sx={{ width: 116, height: 82, objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+          />
+        ))}
+        {images.length > 4 && (
+          <Box
+            sx={{
+              width: 116,
+              height: 82,
+              display: 'grid',
+              placeItems: 'center',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'grey.100',
+              fontWeight: 900,
+            }}
+          >
+            +{images.length - 4}
+          </Box>
+        )}
+      </Stack>
+    );
+  }
+
+  return (
+    <Box sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', bgcolor: 'grey.100' }}>
+      <Box
+        component="img"
+        src={activeImage.url}
+        alt={`${title} ${activeIndex + 1}`}
+        sx={{ width: '100%', maxHeight: 520, objectFit: 'contain', display: 'block', bgcolor: 'grey.100' }}
+      />
+      {images.length > 1 && (
+        <>
+          <IconButton
+            aria-label="Previous image"
+            onClick={() => setActiveIndex((index) => (index === 0 ? images.length - 1 : index - 1))}
+            sx={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', bgcolor: 'background.paper', '&:hover': { bgcolor: 'grey.100' } }}
+          >
+            <ArrowBackIosNewIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            aria-label="Next image"
+            onClick={() => setActiveIndex((index) => (index + 1) % images.length)}
+            sx={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', bgcolor: 'background.paper', '&:hover': { bgcolor: 'grey.100' } }}
+          >
+            <ArrowForwardIosIcon fontSize="small" />
+          </IconButton>
+          <Box sx={{ position: 'absolute', right: 12, bottom: 12, px: 1, py: 0.35, borderRadius: 999, bgcolor: 'rgba(15,23,42,0.72)', color: 'common.white', fontSize: 12, fontWeight: 900 }}>
+            {activeIndex + 1} / {images.length}
+          </Box>
+        </>
+      )}
+    </Box>
+  );
+};
+
 const CommunityPostCard: FC<CommunityPostCardProps> = ({
   post,
   user,
@@ -100,6 +189,7 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
   onReactPost,
   onReactReply,
   onAcceptReply,
+  onArchiveReply,
   onArchivePost,
   onTogglePin,
   onUpdatePost,
@@ -111,6 +201,7 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
   onLoadMoreReplies,
 }) => {
   const [replyBody, setReplyBody] = useState('');
+  const [replyImages, setReplyImages] = useState<File[]>([]);
   const [replying, setReplying] = useState(false);
   const [replyFormOpen, setReplyFormOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -123,14 +214,28 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
   const isAuthor = user?._id === post.author._id;
   const canArchive = Boolean(user && (isAuthor || canModerateRole(user.role)));
   const canPin = canModerateRole(user?.role);
+  const postImages = getPostImages(post);
 
   const submitReply = async () => {
     if (isRichTextEmpty(replyBody)) return;
     setReplying(true);
-    await onReply(post._id, replyBody.trim());
+    const data = new FormData();
+    data.append('body', replyBody.trim());
+    replyImages.forEach((image) => data.append('images', image));
+    await onReply(post._id, data);
     setReplyBody('');
+    setReplyImages([]);
     setReplyFormOpen(false);
     setReplying(false);
+  };
+
+  const addReplyImages = (files: FileList | null) => {
+    if (!files) return;
+    setReplyImages((current) => [...current, ...Array.from(files)]);
+  };
+
+  const removeReplyImage = (index: number) => {
+    setReplyImages((current) => current.filter((_, itemIndex) => itemIndex !== index));
   };
 
   const submitEdit = async () => {
@@ -138,7 +243,7 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
     data.append('channel', editForm.channel);
     data.append('title', editForm.title);
     data.append('description', editForm.description);
-    if (editForm.image) data.append('image', editForm.image);
+    if (editForm.image) data.append('images', editForm.image);
     await onUpdatePost(post._id, data);
     setEditing(false);
   };
@@ -161,7 +266,7 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
       ? [{ label: post.isPinned ? 'Unpin' : 'Pin', icon: <PushPinIcon />, checked: post.isPinned, onClick: () => void onTogglePin(post._id) }]
       : []),
     ...(canArchive
-      ? [{ label: 'Delete', icon: <ArchiveIcon />, color: 'error' as const, onClick: () => void onArchivePost(post._id) }]
+      ? [{ label: 'Delete', icon: <DeleteIcon />, color: 'error' as const, onClick: () => void onArchivePost(post._id) }]
       : []),
   ];
 
@@ -262,14 +367,7 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
               )}
             </>
           )}
-          {post.imageUrl && (
-            <Box
-              component="img"
-              src={post.imageUrl}
-              alt={post.title}
-              sx={{ width: '100%', maxHeight: 360, objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
-            />
-          )}
+          <CommunityImageGallery images={postImages} title={post.title} detailsMode={showReplies} />
           <ReactionBar
             reactions={post.reactions}
             disabled={!user}
@@ -303,6 +401,26 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
                   placeholder="Write a reply..."
                   minHeight={140}
                 />
+                <Stack spacing={1}>
+                  <Button variant="outlined" component="label" startIcon={<UploadIcon />} sx={{ alignSelf: 'flex-start' }}>
+                    Upload images
+                    <input hidden multiple type="file" accept="image/*" onChange={(event) => addReplyImages(event.target.files)} />
+                  </Button>
+                  {replyImages.length > 0 && (
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                      {replyImages.map((image, index) => (
+                        <Chip
+                          key={`${image.name}-${index}`}
+                          label={image.name}
+                          onDelete={() => removeReplyImage(index)}
+                          deleteIcon={<CloseIcon />}
+                          variant="outlined"
+                          sx={{ maxWidth: 260 }}
+                        />
+                      ))}
+                    </Stack>
+                  )}
+                </Stack>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                   <Button
                     variant="contained"
@@ -326,42 +444,53 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
       <Divider />
       <Box sx={{ p: 2.5, bgcolor: 'grey.50' }}>
         <Stack spacing={2}>
-          {post.replies.map((reply, index) => (
-            <Fragment key={reply._id}>
-              <Box
-                sx={{
-                  p: 1.5,
-                  bgcolor: reply.isAccepted ? 'success.50' : 'transparent',
-                  borderRadius: reply.isAccepted ? 1 : 0,
-                }}
-              >
-                <Stack spacing={1}>
-                  <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between' }}>
-                    <AuthorLine author={reply.author} badges={badges} />
-                    {isAuthor && (
-                      <Tooltip title={reply.isAccepted ? 'Remove accepted answer' : 'Mark accepted answer'}>
-                        <Button size="small" color={reply.isAccepted ? 'success' : 'inherit'} startIcon={<CheckCircleIcon />} onClick={() => onAcceptReply(reply._id)}>
-                          {reply.isAccepted ? 'Accepted' : 'Accept'}
-                        </Button>
-                      </Tooltip>
-                    )}
+          {post.replies.map((reply, index) => {
+            const canArchiveReply = Boolean(user && (user._id === reply.author._id || canModerateRole(user.role)));
+            const replyActions: ItemAction[] = canArchiveReply
+              ? [{ label: 'Delete', icon: <DeleteIcon />, color: 'error' as const, onClick: () => void onArchiveReply(reply._id) }]
+              : [];
+
+            return (
+              <Fragment key={reply._id}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    bgcolor: reply.isAccepted ? 'success.50' : 'transparent',
+                    borderRadius: reply.isAccepted ? 1 : 0,
+                  }}
+                >
+                  <Stack spacing={1}>
+                    <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between' }}>
+                      <AuthorLine author={reply.author} badges={badges} />
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        {isAuthor && (
+                          <Tooltip title={reply.isAccepted ? 'Remove accepted answer' : 'Mark accepted answer'}>
+                            <Button size="small" color={reply.isAccepted ? 'success' : 'inherit'} startIcon={<CheckCircleIcon />} onClick={() => onAcceptReply(reply._id)}>
+                              {reply.isAccepted ? 'Accepted' : 'Accept'}
+                            </Button>
+                          </Tooltip>
+                        )}
+                        <ItemActionMenu actions={replyActions} />
+                      </Stack>
+                    </Stack>
+                    {reply.isAccepted && <Chip label="Accepted answer" color="success" size="small" sx={{ alignSelf: 'flex-start', fontWeight: 800 }} />}
+                    <Box
+                      sx={{ typography: 'body2', '& p': { my: 0.75 }, '& ul, & ol': { pl: 3 } }}
+                      dangerouslySetInnerHTML={{ __html: reply.body }}
+                    />
+                    <CommunityImageGallery images={reply.images ?? []} title={`Reply by ${reply.author.name}`} detailsMode />
+                    <ReactionBar
+                      reactions={reply.reactions}
+                      disabled={!user}
+                      currentUserId={user?._id}
+                      onReact={(type) => void onReactReply(reply._id, type)}
+                    />
                   </Stack>
-                  {reply.isAccepted && <Chip label="Accepted answer" color="success" size="small" sx={{ alignSelf: 'flex-start', fontWeight: 800 }} />}
-                  <Box
-                    sx={{ typography: 'body2', '& p': { my: 0.75 }, '& ul, & ol': { pl: 3 } }}
-                    dangerouslySetInnerHTML={{ __html: reply.body }}
-                  />
-                  <ReactionBar
-                    reactions={reply.reactions}
-                    disabled={!user}
-                    currentUserId={user?._id}
-                    onReact={(type) => void onReactReply(reply._id, type)}
-                  />
-                </Stack>
-              </Box>
-              {index < post.replies.length - 1 && <Divider />}
-            </Fragment>
-          ))}
+                </Box>
+                {index < post.replies.length - 1 && <Divider />}
+              </Fragment>
+            );
+          })}
           {hasMoreReplies && onLoadMoreReplies && (
             <Button
               variant="outlined"

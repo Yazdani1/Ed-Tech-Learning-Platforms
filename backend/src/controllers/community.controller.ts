@@ -51,6 +51,20 @@ const awardPoints = async (userId: Types.ObjectId, key: CommunityPointRuleKey) =
 
 const getPublicBadges = () => CommunityBadge.find({ isArchived: false }).sort({ requiredPoints: 1 }).lean();
 
+const getUploadedFiles = (req: Request) => {
+  if (Array.isArray(req.files)) return req.files;
+  if (req.file) return [req.file];
+  return [];
+};
+
+const uploadCommunityImages = async (files: Express.Multer.File[], folder: string) =>
+  Promise.all(
+    files.map(async (file) => {
+      const uploaded = await uploadToCloudinary(file.buffer, folder);
+      return { url: uploaded.url, publicId: uploaded.publicId };
+    })
+  );
+
 const getPaginationNumber = (value: unknown, fallback: number, max?: number) => {
   const parsed = Number(value ?? fallback);
   if (!Number.isFinite(parsed) || parsed < 0) return fallback;
@@ -88,6 +102,7 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
 
   const postIds = posts.map((post) => post._id);
   const replies = await CommunityReply.find({ post: { $in: postIds } })
+    .where({ isArchived: false })
     .sort({ isAccepted: -1, createdAt: 1 })
     .populate(populateReply)
     .lean();
@@ -95,6 +110,22 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
   const channelCounts = await CommunityPost.aggregate<{ _id: Types.ObjectId; count: number }>([
     { $match: { isArchived: false } },
     { $group: { _id: '$channel', count: { $sum: 1 } } },
+  ]);
+  const [totalPostCount, totalReplyCount] = await Promise.all([
+    CommunityPost.countDocuments({ isArchived: false }),
+    CommunityReply.aggregate<{ count: number }>([
+      {
+        $lookup: {
+          from: 'communityposts',
+          localField: 'post',
+          foreignField: '_id',
+          as: 'postDetails',
+        },
+      },
+      { $unwind: '$postDetails' },
+      { $match: { isArchived: false, 'postDetails.isArchived': false } },
+      { $count: 'count' },
+    ]),
   ]);
   const channelPostCounts = channelCounts.reduce<Record<string, number>>((counts, item) => {
     counts[String(item._id)] = item.count;
@@ -106,6 +137,8 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
     data: {
       channels,
       channelPostCounts,
+      totalPostCount,
+      totalReplyCount: totalReplyCount[0]?.count ?? 0,
       posts: posts.map((post) => ({
         ...post,
         replies: replies.filter((reply) => idEquals(reply.post, post._id)),
@@ -181,13 +214,14 @@ export const createPost = asyncHandler(async (req: Request, res: Response) => {
   const activeChannel = await CommunityChannel.findOne({ _id: channel, isArchived: false });
   if (!activeChannel) throw new AppError('Channel not found', 404);
 
-  const uploaded = req.file ? await uploadToCloudinary(req.file.buffer, 'medhabee/community/posts') : undefined;
+  const images = await uploadCommunityImages(getUploadedFiles(req), 'medhabee/community/posts');
   const post = await CommunityPost.create({
     channel,
     title,
     description,
-    imageUrl: uploaded?.url,
-    imagePublicId: uploaded?.publicId,
+    imageUrl: images[0]?.url,
+    imagePublicId: images[0]?.publicId,
+    images,
     author: req.user._id,
   });
   await awardPoints(req.user._id, 'createPost');
@@ -207,12 +241,12 @@ export const getCommunityPost = asyncHandler(async (req: Request, res: Response)
   if (!post) throw new AppError('Discussion not found', 404);
 
   const [replies, repliesTotal] = await Promise.all([
-    CommunityReply.find({ post: post._id })
+    CommunityReply.find({ post: post._id, isArchived: false })
       .sort({ isAccepted: -1, createdAt: 1 })
       .limit(repliesLimit)
       .populate(populateReply)
       .lean(),
-    CommunityReply.countDocuments({ post: post._id }),
+    CommunityReply.countDocuments({ post: post._id, isArchived: false }),
   ]);
   const [badges, channels] = await Promise.all([
     getPublicBadges(),
@@ -242,13 +276,13 @@ export const getCommunityReplies = asyncHandler(async (req: Request, res: Respon
   if (!post) throw new AppError('Discussion not found', 404);
 
   const [replies, total] = await Promise.all([
-    CommunityReply.find({ post: post._id })
+    CommunityReply.find({ post: post._id, isArchived: false })
       .sort({ isAccepted: -1, createdAt: 1 })
       .skip(skip)
       .limit(limit)
       .populate(populateReply)
       .lean(),
-    CommunityReply.countDocuments({ post: post._id }),
+    CommunityReply.countDocuments({ post: post._id, isArchived: false }),
   ]);
 
   res.status(200).json({
@@ -264,7 +298,7 @@ export const getCommunityReplies = asyncHandler(async (req: Request, res: Respon
 });
 
 export const updatePost = asyncHandler(async (req: Request, res: Response) => {
-  const post = await CommunityPost.findOne({ _id: req.params.postId, isArchived: false }).select('+imagePublicId');
+  const post = await CommunityPost.findOne({ _id: req.params.postId, isArchived: false }).select('+imagePublicId +images.publicId');
   if (!post) throw new AppError('Discussion not found', 404);
   if (!idEquals(post.author, req.user._id) && !canModerate(req.user.role)) {
     throw new AppError('You can only edit your own discussions', 403);
@@ -278,11 +312,14 @@ export const updatePost = asyncHandler(async (req: Request, res: Response) => {
   }
   if (title?.trim()) post.title = title;
   if (description?.trim()) post.description = description;
-  if (req.file) {
+  const postFiles = getUploadedFiles(req);
+  if (postFiles.length > 0) {
     if (post.imagePublicId) await deleteFromCloudinary(post.imagePublicId);
-    const uploaded = await uploadToCloudinary(req.file.buffer, 'medhabee/community/posts');
-    post.imageUrl = uploaded.url;
-    post.imagePublicId = uploaded.publicId;
+    await Promise.all((post.images ?? []).map((image) => (image.publicId ? deleteFromCloudinary(image.publicId) : Promise.resolve())));
+    const images = await uploadCommunityImages(postFiles, 'medhabee/community/posts');
+    post.imageUrl = images[0]?.url;
+    post.imagePublicId = images[0]?.publicId;
+    post.images = images;
   }
 
   await post.save();
@@ -297,7 +334,8 @@ export const createReply = asyncHandler(async (req: Request, res: Response) => {
   const post = await CommunityPost.findOne({ _id: req.params.postId, isArchived: false });
   if (!post) throw new AppError('Discussion not found', 404);
 
-  const reply = await CommunityReply.create({ post: post._id, body, author: req.user._id });
+  const images = await uploadCommunityImages(getUploadedFiles(req), 'medhabee/community/replies');
+  const reply = await CommunityReply.create({ post: post._id, body, author: req.user._id, images });
   await awardPoints(req.user._id, 'createReply');
   const populated = await CommunityReply.findById(reply._id).populate(populateReply).lean();
   res.status(201).json({ success: true, message: 'Reply added', data: populated });
@@ -329,7 +367,7 @@ export const reactToReply = asyncHandler(async (req: Request, res: Response) => 
   const { type } = req.body as { type?: CommunityReactionType };
   if (!type || !REACTION_TYPES.includes(type)) throw new AppError('Invalid reaction type', 400);
 
-  const reply = await CommunityReply.findById(req.params.replyId);
+  const reply = await CommunityReply.findOne({ _id: req.params.replyId, isArchived: false });
   if (!reply) throw new AppError('Reply not found', 404);
   const post = await CommunityPost.findOne({ _id: reply.post, isArchived: false });
   if (!post) throw new AppError('Discussion not found', 404);
@@ -351,7 +389,7 @@ export const reactToReply = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const toggleAcceptedReply = asyncHandler(async (req: Request, res: Response) => {
-  const reply = await CommunityReply.findById(req.params.replyId);
+  const reply = await CommunityReply.findOne({ _id: req.params.replyId, isArchived: false });
   if (!reply) throw new AppError('Reply not found', 404);
   const post = await CommunityPost.findById(reply.post);
   if (!post) throw new AppError('Discussion not found', 404);
@@ -367,6 +405,22 @@ export const toggleAcceptedReply = asyncHandler(async (req: Request, res: Respon
 
   const populated = await CommunityReply.findById(reply._id).populate(populateReply).lean();
   res.status(200).json({ success: true, message: 'Accepted answer updated', data: populated });
+});
+
+export const archiveReply = asyncHandler(async (req: Request, res: Response) => {
+  const reply = await CommunityReply.findOne({ _id: req.params.replyId, isArchived: false });
+  if (!reply) throw new AppError('Reply not found', 404);
+  const post = await CommunityPost.findOne({ _id: reply.post, isArchived: false });
+  if (!post) throw new AppError('Discussion not found', 404);
+  if (!canModerate(req.user.role) && !idEquals(reply.author, req.user._id)) {
+    throw new AppError('You can only delete your own answers', 403);
+  }
+
+  reply.isArchived = true;
+  reply.archivedBy = req.user._id;
+  reply.archivedAt = new Date();
+  await reply.save();
+  res.status(200).json({ success: true, message: 'Answer deleted', data: { _id: reply._id } });
 });
 
 export const archivePost = asyncHandler(async (req: Request, res: Response) => {

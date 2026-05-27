@@ -8,12 +8,18 @@ export interface ICommunityReaction {
   createdAt: Date;
 }
 
+export interface ICommunityImage {
+  url: string;
+  publicId?: string;
+}
+
 export interface ICommunityPost extends Document {
   channel: Types.ObjectId;
   title: string;
   description: string;
   imageUrl?: string;
   imagePublicId?: string;
+  images: ICommunityImage[];
   author: Types.ObjectId;
   reactions: ICommunityReaction[];
   isPinned: boolean;
@@ -39,6 +45,14 @@ const reactionSchema = new Schema<ICommunityReaction>(
   { _id: false }
 );
 
+const communityImageSchema = new Schema<ICommunityImage>(
+  {
+    url: { type: String, required: true },
+    publicId: { type: String, select: false },
+  },
+  { _id: false }
+);
+
 const communityPostSchema = new Schema<ICommunityPost>(
   {
     channel: { type: Schema.Types.ObjectId, ref: 'CommunityChannel', required: true },
@@ -46,6 +60,7 @@ const communityPostSchema = new Schema<ICommunityPost>(
     description: { type: String, required: true, trim: true },
     imageUrl: String,
     imagePublicId: { type: String, select: false },
+    images: [communityImageSchema],
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     reactions: [reactionSchema],
     isPinned: { type: Boolean, default: false },

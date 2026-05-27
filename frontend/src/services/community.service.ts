@@ -28,12 +28,14 @@ export const communityService = {
   archiveChannel: (id: string) => api.patch<ICommunityChannel>(`/community/channels/${id}/archive`),
   createPost: (data: FormData) => api.post<ICommunityPost>('/community/posts', data, multipartConfig),
   updatePost: (id: string, data: FormData) => api.put<ICommunityPost>(`/community/posts/${id}`, data, multipartConfig),
-  createReply: (postId: string, body: string) => api.post<ICommunityReply>(`/community/posts/${postId}/replies`, { body }),
+  createReply: (postId: string, data: FormData) =>
+    api.post<ICommunityReply>(`/community/posts/${postId}/replies`, data, multipartConfig),
   reactToPost: (postId: string, type: CommunityReactionType) =>
     api.patch<ICommunityPost>(`/community/posts/${postId}/reactions`, { type }),
   reactToReply: (replyId: string, type: CommunityReactionType) =>
     api.patch<ICommunityReply>(`/community/replies/${replyId}/reactions`, { type }),
   toggleAcceptedReply: (replyId: string) => api.patch<ICommunityReply>(`/community/replies/${replyId}/accepted`),
+  archiveReply: (replyId: string) => api.patch<{ _id: string }>(`/community/replies/${replyId}/archive`),
   archivePost: (postId: string) => api.patch<ICommunityPost>(`/community/posts/${postId}/archive`),
   togglePinnedPost: (postId: string) => api.patch<ICommunityPost>(`/community/posts/${postId}/pin`),
   getBadges: () => api.get<ICommunityBadge[]>('/community/badges'),

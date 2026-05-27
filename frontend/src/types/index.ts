@@ -69,8 +69,10 @@ export interface ICommunityReply {
   post: string;
   body: string;
   author: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+  images?: Array<{ url: string }>;
   reactions: ICommunityReaction[];
   isAccepted: boolean;
+  isArchived?: boolean;
   acceptedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -82,6 +84,7 @@ export interface ICommunityPost {
   title: string;
   description: string;
   imageUrl?: string;
+  images?: Array<{ url: string }>;
   author: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
   reactions: ICommunityReaction[];
   replies: ICommunityReply[];
@@ -102,6 +105,8 @@ export interface ICommunityPointRule {
 export interface ICommunityOverview {
   channels: ICommunityChannel[];
   channelPostCounts: Record<string, number>;
+  totalPostCount?: number;
+  totalReplyCount?: number;
   posts: ICommunityPost[];
   badges: ICommunityBadge[];
   guestLimited: boolean;
