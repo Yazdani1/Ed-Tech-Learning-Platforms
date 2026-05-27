@@ -1,4 +1,4 @@
-import { useRef, useState, type FC } from 'react';
+import { Fragment, useRef, useState, type FC } from 'react';
 import {
   Avatar,
   Box,
@@ -60,9 +60,14 @@ const ReactionBar: FC<ReactionBarProps> = ({
   const closeTimer = useRef<number | null>(null);
   const activeOption = reactionOptions.find((option) => option.type === activeReaction) ?? reactionOptions[0];
   const totalReactions = reactions.length;
-  const visibleSummary = reactionOptions.filter((option) =>
-    reactions.some((reaction) => reaction.type === option.type)
-  );
+  const visibleSummary = reactionOptions
+    .map((option) => ({
+      ...option,
+      count: reactions.filter((reaction) => reaction.type === option.type).length,
+    }))
+    .filter((option) => option.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 2);
   const modalReactions =
     selectedType === 'All' ? reactions : reactions.filter((reaction) => reaction.type === selectedType);
 
@@ -264,7 +269,7 @@ const ReactionBar: FC<ReactionBarProps> = ({
         sx={{ minWidth: 0, p: 0, '&:hover': { bgcolor: 'transparent' } }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', pr: 0.5 }}>
-          {visibleSummary.slice(0, 4).map((option, index) => (
+          {visibleSummary.map((option, index) => (
             <Box
               key={option.type}
               sx={{
@@ -308,9 +313,20 @@ const ReactionBar: FC<ReactionBarProps> = ({
       <DialogContent dividers sx={{ p: 0 }}>
         <Stack direction="row" spacing={2} sx={{ px: 2, py: 1.5, overflowX: 'auto' }}>
           <Button
-            variant={selectedType === 'All' ? 'contained' : 'text'}
+            variant="text"
             onClick={() => setSelectedType('All')}
-            sx={{ borderRadius: 5, textTransform: 'none', fontWeight: 900 }}
+            sx={{
+              borderRadius: 0,
+              textTransform: 'none',
+              fontWeight: 900,
+              color: selectedType === 'All' ? 'primary.main' : 'text.primary',
+              bgcolor: 'transparent',
+              boxShadow: 'none',
+              borderBottom: '3px solid',
+              borderBottomColor: selectedType === 'All' ? 'primary.main' : 'transparent',
+              minHeight: 48,
+              '&:hover': { bgcolor: 'grey.100' },
+            }}
           >
             All {formatCount(reactions.length)}
           </Button>
@@ -319,9 +335,20 @@ const ReactionBar: FC<ReactionBarProps> = ({
             .map((option) => (
               <Button
                 key={option.type}
-                variant={selectedType === option.type ? 'contained' : 'text'}
+                variant="text"
                 onClick={() => setSelectedType(option.type)}
-                sx={{ borderRadius: 5, textTransform: 'none', fontWeight: 900 }}
+                sx={{
+                  borderRadius: 0,
+                  textTransform: 'none',
+                  fontWeight: 900,
+                  color: selectedType === option.type ? 'primary.main' : 'text.primary',
+                  bgcolor: 'transparent',
+                  boxShadow: 'none',
+                  borderBottom: '3px solid',
+                  borderBottomColor: selectedType === option.type ? 'primary.main' : 'transparent',
+                  minHeight: 48,
+                  '&:hover': { bgcolor: 'grey.100' },
+                }}
               >
                 {option.icon} {formatCount(reactions.filter((reaction) => reaction.type === option.type).length)}
               </Button>
@@ -333,40 +360,42 @@ const ReactionBar: FC<ReactionBarProps> = ({
             const option = reactionOptions.find((item) => item.type === reaction.type);
 
             return (
-              <Stack
-                key={`${getReactionUserId(reaction)}-${reaction.type}-${index}`}
-                direction="row"
-                spacing={1.5}
-                sx={{ alignItems: 'center', px: 2, py: 1.5 }}
-              >
-                <Box sx={{ position: 'relative' }}>
-                  <Avatar src={getReactionUserAvatar(reaction)} sx={{ width: 46, height: 46 }}>
-                    {getReactionUserName(reaction)[0]?.toUpperCase()}
-                  </Avatar>
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      right: -4,
-                      bottom: -3,
-                      width: 24,
-                      height: 24,
-                      borderRadius: '50%',
-                      bgcolor: 'background.paper',
-                      display: 'grid',
-                      placeItems: 'center',
-                      fontSize: 16,
-                    }}
-                  >
-                    {option?.icon}
+              <Fragment key={`${getReactionUserId(reaction)}-${reaction.type}-${index}`}>
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  sx={{ alignItems: 'center', px: 2, py: 1.5 }}
+                >
+                  <Box sx={{ position: 'relative' }}>
+                    <Avatar src={getReactionUserAvatar(reaction)} sx={{ width: 46, height: 46 }}>
+                      {getReactionUserName(reaction)[0]?.toUpperCase()}
+                    </Avatar>
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        right: -4,
+                        bottom: -3,
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        bgcolor: 'background.paper',
+                        display: 'grid',
+                        placeItems: 'center',
+                        fontSize: 16,
+                      }}
+                    >
+                      {option?.icon}
+                    </Box>
                   </Box>
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontWeight: 900 }}>{getReactionUserName(reaction)}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {reaction.type}
-                  </Typography>
-                </Box>
-              </Stack>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontWeight: 900 }}>{getReactionUserName(reaction)}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {reaction.type}
+                    </Typography>
+                  </Box>
+                </Stack>
+                {index < modalReactions.length - 1 && <Divider />}
+              </Fragment>
             );
           })}
         </Stack>

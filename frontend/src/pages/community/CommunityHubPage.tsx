@@ -18,7 +18,6 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import ForumIcon from '@mui/icons-material/Forum';
 import SettingsIcon from '@mui/icons-material/Settings';
 import UploadIcon from '@mui/icons-material/Upload';
 import toast from 'react-hot-toast';
@@ -172,30 +171,6 @@ const CommunityHubPage = () => {
       <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', py: 4 }}>
         <Container maxWidth="xl">
           <Stack spacing={3}>
-            <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' } }}>
-                <Box>
-                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <ForumIcon color="primary" />
-                    <Typography variant="h4" sx={{ fontWeight: 900 }}>
-                      Community Hub
-                    </Typography>
-                  </Stack>
-                  <Typography color="text.secondary">
-                    Study questions, tech discussions, accepted answers, reactions, points, and badges.
-                  </Typography>
-                </Box>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                  {isAdminRole(user?.role) && (
-                    <Button variant="outlined" startIcon={<SettingsIcon />} onClick={() => setAdminOpen(true)}>
-                      Community Settings
-                    </Button>
-                  )}
-                  {!user && <Button href="/auth/login" variant="contained">Sign in to participate</Button>}
-                </Stack>
-              </Stack>
-            </Paper>
-
             {overview.guestLimited && (
               <Alert severity="info">
                 You are viewing a limited guest preview. Sign in to read more discussions and join the conversation.
@@ -216,23 +191,22 @@ const CommunityHubPage = () => {
                     borderRadius: 1,
                     cursor: 'pointer',
                     color: 'common.white',
-                    bgcolor: !selectedChannel ? 'primary.main' : 'grey.900',
+                    bgcolor: !selectedChannel ? 'primary.main' : '#334155',
                     border: '2px solid',
                     borderColor: !selectedChannel ? 'primary.light' : 'transparent',
                   }}
                 >
-                  <Typography variant="overline" sx={{ color: 'inherit', fontWeight: 900 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
                     All Channels
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
-                    Recent discussions
-                  </Typography>
-                  <Typography sx={{ opacity: 0.9 }}>{overview.posts.length} shown now</Typography>
+                  <Typography sx={{ opacity: 0.9 }}>Recent discussions</Typography>
+                  <Typography sx={{ mt: 1, fontWeight: 900 }}>{overview.posts.length} shown now</Typography>
                 </Paper>
 
                 {overview.channels.map((channel: ICommunityChannel, index) => {
                   const colors = ['#0f766e', '#7c3aed', '#dc2626', '#2563eb', '#ca8a04', '#be185d'];
                   const active = selectedChannel === channel._id;
+                  const color = colors[index % colors.length];
 
                   return (
                     <Paper
@@ -248,23 +222,22 @@ const CommunityHubPage = () => {
                         borderRadius: 1,
                         cursor: 'pointer',
                         color: 'common.white',
-                        bgcolor: active ? colors[index % colors.length] : '#1f2937',
+                        bgcolor: color,
                         border: '2px solid',
                         borderColor: active ? 'common.white' : 'transparent',
                         backgroundImage: channel.imageUrl
-                          ? `linear-gradient(90deg, rgba(15,23,42,.88), rgba(15,23,42,.62)), url(${channel.imageUrl})`
-                          : undefined,
+                          ? `linear-gradient(90deg, rgba(15,23,42,.76), rgba(15,23,42,.42)), url(${channel.imageUrl})`
+                          : `linear-gradient(135deg, ${color}, rgba(15, 23, 42, 0.78))`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
+                        boxShadow: active ? '0 10px 24px rgba(15, 23, 42, 0.18)' : 'none',
                       }}
                     >
-                      <Typography variant="overline" sx={{ color: 'inherit', fontWeight: 900 }}>
-                        Channel
-                      </Typography>
                       <Typography variant="h6" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
                         {channel.name}
                       </Typography>
-                      <Typography sx={{ opacity: 0.9 }}>{overview.channelPostCounts[channel._id] ?? 0} posts</Typography>
+                      <Typography sx={{ opacity: 0.9, mt: 0.75 }}>{channel.description ? 'Discussion channel' : 'Community discussions'}</Typography>
+                      <Typography sx={{ mt: 1, fontWeight: 900 }}>{overview.channelPostCounts[channel._id] ?? 0} posts</Typography>
                     </Paper>
                   );
                 })}
@@ -273,6 +246,11 @@ const CommunityHubPage = () => {
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ justifyContent: 'flex-end', alignItems: { xs: 'stretch', md: 'center' } }}>
                 <Chip label={selectedChannelName} color="primary" variant="outlined" />
                 {(dateFrom || dateTo) && <Chip label={`${dateFrom || 'Any day'} to ${dateTo || 'Any day'}`} />}
+                {isAdminRole(user?.role) && (
+                  <Button variant="outlined" startIcon={<SettingsIcon />} onClick={() => setAdminOpen(true)}>
+                    Community Settings
+                  </Button>
+                )}
                 <Button variant="outlined" startIcon={<FilterListIcon />} onClick={() => setFiltersOpen((value) => !value)}>
                   Filter
                 </Button>
@@ -281,6 +259,7 @@ const CommunityHubPage = () => {
                     New Discussion
                   </Button>
                 )}
+                {!user && <Button href="/auth/login" variant="contained">Sign in to participate</Button>}
               </Stack>
 
               <Collapse in={filtersOpen}>

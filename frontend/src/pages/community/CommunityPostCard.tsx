@@ -78,6 +78,17 @@ const AuthorLine: FC<AuthorLineProps> = ({ author, badges }) => {
   );
 };
 
+const getPlainText = (html: string) => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+};
+
+const getExcerpt = (html: string, maxLength = 220) => {
+  const text = getPlainText(html);
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trim()}...`;
+};
+
 const CommunityPostCard: FC<CommunityPostCardProps> = ({
   post,
   user,
@@ -231,11 +242,20 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
               >
                 {post.title}
               </Typography>
-              <Box
-                color="text.secondary"
-                sx={{ '& p': { my: 0.75 }, '& ul, & ol': { pl: 3 } }}
-                dangerouslySetInnerHTML={{ __html: post.description }}
-              />
+              {showReplies ? (
+                <Box
+                  color="text.secondary"
+                  sx={{ '& p': { my: 0.75 }, '& ul, & ol': { pl: 3 } }}
+                  dangerouslySetInnerHTML={{ __html: post.description }}
+                />
+              ) : (
+                <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                  {getExcerpt(post.description)}
+                  <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>
+                    {' '}Read more
+                  </Box>
+                </Typography>
+              )}
             </>
           )}
           {post.imageUrl && (
@@ -259,6 +279,47 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
 
       {showReplies && (
       <>
+      <Box sx={{ px: 2.5, pb: 2.5 }}>
+        {user ? (
+          <Stack spacing={1.25}>
+            {!replyFormOpen && (
+              <Button
+                variant="contained"
+                startIcon={<ReplyIcon />}
+                onClick={() => setReplyFormOpen(true)}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                Reply
+              </Button>
+            )}
+            {replyFormOpen && (
+              <Stack spacing={1}>
+                <RichTextEditor
+                  value={replyBody}
+                  onChange={setReplyBody}
+                  placeholder="Write a reply..."
+                  minHeight={140}
+                />
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                  <Button
+                    variant="contained"
+                    startIcon={<SendIcon />}
+                    disabled={replying || isRichTextEmpty(replyBody)}
+                    onClick={() => void submitReply()}
+                  >
+                    Publish Reply
+                  </Button>
+                  <Button onClick={() => setReplyFormOpen(false)}>Cancel</Button>
+                </Stack>
+              </Stack>
+            )}
+          </Stack>
+        ) : (
+          <Button href="/auth/login" variant="outlined" startIcon={<ReplyIcon />} sx={{ alignSelf: 'flex-start' }}>
+            Sign in to reply
+          </Button>
+        )}
+      </Box>
       <Divider />
       <Box sx={{ p: 2.5, bgcolor: 'grey.50' }}>
         <Stack spacing={2}>
@@ -299,46 +360,6 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
               </Stack>
             </Paper>
           ))}
-
-          {user ? (
-            <Stack spacing={1.25}>
-              {!replyFormOpen && (
-                <Button
-                  variant="contained"
-                  startIcon={<ReplyIcon />}
-                  onClick={() => setReplyFormOpen(true)}
-                  sx={{ alignSelf: 'flex-start' }}
-                >
-                  Reply
-                </Button>
-              )}
-              {replyFormOpen && (
-                <Stack spacing={1}>
-                  <RichTextEditor
-                    value={replyBody}
-                    onChange={setReplyBody}
-                    placeholder="Write a reply..."
-                    minHeight={140}
-                  />
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                    <Button
-                      variant="contained"
-                      startIcon={<SendIcon />}
-                      disabled={replying || isRichTextEmpty(replyBody)}
-                      onClick={() => void submitReply()}
-                    >
-                      Publish Reply
-                    </Button>
-                    <Button onClick={() => setReplyFormOpen(false)}>Cancel</Button>
-                  </Stack>
-                </Stack>
-              )}
-            </Stack>
-          ) : (
-            <Button href="/auth/login" variant="outlined" startIcon={<ReplyIcon />} sx={{ alignSelf: 'flex-start' }}>
-              Sign in to reply
-            </Button>
-          )}
         </Stack>
       </Box>
       </>
