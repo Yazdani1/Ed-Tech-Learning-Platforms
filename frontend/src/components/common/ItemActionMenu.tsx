@@ -1,5 +1,4 @@
-import type { FC} from 'react';
-import { useState } from 'react';
+import { type FC, useState } from 'react';
 import { IconButton, Menu, MenuItem, Switch } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 

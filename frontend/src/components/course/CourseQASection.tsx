@@ -1,5 +1,4 @@
-import type { FC} from 'react';
-import { useEffect, useMemo, useState } from 'react';
+﻿import { type FC, useEffect, useMemo, useState } from 'react';
 import {
 	Avatar,
 	Box,
@@ -18,7 +17,6 @@ import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ErrorOutlinedIcon from '@mui/icons-material/ErrorOutlined';
-import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import HelpOutlinedIcon from '@mui/icons-material/HelpOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
@@ -28,8 +26,8 @@ import type { IQuestion, IAnswer } from '../../types/index';
 import RichTextEditor from './RichTextEditor';
 import ItemActionMenu from '../common/ItemActionMenu';
 import { formatDateTime } from '../../utils/dateTime';
-import AppPagination from '../common/AppPagination';
 import YouBadge from '../common/YouBadge';
+import QAQuestionListView from './courseQA/QAQuestionListView';
 import { useConfirmModal } from '../../context/ConfirmModalContext';
 
 interface CourseQASectionProps {
@@ -81,7 +79,6 @@ const CourseQASection: FC<CourseQASectionProps> = ({
 	const [questionFilter, setQuestionFilter] = useState<QuestionFilter>('unresolved');
 	const [resolvingQuestionId, setResolvingQuestionId] = useState<string | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
-	const PAGE_SIZE = 8;
 
 	useEffect(() => {
 		setQaLoading(true);
@@ -155,7 +152,7 @@ const CourseQASection: FC<CourseQASectionProps> = ({
 		);
 	};
 
-	// ── Handlers ──────────────────────────────────────────────
+	// â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 	const handleViewQuestion = async (question: IQuestion) => {
 		setQaDetailLoading(true);
@@ -469,7 +466,7 @@ const CourseQASection: FC<CourseQASectionProps> = ({
 		}
 	};
 
-	// ── UI ────────────────────────────────────────────────────
+	// â”€â”€ UI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 	if (qaDetailLoading) {
 		return (
@@ -510,13 +507,13 @@ const CourseQASection: FC<CourseQASectionProps> = ({
 						<Typography variant='caption' color='text.secondary'>
 							{qaDetail.question.postedBy.name}{' '}
 							{userId === qaDetail.question.postedBy._id && <YouBadge />}
-							{' · '}
+							{' Â· '}
 							<Chip
 								label={qaDetail.question.postedBy.role}
 								size='small'
 								sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}
 							/>
-							{' · '}
+							{' Â· '}
 							{formatDateTime(qaDetail.question.createdAt)}
 						</Typography>
 					</Box>
@@ -710,7 +707,7 @@ const CourseQASection: FC<CourseQASectionProps> = ({
 					</Box>
 				</Paper>
 
-				{/* Add Answer — button + inline form, appears right below the question */}
+				{/* Add Answer â€” button + inline form, appears right below the question */}
 				{canPost && (
 					<Box sx={{ mb: 3 }}>
 						{!showAnswerForm ? (
@@ -812,13 +809,13 @@ const CourseQASection: FC<CourseQASectionProps> = ({
 												color='text.secondary'
 												sx={{ ml: 0.75 }}
 											>
-												·{' '}
+												Â·{' '}
 												<Chip
 													label={answer.postedBy.role}
 													size='small'
 													sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}
 												/>
-												{' · '}
+												{' Â· '}
 												{formatDateTime(answer.createdAt)}
 											</Typography>
 										</Box>
@@ -930,515 +927,43 @@ const CourseQASection: FC<CourseQASectionProps> = ({
 		);
 	}
 
-	// ── Question list view ────────────────────────────────────
+
 	return (
-		<Box>
-			<Box
-				sx={{
-					display: 'flex',
-					justifyContent: 'space-between',
-					alignItems: 'center',
-					mb: 3,
-				}}
-			>
-				<Typography variant='h5' sx={{ fontWeight: 700, display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
-					Q &amp; A
-					{!qaLoading && (
-						<Typography component='span' variant='body2' color='text.secondary' sx={{ fontWeight: 400 }}>
-							{questions.length} question{questions.length !== 1 ? 's' : ''}
-						</Typography>
-					)}
-				</Typography>
-				{canPost && (
-					<Button
-						variant='contained'
-						startIcon={<AddIcon />}
-						onClick={() => setShowAskForm((p) => !p)}
-					>
-						Ask a Question
-					</Button>
-				)}
-			</Box>
-
-			{/* Ask question form */}
-			{canPost && showAskForm && (
-				<Paper
-					variant='outlined'
-					sx={{
-						p: 2.5,
-						mb: 3,
-						borderRadius: 0.5,
-						boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-					}}
-				>
-					<Typography variant='subtitle2' sx={{ fontWeight: 700, mb: 1.5 }}>
-						New Question
-					</Typography>
-					<TextField
-						label='Title'
-						value={askForm.title}
-						onChange={(e) => setAskForm((p) => ({ ...p, title: e.target.value }))}
-						fullWidth
-						size='small'
-						sx={{ mb: 1.5 }}
-					/>
-					<RichTextEditor
-						key={askEditorKey}
-						value={askForm.description}
-						onChange={(html) => setAskForm((p) => ({ ...p, description: html }))}
-						placeholder='Describe your question in detail...'
-						minHeight={120}
-					/>
-					<Box
-						sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1.5 }}
-					>
-						<Button
-							size='small'
-							onClick={() => {
-								setShowAskForm(false);
-								setAskForm({ title: '', description: '' });
-								setAskEditorKey((k) => k + 1);
-							}}
-						>
-							Cancel
-						</Button>
-						<Button
-							size='small'
-							variant='contained'
-							onClick={() => void handleAskQuestion()}
-							disabled={askPosting}
-						>
-							{askPosting ? (
-								<CircularProgress size={16} color='inherit' />
-							) : (
-								'Post Question'
-							)}
-						</Button>
-					</Box>
-				</Paper>
-			)}
-
-			{!qaLoading && questions.length > 0 && (
-				<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-					{[
-						{
-							key: 'unresolved' as const,
-							label: 'Not resolved yet',
-							count: questionFilterCounts.unresolved,
-						},
-						{ key: 'all' as const, label: 'All questions', count: questionFilterCounts.all },
-						{
-							key: 'needsStaffAnswer' as const,
-							label: 'Not answered yet',
-							count: questionFilterCounts.needsStaffAnswer,
-						},
-						{
-							key: 'resolved' as const,
-							label: 'Already resolved',
-							count: questionFilterCounts.resolved,
-						},
-					].map((filter) => (
-						<Button
-							key={filter.key}
-							size='small'
-							variant={questionFilter === filter.key ? 'contained' : 'outlined'}
-							color={
-								filter.key === 'needsStaffAnswer' &&
-								questionFilter === filter.key
-									? 'warning'
-									: 'primary'
-							}
-							onClick={() => setQuestionFilter(filter.key)}
-							sx={{ fontWeight: 700 }}
-						>
-							{filter.label} ({filter.count})
-						</Button>
-					))}
-				</Box>
-			)}
-
-			{/* Questions list */}
-			{qaLoading ? (
-				<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-					<CircularProgress />
-				</Box>
-			) : questions.length === 0 ? (
-				<Box sx={{ textAlign: 'center', py: 8 }}>
-					<ForumOutlinedIcon
-						sx={{ fontSize: 56, color: 'text.disabled', mb: 1.5 }}
-					/>
-					<Typography
-						variant='h6'
-						color='text.secondary'
-						sx={{ fontWeight: 600 }}
-					>
-						No questions yet
-					</Typography>
-					{canPost && (
-						<Typography
-							variant='body2'
-							color='text.secondary'
-							sx={{ mt: 0.5 }}
-						>
-							Be the first to ask a question!
-						</Typography>
-					)}
-				</Box>
-			) : filteredQuestions.length === 0 ? (
-				<Box sx={{ textAlign: 'center', py: 6 }}>
-					<Typography
-						variant='subtitle1'
-						color='text.secondary'
-						sx={{ fontWeight: 700 }}
-					>
-						No questions in this filter
-					</Typography>
-				</Box>
-			) : (
-				<Box>
-					<Paper
-						variant='outlined'
-						sx={{
-							borderRadius: 0.5,
-							boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
-							overflow: 'hidden',
-						}}
-					>
-					{filteredQuestions
-						.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-						.map((q, index) => {
-						const hasUpvoted = q.upvotes.includes(userId);
-						const needsStaffAnswer = questionNeedsStaffAnswer(q);
-						return (
-							<Box key={q._id}>
-								{index > 0 && <Divider />}
-								<Box
-									onClick={
-										editingQuestionId === q._id
-											? undefined
-											: () => void handleViewQuestion(q)
-									}
-									sx={{
-										p: 2.5,
-										bgcolor: needsStaffAnswer
-											? 'rgba(237, 108, 2, 0.06)'
-											: 'transparent',
-										cursor: editingQuestionId === q._id ? 'default' : 'pointer',
-										transition: 'background-color 0.2s',
-										...(editingQuestionId === q._id
-											? {}
-											: {
-													'&:hover': {
-														bgcolor: 'action.hover',
-													},
-												}),
-									}}
-								>
-									<Box
-										sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}
-									>
-										{/* Upvote column */}
-										<Box
-											sx={{
-												display: 'flex',
-												flexDirection: 'column',
-												alignItems: 'center',
-												gap: 0.5,
-												minWidth: 44,
-												flexShrink: 0,
-											}}
-											onClick={(e) => {
-												e.stopPropagation();
-												void handleUpvoteQuestion(q._id);
-											}}
-										>
-											{hasUpvoted ? (
-												<ThumbUpIcon
-													sx={{ fontSize: 20, color: 'primary.main' }}
-												/>
-											) : (
-												<ThumbUpOutlinedIcon
-													sx={{ fontSize: 20, color: 'text.secondary' }}
-												/>
-											)}
-											<Typography
-												variant='caption'
-												sx={{
-													fontWeight: 700,
-													color: hasUpvoted ? 'primary.main' : 'text.secondary',
-												}}
-											>
-												{q.upvotes.length}
-											</Typography>
-										</Box>
-
-										{/* Content */}
-										<Box sx={{ flex: 1, minWidth: 0 }}>
-											{editingQuestionId === q._id ? (
-												<Box
-													onClick={(e) => e.stopPropagation()}
-													sx={{ mb: 1.5 }}
-												>
-													<TextField
-														label='Title'
-														value={editingQuestionForm.title}
-														onChange={(e) =>
-															setEditingQuestionForm((p) => ({
-																...p,
-																title: e.target.value,
-															}))
-														}
-														fullWidth
-														size='small'
-														sx={{ mb: 1.5 }}
-													/>
-													<RichTextEditor
-														value={editingQuestionForm.description}
-														onChange={(html) =>
-															setEditingQuestionForm((p) => ({
-																...p,
-																description: html,
-															}))
-														}
-														placeholder='Update your question...'
-														minHeight={120}
-													/>
-												</Box>
-											) : (
-												<>
-													<Box
-														sx={{
-															display: 'flex',
-															alignItems: 'center',
-															flexWrap: 'wrap',
-															gap: 1,
-															mb: 0.75,
-														}}
-													>
-														<Typography
-															variant='subtitle1'
-															sx={{ fontWeight: 700, lineHeight: 1.3 }}
-														>
-															{q.title}
-														</Typography>
-														<Chip
-															icon={
-																q.isResolved ? (
-																	<CheckCircleOutlinedIcon />
-																) : (
-																	<HelpOutlinedIcon />
-																)
-															}
-															label={q.isResolved ? 'Solved' : 'Open'}
-															size='small'
-															color={q.isResolved ? 'success' : 'default'}
-															variant={q.isResolved ? 'filled' : 'outlined'}
-															sx={{ height: 22, fontSize: '0.68rem', fontWeight: 700 }}
-														/>
-														{questionNeedsStaffAnswer(q) && (
-															<Chip
-																icon={<ErrorOutlinedIcon />}
-																label='Needs staff answer'
-																size='small'
-																color='warning'
-																variant='filled'
-																sx={{ height: 22, fontSize: '0.68rem', fontWeight: 700 }}
-															/>
-														)}
-													</Box>
-													<Typography
-														variant='body2'
-														color='text.secondary'
-														sx={{
-															mb: 1.5,
-															display: '-webkit-box',
-															WebkitLineClamp: 2,
-															WebkitBoxOrient: 'vertical',
-															overflow: 'hidden',
-														}}
-														dangerouslySetInnerHTML={{
-															__html: q.description.replace(/<[^>]*>/g, ' ').trim(),
-														}}
-													/>
-												</>
-											)}
-											<Box
-												sx={{
-													display: 'flex',
-													alignItems: 'center',
-													gap: 1.5,
-													flexWrap: 'wrap',
-												}}
-											>
-												<Box
-													sx={{
-														display: 'flex',
-														alignItems: 'center',
-														gap: 0.75,
-														flex: 1,
-														minWidth: 0,
-													}}
-												>
-													<Avatar
-														src={q.postedBy.avatar}
-														sx={{
-															width: 20,
-															height: 20,
-															fontSize: 10,
-															bgcolor: 'primary.main',
-														}}
-													>
-														{q.postedBy.name[0]}
-													</Avatar>
-													<Typography variant='caption' color='text.secondary' noWrap>
-														{q.postedBy.name}
-													</Typography>
-													{userId === q.postedBy._id && <YouBadge />}
-													<Chip
-														label={q.postedBy.role}
-														size='small'
-														sx={{
-															height: 16,
-															fontSize: '0.6rem',
-															fontWeight: 700,
-															px: 0.25,
-															flexShrink: 0,
-														}}
-													/>
-													<Typography
-														variant='caption'
-														color='text.secondary'
-														sx={{ flexShrink: 0 }}
-													>
-														·{' '}
-														{formatDateTime(q.createdAt)}
-													</Typography>
-												</Box>
-												<Box
-													sx={{
-														display: 'flex',
-														alignItems: 'center',
-														gap: 0.75,
-														flexShrink: 0,
-													}}
-												>
-													<ForumOutlinedIcon
-														sx={{ fontSize: 15, color: 'text.secondary' }}
-													/>
-													<Typography
-														variant='caption'
-														sx={{ fontWeight: 600, color: 'text.secondary' }}
-													>
-														{q.answerCount} answer
-														{q.answerCount !== 1 ? 's' : ''}
-													</Typography>
-													<Typography
-														variant='caption'
-														sx={{ fontWeight: 600, color: 'text.secondary' }}
-													>
-														· {q.staffAnswerCount} staff
-													</Typography>
-													{editingQuestionId === q._id ? (
-														<Box
-															onClick={(e) => e.stopPropagation()}
-															sx={{ display: 'flex', gap: 1 }}
-														>
-															<Button
-																size='small'
-																onClick={() => setEditingQuestionId(null)}
-															>
-																Cancel
-															</Button>
-															<Button
-																size='small'
-																variant='contained'
-																onClick={() => void handleUpdateQuestion()}
-																disabled={
-																	questionUpdating ||
-																	!editingQuestionForm.title.trim() ||
-																	!editingQuestionForm.description.trim()
-																}
-															>
-																{questionUpdating ? (
-																	<CircularProgress size={16} color='inherit' />
-																) : (
-																	'Update'
-																)}
-															</Button>
-														</Box>
-													) : (
-														<>
-															{canResolve(q) && (
-																<Button
-																	size='small'
-																	variant={q.isResolved ? 'outlined' : 'contained'}
-																	color={q.isResolved ? 'inherit' : 'success'}
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		void handleResolveQuestion(q, !q.isResolved);
-																	}}
-																	disabled={resolvingQuestionId === q._id}
-																	sx={{ fontWeight: 700, py: 0.25 }}
-																>
-																	{resolvingQuestionId === q._id ? (
-																		<CircularProgress size={14} color='inherit' />
-																	) : q.isResolved ? (
-																		'Not solved'
-																	) : (
-																		'Mark solved'
-																	)}
-																</Button>
-															)}
-															{canEdit(q.postedBy._id) && (
-																<ItemActionMenu
-																	actions={[
-																		{
-																			label: 'Edit',
-																			icon: (
-																				<EditOutlinedIcon
-																					fontSize='small'
-																					sx={{ mr: 1 }}
-																				/>
-																			),
-																			onClick: () => startEditQuestion(q),
-																		},
-																		{
-																			label: 'Delete',
-																			color: 'error',
-																			icon: (
-																				<DeleteOutlinedIcon
-																					fontSize='small'
-																					sx={{ mr: 1 }}
-																				/>
-																			),
-																			onClick: () =>
-																				void handleDeleteQuestion(q._id),
-																		},
-																	]}
-																/>
-															)}
-														</>
-													)}
-												</Box>
-											</Box>
-										</Box>
-									</Box>
-								</Box>
-							</Box>
-						);
-					})}
-				</Paper>
-					<AppPagination
-						page={currentPage}
-						totalPages={Math.ceil(filteredQuestions.length / PAGE_SIZE)}
-						totalItems={filteredQuestions.length}
-						pageSize={PAGE_SIZE}
-						onChange={setCurrentPage}
-						align='center'
-					/>
-				</Box>
-			)}
-		</Box>
+		<QAQuestionListView
+			questions={questions}
+			qaLoading={qaLoading}
+			canPost={canPost}
+			userId={userId}
+			showAskForm={showAskForm}
+			setShowAskForm={setShowAskForm}
+			askForm={askForm}
+			setAskForm={setAskForm}
+			askPosting={askPosting}
+			askEditorKey={askEditorKey}
+			setAskEditorKey={setAskEditorKey}
+			questionFilter={questionFilter}
+			setQuestionFilter={setQuestionFilter}
+			filteredQuestions={filteredQuestions}
+			questionFilterCounts={questionFilterCounts}
+			currentPage={currentPage}
+			setCurrentPage={setCurrentPage}
+			editingQuestionId={editingQuestionId}
+			setEditingQuestionId={setEditingQuestionId}
+			editingQuestionForm={editingQuestionForm}
+			setEditingQuestionForm={setEditingQuestionForm}
+			questionUpdating={questionUpdating}
+			resolvingQuestionId={resolvingQuestionId}
+			canEdit={canEdit}
+			canResolve={canResolve}
+			questionNeedsStaffAnswer={questionNeedsStaffAnswer}
+			onAskQuestion={handleAskQuestion}
+			onViewQuestion={handleViewQuestion}
+			onUpvoteQuestion={handleUpvoteQuestion}
+			onResolveQuestion={handleResolveQuestion}
+			onDeleteQuestion={handleDeleteQuestion}
+			onUpdateQuestion={handleUpdateQuestion}
+			onStartEditQuestion={startEditQuestion}
+		/>
 	);
 };
 
