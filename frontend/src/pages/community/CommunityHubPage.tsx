@@ -1,57 +1,67 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   Chip,
   Container,
+  Divider,
   FormControl,
   Grid,
-  IconButton,
   InputLabel,
   MenuItem,
   Paper,
   Select,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined';
+import SearchIcon from '@mui/icons-material/Search';
 import SettingsIcon from '@mui/icons-material/Settings';
 import TuneIcon from '@mui/icons-material/Tune';
 import UploadIcon from '@mui/icons-material/Upload';
+import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import toast from 'react-hot-toast';
 import PublicNavbar from '../../components/layout/PublicNavbar';
 import RichTextEditor from '../../components/course/RichTextEditor';
 import { useAuth } from '../../context/useAuth';
 import { communityService } from '../../services/community.service';
-import type { CommunityReactionType, ICommunityChannel, ICommunityOverview, ICommunityPost, ICommunityReply } from '../../types/index';
+import type { CommunityReactionType, ICommunityOverview, ICommunityPost, ICommunityReply } from '../../types/index';
 import CommunityAdminModal from './CommunityAdminModal';
 import CommunityPostCard from './CommunityPostCard';
 import { isAdminRole, isRichTextEmpty } from './communityHelpers';
 
+const numberFormatter = new Intl.NumberFormat();
+
 const CommunityHubPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const channelScrollerRef = useRef<HTMLDivElement | null>(null);
   const [overview, setOverview] = useState<ICommunityOverview>({
     channels: [],
     posts: [],
     badges: [],
     channelPostCounts: {},
+    channelReplyCounts: {},
     totalPostCount: 0,
+    resultPostCount: 0,
     totalReplyCount: 0,
+    totalMemberCount: 0,
     guestLimited: false,
   });
   const [selectedChannel, setSelectedChannel] = useState('');
   const [filterChannel, setFilterChannel] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [searchText, setSearchText] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
@@ -74,14 +84,19 @@ const CommunityHubPage = () => {
       archived: canViewArchive && showArchived,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
+      search: appliedSearch || undefined,
     });
-    setOverview(res.data ?? { channels: [], posts: [], badges: [], channelPostCounts: {}, totalPostCount: 0, totalReplyCount: 0, guestLimited: false });
+    setOverview(res.data ?? { channels: [], posts: [], badges: [], channelPostCounts: {}, channelReplyCounts: {}, totalPostCount: 0, resultPostCount: 0, totalReplyCount: 0, totalMemberCount: 0, guestLimited: false });
     setLoading(false);
   };
 
   useEffect(() => {
     void loadHub();
-  }, [selectedChannel, showArchived, dateFrom, dateTo]);
+  }, [selectedChannel, showArchived, dateFrom, dateTo, appliedSearch]);
+
+  useEffect(() => {
+    if (searchText.trim() === '' && appliedSearch) setAppliedSearch('');
+  }, [searchText, appliedSearch]);
 
   const updatePost = (updatedPost: ICommunityPost) => {
     setOverview((current) => ({
@@ -194,15 +209,111 @@ const CommunityHubPage = () => {
 
   const activeFilterCount = [selectedChannel, dateFrom, dateTo, canViewArchive && showArchived ? 'archive' : ''].filter(Boolean).length;
   const filterButtonLabel = `${filtersOpen ? 'Hide filters' : 'Show filters'}${activeFilterCount ? ` (${activeFilterCount})` : ''}`;
-
-  const scrollChannels = (direction: 'left' | 'right') => {
-    channelScrollerRef.current?.scrollBy({ left: direction === 'left' ? -320 : 320, behavior: 'smooth' });
-  };
+  const searchedText = appliedSearch.trim();
+  const headerTitle = overview.settings?.title || 'Community Hub';
+  const headerDescription = overview.settings?.description || 'Find study questions, tech discussions, accepted answers, reactions, points, and badges.';
+  const headerImage = overview.settings?.headerImageUrl || 'https://picsum.photos/seed/community-hub-header/1800/520';
+  const stats = [
+    { label: 'Total Members', value: overview.totalMemberCount ?? 0, icon: GroupsOutlinedIcon },
+    { label: 'Discussion Questions', value: overview.totalPostCount ?? 0, icon: ForumOutlinedIcon },
+    { label: 'Answers', value: overview.totalReplyCount ?? 0, icon: QuestionAnswerOutlinedIcon },
+  ];
 
   return (
     <>
       <PublicNavbar />
-      <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', py: 4 }}>
+      <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', pb: 4 }}>
+        <Box
+          sx={{
+            width: '100%',
+            minHeight: { xs: 320, md: 390 },
+            display: 'flex',
+            alignItems: 'center',
+            backgroundImage: `linear-gradient(90deg, rgba(8, 20, 38, 0.82), rgba(8, 20, 38, 0.44)), url("${headerImage}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            color: 'common.white',
+            mb: 4,
+          }}
+        >
+          <Container maxWidth="lg">
+            <Stack spacing={3} sx={{ maxWidth: 900, py: { xs: 5, md: 7 } }}>
+              <Box>
+                <Typography variant="h3" sx={{ fontWeight: 950, mb: 1, fontSize: { xs: 34, md: 52 }, lineHeight: 1.08 }}>
+                  {headerTitle}
+                </Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.88)', fontSize: { xs: 16, md: 19 }, maxWidth: 760 }}>
+                  {headerDescription}
+                </Typography>
+              </Box>
+              <Paper
+                elevation={0}
+                component="form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setAppliedSearch(searchText.trim());
+                }}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) auto' },
+                  gap: 0,
+                  p: { xs: 0.75, sm: 0 },
+                  borderRadius: 999,
+                  maxWidth: 860,
+                  bgcolor: 'rgba(255,255,255,0.96)',
+                  overflow: 'hidden',
+                  boxShadow: '0 18px 38px rgba(0, 0, 0, 0.2)',
+                }}
+              >
+                <TextField
+                  fullWidth
+                  placeholder="Search discussions..."
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />,
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'transparent',
+                      minHeight: 62,
+                      borderRadius: 999,
+                      pr: { sm: 2 },
+                      '& fieldset': { borderColor: 'transparent' },
+                      '&:hover fieldset': { borderColor: 'transparent' },
+                      '&.Mui-focused fieldset': { borderColor: 'transparent' },
+                    },
+                    '& .MuiInputBase-input': {
+                      py: 2,
+                    },
+                  }}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  sx={{
+                    px: { xs: 3, sm: 4.5 },
+                    minHeight: { xs: 54, sm: 62 },
+                    borderRadius: { xs: 999, sm: 0 },
+                    fontWeight: 900,
+                    textTransform: 'none',
+                    boxShadow: 'none',
+                    background: 'linear-gradient(135deg, #f57c00 0%, #ffb300 52%, #ec407a 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #ef6c00 0%, #ffa000 48%, #d81b60 100%)',
+                      boxShadow: 'none',
+                    },
+                    transition: 'background 0.18s ease',
+                  }}
+                >
+                  Search
+                </Button>
+              </Paper>
+            </Stack>
+          </Container>
+        </Box>
         <Container maxWidth="lg">
           <Stack spacing={3}>
             {overview.guestLimited && (
@@ -212,81 +323,34 @@ const CommunityHubPage = () => {
             )}
 
             <Stack spacing={2.5}>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <IconButton aria-label="Previous channels" onClick={() => scrollChannels('left')} sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
-                  <ArrowBackIosNewIcon fontSize="small" />
-                </IconButton>
-                <Box ref={channelScrollerRef} sx={{ display: 'flex', gap: 1.5, overflow: 'hidden', scrollBehavior: 'smooth', flex: 1, py: 0.5 }}>
-                  <Paper
-                    elevation={0}
-                    onClick={() => {
-                      setSelectedChannel('');
-                      setFilterChannel('');
-                    }}
-                    sx={{
-                      minWidth: 230,
-                      p: 2,
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      color: 'common.white',
-                      bgcolor: !selectedChannel ? 'primary.main' : '#334155',
-                      border: '2px solid',
-                      borderColor: !selectedChannel ? 'primary.light' : 'transparent',
-                    }}
-                  >
-                    <Typography variant="h6" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
-                      All Channels
-                    </Typography>
-                    <Typography sx={{ mt: 1, fontWeight: 900 }}>{overview.totalPostCount ?? 0} posts</Typography>
-                    <Typography sx={{ fontWeight: 900 }}>{overview.totalReplyCount ?? 0} replies</Typography>
-                  </Paper>
-
-                  {overview.channels.map((channel: ICommunityChannel, index) => {
-                    const colors = ['#0f766e', '#7c3aed', '#dc2626', '#2563eb', '#ca8a04', '#be185d'];
-                    const active = selectedChannel === channel._id;
-                    const color = colors[index % colors.length];
-
+              <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, px: { xs: 2, md: 3 }, py: 2, bgcolor: 'background.paper' }}>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={{ xs: 1.5, sm: 3, md: 6 }}
+                  sx={{ alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap' }}
+                >
+                  {stats.map((item) => {
+                    const Icon = item.icon;
                     return (
-                      <Paper
-                        key={channel._id}
-                        elevation={0}
-                        onClick={() => {
-                          setSelectedChannel(channel._id);
-                          setFilterChannel(channel._id);
-                        }}
-                        sx={{
-                          minWidth: 260,
-                          p: 2,
-                          borderRadius: 1,
-                          cursor: 'pointer',
-                          color: 'common.white',
-                          bgcolor: color,
-                          border: '2px solid',
-                          borderColor: active ? 'common.white' : 'transparent',
-                          backgroundImage: channel.imageUrl
-                            ? `linear-gradient(90deg, rgba(15,23,42,.76), rgba(15,23,42,.42)), url(${channel.imageUrl})`
-                            : `linear-gradient(135deg, ${color}, rgba(15, 23, 42, 0.78))`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          boxShadow: active ? '0 10px 24px rgba(15, 23, 42, 0.18)' : 'none',
-                        }}
-                      >
-                        <Typography variant="h6" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
-                          {channel.name}
+                      <Stack key={item.label} direction="row" spacing={1.1} sx={{ alignItems: 'center', minWidth: { xs: 'auto', sm: 190 } }}>
+                        <Icon sx={{ color: 'text.primary', fontSize: 28 }} />
+                        <Typography sx={{ fontWeight: 800, color: 'text.primary', whiteSpace: 'nowrap' }}>
+                          {numberFormatter.format(item.value)} {item.label}
                         </Typography>
-                        <Typography sx={{ mt: 1, fontWeight: 900 }}>{overview.channelPostCounts[channel._id] ?? 0} posts</Typography>
-                      </Paper>
+                      </Stack>
                     );
                   })}
-                </Box>
-                <IconButton aria-label="Next channels" onClick={() => scrollChannels('right')} sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
-                  <ArrowForwardIosIcon fontSize="small" />
-                </IconButton>
-              </Stack>
+                </Stack>
+              </Paper>
 
               <Box>
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ justifyContent: 'flex-end', alignItems: { xs: 'stretch', md: 'center' } }}>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    {searchedText && (
+                      <Typography sx={{ fontWeight: 900, color: 'text.primary', alignSelf: 'center', mr: { sm: 0.5 } }}>
+                        Search results ({numberFormatter.format(overview.resultPostCount ?? overview.posts.length)})
+                      </Typography>
+                    )}
                     {isAdminRole(user?.role) && (
                       <Button variant="outlined" startIcon={<SettingsIcon />} onClick={() => setAdminOpen(true)}>
                         Community Settings
@@ -371,10 +435,118 @@ const CommunityHubPage = () => {
                 </Box>
               </Box>
 
-              <Stack spacing={2.5}>
-                {postFormOpen && user && (
-                  <Paper elevation={0} sx={{ p: 2.5, borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                    <Stack spacing={2}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '300px minmax(0, 1fr)' }, gap: 2.5, alignItems: 'start' }}>
+                <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden', bgcolor: 'background.paper' }}>
+                  <Box sx={{ p: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>
+                      Channels
+                    </Typography>
+                  </Box>
+                  <Divider />
+                  <Tooltip
+                    arrow
+                    placement="right"
+                    title={
+                      <Stack spacing={0.5}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>All Channels</Typography>
+                        <Typography variant="caption">{numberFormatter.format(overview.totalPostCount ?? 0)} discussions</Typography>
+                        <Typography variant="caption">{numberFormatter.format(overview.totalReplyCount ?? 0)} answers</Typography>
+                      </Stack>
+                    }
+                  >
+                    <Box
+                      onClick={() => {
+                        setSelectedChannel('');
+                        setFilterChannel('');
+                      }}
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '44px minmax(0, 1fr) auto',
+                        gap: 1.25,
+                        alignItems: 'center',
+                        p: 1.5,
+                        cursor: 'pointer',
+                        borderLeft: '4px solid',
+                        borderLeftColor: selectedChannel ? 'transparent' : 'primary.main',
+                        bgcolor: selectedChannel ? 'transparent' : 'primary.50',
+                        transition: 'background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
+                        '&:hover': {
+                          bgcolor: selectedChannel ? 'grey.50' : 'primary.50',
+                          transform: 'translateX(2px)',
+                        },
+                      }}
+                    >
+                      <Avatar variant="rounded" sx={{ bgcolor: 'primary.main' }}>A</Avatar>
+                      <Typography sx={{ fontWeight: 900 }}>All Channels</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 800 }}>
+                        {numberFormatter.format(overview.totalPostCount ?? 0)}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
+                  <Divider />
+                  {overview.channels.map((channel, index) => {
+                    const active = selectedChannel === channel._id;
+                    const postCount = overview.channelPostCounts[channel._id] ?? 0;
+                    const answerCount = overview.channelReplyCounts?.[channel._id] ?? 0;
+                    return (
+                      <Box key={channel._id}>
+                        <Tooltip
+                          arrow
+                          placement="right"
+                          title={
+                            <Stack spacing={0.6} sx={{ maxWidth: 240 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>{channel.name}</Typography>
+                              {channel.description && (
+                                <Typography variant="caption" sx={{ color: 'grey.100' }}>
+                                  {channel.description}
+                                </Typography>
+                              )}
+                              <Stack direction="row" spacing={1.5}>
+                                <Typography variant="caption">{numberFormatter.format(postCount)} discussions</Typography>
+                                <Typography variant="caption">{numberFormatter.format(answerCount)} answers</Typography>
+                              </Stack>
+                            </Stack>
+                          }
+                        >
+                          <Box
+                            onClick={() => {
+                              setSelectedChannel(channel._id);
+                              setFilterChannel(channel._id);
+                            }}
+                            sx={{
+                              display: 'grid',
+                              gridTemplateColumns: '44px minmax(0, 1fr) auto',
+                              gap: 1.25,
+                              alignItems: 'center',
+                              p: 1.5,
+                              cursor: 'pointer',
+                              borderLeft: '4px solid',
+                              borderLeftColor: active ? 'primary.main' : 'transparent',
+                              bgcolor: active ? 'primary.50' : 'transparent',
+                              transition: 'background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
+                              '&:hover': {
+                                bgcolor: active ? 'primary.50' : 'grey.50',
+                                transform: 'translateX(2px)',
+                              },
+                            }}
+                          >
+                            <Avatar src={channel.imageUrl} variant="rounded">{channel.name[0]}</Avatar>
+                            <Typography sx={{ fontWeight: 900 }} noWrap>{channel.name}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 800 }}>
+                              {numberFormatter.format(postCount)}
+                            </Typography>
+                          </Box>
+                        </Tooltip>
+                        {index < overview.channels.length - 1 && <Divider />}
+                      </Box>
+                    );
+                  })}
+                </Paper>
+
+                <Stack spacing={2.5}>
+                  {postFormOpen && user && (
+                    <Paper elevation={0} sx={{ p: 2.5, borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                      <Stack spacing={2}>
                       <Typography variant="h6" sx={{ fontWeight: 900 }}>
                         Start a discussion
                       </Typography>
@@ -425,41 +597,42 @@ const CommunityHubPage = () => {
                           Cancel
                         </Button>
                       </Stack>
-                    </Stack>
-                  </Paper>
-                )}
+                      </Stack>
+                    </Paper>
+                  )}
 
-                {loading ? (
-                  <Paper elevation={0} sx={{ p: 4, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
-                    Loading discussions...
-                  </Paper>
-                ) : overview.posts.length === 0 ? (
-                  <Paper elevation={0} sx={{ p: 4, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
-                    <Typography sx={{ fontWeight: 900 }}>No discussions found</Typography>
-                    <Typography color="text.secondary">Pick another channel or start a new discussion.</Typography>
-                  </Paper>
-                ) : (
-                  overview.posts.map((post) => (
-                    <CommunityPostCard
-                      key={post._id}
-                      post={post}
-                      user={user}
-                      badges={overview.badges}
-                      onReply={createReply}
-                      onReactPost={reactToPost}
-                      onReactReply={reactToReply}
-                      onAcceptReply={acceptReply}
-                      onArchiveReply={archiveReply}
-                      onArchivePost={archivePost}
-                      onTogglePin={togglePin}
-                      onUpdatePost={updatePostDetails}
-                      channels={overview.channels}
-                      showReplies={false}
-                      onOpen={(postId) => navigate(`/community-hub/${postId}`)}
-                    />
-                  ))
-                )}
-              </Stack>
+                  {loading ? (
+                    <Paper elevation={0} sx={{ p: 4, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
+                      Loading discussions...
+                    </Paper>
+                  ) : overview.posts.length === 0 ? (
+                    <Paper elevation={0} sx={{ p: 4, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
+                      <Typography sx={{ fontWeight: 900 }}>No discussions found</Typography>
+                      <Typography color="text.secondary">Pick another channel or start a new discussion.</Typography>
+                    </Paper>
+                  ) : (
+                    overview.posts.map((post) => (
+                      <CommunityPostCard
+                        key={post._id}
+                        post={post}
+                        user={user}
+                        badges={overview.badges}
+                        onReply={createReply}
+                        onReactPost={reactToPost}
+                        onReactReply={reactToReply}
+                        onAcceptReply={acceptReply}
+                        onArchiveReply={archiveReply}
+                        onArchivePost={archivePost}
+                        onTogglePin={togglePin}
+                        onUpdatePost={updatePostDetails}
+                        channels={overview.channels}
+                        showReplies={false}
+                        onOpen={(postId) => navigate(`/community-hub/${postId}`)}
+                      />
+                    ))
+                  )}
+                </Stack>
+              </Box>
             </Stack>
           </Stack>
         </Container>

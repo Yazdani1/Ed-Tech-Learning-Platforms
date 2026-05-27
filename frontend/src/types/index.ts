@@ -50,9 +50,8 @@ export interface ICommunityChannel {
 export interface ICommunityBadge {
   _id: string;
   name: string;
-  icon: string;
+  imageUrl?: string;
   requiredPoints: number;
-  description?: string;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -102,11 +101,24 @@ export interface ICommunityPointRule {
   points: number;
 }
 
+export interface ICommunitySetting {
+  _id: string;
+  title: string;
+  description: string;
+  headerImageUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ICommunityOverview {
   channels: ICommunityChannel[];
   channelPostCounts: Record<string, number>;
+  channelReplyCounts?: Record<string, number>;
+  settings?: ICommunitySetting;
   totalPostCount?: number;
+  resultPostCount?: number;
   totalReplyCount?: number;
+  totalMemberCount?: number;
   posts: ICommunityPost[];
   badges: ICommunityBadge[];
   guestLimited: boolean;

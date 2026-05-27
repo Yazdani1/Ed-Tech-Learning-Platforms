@@ -86,7 +86,13 @@ const AuthorLine: FC<AuthorLineProps> = ({ author, badges }) => {
       </Typography>
       {earnedBadges.slice(0, 3).map((badge) => (
         <Tooltip key={badge._id} title={`${badge.name} • ${badge.requiredPoints} pts`}>
-          <Chip size="small" label={`${badge.icon} ${badge.name}`} color="success" variant="outlined" />
+          <Chip
+            size="small"
+            avatar={badge.imageUrl ? <Avatar src={badge.imageUrl} /> : undefined}
+            label={badge.name}
+            color="success"
+            variant="outlined"
+          />
         </Tooltip>
       ))}
     </Stack>

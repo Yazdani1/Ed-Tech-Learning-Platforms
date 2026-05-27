@@ -5,6 +5,7 @@ import { CommunityChannel } from '../models/CommunityChannel.model';
 import { CommunityPointRule, type CommunityPointRuleKey } from '../models/CommunityPointRule.model';
 import { CommunityPost, type CommunityReactionType } from '../models/CommunityPost.model';
 import { CommunityReply } from '../models/CommunityReply.model';
+import { CommunitySetting } from '../models/CommunitySetting.model';
 import { User } from '../models/User.model';
 import { deleteFromCloudinary, uploadToCloudinary } from '../config/cloudinary';
 import { AppError } from '../utils/AppError';
@@ -50,6 +51,11 @@ const awardPoints = async (userId: Types.ObjectId, key: CommunityPointRuleKey) =
 };
 
 const getPublicBadges = () => CommunityBadge.find({ isArchived: false }).sort({ requiredPoints: 1 }).lean();
+const getCommunitySettings = async () => {
+  const existing = await CommunitySetting.findOne().lean();
+  if (existing) return existing;
+  return CommunitySetting.create({});
+};
 
 const getUploadedFiles = (req: Request) => {
   if (Array.isArray(req.files)) return req.files;
@@ -77,6 +83,7 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
   const includeArchived = req.query.archived === 'true';
   const dateFrom = req.query.dateFrom ? new Date(String(req.query.dateFrom)) : undefined;
   const dateTo = req.query.dateTo ? new Date(String(req.query.dateTo)) : undefined;
+  const search = req.query.search ? String(req.query.search).trim() : '';
   const user = req.user;
 
   if (includeArchived && !isAdmin(user?.role)) throw new AppError('Only admins can view archived posts', 403);
@@ -93,6 +100,12 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
       ...(dateTo ? { $lte: new Date(dateTo.setHours(23, 59, 59, 999)) } : {}),
     };
   }
+  if (search) {
+    postQuery.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+    ];
+  }
 
   const posts = await CommunityPost.find(postQuery)
     .sort({ isPinned: -1, pinnedAt: -1, createdAt: -1 })
@@ -106,12 +119,12 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
     .sort({ isAccepted: -1, createdAt: 1 })
     .populate(populateReply)
     .lean();
-  const badges = await getPublicBadges();
+  const [badges, settings] = await Promise.all([getPublicBadges(), getCommunitySettings()]);
   const channelCounts = await CommunityPost.aggregate<{ _id: Types.ObjectId; count: number }>([
     { $match: { isArchived: false } },
     { $group: { _id: '$channel', count: { $sum: 1 } } },
   ]);
-  const [totalPostCount, totalReplyCount] = await Promise.all([
+  const [totalPostCount, totalReplyCount, totalMemberCount, channelReplyCountRows, resultPostCount] = await Promise.all([
     CommunityPost.countDocuments({ isArchived: false }),
     CommunityReply.aggregate<{ count: number }>([
       {
@@ -126,8 +139,27 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
       { $match: { isArchived: false, 'postDetails.isArchived': false } },
       { $count: 'count' },
     ]),
+    User.countDocuments(),
+    CommunityReply.aggregate<{ _id: Types.ObjectId; count: number }>([
+      {
+        $lookup: {
+          from: 'communityposts',
+          localField: 'post',
+          foreignField: '_id',
+          as: 'postDetails',
+        },
+      },
+      { $unwind: '$postDetails' },
+      { $match: { isArchived: false, 'postDetails.isArchived': false } },
+      { $group: { _id: '$postDetails.channel', count: { $sum: 1 } } },
+    ]),
+    CommunityPost.countDocuments(postQuery),
   ]);
   const channelPostCounts = channelCounts.reduce<Record<string, number>>((counts, item) => {
+    counts[String(item._id)] = item.count;
+    return counts;
+  }, {});
+  const channelReplyCounts = channelReplyCountRows.reduce<Record<string, number>>((counts, item) => {
     counts[String(item._id)] = item.count;
     return counts;
   }, {});
@@ -137,7 +169,11 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
     data: {
       channels,
       channelPostCounts,
+      channelReplyCounts,
+      settings,
       totalPostCount,
+      resultPostCount,
+      totalMemberCount,
       totalReplyCount: totalReplyCount[0]?.count ?? 0,
       posts: posts.map((post) => ({
         ...post,
@@ -147,6 +183,31 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
       guestLimited: !user,
     },
   });
+});
+
+export const getCommunitySettingsForAdmin = asyncHandler(async (_req: Request, res: Response) => {
+  const settings = await getCommunitySettings();
+  res.status(200).json({ success: true, data: settings });
+});
+
+export const updateCommunitySettings = asyncHandler(async (req: Request, res: Response) => {
+  const settings = await CommunitySetting.findOne().select('+headerImagePublicId');
+  const current = settings ?? new CommunitySetting({});
+  const { title, description } = req.body as { title?: string; description?: string };
+
+  if (title !== undefined) current.title = title;
+  if (description !== undefined) current.description = description;
+  if (req.file) {
+    if (current.headerImagePublicId) await deleteFromCloudinary(current.headerImagePublicId);
+    const uploaded = await uploadToCloudinary(req.file.buffer, 'medhabee/community/settings');
+    current.headerImageUrl = uploaded.url;
+    current.headerImagePublicId = uploaded.publicId;
+  }
+  current.updatedBy = req.user._id;
+
+  await current.save();
+  const updated = await CommunitySetting.findById(current._id).lean();
+  res.status(200).json({ success: true, message: 'Community settings updated', data: updated });
 });
 
 export const createChannel = asyncHandler(async (req: Request, res: Response) => {
@@ -456,38 +517,39 @@ export const getBadges = asyncHandler(async (_req: Request, res: Response) => {
 });
 
 export const createBadge = asyncHandler(async (req: Request, res: Response) => {
-  const { name, icon, requiredPoints, description } = req.body as {
+  const { name, requiredPoints } = req.body as {
     name?: string;
-    icon?: string;
     requiredPoints?: string;
-    description?: string;
   };
-  if (!name?.trim() || !icon?.trim()) throw new AppError('Badge name and icon are required', 400);
+  if (!name?.trim()) throw new AppError('Badge name is required', 400);
+  const uploaded = req.file ? await uploadToCloudinary(req.file.buffer, 'medhabee/community/badges') : undefined;
 
   const badge = await CommunityBadge.create({
     name,
-    icon,
+    imageUrl: uploaded?.url,
+    imagePublicId: uploaded?.publicId,
     requiredPoints: Number(requiredPoints ?? 0),
-    description,
     createdBy: req.user._id,
   });
   res.status(201).json({ success: true, message: 'Badge created', data: badge });
 });
 
 export const updateBadge = asyncHandler(async (req: Request, res: Response) => {
-  const badge = await CommunityBadge.findById(req.params.id);
+  const badge = await CommunityBadge.findById(req.params.id).select('+imagePublicId');
   if (!badge) throw new AppError('Badge not found', 404);
-  const { name, icon, requiredPoints, description } = req.body as {
+  const { name, requiredPoints } = req.body as {
     name?: string;
-    icon?: string;
     requiredPoints?: number;
-    description?: string;
   };
 
   if (name !== undefined) badge.name = name;
-  if (icon !== undefined) badge.icon = icon;
   if (requiredPoints !== undefined) badge.requiredPoints = Number(requiredPoints);
-  if (description !== undefined) badge.description = description;
+  if (req.file) {
+    if (badge.imagePublicId) await deleteFromCloudinary(badge.imagePublicId);
+    const uploaded = await uploadToCloudinary(req.file.buffer, 'medhabee/community/badges');
+    badge.imageUrl = uploaded.url;
+    badge.imagePublicId = uploaded.publicId;
+  }
   await badge.save();
   res.status(200).json({ success: true, message: 'Badge updated', data: badge });
 });

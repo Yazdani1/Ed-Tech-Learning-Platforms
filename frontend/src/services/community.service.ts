@@ -8,12 +8,13 @@ import type {
   ICommunityPointRule,
   ICommunityPost,
   ICommunityReply,
+  ICommunitySetting,
 } from '../types/index';
 
 const multipartConfig = { headers: { 'Content-Type': 'multipart/form-data' } };
 
 export const communityService = {
-  getOverview: (params?: { channel?: string; archived?: boolean; dateFrom?: string; dateTo?: string; limit?: number }) =>
+  getOverview: (params?: { channel?: string; archived?: boolean; dateFrom?: string; dateTo?: string; limit?: number; search?: string }) =>
     api.get<ICommunityOverview>('/community', { params }),
   getPost: (postId: string, params?: { archived?: boolean }) =>
     api.get<ICommunityPostDetail>(`/community/posts/${postId}`, { params }),
@@ -39,12 +40,12 @@ export const communityService = {
   archivePost: (postId: string) => api.patch<ICommunityPost>(`/community/posts/${postId}/archive`),
   togglePinnedPost: (postId: string) => api.patch<ICommunityPost>(`/community/posts/${postId}/pin`),
   getBadges: () => api.get<ICommunityBadge[]>('/community/badges'),
-  createBadge: (data: { name: string; icon: string; requiredPoints: number; description?: string }) =>
-    api.post<ICommunityBadge>('/community/badges', data),
-  updateBadge: (id: string, data: Partial<{ name: string; icon: string; requiredPoints: number; description: string }>) =>
-    api.put<ICommunityBadge>(`/community/badges/${id}`, data),
+  createBadge: (data: FormData) => api.post<ICommunityBadge>('/community/badges', data, multipartConfig),
+  updateBadge: (id: string, data: FormData) => api.put<ICommunityBadge>(`/community/badges/${id}`, data, multipartConfig),
   archiveBadge: (id: string) => api.patch<ICommunityBadge>(`/community/badges/${id}/archive`),
   getPointRules: () => api.get<ICommunityPointRule[]>('/community/point-rules'),
   updatePointRules: (rules: Array<{ key: ICommunityPointRule['key']; points: number }>) =>
     api.put<ICommunityPointRule[]>('/community/point-rules', { rules }),
+  getSettings: () => api.get<ICommunitySetting>('/community/settings'),
+  updateSettings: (data: FormData) => api.put<ICommunitySetting>('/community/settings', data, multipartConfig),
 };

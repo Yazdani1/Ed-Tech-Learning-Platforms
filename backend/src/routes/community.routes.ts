@@ -11,6 +11,7 @@ import {
   getAdminChannels,
   getCommunityPost,
   getCommunityReplies,
+  getCommunitySettingsForAdmin,
   getBadges,
   getCommunityOverview,
   getPointRules,
@@ -18,6 +19,7 @@ import {
   reactToReply,
   toggleAcceptedReply,
   togglePinnedPost,
+  updateCommunitySettings,
   updatePost,
   updateBadge,
   updateChannel,
@@ -29,6 +31,8 @@ import { upload } from '../middleware/upload.middleware';
 const router = Router();
 
 router.get('/', optionalProtect, getCommunityOverview);
+router.get('/settings', protect, authorize('Super Admin', 'Admin'), getCommunitySettingsForAdmin);
+router.put('/settings', protect, authorize('Super Admin', 'Admin'), upload.single('image'), updateCommunitySettings);
 
 router.get('/admin/channels', protect, authorize('Super Admin', 'Admin'), getAdminChannels);
 router.post('/channels', protect, authorize('Super Admin', 'Admin'), upload.single('image'), createChannel);
@@ -48,8 +52,8 @@ router.patch('/replies/:replyId/accepted', protect, toggleAcceptedReply);
 router.patch('/replies/:replyId/archive', protect, archiveReply);
 
 router.get('/badges', protect, authorize('Super Admin', 'Admin'), getBadges);
-router.post('/badges', protect, authorize('Super Admin', 'Admin'), createBadge);
-router.put('/badges/:id', protect, authorize('Super Admin', 'Admin'), updateBadge);
+router.post('/badges', protect, authorize('Super Admin', 'Admin'), upload.single('image'), createBadge);
+router.put('/badges/:id', protect, authorize('Super Admin', 'Admin'), upload.single('image'), updateBadge);
 router.patch('/badges/:id/archive', protect, authorize('Super Admin', 'Admin'), archiveBadge);
 
 router.get('/point-rules', protect, authorize('Super Admin', 'Admin'), getPointRules);
