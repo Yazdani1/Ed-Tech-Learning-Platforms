@@ -10,6 +10,8 @@ import {
   Divider,
   FormControl,
   Grid,
+  IconButton,
+  InputAdornment,
   InputLabel,
   MenuItem,
   Paper,
@@ -77,14 +79,15 @@ const CommunityHubPage = () => {
 
   const canViewArchive = isAdminRole(user?.role);
 
-  const loadHub = async () => {
+  const loadHub = async (searchOverride?: string) => {
     setLoading(true);
+    const searchValue = searchOverride ?? appliedSearch;
     const res = await communityService.getOverview({
       channel: selectedChannel || undefined,
       archived: canViewArchive && showArchived,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
-      search: appliedSearch || undefined,
+      search: searchValue || undefined,
     });
     setOverview(res.data ?? { channels: [], posts: [], badges: [], channelPostCounts: {}, channelReplyCounts: {}, totalPostCount: 0, resultPostCount: 0, totalReplyCount: 0, totalMemberCount: 0, guestLimited: false });
     setLoading(false);
@@ -92,11 +95,29 @@ const CommunityHubPage = () => {
 
   useEffect(() => {
     void loadHub();
-  }, [selectedChannel, showArchived, dateFrom, dateTo, appliedSearch]);
+  }, [selectedChannel, showArchived, dateFrom, dateTo]);
 
   useEffect(() => {
-    if (searchText.trim() === '' && appliedSearch) setAppliedSearch('');
+    if (searchText.trim() === '' && appliedSearch) {
+      setAppliedSearch('');
+      void loadHub('');
+    }
   }, [searchText, appliedSearch]);
+
+  const submitSearch = () => {
+    const nextSearch = searchText.trim();
+    if (!nextSearch) return;
+    setAppliedSearch(nextSearch);
+    void loadHub(nextSearch);
+  };
+
+  const clearSearch = () => {
+    setSearchText('');
+    if (appliedSearch) {
+      setAppliedSearch('');
+      void loadHub('');
+    }
+  };
 
   const updatePost = (updatedPost: ICommunityPost) => {
     setOverview((current) => ({
@@ -251,7 +272,7 @@ const CommunityHubPage = () => {
                 component="form"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  setAppliedSearch(searchText.trim());
+                  submitSearch();
                 }}
                 sx={{
                   display: 'grid',
@@ -273,6 +294,13 @@ const CommunityHubPage = () => {
                   slotProps={{
                     input: {
                       startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />,
+                      endAdornment: searchText ? (
+                        <InputAdornment position="end">
+                          <IconButton aria-label="Clear search" size="small" onClick={clearSearch} edge="end">
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        </InputAdornment>
+                      ) : null,
                     },
                   }}
                   sx={{
@@ -291,8 +319,9 @@ const CommunityHubPage = () => {
                   }}
                 />
                 <Button
-                  type="submit"
+                  type="button"
                   variant="contained"
+                  onClick={submitSearch}
                   sx={{
                     px: { xs: 3, sm: 4.5 },
                     minHeight: { xs: 54, sm: 62 },
