@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useState, type FC, type MouseEvent } from 'react';
 import {
   Avatar,
   Box,
@@ -126,6 +126,16 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
     setEditing(false);
   };
 
+  const handleCardClick = (event: MouseEvent<HTMLElement>) => {
+    if (!onOpen || editing || showReplies) return;
+    const target = event.target as HTMLElement;
+    const interactiveElement = target.closest(
+      'a, button, input, textarea, select, [role="button"], [contenteditable="true"], .MuiMenu-root, .MuiDialog-root'
+    );
+    if (interactiveElement) return;
+    onOpen(post._id);
+  };
+
   const actions: ItemAction[] = [
     ...(isAuthor || canModerateRole(user?.role)
       ? [{ label: 'Edit', icon: <EditIcon />, onClick: () => setEditing(true) }]
@@ -141,6 +151,7 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
   return (
     <Paper
       elevation={0}
+      onClick={handleCardClick}
       sx={{
         border: '1px solid',
         borderColor: post.isPinned ? 'warning.main' : 'divider',
@@ -149,6 +160,13 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
         bgcolor: post.isPinned ? 'warning.50' : 'background.paper',
         borderRadius: 1,
         overflow: 'hidden',
+        cursor: onOpen && !showReplies ? 'pointer' : 'default',
+        transition: onOpen && !showReplies ? 'border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease' : undefined,
+        '&:hover': onOpen && !showReplies ? {
+          borderColor: post.isPinned ? 'warning.dark' : 'primary.light',
+          boxShadow: '0 10px 28px rgba(15, 23, 42, 0.08)',
+          transform: 'translateY(-1px)',
+        } : undefined,
       }}
     >
       {post.isPinned && (

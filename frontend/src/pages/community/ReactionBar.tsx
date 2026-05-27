@@ -36,6 +36,15 @@ const getReactionUserName = (reaction: ICommunityReaction) =>
 const getReactionUserAvatar = (reaction: ICommunityReaction) =>
   typeof reaction.user === 'string' ? undefined : reaction.user.avatar;
 
+const reactionAnimationByType: Record<CommunityReactionType, string> = {
+  Like: 'reactionLikeIdle 1400ms ease-in-out infinite',
+  Love: 'reactionLoveIdle 1200ms ease-in-out infinite',
+  Wow: 'reactionWowIdle 1300ms ease-in-out infinite',
+  Sad: 'reactionSadIdle 1700ms ease-in-out infinite',
+  Angry: 'reactionAngryIdle 900ms ease-in-out infinite',
+  Helpful: 'reactionHelpfulIdle 1500ms ease-in-out infinite',
+};
+
 const ReactionBar: FC<ReactionBarProps> = ({
   reactions,
   disabled,
@@ -168,7 +177,7 @@ const ReactionBar: FC<ReactionBarProps> = ({
                   fontWeight: 800,
                   fontSize: 24,
                   transformOrigin: 'bottom center',
-                  animation: `reactionFloatIn 360ms cubic-bezier(.2, 1.4, .35, 1) ${index * 36}ms both, reactionIdle 1500ms ease-in-out ${420 + index * 90}ms infinite`,
+                  animation: `reactionFloatIn 360ms cubic-bezier(.2, 1.4, .35, 1) ${index * 36}ms both, ${reactionAnimationByType[type]} ${420 + index * 90}ms`,
                   '@keyframes reactionPop': {
                     from: { opacity: 0, transform: 'translateY(8px) scale(0.7)' },
                     to: { opacity: 1, transform: 'translateY(0) scale(1)' },
@@ -179,10 +188,33 @@ const ReactionBar: FC<ReactionBarProps> = ({
                     '78%': { transform: 'translateY(2px) scale(0.96) rotate(0deg)' },
                     '100%': { opacity: 1, transform: 'translateY(0) scale(1) rotate(0deg)' },
                   },
-                  '@keyframes reactionIdle': {
-                    '0%, 100%': { transform: 'translateY(0) scale(1) rotate(0deg)' },
-                    '35%': { transform: 'translateY(-3px) scale(1.04) rotate(-2deg)' },
-                    '70%': { transform: 'translateY(1px) scale(0.98) rotate(2deg)' },
+                  '@keyframes reactionLikeIdle': {
+                    '0%, 100%': { transform: 'translateY(0) scale(1)' },
+                    '45%': { transform: 'translateY(-4px) scale(1.08)' },
+                  },
+                  '@keyframes reactionLoveIdle': {
+                    '0%, 100%': { transform: 'scale(1)' },
+                    '35%': { transform: 'scale(1.18)' },
+                    '65%': { transform: 'scale(0.96)' },
+                  },
+                  '@keyframes reactionWowIdle': {
+                    '0%, 100%': { transform: 'translateY(0) rotate(0deg) scale(1)' },
+                    '28%': { transform: 'translateY(-6px) rotate(-6deg) scale(1.12)' },
+                    '58%': { transform: 'translateY(1px) rotate(6deg) scale(0.98)' },
+                  },
+                  '@keyframes reactionSadIdle': {
+                    '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+                    '45%': { transform: 'translateY(5px) rotate(-4deg)' },
+                  },
+                  '@keyframes reactionAngryIdle': {
+                    '0%, 100%': { transform: 'translateX(0) rotate(0deg)' },
+                    '25%': { transform: 'translateX(-2px) rotate(-3deg)' },
+                    '50%': { transform: 'translateX(2px) rotate(3deg)' },
+                    '75%': { transform: 'translateX(-1px) rotate(-2deg)' },
+                  },
+                  '@keyframes reactionHelpfulIdle': {
+                    '0%, 100%': { transform: 'translateY(0) scale(1)', filter: 'drop-shadow(0 0 0 rgba(250,204,21,0))' },
+                    '50%': { transform: 'translateY(-2px) scale(1.08)', filter: 'drop-shadow(0 0 8px rgba(250,204,21,.65))' },
                   },
                   transition: 'transform 150ms cubic-bezier(.2, 1.4, .35, 1), filter 150ms ease',
                   '&:hover': {
