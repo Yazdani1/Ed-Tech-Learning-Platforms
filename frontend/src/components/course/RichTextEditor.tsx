@@ -3,7 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
-import { type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Box, IconButton, Divider, Tooltip, Paper } from '@mui/material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
@@ -59,6 +59,13 @@ export default function RichTextEditor({
 		content: value,
 		onUpdate: ({ editor: e }) => onChange(e.getHTML()),
 	});
+
+	useEffect(() => {
+		if (!editor) return;
+		if (editor.getHTML() !== value) {
+			editor.commands.setContent(value, { emitUpdate: false });
+		}
+	}, [editor, value]);
 
 	if (!editor) return null;
 

@@ -8,6 +8,7 @@ export interface IUser extends Document {
   role: UserRole;
   avatar?: string;
   avatarPublicId?: string;
+  communityPoints: number;
   activeSubscription?: {
     plan: SubscriptionPlan;
     billingDuration?: number;
@@ -32,6 +33,7 @@ const userSchema = new Schema<IUser>(
     },
     avatar: String,
     avatarPublicId: { type: String, select: false },
+    communityPoints: { type: Number, default: 0, min: 0 },
     activeSubscription: {
       plan: { type: String, trim: true },
       billingDuration: { type: Number, min: 1 },

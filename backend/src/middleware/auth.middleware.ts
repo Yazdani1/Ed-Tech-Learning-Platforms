@@ -25,6 +25,29 @@ export const protect = asyncHandler(async (req, _res, next) => {
   next();
 });
 
+export const optionalProtect = asyncHandler(async (req, _res, next) => {
+  let token: string | undefined = req.cookies.token as string | undefined;
+  if (!token) {
+    const auth = req.headers.authorization;
+    if (auth?.startsWith('Bearer ')) token = auth.slice(7);
+  }
+
+  if (!token) {
+    next();
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;
+    const user = await User.findById(decoded.id).select('-password');
+    if (user) req.user = user;
+  } catch {
+    // Public endpoints should still work for guests with expired tokens.
+  }
+
+  next();
+});
+
 export const authorize =
   (...roles: UserRole[]) =>
   asyncHandler(async (req, _res, next) => {

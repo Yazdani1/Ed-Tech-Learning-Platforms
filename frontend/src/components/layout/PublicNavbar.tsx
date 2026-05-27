@@ -25,6 +25,7 @@ const prefetchPublicRoutes = () => {
 	void import('../../pages/pricing/PricingPage');
 	void import('../../pages/teachers/PublicTeachersPage');
 	void import('../../pages/quiz/PracticeQuizPage');
+	void import('../../pages/community/CommunityHubPage');
 };
 
 const PublicNavbar= () => {
@@ -201,6 +202,16 @@ const PublicNavbar= () => {
             sx={{ display: { xs: 'none', md: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
           >
             Practice Quiz
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/community-hub"
+            color="inherit"
+            onMouseEnter={prefetchPublicRoutes}
+            onFocus={prefetchPublicRoutes}
+            sx={{ display: { xs: 'none', lg: 'inline-flex' }, color: 'text.primary', fontWeight: 500 }}
+          >
+            Community Hub
           </Button>
 
           {user ? (

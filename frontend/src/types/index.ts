@@ -10,6 +10,7 @@ export interface IUser {
   email: string;
   role: UserRole;
   avatar?: string;
+  communityPoints?: number;
   activeSubscription?: {
     plan: SubscriptionPlan;
     billingDuration?: number;
@@ -31,6 +32,84 @@ export interface IUser {
   purchasedCourses: string[];
   createdAt: string;
   updatedAt?: string;
+}
+
+export type CommunityReactionType = 'Like' | 'Love' | 'Wow' | 'Sad' | 'Angry' | 'Helpful';
+
+export interface ICommunityChannel {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  imageUrl?: string;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICommunityBadge {
+  _id: string;
+  name: string;
+  icon: string;
+  requiredPoints: number;
+  description?: string;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICommunityReaction {
+  user: string | Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
+  type: CommunityReactionType;
+  createdAt: string;
+}
+
+export interface ICommunityReply {
+  _id: string;
+  post: string;
+  body: string;
+  author: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+  reactions: ICommunityReaction[];
+  isAccepted: boolean;
+  acceptedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICommunityPost {
+  _id: string;
+  channel: ICommunityChannel;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  author: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+  reactions: ICommunityReaction[];
+  replies: ICommunityReply[];
+  isPinned: boolean;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICommunityPointRule {
+  _id: string;
+  key: 'acceptedAnswer' | 'createPost' | 'createReply' | 'receiveReaction';
+  label: string;
+  points: number;
+}
+
+export interface ICommunityOverview {
+  channels: ICommunityChannel[];
+  channelPostCounts: Record<string, number>;
+  posts: ICommunityPost[];
+  badges: ICommunityBadge[];
+  guestLimited: boolean;
+}
+
+export interface ICommunityPostDetail {
+  post: ICommunityPost;
+  badges: ICommunityBadge[];
+  channels: ICommunityChannel[];
 }
 
 export interface IChatConversation {

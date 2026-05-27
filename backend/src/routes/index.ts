@@ -20,6 +20,7 @@ import notificationRouter from './notification.routes';
 import quizBankRouter from './quizBank.routes';
 import quizSectionRouter from './quizSection.routes';
 import homeHeroPostRouter from './homeHeroPost.routes';
+import communityRouter from './community.routes';
 
 const router = Router();
 
@@ -44,5 +45,6 @@ router.use('/notifications', notificationRouter);
 router.use('/quiz-bank', quizBankRouter);
 router.use('/quiz-sections', quizSectionRouter);
 router.use('/home-hero-posts', homeHeroPostRouter);
+router.use('/community', communityRouter);
 
 export default router;
