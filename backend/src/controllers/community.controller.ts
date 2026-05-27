@@ -51,6 +51,13 @@ const awardPoints = async (userId: Types.ObjectId, key: CommunityPointRuleKey) =
 
 const getPublicBadges = () => CommunityBadge.find({ isArchived: false }).sort({ requiredPoints: 1 }).lean();
 
+const getPaginationNumber = (value: unknown, fallback: number, max?: number) => {
+  const parsed = Number(value ?? fallback);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  const rounded = Math.floor(parsed);
+  return max ? Math.min(rounded, max) : rounded;
+};
+
 export const getCommunityOverview = asyncHandler(async (req: Request, res: Response) => {
   const channelId = req.query.channel ? String(req.query.channel) : undefined;
   const includeArchived = req.query.archived === 'true';
@@ -192,16 +199,21 @@ export const createPost = asyncHandler(async (req: Request, res: Response) => {
 export const getCommunityPost = asyncHandler(async (req: Request, res: Response) => {
   const includeArchived = req.query.archived === 'true';
   if (includeArchived && !isAdmin(req.user?.role)) throw new AppError('Only admins can view archived posts', 403);
+  const repliesLimit = getPaginationNumber(req.query.repliesLimit, 10, 50);
 
   const post = await CommunityPost.findOne({ _id: req.params.postId, isArchived: includeArchived })
     .populate(populatePost)
     .lean();
   if (!post) throw new AppError('Discussion not found', 404);
 
-  const replies = await CommunityReply.find({ post: post._id })
-    .sort({ isAccepted: -1, createdAt: 1 })
-    .populate(populateReply)
-    .lean();
+  const [replies, repliesTotal] = await Promise.all([
+    CommunityReply.find({ post: post._id })
+      .sort({ isAccepted: -1, createdAt: 1 })
+      .limit(repliesLimit)
+      .populate(populateReply)
+      .lean(),
+    CommunityReply.countDocuments({ post: post._id }),
+  ]);
   const [badges, channels] = await Promise.all([
     getPublicBadges(),
     CommunityChannel.find({ isArchived: false }).sort({ name: 1 }).lean(),
@@ -210,9 +222,43 @@ export const getCommunityPost = asyncHandler(async (req: Request, res: Response)
   res.status(200).json({
     success: true,
     data: {
-      post: { ...post, replies },
+      post: { ...post, replies, replyCount: repliesTotal },
       badges,
       channels,
+      repliesPagination: {
+        total: repliesTotal,
+        limit: repliesLimit,
+        skip: 0,
+        hasMore: replies.length < repliesTotal,
+      },
+    },
+  });
+});
+
+export const getCommunityReplies = asyncHandler(async (req: Request, res: Response) => {
+  const skip = getPaginationNumber(req.query.skip, 0);
+  const limit = getPaginationNumber(req.query.limit, 10, 50);
+  const post = await CommunityPost.findOne({ _id: req.params.postId, isArchived: false }).select('_id');
+  if (!post) throw new AppError('Discussion not found', 404);
+
+  const [replies, total] = await Promise.all([
+    CommunityReply.find({ post: post._id })
+      .sort({ isAccepted: -1, createdAt: 1 })
+      .skip(skip)
+      .limit(limit)
+      .populate(populateReply)
+      .lean(),
+    CommunityReply.countDocuments({ post: post._id }),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      replies,
+      total,
+      limit,
+      skip,
+      hasMore: skip + replies.length < total,
     },
   });
 });

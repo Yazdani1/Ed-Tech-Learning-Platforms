@@ -1,4 +1,4 @@
-import { useState, type FC, type MouseEvent } from 'react';
+import { Fragment, useState, type FC, type MouseEvent } from 'react';
 import {
   Avatar,
   Box,
@@ -52,6 +52,9 @@ interface CommunityPostCardProps {
   channels: ICommunityPost['channel'][];
   showReplies?: boolean;
   onOpen?: (postId: string) => void;
+  hasMoreReplies?: boolean;
+  loadingMoreReplies?: boolean;
+  onLoadMoreReplies?: () => Promise<void>;
 }
 
 const AuthorLine: FC<AuthorLineProps> = ({ author, badges }) => {
@@ -103,6 +106,9 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
   channels,
   showReplies = true,
   onOpen,
+  hasMoreReplies = false,
+  loadingMoreReplies = false,
+  onLoadMoreReplies,
 }) => {
   const [replyBody, setReplyBody] = useState('');
   const [replying, setReplying] = useState(false);
@@ -166,8 +172,6 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
       sx={{
         border: '1px solid',
         borderColor: post.isPinned ? 'warning.main' : 'divider',
-        borderLeft: '5px solid',
-        borderLeftColor: post.isPinned ? 'warning.main' : 'primary.main',
         bgcolor: post.isPinned ? 'warning.50' : 'background.paper',
         borderRadius: 1,
         overflow: 'hidden',
@@ -271,7 +275,7 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
             disabled={!user}
             currentUserId={user?._id}
             onReact={(type) => void onReactPost(post._id, type)}
-            answerCount={post.replies.length}
+            answerCount={post.replyCount ?? post.replies.length}
             onAnswerClick={() => onOpen?.(post._id)}
           />
         </Stack>
@@ -281,19 +285,18 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
       <>
       <Box sx={{ px: 2.5, pb: 2.5 }}>
         {user ? (
-          <Stack spacing={1.25}>
+          <Stack spacing={1.25} sx={{ alignItems: 'flex-end' }}>
             {!replyFormOpen && (
               <Button
                 variant="contained"
                 startIcon={<ReplyIcon />}
                 onClick={() => setReplyFormOpen(true)}
-                sx={{ alignSelf: 'flex-start' }}
               >
                 Reply
               </Button>
             )}
             {replyFormOpen && (
-              <Stack spacing={1}>
+              <Stack spacing={1} sx={{ width: '100%' }}>
                 <RichTextEditor
                   value={replyBody}
                   onChange={setReplyBody}
@@ -315,7 +318,7 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
             )}
           </Stack>
         ) : (
-          <Button href="/auth/login" variant="outlined" startIcon={<ReplyIcon />} sx={{ alignSelf: 'flex-start' }}>
+          <Button href="/auth/login" variant="outlined" startIcon={<ReplyIcon />} sx={{ display: 'flex', ml: 'auto' }}>
             Sign in to reply
           </Button>
         )}
@@ -323,43 +326,65 @@ const CommunityPostCard: FC<CommunityPostCardProps> = ({
       <Divider />
       <Box sx={{ p: 2.5, bgcolor: 'grey.50' }}>
         <Stack spacing={2}>
-          {post.replies.map((reply) => (
-            <Paper
-              key={reply._id}
-              elevation={0}
+          {post.replies.map((reply, index) => (
+            <Fragment key={reply._id}>
+              <Box
+                sx={{
+                  p: 1.5,
+                  bgcolor: reply.isAccepted ? 'success.50' : 'transparent',
+                  borderRadius: reply.isAccepted ? 1 : 0,
+                }}
+              >
+                <Stack spacing={1}>
+                  <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between' }}>
+                    <AuthorLine author={reply.author} badges={badges} />
+                    {isAuthor && (
+                      <Tooltip title={reply.isAccepted ? 'Remove accepted answer' : 'Mark accepted answer'}>
+                        <Button size="small" color={reply.isAccepted ? 'success' : 'inherit'} startIcon={<CheckCircleIcon />} onClick={() => onAcceptReply(reply._id)}>
+                          {reply.isAccepted ? 'Accepted' : 'Accept'}
+                        </Button>
+                      </Tooltip>
+                    )}
+                  </Stack>
+                  {reply.isAccepted && <Chip label="Accepted answer" color="success" size="small" sx={{ alignSelf: 'flex-start', fontWeight: 800 }} />}
+                  <Box
+                    sx={{ typography: 'body2', '& p': { my: 0.75 }, '& ul, & ol': { pl: 3 } }}
+                    dangerouslySetInnerHTML={{ __html: reply.body }}
+                  />
+                  <ReactionBar
+                    reactions={reply.reactions}
+                    disabled={!user}
+                    currentUserId={user?._id}
+                    onReact={(type) => void onReactReply(reply._id, type)}
+                  />
+                </Stack>
+              </Box>
+              {index < post.replies.length - 1 && <Divider />}
+            </Fragment>
+          ))}
+          {hasMoreReplies && onLoadMoreReplies && (
+            <Button
+              variant="outlined"
+              disabled={loadingMoreReplies}
+              onClick={() => void onLoadMoreReplies()}
               sx={{
-                p: 1.5,
-                border: '1px solid',
-                borderColor: reply.isAccepted ? 'success.main' : 'divider',
-                bgcolor: reply.isAccepted ? 'success.50' : 'background.paper',
-                borderRadius: 1,
+                alignSelf: 'center',
+                px: 3,
+                py: 1,
+                borderRadius: 999,
+                fontWeight: 900,
+                textTransform: 'none',
+                bgcolor: 'background.paper',
+                boxShadow: '0 8px 22px rgba(15, 23, 42, 0.08)',
+                '&:hover': {
+                  bgcolor: 'primary.50',
+                  boxShadow: '0 10px 26px rgba(37, 99, 235, 0.14)',
+                },
               }}
             >
-              <Stack spacing={1}>
-                <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between' }}>
-                  <AuthorLine author={reply.author} badges={badges} />
-                  {isAuthor && (
-                    <Tooltip title={reply.isAccepted ? 'Remove accepted answer' : 'Mark accepted answer'}>
-                      <Button size="small" color={reply.isAccepted ? 'success' : 'inherit'} startIcon={<CheckCircleIcon />} onClick={() => onAcceptReply(reply._id)}>
-                        {reply.isAccepted ? 'Accepted' : 'Accept'}
-                      </Button>
-                    </Tooltip>
-                  )}
-                </Stack>
-                {reply.isAccepted && <Chip label="Accepted answer" color="success" size="small" sx={{ alignSelf: 'flex-start', fontWeight: 800 }} />}
-                <Box
-                  sx={{ typography: 'body2', '& p': { my: 0.75 }, '& ul, & ol': { pl: 3 } }}
-                  dangerouslySetInnerHTML={{ __html: reply.body }}
-                />
-                <ReactionBar
-                  reactions={reply.reactions}
-                  disabled={!user}
-                  currentUserId={user?._id}
-                  onReact={(type) => void onReactReply(reply._id, type)}
-                />
-              </Stack>
-            </Paper>
-          ))}
+              {loadingMoreReplies ? 'Loading answers...' : 'Load more answers'}
+            </Button>
+          )}
         </Stack>
       </Box>
       </>

@@ -85,6 +85,7 @@ export interface ICommunityPost {
   author: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
   reactions: ICommunityReaction[];
   replies: ICommunityReply[];
+  replyCount?: number;
   isPinned: boolean;
   isArchived: boolean;
   createdAt: string;
@@ -110,6 +111,12 @@ export interface ICommunityPostDetail {
   post: ICommunityPost;
   badges: ICommunityBadge[];
   channels: ICommunityChannel[];
+  repliesPagination?: {
+    total: number;
+    limit: number;
+    skip: number;
+    hasMore: boolean;
+  };
 }
 
 export interface IChatConversation {

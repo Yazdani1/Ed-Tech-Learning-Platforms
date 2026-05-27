@@ -12,7 +12,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import ChatBubbleOutlinedIcon from '@mui/icons-material/ChatBubbleOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import type { CommunityReactionType, ICommunityReaction } from '../../types/index';
@@ -254,9 +253,8 @@ const ReactionBar: FC<ReactionBarProps> = ({
           '&:hover': { bgcolor: 'transparent', color: 'primary.main' },
         }}
       >
-        <ChatBubbleOutlinedIcon sx={{ fontSize: 26 }} />
         <Typography component="span" sx={{ fontWeight: 800, fontSize: 16 }}>
-          {formatCount(answerCount)}
+          {formatCount(answerCount)} Answers
         </Typography>
       </Button>
     )}

@@ -17,6 +17,11 @@ export const communityService = {
     api.get<ICommunityOverview>('/community', { params }),
   getPost: (postId: string, params?: { archived?: boolean }) =>
     api.get<ICommunityPostDetail>(`/community/posts/${postId}`, { params }),
+  getReplies: (postId: string, params?: { skip?: number; limit?: number }) =>
+    api.get<{ replies: ICommunityReply[]; total: number; limit: number; skip: number; hasMore: boolean }>(
+      `/community/posts/${postId}/replies`,
+      { params }
+    ),
   getAdminChannels: () => api.get<ICommunityChannel[]>('/community/admin/channels'),
   createChannel: (data: FormData) => api.post<ICommunityChannel>('/community/channels', data, multipartConfig),
   updateChannel: (id: string, data: FormData) => api.put<ICommunityChannel>(`/community/channels/${id}`, data, multipartConfig),

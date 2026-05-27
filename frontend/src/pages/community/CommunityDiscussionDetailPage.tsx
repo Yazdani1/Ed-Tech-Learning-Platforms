@@ -26,6 +26,8 @@ const CommunityDiscussionDetailPage = () => {
   const [channels, setChannels] = useState<ICommunityChannel[]>([]);
   const [relatedPosts, setRelatedPosts] = useState<ICommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMoreReplies, setLoadingMoreReplies] = useState(false);
+  const [hasMoreReplies, setHasMoreReplies] = useState(false);
 
   const loadPost = async () => {
     if (!postId) return;
@@ -35,6 +37,7 @@ const CommunityDiscussionDetailPage = () => {
     setPost(discussion);
     setBadges(res.data?.badges ?? []);
     setChannels(res.data?.channels ?? []);
+    setHasMoreReplies(Boolean(res.data?.repliesPagination?.hasMore));
     if (discussion?.channel?._id) {
       const relatedRes = await communityService.getOverview({ channel: discussion.channel._id, limit: 12 });
       setRelatedPosts((relatedRes.data?.posts ?? []).filter((item) => item._id !== discussion._id));
@@ -66,7 +69,15 @@ const CommunityDiscussionDetailPage = () => {
   const createReply = async (discussionId: string, body: string) => {
     const res = await communityService.createReply(discussionId, body);
     if (!res.data) return;
-    setPost((current) => (current ? { ...current, replies: [...current.replies, res.data as ICommunityReply] } : current));
+    setPost((current) =>
+      current
+        ? {
+            ...current,
+            replies: [...current.replies, res.data as ICommunityReply],
+            replyCount: (current.replyCount ?? current.replies.length) + 1,
+          }
+        : current
+    );
   };
 
   const reactToPost = async (discussionId: string, type: CommunityReactionType) => {
@@ -99,6 +110,27 @@ const CommunityDiscussionDetailPage = () => {
     if (res.data) await loadPost();
   };
 
+  const loadMoreReplies = async () => {
+    if (!post || loadingMoreReplies || !hasMoreReplies) return;
+    setLoadingMoreReplies(true);
+    try {
+      const res = await communityService.getReplies(post._id, { skip: post.replies.length, limit: 10 });
+      const nextReplies = res.data?.replies ?? [];
+      setPost((current) =>
+        current
+          ? {
+              ...current,
+              replies: [...current.replies, ...nextReplies],
+              replyCount: res.data?.total ?? current.replyCount,
+            }
+          : current
+      );
+      setHasMoreReplies(Boolean(res.data?.hasMore));
+    } finally {
+      setLoadingMoreReplies(false);
+    }
+  };
+
   const latestRelatedPosts = relatedPosts.slice(0, 5);
   const mostAnsweredPosts = [...relatedPosts]
     .sort((a, b) => b.replies.length - a.replies.length || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -117,71 +149,71 @@ const CommunityDiscussionDetailPage = () => {
   const renderSidebarPosts = (items: ICommunityPost[]) =>
     items.length > 0 ? (
       <Stack spacing={1}>
-        {items.map((item) => {
+        {items.map((item, index) => {
           const topReactions = getTopReactionIcons(item);
 
           return (
-            <Paper
-              key={item._id}
-              elevation={0}
-              onClick={() => navigate(`/community-hub/${item._id}`)}
-              sx={{
-                p: 1.5,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1,
-                cursor: 'pointer',
-                transition: 'border-color 140ms ease, background-color 140ms ease',
-                '&:hover': { borderColor: 'primary.light', bgcolor: 'grey.50' },
-              }}
-            >
-              <Stack spacing={0.75}>
-                <Typography variant="body2" sx={{ fontWeight: 900, lineHeight: 1.35 }}>
-                  {item.title}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
-                  {item.author.name}
-                </Typography>
-                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-                  <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-                    {topReactions.length > 0 ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {topReactions.map((reaction, index) => (
-                          <Box
-                            key={reaction.type}
-                            component="span"
-                            sx={{
-                              width: 18,
-                              height: 18,
-                              display: 'grid',
-                              placeItems: 'center',
-                              ml: index === 0 ? 0 : -0.5,
-                              fontSize: 15,
-                            }}
-                          >
-                            {reaction.icon}
-                          </Box>
-                        ))}
-                      </Box>
-                    ) : (
-                      <ThumbUpOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                    )}
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
-                      {formatCount(item.reactions.length)}
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-                    <ChatBubbleOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
-                      {formatCount(item.replies.length)}
-                    </Typography>
-                  </Stack>
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(item.createdAt).toLocaleDateString()}
+            <Box key={item._id}>
+              <Box
+                onClick={() => navigate(`/community-hub/${item._id}`)}
+                sx={{
+                  py: 1.25,
+                  px: 0.5,
+                  borderRadius: 1,
+                  cursor: 'pointer',
+                  transition: 'background-color 140ms ease',
+                  '&:hover': { bgcolor: 'grey.100' },
+                }}
+              >
+                <Stack spacing={0.75}>
+                  <Typography variant="body2" sx={{ fontWeight: 900, lineHeight: 1.35 }}>
+                    {item.title}
                   </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                    {item.author.name}
+                  </Typography>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+                      {topReactions.length > 0 ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {topReactions.map((reaction, reactionIndex) => (
+                            <Box
+                              key={reaction.type}
+                              component="span"
+                              sx={{
+                                width: 18,
+                                height: 18,
+                                display: 'grid',
+                                placeItems: 'center',
+                                ml: reactionIndex === 0 ? 0 : -0.5,
+                                fontSize: 15,
+                              }}
+                            >
+                              {reaction.icon}
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : (
+                        <ThumbUpOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                      )}
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                        {formatCount(item.reactions.length)}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+                      <ChatBubbleOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                        {formatCount(item.replies.length)}
+                      </Typography>
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </Typography>
+                  </Stack>
                 </Stack>
-              </Stack>
-            </Paper>
+              </Box>
+              {index < items.length - 1 && <Divider />}
+            </Box>
           );
         })}
       </Stack>
@@ -219,6 +251,9 @@ const CommunityDiscussionDetailPage = () => {
                   onArchivePost={archivePost}
                   onTogglePin={togglePin}
                   onUpdatePost={updatePostDetails}
+                  hasMoreReplies={hasMoreReplies}
+                  loadingMoreReplies={loadingMoreReplies}
+                  onLoadMoreReplies={loadMoreReplies}
                 />
                 <Paper elevation={0} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                   <Stack spacing={2}>

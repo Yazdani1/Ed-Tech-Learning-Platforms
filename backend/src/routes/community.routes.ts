@@ -9,6 +9,7 @@ import {
   createReply,
   getAdminChannels,
   getCommunityPost,
+  getCommunityReplies,
   getBadges,
   getCommunityOverview,
   getPointRules,
@@ -35,6 +36,7 @@ router.patch('/channels/:id/archive', protect, authorize('Super Admin', 'Admin')
 
 router.post('/posts', protect, upload.single('image'), createPost);
 router.get('/posts/:postId', optionalProtect, getCommunityPost);
+router.get('/posts/:postId/replies', optionalProtect, getCommunityReplies);
 router.put('/posts/:postId', protect, upload.single('image'), updatePost);
 router.post('/posts/:postId/replies', protect, createReply);
 router.patch('/posts/:postId/reactions', protect, reactToPost);
