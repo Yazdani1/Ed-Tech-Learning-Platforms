@@ -757,6 +757,26 @@ export interface IPublicCourseQuizTree {
   lockedQuestionCount: number;
 }
 
+export type ScheduleType = 'timer' | 'reminder';
+export type ScheduleStatus = 'pending' | 'active' | 'paused' | 'completed' | 'cancelled';
+
+export interface IStudySchedule {
+	_id: string;
+	user: string;
+	type: ScheduleType;
+	title: string;
+	description: string;
+	status: ScheduleStatus;
+	duration?: number;
+	elapsedSeconds?: number;
+	completedAt?: string;
+	startDateTime?: string;
+	endDateTime?: string;
+	firedAt?: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
 export interface IAttemptAnswer {
   questionId: string;
   selectedOptionIndices: number[];

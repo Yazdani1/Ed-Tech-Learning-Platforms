@@ -42,6 +42,7 @@ const HomeHeroPostsPage = lazy(() => import('./pages/homeHero/HomeHeroPostsPage'
 const CommunityHubPage = lazy(() => import('./pages/community/CommunityHubPage'));
 const CommunityDiscussionDetailPage = lazy(() => import('./pages/community/CommunityDiscussionDetailPage'));
 const CommunityUserProfilePage = lazy(() => import('./pages/community/CommunityUserProfilePage'));
+const StudySchedulePage = lazy(() => import('./pages/studySchedule/StudySchedulePage'));
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
@@ -89,6 +90,7 @@ const App= () => {
 					<Route path='/admin/chat' element={<StaffChatPage />} />
 					<Route path='/admin/group-chat' element={<GroupChatPage />} />
 					<Route path='/admin/notifications' element={<NotificationsPage />} />
+					<Route path='/admin/schedule' element={<StudySchedulePage />} />
 				</Route>
 			</Route>
 
@@ -103,6 +105,7 @@ const App= () => {
 					<Route path='/student/chat' element={<StudentChatPage />} />
 					<Route path='/student/group-chat' element={<GroupChatPage />} />
 					<Route path='/student/notifications' element={<NotificationsPage />} />
+					<Route path='/student/schedule' element={<StudySchedulePage />} />
 				</Route>
 			</Route>
 
@@ -114,6 +117,7 @@ const App= () => {
 					<Route path='/teacher/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
 					<Route path='/teacher/chat' element={<StaffChatPage />} />
 					<Route path='/teacher/notifications' element={<NotificationsPage />} />
+					<Route path='/teacher/schedule' element={<StudySchedulePage />} />
 				</Route>
 			</Route>
 

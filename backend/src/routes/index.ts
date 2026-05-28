@@ -22,6 +22,7 @@ import quizSectionRouter from './quizSection.routes';
 import homeHeroPostRouter from './homeHeroPost.routes';
 import communityRouter from './community.routes';
 import groupChatRouter from './groupChat.routes';
+import studyScheduleRouter from './studySchedule.routes';
 
 const router = Router();
 
@@ -48,5 +49,6 @@ router.use('/quiz-sections', quizSectionRouter);
 router.use('/home-hero-posts', homeHeroPostRouter);
 router.use('/community', communityRouter);
 router.use('/group-chat', groupChatRouter);
+router.use('/study-schedules', studyScheduleRouter);
 
 export default router;

@@ -24,6 +24,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ChatIcon from '@mui/icons-material/Chat';
 import GroupsIcon from '@mui/icons-material/Groups';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 import Badge from '@mui/material/Badge';
 import { useAuth } from '../../../context/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -45,6 +46,7 @@ const navItems = [
 	{ label: 'Pricing', icon: <CardMembershipIcon />, path: '/pricing' },
 	{ label: 'Support Chat', icon: <ChatIcon />, path: '/student/chat' },
 	{ label: 'Create Channel', icon: <GroupsIcon />, path: '/student/group-chat' },
+	{ label: 'Schedule', icon: <EventNoteIcon />, path: '/student/schedule' },
 	{ label: 'Notifications', icon: <NotificationsIcon />, path: '/student/notifications' },
 ];
 
