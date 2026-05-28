@@ -76,7 +76,16 @@ const CommunityProfilePreviewPopover: FC<CommunityProfilePreviewPopoverProps> = 
             <Typography variant="h6" sx={{ fontWeight: 950, textAlign: 'center' }}>
               This profile is private.
             </Typography>
-            <Button variant="contained" onClick={viewProfile} sx={{ px: 4, fontWeight: 900, textTransform: 'none' }}>
+            <Button
+              variant="outlined"
+              onClick={viewProfile}
+              sx={{
+                px: 4,
+                fontWeight: 900,
+                textTransform: 'none',
+                '&:hover': { bgcolor: 'primary.main', color: 'primary.contrastText', borderColor: 'primary.main' },
+              }}
+            >
               View Profile
             </Button>
           </Stack>
@@ -96,15 +105,14 @@ const CommunityProfilePreviewPopover: FC<CommunityProfilePreviewPopoverProps> = 
                 <Chip label={profile.user.role} size="small" variant="outlined" sx={{ mt: 1 }} />
               </Box>
               <Button
-                variant="contained"
+                variant="outlined"
                 size="large"
                 onClick={viewProfile}
                 sx={{
                   px: 4,
                   fontWeight: 900,
                   textTransform: 'none',
-                  bgcolor: 'primary.main',
-                  '&:hover': { bgcolor: 'primary.dark' },
+                  '&:hover': { bgcolor: 'primary.main', color: 'primary.contrastText', borderColor: 'primary.main' },
                 }}
               >
                 View Profile

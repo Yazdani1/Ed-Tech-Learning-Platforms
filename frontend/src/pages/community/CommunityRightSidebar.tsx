@@ -1,6 +1,6 @@
 import { useState, type FC, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Avatar, Badge, Box, Button, Chip, Divider, Paper, Stack, Tooltip, Typography } from '@mui/material';
+import { Avatar, Badge, Box, Divider, Paper, Stack, Tooltip, Typography } from '@mui/material';
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
@@ -31,6 +31,8 @@ const CommunityRightSidebar: FC<CommunityRightSidebarProps> = ({ widgets, badges
   const navigate = useNavigate();
   const [contributorAnchor, setContributorAnchor] = useState<HTMLElement | null>(null);
   const [activeContributorId, setActiveContributorId] = useState<string | undefined>();
+  const [onlineMemberAnchor, setOnlineMemberAnchor] = useState<HTMLElement | null>(null);
+  const [activeOnlineMemberId, setActiveOnlineMemberId] = useState<string | undefined>();
 
   const openContributorPreview = (event: MouseEvent<HTMLElement>, contributor: ICommunityHubWidgets['topContributors'][number]) => {
     setContributorAnchor(event.currentTarget);
@@ -40,6 +42,16 @@ const CommunityRightSidebar: FC<CommunityRightSidebarProps> = ({ widgets, badges
   const closeContributorPreview = () => {
     setContributorAnchor(null);
     setActiveContributorId(undefined);
+  };
+
+  const openOnlineMemberPreview = (event: MouseEvent<HTMLElement>, userId: string) => {
+    setOnlineMemberAnchor(event.currentTarget);
+    setActiveOnlineMemberId(userId);
+  };
+
+  const closeOnlineMemberPreview = () => {
+    setOnlineMemberAnchor(null);
+    setActiveOnlineMemberId(undefined);
   };
 
   return (
@@ -137,67 +149,35 @@ const CommunityRightSidebar: FC<CommunityRightSidebarProps> = ({ widgets, badges
       <SectionCard title="Online Members">
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 1 }}>
           {(widgets?.onlineMembers ?? []).slice(0, 5).map((item) => (
-            <Tooltip
+            <Paper
               key={item.user._id}
-              arrow
-              placement="top"
-              title={
-                <Stack spacing={1} sx={{ p: 0.5, minWidth: 220 }}>
-                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <Avatar src={item.user.avatar} sx={{ width: 36, height: 36 }}>
-                      {item.user.name[0]?.toUpperCase()}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>
-                        {item.user.name}
-                      </Typography>
-                      <Typography variant="caption">{item.user.role}</Typography>
-                    </Box>
-                  </Stack>
-                  <Stack spacing={0.4}>
-                    <Typography variant="caption">{formatCount(item.stats.discussionsAsked)} discussions asked</Typography>
-                    <Typography variant="caption">{formatCount(item.stats.answersGiven)} answers/replies</Typography>
-                  </Stack>
-                  {item.badges.length > 0 && (
-                    <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
-                      {item.badges.slice(0, 3).map((badge) => (
-                        <Chip key={badge._id} size="small" label={badge.name} />
-                      ))}
-                    </Stack>
-                  )}
-                  <Button size="small" variant="contained" onClick={() => navigate(`/community-hub/users/${item.user._id}`)}>
-                    View Profile
-                  </Button>
-                </Stack>
-              }
+              elevation={0}
+              onClick={(event) => openOnlineMemberPreview(event, item.user._id)}
+              sx={{
+                p: 1,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                display: 'grid',
+                placeItems: 'center',
+                cursor: 'pointer',
+                '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.50' },
+              }}
             >
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 1,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  display: 'grid',
-                  placeItems: 'center',
-                  cursor: 'pointer',
-                  '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.50' },
-                }}
+              <Badge
+                overlap="circular"
+                variant="dot"
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                sx={{ '& .MuiBadge-badge': { bgcolor: 'success.main', border: '2px solid white', width: 12, height: 12, borderRadius: '50%' } }}
               >
-                <Badge
-                  overlap="circular"
-                  variant="dot"
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                  sx={{ '& .MuiBadge-badge': { bgcolor: 'success.main', border: '2px solid white', width: 12, height: 12, borderRadius: '50%' } }}
-                >
-                  <Avatar src={item.user.avatar} sx={{ width: 38, height: 38 }}>
-                    {item.user.name[0]?.toUpperCase()}
-                  </Avatar>
-                </Badge>
-              </Paper>
-            </Tooltip>
+                <Avatar src={item.user.avatar} sx={{ width: 38, height: 38 }}>
+                  {item.user.name[0]?.toUpperCase()}
+                </Avatar>
+              </Badge>
+            </Paper>
           ))}
         </Box>
+        <CommunityProfilePreviewPopover anchorEl={onlineMemberAnchor} userId={activeOnlineMemberId} onClose={closeOnlineMemberPreview} />
         {(widgets?.onlineMembers ?? []).length === 0 && (
           <Typography variant="body2" color="text.secondary">
             No members are online right now.
