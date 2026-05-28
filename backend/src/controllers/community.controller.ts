@@ -267,13 +267,17 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
   const dateTo = req.query.dateTo ? new Date(String(req.query.dateTo)) : undefined;
   const search = req.query.search ? String(req.query.search).trim() : '';
   const user = req.user;
+  const requestedLimit = Number(req.query.limit ?? 10);
+  const requestedSkip = Number(req.query.skip ?? 0);
 
   if (includeArchived && !isAdmin(user?.role)) throw new AppError('Only admins can view archived posts', 403);
   if (dateFrom && Number.isNaN(dateFrom.getTime())) throw new AppError('Invalid start date', 400);
   if (dateTo && Number.isNaN(dateTo.getTime())) throw new AppError('Invalid end date', 400);
+  if (!Number.isFinite(requestedSkip) || requestedSkip < 0) throw new AppError('Invalid pagination offset', 400);
 
   const channels = await CommunityChannel.find({ isArchived: false }).sort({ name: 1 }).lean();
-  const limit = user ? Number(req.query.limit ?? 30) : Math.min(Number(req.query.limit ?? 6), 6);
+  const limit = Math.min(Math.max(Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 10, 1), user ? 50 : 10);
+  const skip = user ? Math.floor(requestedSkip) : 0;
   const postQuery: Record<string, unknown> = { isArchived: includeArchived };
   if (channelId) postQuery.channel = channelId;
   if (dateFrom || dateTo) {
@@ -291,7 +295,8 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
 
   const posts = await CommunityPost.find(postQuery)
     .sort({ isPinned: -1, pinnedAt: -1, createdAt: -1 })
-    .limit(Number.isFinite(limit) && limit > 0 ? limit : 30)
+    .skip(skip)
+    .limit(limit)
     .populate(populatePost)
     .lean();
 
@@ -356,6 +361,12 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
       settings,
       totalPostCount,
       resultPostCount,
+      postPagination: {
+        skip,
+        limit,
+        loaded: posts.length,
+        hasMore: Boolean(user && skip + posts.length < resultPostCount),
+      },
       totalMemberCount,
       totalReplyCount: totalReplyCount[0]?.count ?? 0,
       posts: posts.map((post) => ({

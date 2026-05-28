@@ -16,7 +16,7 @@ import type {
 const multipartConfig = { headers: { 'Content-Type': 'multipart/form-data' } };
 
 export const communityService = {
-  getOverview: (params?: { channel?: string; archived?: boolean; dateFrom?: string; dateTo?: string; limit?: number; search?: string }) =>
+  getOverview: (params?: { channel?: string; archived?: boolean; dateFrom?: string; dateTo?: string; limit?: number; skip?: number; search?: string }) =>
     api.get<ICommunityOverview>('/community', { params }),
   getUserProfile: (userId: string) => api.get<ICommunityUserProfile>(`/community/users/${userId}`),
   getPost: (postId: string, params?: { archived?: boolean }) =>

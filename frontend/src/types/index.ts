@@ -130,6 +130,12 @@ export interface ICommunityOverview {
   settings?: ICommunitySetting;
   totalPostCount?: number;
   resultPostCount?: number;
+  postPagination?: {
+    skip: number;
+    limit: number;
+    loaded: number;
+    hasMore: boolean;
+  };
   totalReplyCount?: number;
   totalMemberCount?: number;
   posts: ICommunityPost[];

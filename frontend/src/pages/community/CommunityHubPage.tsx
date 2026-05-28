@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -43,6 +43,7 @@ import CommunityRightSidebar from './CommunityRightSidebar';
 import { isAdminRole, isRichTextEmpty } from './communityHelpers';
 
 const numberFormatter = new Intl.NumberFormat();
+const DISCUSSION_PAGE_SIZE = 10;
 
 const CommunityHubPage = () => {
   const navigate = useNavigate();
@@ -57,6 +58,7 @@ const CommunityHubPage = () => {
     resultPostCount: 0,
     totalReplyCount: 0,
     totalMemberCount: 0,
+    postPagination: { skip: 0, limit: DISCUSSION_PAGE_SIZE, loaded: 0, hasMore: false },
     guestLimited: false,
   });
   const [selectedChannel, setSelectedChannel] = useState('');
@@ -70,7 +72,9 @@ const CommunityHubPage = () => {
   const [adminOpen, setAdminOpen] = useState(false);
   const [postFormOpen, setPostFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [creating, setCreating] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [postForm, setPostForm] = useState({
     channel: '',
     title: '',
@@ -80,30 +84,67 @@ const CommunityHubPage = () => {
 
   const canViewArchive = isAdminRole(user?.role);
 
-  const loadHub = async (searchOverride?: string) => {
-    setLoading(true);
+  const loadHub = async (searchOverride?: string, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     const searchValue = searchOverride ?? appliedSearch;
-    const res = await communityService.getOverview({
-      channel: selectedChannel || undefined,
-      archived: canViewArchive && showArchived,
-      dateFrom: dateFrom || undefined,
-      dateTo: dateTo || undefined,
-      search: searchValue || undefined,
-    });
-    setOverview(res.data ?? { channels: [], posts: [], badges: [], channelPostCounts: {}, channelReplyCounts: {}, totalPostCount: 0, resultPostCount: 0, totalReplyCount: 0, totalMemberCount: 0, guestLimited: false });
-    setLoading(false);
+    try {
+      const res = await communityService.getOverview({
+        channel: selectedChannel || undefined,
+        archived: canViewArchive && showArchived,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        limit: DISCUSSION_PAGE_SIZE,
+        skip: append ? overview.posts.length : 0,
+        search: searchValue || undefined,
+      });
+      const nextOverview = res.data ?? { channels: [], posts: [], badges: [], channelPostCounts: {}, channelReplyCounts: {}, totalPostCount: 0, resultPostCount: 0, totalReplyCount: 0, totalMemberCount: 0, postPagination: { skip: 0, limit: DISCUSSION_PAGE_SIZE, loaded: 0, hasMore: false }, guestLimited: false };
+      setOverview((current) => (
+        append
+          ? { ...nextOverview, posts: [...current.posts, ...nextOverview.posts] }
+          : nextOverview
+      ));
+    } finally {
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
+    }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadHub();
-  }, [selectedChannel, showArchived, dateFrom, dateTo]);
+  }, [selectedChannel, showArchived, dateFrom, dateTo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (searchText.trim() === '' && appliedSearch) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAppliedSearch('');
       void loadHub('');
     }
-  }, [searchText, appliedSearch]);
+  }, [searchText, appliedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || loading || loadingMore || !overview.postPagination?.hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !loadingMore) {
+          void loadHub(undefined, true);
+        }
+      },
+      { rootMargin: '360px 0px' }
+    );
+    observer.observe(target);
+
+    return () => observer.disconnect();
+  }, [overview.postPagination?.hasMore, overview.posts.length, loading, loadingMore, selectedChannel, showArchived, dateFrom, dateTo, appliedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submitSearch = () => {
     const nextSearch = searchText.trim();
@@ -621,25 +662,33 @@ const CommunityHubPage = () => {
                       <Typography color="text.secondary">Pick another channel or start a new discussion.</Typography>
                     </Paper>
                   ) : (
-                    overview.posts.map((post) => (
-                      <CommunityPostCard
-                        key={post._id}
-                        post={post}
-                        user={user}
-                        badges={overview.badges}
-                        onReply={createReply}
-                        onReactPost={reactToPost}
-                        onReactReply={reactToReply}
-                        onAcceptReply={acceptReply}
-                        onArchiveReply={archiveReply}
-                        onArchivePost={archivePost}
-                        onTogglePin={togglePin}
-                        onUpdatePost={updatePostDetails}
-                        channels={overview.channels}
-                        showReplies={false}
-                        onOpen={(postId) => navigate(`/community-hub/${postId}`)}
-                      />
-                    ))
+                    <>
+                      {overview.posts.map((post) => (
+                        <CommunityPostCard
+                          key={post._id}
+                          post={post}
+                          user={user}
+                          badges={overview.badges}
+                          onReply={createReply}
+                          onReactPost={reactToPost}
+                          onReactReply={reactToReply}
+                          onAcceptReply={acceptReply}
+                          onArchiveReply={archiveReply}
+                          onArchivePost={archivePost}
+                          onTogglePin={togglePin}
+                          onUpdatePost={updatePostDetails}
+                          channels={overview.channels}
+                          showReplies={false}
+                          onOpen={(postId) => navigate(`/community-hub/${postId}`)}
+                        />
+                      ))}
+                      <Box ref={loadMoreRef} sx={{ minHeight: 24 }} />
+                      {loadingMore && (
+                        <Paper elevation={0} sx={{ p: 2.5, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
+                          Loading more discussions...
+                        </Paper>
+                      )}
+                    </>
                   )}
                 </Stack>
                 <CommunityRightSidebar widgets={overview.widgets} badges={overview.badges} />
