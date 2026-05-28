@@ -36,6 +36,7 @@ const PracticeQuizPage = lazy(() => import('./pages/quiz/PracticeQuizPage'));
 const PublicTeachersPage = lazy(() => import('./pages/teachers/PublicTeachersPage'));
 const StaffChatPage = lazy(() => import('./pages/chat/StaffChatPage'));
 const StudentChatPage = lazy(() => import('./pages/chat/StudentChatPage'));
+const GroupChatPage = lazy(() => import('./pages/chat/GroupChatPage'));
 const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage'));
 const HomeHeroPostsPage = lazy(() => import('./pages/homeHero/HomeHeroPostsPage'));
 const CommunityHubPage = lazy(() => import('./pages/community/CommunityHubPage'));
@@ -86,6 +87,7 @@ const App= () => {
 					<Route path='/admin/performance' element={<PerformancePage />} />
 					<Route path='/admin/courses/:courseId/learn' element={<StudentCourseLearningPage />} />
 					<Route path='/admin/chat' element={<StaffChatPage />} />
+					<Route path='/admin/group-chat' element={<GroupChatPage />} />
 					<Route path='/admin/notifications' element={<NotificationsPage />} />
 				</Route>
 			</Route>
@@ -99,6 +101,7 @@ const App= () => {
 					<Route path='/student/profile' element={<ProfilePage />} />{' '}
 					<Route path='/student/courses' element={<CoursesPage />} />
 					<Route path='/student/chat' element={<StudentChatPage />} />
+					<Route path='/student/group-chat' element={<GroupChatPage />} />
 					<Route path='/student/notifications' element={<NotificationsPage />} />
 				</Route>
 			</Route>

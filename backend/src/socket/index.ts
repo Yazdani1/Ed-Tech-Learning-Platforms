@@ -6,6 +6,7 @@ import { config } from '../config/env';
 import { User } from '../models/User.model';
 import { ChatConversation } from '../models/ChatConversation.model';
 import { ChatMessage } from '../models/ChatMessage.model';
+import { GroupChatChannel } from '../models/GroupChatChannel.model';
 
 const STAFF_ROLES = ['Super Admin', 'Admin', 'Moderator', 'Teacher'];
 const onlineStudents = new Map<string, number>();
@@ -82,6 +83,13 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 				io.to('staff').emit('chat:presence', { studentId, isOnline: true });
 			}
 		}
+		const groupChannels = await GroupChatChannel.find({
+			isArchived: false,
+			...(isStaff ? {} : { isBlocked: false, 'members.user': user._id }),
+		}).select('_id');
+		groupChannels.forEach((channel) => {
+			void socket.join(`group:${(channel._id as Types.ObjectId).toString()}`);
+		});
 
 		socket.on('chat:send', async (payload: { content: string; conversationId?: string }) => {
 			const content = (payload?.content ?? '').trim();
@@ -177,6 +185,30 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 			} catch {
 				/* silent */
 			}
+		});
+
+		socket.on('groupChat:joinRoom', async (payload: { channelId?: string }) => {
+			const channelId = payload?.channelId;
+			if (!channelId) return;
+			const channel = await GroupChatChannel.findById(channelId);
+			if (!channel) return;
+			if (!isStaff && (channel.isArchived || channel.isBlocked || !channel.members.some((member) => member.user.toString() === user._id.toString()))) return;
+			await socket.join(`group:${channelId}`);
+		});
+
+		socket.on('groupChat:typing', async (payload: { channelId?: string; isTyping?: boolean }) => {
+			const channelId = payload?.channelId;
+			if (!channelId) return;
+			const channel = await GroupChatChannel.findById(channelId).select('members isArchived isBlocked');
+			if (!channel) return;
+			if (!isStaff && (channel.isArchived || channel.isBlocked || !channel.members.some((member) => member.user.toString() === user._id.toString()))) return;
+			socket.to(`group:${channelId}`).emit('groupChat:typing', {
+				channelId,
+				userId: user._id.toString(),
+				userName: user.name,
+				userRole: user.role,
+				isTyping: Boolean(payload?.isTyping),
+			});
 		});
 
 		socket.on('disconnect', () => {

@@ -22,6 +22,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ChatIcon from '@mui/icons-material/Chat';
+import GroupsIcon from '@mui/icons-material/Groups';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import Badge from '@mui/material/Badge';
 import { useAuth } from '../../../context/useAuth';
@@ -43,6 +44,7 @@ const navItems = [
 	{ label: 'nav.myCourses', icon: <BookIcon />, path: '/student/courses' },
 	{ label: 'Pricing', icon: <CardMembershipIcon />, path: '/pricing' },
 	{ label: 'Support Chat', icon: <ChatIcon />, path: '/student/chat' },
+	{ label: 'Create Channel', icon: <GroupsIcon />, path: '/student/group-chat' },
 	{ label: 'Notifications', icon: <NotificationsIcon />, path: '/student/notifications' },
 ];
 

@@ -1,5 +1,5 @@
 import { type FC, useState } from 'react';
-import { IconButton, Menu, MenuItem, Switch } from '@mui/material';
+import { IconButton, Menu, MenuItem, Switch, type SxProps, type Theme } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 export interface ItemAction {
@@ -12,9 +12,10 @@ export interface ItemAction {
 
 interface ItemActionMenuProps {
 	actions: ItemAction[];
+	iconButtonSx?: SxProps<Theme>;
 }
 
-const ItemActionMenu: FC<ItemActionMenuProps> = ({ actions }) => {
+const ItemActionMenu: FC<ItemActionMenuProps> = ({ actions, iconButtonSx }) => {
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
 	if (actions.length === 0) return null;
@@ -26,6 +27,7 @@ const ItemActionMenu: FC<ItemActionMenuProps> = ({ actions }) => {
 			<IconButton
 				size='small'
 				aria-label='Open item actions'
+				sx={iconButtonSx}
 				onClick={(event) => {
 					event.stopPropagation();
 					setAnchorEl(event.currentTarget);

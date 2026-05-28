@@ -22,5 +22,18 @@ export const uploadToCloudinary = (
       .end(buffer);
   });
 
+export const uploadFileToCloudinary = (
+  buffer: Buffer,
+  folder: string
+): Promise<{ url: string; publicId: string; resourceType: string }> =>
+  new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream({ folder, resource_type: 'auto' }, (error, result) => {
+        if (error || !result) return reject(error ?? new Error('Cloudinary upload failed'));
+        resolve({ url: result.secure_url, publicId: result.public_id, resourceType: result.resource_type });
+      })
+      .end(buffer);
+  });
+
 export const deleteFromCloudinary = (publicId: string): Promise<void> =>
   cloudinary.uploader.destroy(publicId).then(() => undefined);

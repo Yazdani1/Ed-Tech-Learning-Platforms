@@ -229,6 +229,69 @@ export interface IChatPresenceEvent {
   isOnline: boolean;
 }
 
+export type GroupChatChannelType = 'Public' | 'Private';
+export type GroupChatMemberRole = 'Admin' | 'Member';
+
+export interface IGroupChatMember {
+  user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
+  role: GroupChatMemberRole;
+  unreadCount: number;
+  joinedAt: string;
+}
+
+export interface IGroupChatJoinRequest {
+  user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  requestedAt: string;
+  respondedAt?: string;
+}
+
+export interface IGroupChatChannel {
+  _id: string;
+  name: string;
+  description?: string;
+  type: GroupChatChannelType;
+  creator: Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
+  members: IGroupChatMember[];
+  joinRequests: IGroupChatJoinRequest[];
+  lastMessage: string;
+  lastMessageAt: string;
+  isBlocked: boolean;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IGroupChatAttachment {
+  url: string;
+  publicId: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  resourceType: string;
+}
+
+export interface IGroupChatMessage {
+  _id: string;
+  channel: string;
+  sender: string;
+  senderName: string;
+  senderRole: string;
+  senderAvatar: string;
+  content: string;
+  attachments: IGroupChatAttachment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IGroupChatTypingEvent {
+  channelId: string;
+  userId: string;
+  userName: string;
+  userRole: string;
+  isTyping: boolean;
+}
+
 export type NotificationPriority = 'Low' | 'Normal' | 'High' | 'Urgent';
 
 export interface INotificationRecipient {
