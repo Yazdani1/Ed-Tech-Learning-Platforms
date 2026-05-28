@@ -41,8 +41,10 @@ import PublicIcon from '@mui/icons-material/Public';
 import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
 import AppModal from '../../components/common/AppModal';
+import DestructiveActionConfirmModal from '../../components/common/DestructiveActionConfirmModal';
 import toast from 'react-hot-toast';
 import ItemActionMenu, { type ItemAction } from '../../components/common/ItemActionMenu';
+import SelectedChatFilePreview from '../../components/chat/SelectedChatFilePreview';
 import TypingIndicator from '../../components/chat/TypingIndicator';
 import { useAuth } from '../../context/useAuth';
 import { useChat } from '../../context/ChatContext';
@@ -81,13 +83,13 @@ interface MembersModalProps {
 	canManage: boolean;
 	onClose: () => void;
 	onApprove: (userId: string) => Promise<void>;
-	onRemove: (userId: string) => Promise<void>;
+	onRemove: (userId: string, userName: string) => void;
 }
 
-interface SelectedFilePreviewProps {
-	file: File;
-	onRemove: () => void;
-}
+type GroupChatConfirmAction =
+	| { type: 'archiveChannel'; channelName: string }
+	| { type: 'leaveChannel'; channelName: string }
+	| { type: 'removeMember'; userId: string; userName: string };
 
 const formatTime = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const isAdminRole = (role?: string) => Boolean(role && adminRoles.includes(role));
@@ -100,63 +102,6 @@ const getMemberUnread = (channel: IGroupChatChannel, userId?: string) =>
 
 const getMemberCountLabel = (channel: IGroupChatChannel) =>
 	`${channel.members.length} ${channel.members.length === 1 ? 'member' : 'members'}`;
-
-const SelectedFilePreview: FC<SelectedFilePreviewProps> = ({ file, onRemove }) => {
-	const [previewUrl, setPreviewUrl] = useState('');
-	const imageFile = file.type.startsWith('image/');
-
-	useEffect(() => {
-		if (!imageFile) return;
-		const nextUrl = URL.createObjectURL(file);
-		// eslint-disable-next-line react-hooks/set-state-in-effect
-		setPreviewUrl(nextUrl);
-		return () => URL.revokeObjectURL(nextUrl);
-	}, [file, imageFile]);
-
-	return (
-		<Box
-			sx={{
-				position: 'relative',
-				width: imageFile ? 86 : 'auto',
-				minWidth: imageFile ? 86 : 120,
-				height: 72,
-				borderRadius: 1,
-				overflow: 'hidden',
-				border: '1px solid',
-				borderColor: 'divider',
-				bgcolor: '#f8fafc',
-			}}
-		>
-			{imageFile ? (
-				<Box component="img" src={previewUrl} alt={file.name} sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-			) : (
-				<Stack sx={{ height: '100%', alignItems: 'center', justifyContent: 'center', px: 1 }}>
-					{file.type === 'application/pdf' ? <DescriptionIcon color="error" /> : <InsertDriveFileIcon color="success" />}
-					<Typography variant="caption" noWrap sx={{ maxWidth: 104 }}>
-						{file.name}
-					</Typography>
-				</Stack>
-			)}
-			<IconButton
-				size="small"
-				aria-label="Remove selected file"
-				onClick={onRemove}
-				sx={{
-					position: 'absolute',
-					top: 4,
-					right: 4,
-					width: 22,
-					height: 22,
-					bgcolor: 'rgba(15,23,42,0.72)',
-					color: '#fff',
-					'&:hover': { bgcolor: 'rgba(15,23,42,0.9)' },
-				}}
-			>
-				<CloseIcon sx={{ fontSize: 14 }} />
-			</IconButton>
-		</Box>
-	);
-};
 
 const ChannelModal: FC<ChannelModalProps> = ({ open, channel, onClose, onSaved }) => {
 	const [name, setName] = useState('');
@@ -341,7 +286,7 @@ const MembersModal: FC<MembersModalProps> = ({ open, channel, currentUserId, can
 									<ListItemText primary={member.user.name} secondary={`${member.user.role} - Online status active`} />
 									<Chip label={member.role} size="small" variant="outlined" />
 									{canManage && member.role !== 'Admin' && member.user._id !== currentUserId && (
-										<IconButton color="error" onClick={() => void onRemove(member.user._id)}>
+										<IconButton color="error" onClick={() => onRemove(member.user._id, member.user.name)}>
 											<CloseIcon />
 										</IconButton>
 									)}
@@ -397,6 +342,8 @@ const GroupChatPage = () => {
 	const [addMembersOpen, setAddMembersOpen] = useState(false);
 	const [membersOpen, setMembersOpen] = useState(false);
 	const [uploadTrayDismissed, setUploadTrayDismissed] = useState(false);
+	const [confirmAction, setConfirmAction] = useState<GroupChatConfirmAction | null>(null);
+	const [confirmingAction, setConfirmingAction] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -569,6 +516,25 @@ const GroupChatPage = () => {
 		toast.success('Left channel');
 	};
 
+	const confirmDestructiveAction = async () => {
+		if (!confirmAction) return;
+		setConfirmingAction(true);
+		try {
+			if (confirmAction.type === 'archiveChannel') {
+				await archiveSelected();
+			} else if (confirmAction.type === 'leaveChannel') {
+				await leaveSelected();
+			} else if (confirmAction.type === 'removeMember' && selectedChannel) {
+				const res = await groupChatService.removeMember(selectedChannel._id, confirmAction.userId);
+				if (res.data) updateSelectedChannel(res.data);
+				toast.success('Member removed');
+			}
+			setConfirmAction(null);
+		} finally {
+			setConfirmingAction(false);
+		}
+	};
+
 	const visibleMessages = useMemo(() => {
 		const search = messageSearch.trim().toLowerCase();
 		if (!search) return messages;
@@ -579,10 +545,27 @@ const GroupChatPage = () => {
 	const joinableChannels = discoverChannels.filter((channel) => !ownedOrJoinedIds.has(channel._id));
 	const selectedActions: ItemAction[] = [
 		...(isCreatorSelected || isPlatformAdmin ? [{ label: 'Edit', icon: <EditIcon />, onClick: () => setEditOpen(true) }] : []),
-		...(selectedChannel && selectedChannel.creator._id !== user?._id && !isPlatformAdmin ? [{ label: 'Leave', icon: <ExitToAppIcon />, onClick: () => void leaveSelected() }] : []),
-		...(isCreatorSelected || isPlatformAdmin ? [{ label: 'Delete', icon: <DeleteIcon />, color: 'error' as const, onClick: () => void archiveSelected() }] : []),
+		...(selectedChannel && selectedChannel.creator._id !== user?._id && !isPlatformAdmin ? [{ label: 'Leave', icon: <ExitToAppIcon />, onClick: () => setConfirmAction({ type: 'leaveChannel', channelName: selectedChannel.name }) }] : []),
+		...(isCreatorSelected || isPlatformAdmin ? [{ label: 'Delete', icon: <DeleteIcon />, color: 'error' as const, onClick: () => selectedChannel && setConfirmAction({ type: 'archiveChannel', channelName: selectedChannel.name }) }] : []),
 		...(isPlatformAdmin ? [{ label: selectedChannel?.isBlocked ? 'Unblock channel' : 'Block channel', icon: <BlockIcon />, onClick: () => void blockSelected() }] : []),
 	];
+	const confirmTitle = confirmAction?.type === 'leaveChannel'
+		? 'Leave channel'
+		: confirmAction?.type === 'removeMember'
+			? 'Remove member'
+			: 'Delete channel';
+	const confirmText = confirmAction?.type === 'leaveChannel'
+		? 'Leave'
+		: confirmAction?.type === 'removeMember'
+			? 'Remove'
+			: 'Delete';
+	const confirmMessage = confirmAction?.type === 'leaveChannel'
+		? `Are you sure you want to leave "${confirmAction.channelName}"?`
+		: confirmAction?.type === 'removeMember'
+			? `Are you sure you want to remove ${confirmAction.userName} from this channel?`
+			: confirmAction
+				? `Are you sure you want to delete "${confirmAction.channelName}"? This will archive the channel.`
+				: undefined;
 
 	return (
 		<Box sx={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden', bgcolor: '#f5f7fb' }}>
@@ -842,7 +825,7 @@ const GroupChatPage = () => {
 							{files.length > 0 && (
 								<Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, mb: 1 }}>
 									{files.map((file, index) => (
-										<SelectedFilePreview
+										<SelectedChatFilePreview
 											key={`${file.name}-${index}`}
 											file={file}
 											onRemove={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))}
@@ -964,12 +947,18 @@ const GroupChatPage = () => {
 					const res = await groupChatService.approveJoinRequest(selectedChannel._id, userId);
 					if (res.data) updateSelectedChannel(res.data);
 				}}
-				onRemove={async (userId) => {
-					if (!selectedChannel) return;
-					const res = await groupChatService.removeMember(selectedChannel._id, userId);
-					if (res.data) updateSelectedChannel(res.data);
-				}}
+				onRemove={(userId, userName) => setConfirmAction({ type: 'removeMember', userId, userName })}
 			/>
+			<DestructiveActionConfirmModal
+				open={Boolean(confirmAction)}
+				title={confirmTitle}
+				confirmText={confirmText}
+				confirming={confirmingAction}
+				onClose={() => setConfirmAction(null)}
+				onConfirm={() => void confirmDestructiveAction()}
+			>
+				{confirmMessage}
+			</DestructiveActionConfirmModal>
 		</Box>
 	);
 };
