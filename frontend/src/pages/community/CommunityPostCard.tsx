@@ -1,4 +1,5 @@
 import { Fragment, useState, type FC, type MouseEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Avatar,
   Box,
@@ -73,14 +74,27 @@ interface CommunityImageGalleryProps {
 }
 
 const AuthorLine: FC<AuthorLineProps> = ({ author, badges }) => {
+  const navigate = useNavigate();
   const earnedBadges = getUserBadges(author, badges);
+  const openProfile = (event: MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    navigate(`/community-hub/users/${author._id}`);
+  };
 
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-      <Avatar src={author.avatar} sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
+      <Avatar
+        src={author.avatar}
+        onClick={openProfile}
+        sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14, cursor: 'pointer' }}
+      >
         {author.name[0]?.toUpperCase()}
       </Avatar>
-      <Typography variant="body2" sx={{ fontWeight: 900 }}>
+      <Typography
+        variant="body2"
+        onClick={openProfile}
+        sx={{ fontWeight: 900, cursor: 'pointer', '&:hover': { color: 'primary.main', textDecoration: 'underline' } }}
+      >
         {author.name}
       </Typography>
       <Chip label={author.role} size="small" variant="outlined" />

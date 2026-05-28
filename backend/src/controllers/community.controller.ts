@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { CommunityAnswerReply } from '../models/CommunityAnswerReply.model';
 import { CommunityBadge } from '../models/CommunityBadge.model';
 import { CommunityChannel } from '../models/CommunityChannel.model';
@@ -9,6 +9,7 @@ import { CommunityReply } from '../models/CommunityReply.model';
 import { CommunitySetting } from '../models/CommunitySetting.model';
 import { User } from '../models/User.model';
 import { deleteFromCloudinary, uploadToCloudinary } from '../config/cloudinary';
+import { getOnlineStudentIds } from '../socket/index';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 
@@ -82,6 +83,151 @@ const getPaginationNumber = (value: unknown, fallback: number, max?: number) => 
   return max ? Math.min(rounded, max) : rounded;
 };
 
+const getCommunityUserStats = async (userIds: Types.ObjectId[]) => {
+  if (userIds.length === 0) return {};
+  const [discussionRows, answerRows, childReplyRows, receivedPostReactionRows, receivedReplyReactionRows, givenPostReactionRows, givenReplyReactionRows] = await Promise.all([
+    CommunityPost.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { author: { $in: userIds }, isArchived: false } },
+      { $group: { _id: '$author', count: { $sum: 1 } } },
+    ]),
+    CommunityReply.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { author: { $in: userIds }, isArchived: false } },
+      {
+        $lookup: {
+          from: 'communityposts',
+          localField: 'post',
+          foreignField: '_id',
+          as: 'postDetails',
+        },
+      },
+      { $unwind: '$postDetails' },
+      { $match: { 'postDetails.isArchived': false } },
+      { $group: { _id: '$author', count: { $sum: 1 } } },
+    ]),
+    CommunityAnswerReply.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { author: { $in: userIds }, isArchived: false } },
+      { $group: { _id: '$author', count: { $sum: 1 } } },
+    ]),
+    CommunityPost.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { author: { $in: userIds }, isArchived: false } },
+      { $project: { author: 1, count: { $size: '$reactions' } } },
+      { $group: { _id: '$author', count: { $sum: '$count' } } },
+    ]),
+    CommunityReply.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { author: { $in: userIds }, isArchived: false } },
+      { $project: { author: 1, count: { $size: '$reactions' } } },
+      { $group: { _id: '$author', count: { $sum: '$count' } } },
+    ]),
+    CommunityPost.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { isArchived: false } },
+      { $unwind: '$reactions' },
+      { $match: { 'reactions.user': { $in: userIds } } },
+      { $group: { _id: '$reactions.user', count: { $sum: 1 } } },
+    ]),
+    CommunityReply.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { isArchived: false } },
+      { $unwind: '$reactions' },
+      { $match: { 'reactions.user': { $in: userIds } } },
+      { $group: { _id: '$reactions.user', count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const toMap = (rows: Array<{ _id: Types.ObjectId; count: number }>) =>
+    rows.reduce<Record<string, number>>((items, item) => {
+      items[String(item._id)] = item.count;
+      return items;
+    }, {});
+  const discussions = toMap(discussionRows);
+  const answers = toMap(answerRows);
+  const childReplies = toMap(childReplyRows);
+  const receivedPostReactions = toMap(receivedPostReactionRows);
+  const receivedReplyReactions = toMap(receivedReplyReactionRows);
+  const givenPostReactions = toMap(givenPostReactionRows);
+  const givenReplyReactions = toMap(givenReplyReactionRows);
+
+  return userIds.reduce<Record<string, { discussionsAsked: number; answersGiven: number; reactionsReceived: number; reactionsGiven: number }>>((items, userId) => {
+    const id = String(userId);
+    items[id] = {
+      discussionsAsked: discussions[id] ?? 0,
+      answersGiven: (answers[id] ?? 0) + (childReplies[id] ?? 0),
+      reactionsReceived: (receivedPostReactions[id] ?? 0) + (receivedReplyReactions[id] ?? 0),
+      reactionsGiven: (givenPostReactions[id] ?? 0) + (givenReplyReactions[id] ?? 0),
+    };
+    return items;
+  }, {});
+};
+
+const getHubWidgets = async (badges: Awaited<ReturnType<typeof getPublicBadges>>) => {
+  const mostAnsweredRows = await CommunityReply.aggregate<{ _id: Types.ObjectId; replyCount: number }>([
+    { $match: { isArchived: false } },
+    {
+      $lookup: {
+        from: 'communityposts',
+        localField: 'post',
+        foreignField: '_id',
+        as: 'postDetails',
+      },
+    },
+    { $unwind: '$postDetails' },
+    { $match: { 'postDetails.isArchived': false } },
+    { $group: { _id: '$post', replyCount: { $sum: 1 } } },
+    { $sort: { replyCount: -1 } },
+    { $limit: 5 },
+  ]);
+  const mostAnsweredIds = mostAnsweredRows.map((row) => row._id);
+  const mostAnsweredPosts = await CommunityPost.find({ _id: { $in: mostAnsweredIds } })
+    .populate(populatePost)
+    .lean();
+  const replyCountByPost = mostAnsweredRows.reduce<Record<string, number>>((items, item) => {
+    items[String(item._id)] = item.replyCount;
+    return items;
+  }, {});
+
+  const topContributorRows = await CommunityReply.aggregate<{ _id: Types.ObjectId; answerCount: number }>([
+    { $match: { isArchived: false } },
+    {
+      $lookup: {
+        from: 'communityposts',
+        localField: 'post',
+        foreignField: '_id',
+        as: 'postDetails',
+      },
+    },
+    { $unwind: '$postDetails' },
+    { $match: { 'postDetails.isArchived': false } },
+    { $group: { _id: '$author', answerCount: { $sum: 1 } } },
+    { $sort: { answerCount: -1 } },
+    { $limit: 5 },
+  ]);
+  const contributorUsers = await User.find({ _id: { $in: topContributorRows.map((row) => row._id) } })
+    .select('name avatar role communityPoints')
+    .lean();
+  const answerCountByUser = topContributorRows.reduce<Record<string, number>>((items, item) => {
+    items[String(item._id)] = item.answerCount;
+    return items;
+  }, {});
+
+  const onlineIds = getOnlineStudentIds().slice(0, 5).map((id) => new Types.ObjectId(id));
+  const onlineUsers = onlineIds.length > 0
+    ? await User.find({ _id: { $in: onlineIds } }).select('name avatar role communityPoints').lean()
+    : [];
+  const onlineStats = await getCommunityUserStats(onlineUsers.map((onlineUser) => onlineUser._id));
+
+  return {
+    mostAnsweredPosts: mostAnsweredPosts
+      .map((post) => ({ ...post, replyCount: replyCountByPost[String(post._id)] ?? 0, replies: [] }))
+      .sort((a, b) => (b.replyCount ?? 0) - (a.replyCount ?? 0)),
+    topContributors: contributorUsers
+      .map((contributor) => ({ user: contributor, answerCount: answerCountByUser[String(contributor._id)] ?? 0 }))
+      .sort((a, b) => b.answerCount - a.answerCount),
+    onlineMembers: onlineUsers.map((onlineUser) => ({
+      user: onlineUser,
+      stats: onlineStats[String(onlineUser._id)] ?? { discussionsAsked: 0, answersGiven: 0, reactionsReceived: 0, reactionsGiven: 0 },
+      badges: badges.filter((badge) => (onlineUser.communityPoints ?? 0) >= badge.requiredPoints),
+    })),
+  };
+};
+
 const attachAnswerReplies = async <T extends { _id: unknown }>(replies: T[]) => {
   const replyIds = replies.map((reply) => reply._id as Types.ObjectId);
   if (replyIds.length === 0) return replies.map((reply) => ({ ...reply, childReplies: [], childReplyCount: 0 }));
@@ -150,6 +296,7 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
     .populate(populateReply)
     .lean();
   const [badges, settings] = await Promise.all([getPublicBadges(), getCommunitySettings()]);
+  const widgets = await getHubWidgets(badges);
   const channelCounts = await CommunityPost.aggregate<{ _id: Types.ObjectId; count: number }>([
     { $match: { isArchived: false } },
     { $group: { _id: '$channel', count: { $sum: 1 } } },
@@ -210,7 +357,79 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
         replies: replies.filter((reply) => idEquals(reply.post, post._id)),
       })),
       badges,
+      widgets,
       guestLimited: !user,
+    },
+  });
+});
+
+export const getCommunityUserProfile = asyncHandler(async (req: Request, res: Response) => {
+  const profileUser = await User.findById(req.params.userId)
+    .select('name avatar role communityPoints isCommunityProfilePrivate createdAt')
+    .lean();
+  if (!profileUser) throw new AppError('User not found', 404);
+
+  if (profileUser.isCommunityProfilePrivate && !idEquals(profileUser._id, req.user?._id) && !isAdmin(req.user?.role)) {
+    res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          _id: profileUser._id,
+          name: profileUser.name,
+          avatar: profileUser.avatar,
+          role: profileUser.role,
+          isCommunityProfilePrivate: true,
+        },
+        isPrivate: true,
+      },
+    });
+    return;
+  }
+
+  const [statsByUser, badges, discussions, answers, childReplies] = await Promise.all([
+    getCommunityUserStats([profileUser._id]),
+    getPublicBadges(),
+    CommunityPost.find({ author: profileUser._id, isArchived: false })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate(populatePost)
+      .lean(),
+    CommunityReply.find({ author: profileUser._id, isArchived: false })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate(populateReply)
+      .populate({ path: 'post', select: 'title channel isArchived', populate: { path: 'channel', select: 'name slug' } })
+      .lean(),
+    CommunityAnswerReply.find({ author: profileUser._id, isArchived: false })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate(populateAnswerReply)
+      .populate({
+        path: 'reply',
+        select: 'post isArchived',
+        populate: { path: 'post', select: 'title channel isArchived', populate: { path: 'channel', select: 'name slug' } },
+      })
+      .lean(),
+  ]);
+  const stats = statsByUser[String(profileUser._id)] ?? {
+    discussionsAsked: 0,
+    answersGiven: 0,
+    reactionsReceived: 0,
+    reactionsGiven: 0,
+  };
+
+  res.status(200).json({
+    success: true,
+    data: {
+      user: profileUser,
+      isPrivate: false,
+      stats,
+      badges: badges.filter((badge) => (profileUser.communityPoints ?? 0) >= badge.requiredPoints),
+      discussions: discussions.map((post) => ({ ...post, replies: [] })),
+      answers: [
+        ...answers.filter((answer) => !(answer.post as { isArchived?: boolean } | null)?.isArchived),
+        ...childReplies.filter((childReply) => !((childReply.reply as { post?: { isArchived?: boolean } } | null)?.post?.isArchived)),
+      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     },
   });
 });

@@ -15,6 +15,10 @@ export function getSocketIO(): Server | null {
 	return ioInstance;
 }
 
+export function getOnlineStudentIds(): string[] {
+	return Array.from(onlineStudents.keys());
+}
+
 interface SocketUser {
 	_id: Types.ObjectId;
 	name: string;

@@ -10,6 +10,7 @@ import {
 	Grid,
 	Paper,
 	Stack,
+	Switch,
 	TextField,
 	Typography,
 } from '@mui/material';
@@ -126,6 +127,7 @@ const ProfilePage= () => {
 		newPassword: '',
 		confirmPassword: '',
 		removeAvatar: false,
+		isCommunityProfilePrivate: false,
 	});
 	const [avatarFile, setAvatarFile] = useState<File | null>(null);
 	const [avatarPreview, setAvatarPreview] = useState<string>('');
@@ -147,6 +149,7 @@ const ProfilePage= () => {
 			newPassword: '',
 			confirmPassword: '',
 			removeAvatar: false,
+			isCommunityProfilePrivate: Boolean(user.isCommunityProfilePrivate),
 		}));
 		setAvatarPreview(user.avatar ?? '');
 		setAvatarFile(null);
@@ -235,6 +238,9 @@ const ProfilePage= () => {
 		}
 		if (avatarFile) fd.append('avatar', avatarFile);
 		if (form.removeAvatar) fd.append('removeAvatar', 'true');
+		if (form.isCommunityProfilePrivate !== Boolean(user.isCommunityProfilePrivate)) {
+			fd.append('isCommunityProfilePrivate', String(form.isCommunityProfilePrivate));
+		}
 		if (form.newPassword) {
 			fd.append('currentPassword', form.currentPassword);
 			fd.append('newPassword', form.newPassword);
@@ -583,6 +589,22 @@ const ProfilePage= () => {
 								}
 								onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
 							/>
+						</Grid>
+						<Grid size={{ xs: 12 }}>
+							<Paper variant='outlined' sx={{ p: 1.5, borderRadius: 1, bgcolor: 'grey.50' }}>
+								<Stack direction='row' spacing={1.5} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+									<Box>
+										<Typography sx={{ fontWeight: 900 }}>Private community profile</Typography>
+										<Typography variant='body2' color='text.secondary'>
+											Hide your public community stats, discussions, and answers from other users.
+										</Typography>
+									</Box>
+									<Switch
+										checked={form.isCommunityProfilePrivate}
+										onChange={(e) => setForm((p) => ({ ...p, isCommunityProfilePrivate: e.target.checked }))}
+									/>
+								</Stack>
+							</Paper>
 						</Grid>
 						<Grid size={{ xs: 12 }}>
 							<Divider sx={{ my: 1 }} />

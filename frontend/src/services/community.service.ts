@@ -10,6 +10,7 @@ import type {
   ICommunityReply,
   ICommunityAnswerReply,
   ICommunitySetting,
+  ICommunityUserProfile,
 } from '../types/index';
 
 const multipartConfig = { headers: { 'Content-Type': 'multipart/form-data' } };
@@ -17,6 +18,7 @@ const multipartConfig = { headers: { 'Content-Type': 'multipart/form-data' } };
 export const communityService = {
   getOverview: (params?: { channel?: string; archived?: boolean; dateFrom?: string; dateTo?: string; limit?: number; search?: string }) =>
     api.get<ICommunityOverview>('/community', { params }),
+  getUserProfile: (userId: string) => api.get<ICommunityUserProfile>(`/community/users/${userId}`),
   getPost: (postId: string, params?: { archived?: boolean }) =>
     api.get<ICommunityPostDetail>(`/community/posts/${postId}`, { params }),
   getReplies: (postId: string, params?: { skip?: number; limit?: number }) =>

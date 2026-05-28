@@ -39,6 +39,7 @@ import { communityService } from '../../services/community.service';
 import type { CommunityReactionType, ICommunityOverview, ICommunityPost, ICommunityReply } from '../../types/index';
 import CommunityAdminModal from './CommunityAdminModal';
 import CommunityPostCard from './CommunityPostCard';
+import CommunityRightSidebar from './CommunityRightSidebar';
 import { isAdminRole, isRichTextEmpty } from './communityHelpers';
 
 const numberFormatter = new Intl.NumberFormat();
@@ -234,6 +235,9 @@ const CommunityHubPage = () => {
   const headerTitle = overview.settings?.title || 'Community Hub';
   const headerDescription = overview.settings?.description || 'Find study questions, tech discussions, accepted answers, reactions, points, and badges.';
   const headerImage = overview.settings?.headerImageUrl || 'https://picsum.photos/seed/community-hub-header/1800/520';
+  const selectedChannelInfo = overview.channels.find((channel) => channel._id === selectedChannel);
+  const selectedChannelName = selectedChannelInfo?.name ?? 'All Channels';
+  const selectedChannelPostCount = selectedChannel ? overview.channelPostCounts[selectedChannel] ?? 0 : overview.totalPostCount ?? 0;
   const stats = [
     { label: 'Total Members', value: overview.totalMemberCount ?? 0, icon: GroupsOutlinedIcon },
     { label: 'Discussion Questions', value: overview.totalPostCount ?? 0, icon: ForumOutlinedIcon },
@@ -250,20 +254,20 @@ const CommunityHubPage = () => {
             minHeight: { xs: 320, md: 390 },
             display: 'flex',
             alignItems: 'center',
-            backgroundImage: `linear-gradient(90deg, rgba(8, 20, 38, 0.82), rgba(8, 20, 38, 0.44)), url("${headerImage}")`,
+            backgroundImage: `linear-gradient(90deg, rgba(8, 20, 38, 0.72), rgba(8, 20, 38, 0.48)), url("${headerImage}")`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             color: 'common.white',
             mb: 4,
           }}
         >
-          <Container maxWidth="lg">
-            <Stack spacing={3} sx={{ maxWidth: 900, py: { xs: 5, md: 7 } }}>
-              <Box>
+          <Container maxWidth={false} sx={{ maxWidth: 1440, mx: 'auto', px: { xs: 2, md: 3 } }}>
+            <Stack spacing={3} sx={{ maxWidth: 980, mx: 'auto', py: { xs: 5, md: 7 }, alignItems: 'center', textAlign: 'center' }}>
+              <Box sx={{ maxWidth: 860 }}>
                 <Typography variant="h3" sx={{ fontWeight: 950, mb: 1, fontSize: { xs: 34, md: 52 }, lineHeight: 1.08 }}>
                   {headerTitle}
                 </Typography>
-                <Typography sx={{ color: 'rgba(255,255,255,0.88)', fontSize: { xs: 16, md: 19 }, maxWidth: 760 }}>
+                <Typography sx={{ color: 'rgba(255,255,255,0.88)', fontSize: { xs: 16, md: 19 }, maxWidth: 760, mx: 'auto' }}>
                   {headerDescription}
                 </Typography>
               </Box>
@@ -281,6 +285,7 @@ const CommunityHubPage = () => {
                   p: { xs: 0.75, sm: 0 },
                   borderRadius: 999,
                   maxWidth: 860,
+                  width: '100%',
                   bgcolor: 'rgba(255,255,255,0.96)',
                   overflow: 'hidden',
                   boxShadow: '0 18px 38px rgba(0, 0, 0, 0.2)',
@@ -343,7 +348,7 @@ const CommunityHubPage = () => {
             </Stack>
           </Container>
         </Box>
-        <Container maxWidth="lg">
+        <Container maxWidth={false} sx={{ maxWidth: 1440, mx: 'auto', px: { xs: 2, md: 3 } }}>
           <Stack spacing={3}>
             {overview.guestLimited && (
               <Alert severity="info">
@@ -373,8 +378,11 @@ const CommunityHubPage = () => {
               </Paper>
 
               <Box>
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ justifyContent: 'flex-end', alignItems: { xs: 'stretch', md: 'center' } }}>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' } }}>
+                    <Typography sx={{ fontWeight: 950, fontSize: { xs: 20, md: 24 }, alignSelf: { md: 'center' } }}>
+                      {selectedChannelName} ({numberFormatter.format(selectedChannelPostCount)})
+                    </Typography>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                     {searchedText && (
                       <Typography sx={{ fontWeight: 900, color: 'text.primary', alignSelf: 'center', mr: { sm: 0.5 } }}>
                         Search results ({numberFormatter.format(overview.resultPostCount ?? overview.posts.length)})
@@ -464,7 +472,7 @@ const CommunityHubPage = () => {
                 </Box>
               </Box>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '300px minmax(0, 1fr)' }, gap: 2.5, alignItems: 'start' }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '290px minmax(0, 1fr) 330px' }, gap: 2.5, alignItems: 'start' }}>
                 <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden', bgcolor: 'background.paper' }}>
                   <Box sx={{ p: 2 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>
@@ -661,6 +669,7 @@ const CommunityHubPage = () => {
                     ))
                   )}
                 </Stack>
+                <CommunityRightSidebar widgets={overview.widgets} badges={overview.badges} />
               </Box>
             </Stack>
           </Stack>

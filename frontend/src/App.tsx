@@ -40,6 +40,7 @@ const NotificationsPage = lazy(() => import('./pages/notifications/Notifications
 const HomeHeroPostsPage = lazy(() => import('./pages/homeHero/HomeHeroPostsPage'));
 const CommunityHubPage = lazy(() => import('./pages/community/CommunityHubPage'));
 const CommunityDiscussionDetailPage = lazy(() => import('./pages/community/CommunityDiscussionDetailPage'));
+const CommunityUserProfilePage = lazy(() => import('./pages/community/CommunityUserProfilePage'));
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'] as const;
 
@@ -121,6 +122,7 @@ const App= () => {
 			<Route path='/teachers' element={<PublicTeachersPage />} />
 			<Route path='/practice-quiz' element={<PracticeQuizPage />} />
 			<Route path='/community-hub' element={<CommunityHubPage />} />
+			<Route path='/community-hub/users/:userId' element={<CommunityUserProfilePage />} />
 			<Route path='/community-hub/:postId' element={<CommunityDiscussionDetailPage />} />
 
 			<Route path='*' element={<NotFoundPage />} />

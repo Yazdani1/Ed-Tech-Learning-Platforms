@@ -11,6 +11,7 @@ export interface IUser {
   role: UserRole;
   avatar?: string;
   communityPoints?: number;
+  isCommunityProfilePrivate?: boolean;
   activeSubscription?: {
     plan: SubscriptionPlan;
     billingDuration?: number;
@@ -133,7 +134,44 @@ export interface ICommunityOverview {
   totalMemberCount?: number;
   posts: ICommunityPost[];
   badges: ICommunityBadge[];
+  widgets?: ICommunityHubWidgets;
   guestLimited: boolean;
+}
+
+export interface ICommunityUserStats {
+  discussionsAsked: number;
+  answersGiven: number;
+  reactionsReceived: number;
+  reactionsGiven: number;
+}
+
+export interface ICommunityHubWidgets {
+  mostAnsweredPosts: ICommunityPost[];
+  topContributors: Array<{
+    user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+    answerCount: number;
+  }>;
+  onlineMembers: Array<{
+    user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+    stats: ICommunityUserStats;
+    badges: ICommunityBadge[];
+  }>;
+}
+
+export interface ICommunityUserProfile {
+  user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints' | 'createdAt' | 'isCommunityProfilePrivate'>;
+  isPrivate: boolean;
+  stats?: ICommunityUserStats;
+  badges?: ICommunityBadge[];
+  discussions?: ICommunityPost[];
+  answers?: Array<
+    | ICommunityReply
+    | (ICommunityAnswerReply & {
+        reply?: {
+          post?: Pick<ICommunityPost, '_id' | 'title' | 'channel' | 'isArchived'>;
+        };
+      })
+  >;
 }
 
 export interface ICommunityPostDetail {

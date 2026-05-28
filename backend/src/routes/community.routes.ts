@@ -18,6 +18,7 @@ import {
   getBadges,
   getCommunityOverview,
   getPointRules,
+  getCommunityUserProfile,
   reactToPost,
   reactToReply,
   toggleAcceptedReply,
@@ -34,6 +35,7 @@ import { upload } from '../middleware/upload.middleware';
 const router = Router();
 
 router.get('/', optionalProtect, getCommunityOverview);
+router.get('/users/:userId', optionalProtect, getCommunityUserProfile);
 router.get('/settings', protect, authorize('Super Admin', 'Admin'), getCommunitySettingsForAdmin);
 router.put('/settings', protect, authorize('Super Admin', 'Admin'), upload.single('image'), updateCommunitySettings);
 
