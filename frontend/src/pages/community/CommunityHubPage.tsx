@@ -18,7 +18,6 @@ import {
   Select,
   Stack,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -31,6 +30,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import TuneIcon from '@mui/icons-material/Tune';
 import UploadIcon from '@mui/icons-material/Upload';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import toast from 'react-hot-toast';
 import PublicNavbar from '../../components/layout/PublicNavbar';
 import RichTextEditor from '../../components/course/RichTextEditor';
@@ -393,6 +393,11 @@ const CommunityHubPage = () => {
                         Community Settings
                       </Button>
                     )}
+                    {user && (
+                      <Button variant="outlined" startIcon={<PersonOutlinedIcon />} onClick={() => navigate(`/community-hub/users/${user._id}`)}>
+                        My Profile
+                      </Button>
+                    )}
                     <Button
                       size="small"
                       variant="outlined"
@@ -480,100 +485,68 @@ const CommunityHubPage = () => {
                     </Typography>
                   </Box>
                   <Divider />
-                  <Tooltip
-                    arrow
-                    placement="right"
-                    title={
-                      <Stack spacing={0.5}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>All Channels</Typography>
-                        <Typography variant="caption">{numberFormatter.format(overview.totalPostCount ?? 0)} discussions</Typography>
-                        <Typography variant="caption">{numberFormatter.format(overview.totalReplyCount ?? 0)} answers</Typography>
-                      </Stack>
-                    }
+                  <Box
+                    onClick={() => {
+                      setSelectedChannel('');
+                      setFilterChannel('');
+                    }}
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: '44px minmax(0, 1fr) auto',
+                      gap: 1.25,
+                      alignItems: 'center',
+                      p: 1.5,
+                      cursor: 'pointer',
+                      borderLeft: '4px solid',
+                      borderLeftColor: selectedChannel ? 'transparent' : 'primary.main',
+                      bgcolor: selectedChannel ? 'transparent' : 'primary.50',
+                      transition: 'background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
+                      '&:hover': {
+                        bgcolor: selectedChannel ? 'grey.50' : 'primary.50',
+                        transform: 'translateX(2px)',
+                      },
+                    }}
                   >
-                    <Box
-                      onClick={() => {
-                        setSelectedChannel('');
-                        setFilterChannel('');
-                      }}
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: '44px minmax(0, 1fr) auto',
-                        gap: 1.25,
-                        alignItems: 'center',
-                        p: 1.5,
-                        cursor: 'pointer',
-                        borderLeft: '4px solid',
-                        borderLeftColor: selectedChannel ? 'transparent' : 'primary.main',
-                        bgcolor: selectedChannel ? 'transparent' : 'primary.50',
-                        transition: 'background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
-                        '&:hover': {
-                          bgcolor: selectedChannel ? 'grey.50' : 'primary.50',
-                          transform: 'translateX(2px)',
-                        },
-                      }}
-                    >
-                      <Avatar variant="rounded" sx={{ bgcolor: 'primary.main' }}>A</Avatar>
-                      <Typography sx={{ fontWeight: 900 }}>All Channels</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 800 }}>
-                        {numberFormatter.format(overview.totalPostCount ?? 0)}
-                      </Typography>
-                    </Box>
-                  </Tooltip>
+                    <Avatar variant="rounded" sx={{ bgcolor: 'primary.main' }}>A</Avatar>
+                    <Typography sx={{ fontWeight: 900 }}>All Channels</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 800 }}>
+                      {numberFormatter.format(overview.totalPostCount ?? 0)}
+                    </Typography>
+                  </Box>
                   <Divider />
                   {overview.channels.map((channel, index) => {
                     const active = selectedChannel === channel._id;
                     const postCount = overview.channelPostCounts[channel._id] ?? 0;
-                    const answerCount = overview.channelReplyCounts?.[channel._id] ?? 0;
                     return (
                       <Box key={channel._id}>
-                        <Tooltip
-                          arrow
-                          placement="right"
-                          title={
-                            <Stack spacing={0.6} sx={{ maxWidth: 240 }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>{channel.name}</Typography>
-                              {channel.description && (
-                                <Typography variant="caption" sx={{ color: 'grey.100' }}>
-                                  {channel.description}
-                                </Typography>
-                              )}
-                              <Stack direction="row" spacing={1.5}>
-                                <Typography variant="caption">{numberFormatter.format(postCount)} discussions</Typography>
-                                <Typography variant="caption">{numberFormatter.format(answerCount)} answers</Typography>
-                              </Stack>
-                            </Stack>
-                          }
+                        <Box
+                          onClick={() => {
+                            setSelectedChannel(channel._id);
+                            setFilterChannel(channel._id);
+                          }}
+                          sx={{
+                            display: 'grid',
+                            gridTemplateColumns: '44px minmax(0, 1fr) auto',
+                            gap: 1.25,
+                            alignItems: 'center',
+                            p: 1.5,
+                            cursor: 'pointer',
+                            borderLeft: '4px solid',
+                            borderLeftColor: active ? 'primary.main' : 'transparent',
+                            bgcolor: active ? 'primary.50' : 'transparent',
+                            transition: 'background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
+                            '&:hover': {
+                              bgcolor: active ? 'primary.50' : 'grey.50',
+                              transform: 'translateX(2px)',
+                            },
+                          }}
                         >
-                          <Box
-                            onClick={() => {
-                              setSelectedChannel(channel._id);
-                              setFilterChannel(channel._id);
-                            }}
-                            sx={{
-                              display: 'grid',
-                              gridTemplateColumns: '44px minmax(0, 1fr) auto',
-                              gap: 1.25,
-                              alignItems: 'center',
-                              p: 1.5,
-                              cursor: 'pointer',
-                              borderLeft: '4px solid',
-                              borderLeftColor: active ? 'primary.main' : 'transparent',
-                              bgcolor: active ? 'primary.50' : 'transparent',
-                              transition: 'background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
-                              '&:hover': {
-                                bgcolor: active ? 'primary.50' : 'grey.50',
-                                transform: 'translateX(2px)',
-                              },
-                            }}
-                          >
-                            <Avatar src={channel.imageUrl} variant="rounded">{channel.name[0]}</Avatar>
-                            <Typography sx={{ fontWeight: 900 }} noWrap>{channel.name}</Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 800 }}>
-                              {numberFormatter.format(postCount)}
-                            </Typography>
-                          </Box>
-                        </Tooltip>
+                          <Avatar src={channel.imageUrl} variant="rounded">{channel.name[0]}</Avatar>
+                          <Typography sx={{ fontWeight: 900 }} noWrap>{channel.name}</Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 800 }}>
+                            {numberFormatter.format(postCount)}
+                          </Typography>
+                        </Box>
                         {index < overview.channels.length - 1 && <Divider />}
                       </Box>
                     );

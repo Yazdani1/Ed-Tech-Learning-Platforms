@@ -200,12 +200,13 @@ const getHubWidgets = async (badges: Awaited<ReturnType<typeof getPublicBadges>>
     { $limit: 5 },
   ]);
   const contributorUsers = await User.find({ _id: { $in: topContributorRows.map((row) => row._id) } })
-    .select('name avatar role communityPoints')
+    .select('name avatar role communityPoints createdAt')
     .lean();
   const answerCountByUser = topContributorRows.reduce<Record<string, number>>((items, item) => {
     items[String(item._id)] = item.answerCount;
     return items;
   }, {});
+  const contributorStats = await getCommunityUserStats(contributorUsers.map((contributor) => contributor._id));
 
   const onlineIds = getOnlineStudentIds().slice(0, 5).map((id) => new Types.ObjectId(id));
   const onlineUsers = onlineIds.length > 0
@@ -218,7 +219,12 @@ const getHubWidgets = async (badges: Awaited<ReturnType<typeof getPublicBadges>>
       .map((post) => ({ ...post, replyCount: replyCountByPost[String(post._id)] ?? 0, replies: [] }))
       .sort((a, b) => (b.replyCount ?? 0) - (a.replyCount ?? 0)),
     topContributors: contributorUsers
-      .map((contributor) => ({ user: contributor, answerCount: answerCountByUser[String(contributor._id)] ?? 0 }))
+      .map((contributor) => ({
+        user: contributor,
+        answerCount: answerCountByUser[String(contributor._id)] ?? 0,
+        stats: contributorStats[String(contributor._id)] ?? { discussionsAsked: 0, answersGiven: 0, reactionsReceived: 0, reactionsGiven: 0 },
+        badges: badges.filter((badge) => (contributor.communityPoints ?? 0) >= badge.requiredPoints),
+      }))
       .sort((a, b) => b.answerCount - a.answerCount),
     onlineMembers: onlineUsers.map((onlineUser) => ({
       user: onlineUser,

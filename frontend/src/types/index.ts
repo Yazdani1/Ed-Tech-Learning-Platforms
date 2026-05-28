@@ -148,8 +148,10 @@ export interface ICommunityUserStats {
 export interface ICommunityHubWidgets {
   mostAnsweredPosts: ICommunityPost[];
   topContributors: Array<{
-    user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+    user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints' | 'createdAt'>;
     answerCount: number;
+    stats: ICommunityUserStats;
+    badges: ICommunityBadge[];
   }>;
   onlineMembers: Array<{
     user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;

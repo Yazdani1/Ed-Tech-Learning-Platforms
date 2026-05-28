@@ -1,10 +1,12 @@
-import type { FC } from 'react';
+import { useState, type FC, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, Badge, Box, Button, Chip, Divider, Paper, Stack, Tooltip, Typography } from '@mui/material';
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined';
+import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import type { ICommunityBadge, ICommunityHubWidgets } from '../../types/index';
 import { formatCount } from './communityHelpers';
+import CommunityProfilePreviewPopover from './CommunityProfilePreviewPopover';
 
 interface CommunityRightSidebarProps {
   widgets?: ICommunityHubWidgets;
@@ -27,6 +29,18 @@ const SectionCard: FC<SectionCardProps> = ({ title, children }) => (
 
 const CommunityRightSidebar: FC<CommunityRightSidebarProps> = ({ widgets, badges }) => {
   const navigate = useNavigate();
+  const [contributorAnchor, setContributorAnchor] = useState<HTMLElement | null>(null);
+  const [activeContributorId, setActiveContributorId] = useState<string | undefined>();
+
+  const openContributorPreview = (event: MouseEvent<HTMLElement>, contributor: ICommunityHubWidgets['topContributors'][number]) => {
+    setContributorAnchor(event.currentTarget);
+    setActiveContributorId(contributor.user._id);
+  };
+
+  const closeContributorPreview = () => {
+    setContributorAnchor(null);
+    setActiveContributorId(undefined);
+  };
 
   return (
     <Stack spacing={2}>
@@ -38,13 +52,19 @@ const CommunityRightSidebar: FC<CommunityRightSidebarProps> = ({ widgets, badges
               onClick={() => navigate(`/community-hub/${post._id}`)}
               sx={{ py: 1.2, cursor: 'pointer', '&:hover .community-sidebar-title': { color: 'primary.main' } }}
             >
-              <Typography className="community-sidebar-title" variant="body2" sx={{ fontWeight: 900, lineHeight: 1.35 }}>
-                {post.title}
-              </Typography>
+              <Tooltip title={post.title} placement="top" arrow>
+                <Typography className="community-sidebar-title" variant="body2" noWrap sx={{ fontWeight: 900, lineHeight: 1.35 }}>
+                  {post.title}
+                </Typography>
+              </Tooltip>
               <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', mt: 0.75 }}>
                 <QuestionAnswerOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
                   {formatCount(post.replyCount ?? post.replies?.length ?? 0)} answers
+                </Typography>
+                <ThumbUpOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                  {formatCount(post.reactions?.length ?? 0)} reactions
                 </Typography>
               </Stack>
             </Box>
@@ -60,7 +80,13 @@ const CommunityRightSidebar: FC<CommunityRightSidebarProps> = ({ widgets, badges
       <SectionCard title="Top Contributors">
         <Stack divider={<Divider />} spacing={0}>
           {(widgets?.topContributors ?? []).slice(0, 5).map((item) => (
-            <Stack key={item.user._id} direction="row" spacing={1.25} sx={{ alignItems: 'center', py: 1 }}>
+            <Stack
+              key={item.user._id}
+              direction="row"
+              spacing={1.25}
+              onClick={(event) => openContributorPreview(event, item)}
+              sx={{ alignItems: 'center', py: 1, cursor: 'pointer', '&:hover': { bgcolor: 'grey.50' } }}
+            >
               <Avatar src={item.user.avatar} sx={{ width: 38, height: 38 }}>
                 {item.user.name[0]?.toUpperCase()}
               </Avatar>
@@ -80,6 +106,7 @@ const CommunityRightSidebar: FC<CommunityRightSidebarProps> = ({ widgets, badges
             </Typography>
           )}
         </Stack>
+        <CommunityProfilePreviewPopover anchorEl={contributorAnchor} userId={activeContributorId} onClose={closeContributorPreview} />
       </SectionCard>
 
       <SectionCard title="Badges">

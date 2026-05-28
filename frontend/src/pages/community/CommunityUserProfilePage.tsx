@@ -1,15 +1,18 @@
 import { useEffect, useState, type FC } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Avatar, Box, Button, Chip, Container, Divider, Grid, Paper, Stack, Typography } from '@mui/material';
+import { Avatar, Box, Button, Chip, Container, Divider, Grid, Paper, Stack, Switch, Typography } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ChatBubbleOutlinedIcon from '@mui/icons-material/ChatBubbleOutlined';
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
+import toast from 'react-hot-toast';
 import PublicNavbar from '../../components/layout/PublicNavbar';
+import { useAuth } from '../../context/useAuth';
+import { authService } from '../../services/auth.service';
 import { communityService } from '../../services/community.service';
 import type { ICommunityAnswerReply, ICommunityPost, ICommunityReply, ICommunityUserProfile } from '../../types/index';
-import { formatCount } from './communityHelpers';
 
 interface StatCardProps {
   label: string;
@@ -20,6 +23,7 @@ interface StatCardProps {
 type AnswerItem = NonNullable<ICommunityUserProfile['answers']>[number];
 type AnswerPostRef = Pick<ICommunityPost, '_id' | 'title' | 'channel' | 'isArchived'>;
 
+const numberFormatter = new Intl.NumberFormat();
 const plainText = (html: string) => new DOMParser().parseFromString(html, 'text/html').body.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
 const StatCard: FC<StatCardProps> = ({ label, value, icon }) => (
@@ -42,7 +46,7 @@ const StatCard: FC<StatCardProps> = ({ label, value, icon }) => (
       </Typography>
     </Stack>
     <Typography variant="h5" sx={{ fontWeight: 950 }}>
-      {typeof value === 'number' ? formatCount(value) : value}
+      {typeof value === 'number' ? numberFormatter.format(value) : value}
     </Typography>
   </Paper>
 );
@@ -56,8 +60,13 @@ const getAnswerPost = (answer: AnswerItem): AnswerPostRef | null => {
 const CommunityUserProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const { user, refreshUser } = useAuth();
   const [profile, setProfile] = useState<ICommunityUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [privacySaving, setPrivacySaving] = useState(false);
+
+  const isOwnProfile = Boolean(user && profile && user._id === profile.user._id);
+  const isProfilePrivate = Boolean(profile?.user.isCommunityProfilePrivate);
 
   useEffect(() => {
     if (!userId) return;
@@ -68,6 +77,31 @@ const CommunityUserProfilePage = () => {
       .then((res) => setProfile(res.data ?? null))
       .finally(() => setLoading(false));
   }, [userId]);
+
+  const updateProfilePrivacy = async (checked: boolean) => {
+    if (!profile || !isOwnProfile) return;
+    setPrivacySaving(true);
+    try {
+      const data = new FormData();
+      data.append('isCommunityProfilePrivate', String(checked));
+      await authService.updateMe(data);
+      await refreshUser();
+      setProfile((current) => (
+        current
+          ? {
+              ...current,
+              user: {
+                ...current.user,
+                isCommunityProfilePrivate: checked,
+              },
+            }
+          : current
+      ));
+      toast.success(checked ? 'Community profile is private' : 'Community profile is public');
+    } finally {
+      setPrivacySaving(false);
+    }
+  };
 
   return (
     <>
@@ -141,10 +175,48 @@ const CommunityUserProfilePage = () => {
                     </Typography>
                     <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
                       <Chip label={profile.user.role} sx={{ bgcolor: 'rgba(255,255,255,0.16)', color: 'common.white', fontWeight: 900 }} />
-                      <Chip label={`${formatCount(profile.user.communityPoints ?? 0)} pts`} sx={{ bgcolor: 'rgba(255,255,255,0.16)', color: 'common.white', fontWeight: 900 }} />
+                      <Chip label={`${numberFormatter.format(profile.user.communityPoints ?? 0)} pts`} sx={{ bgcolor: 'rgba(255,255,255,0.16)', color: 'common.white', fontWeight: 900 }} />
                       {profile.user.createdAt && <Chip label={`Member since ${new Date(profile.user.createdAt).toLocaleDateString()}`} sx={{ bgcolor: 'rgba(255,255,255,0.16)', color: 'common.white', fontWeight: 900 }} />}
                     </Stack>
                   </Box>
+                  {isOwnProfile && (
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        width: { xs: '100%', sm: 330 },
+                        p: 1.5,
+                        borderRadius: 1,
+                        bgcolor: 'rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(255,255,255,0.24)',
+                        color: 'common.white',
+                        backdropFilter: 'blur(10px)',
+                      }}
+                    >
+                      <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Stack direction="row" spacing={1.1} sx={{ alignItems: 'center', minWidth: 0 }}>
+                          <LockOutlinedIcon fontSize="small" />
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ fontWeight: 950, lineHeight: 1.2 }}>Private profile</Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.78)' }}>
+                              Hide details from other members.
+                            </Typography>
+                          </Box>
+                        </Stack>
+                        <Switch
+                          checked={isProfilePrivate}
+                          disabled={privacySaving}
+                          onChange={(event) => {
+                            void updateProfilePrivacy(event.target.checked);
+                          }}
+                          slotProps={{ input: { 'aria-label': 'Make community profile private' } }}
+                          sx={{
+                            '& .MuiSwitch-switchBase.Mui-checked': { color: 'common.white' },
+                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: 'success.light', opacity: 1 },
+                          }}
+                        />
+                      </Stack>
+                    </Paper>
+                  )}
                 </Stack>
               </Paper>
 
@@ -227,7 +299,7 @@ const CommunityUserProfilePage = () => {
                           <Box>
                             <Typography sx={{ fontWeight: 900 }}>{badge.name}</Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {formatCount(badge.requiredPoints)} pts
+                              {numberFormatter.format(badge.requiredPoints)} pts
                             </Typography>
                           </Box>
                         </Stack>

@@ -1,5 +1,4 @@
 import { Fragment, useState, type FC, type MouseEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Avatar,
   Box,
@@ -39,6 +38,7 @@ import type {
 } from '../../types/index';
 import { canModerateRole, getUserBadges, isRichTextEmpty } from './communityHelpers';
 import ReactionBar from './ReactionBar';
+import CommunityProfilePreviewPopover from './CommunityProfilePreviewPopover';
 
 interface AuthorLineProps {
   author: ICommunityPost['author'] | ICommunityReply['author'] | ICommunityAnswerReply['author'];
@@ -74,25 +74,30 @@ interface CommunityImageGalleryProps {
 }
 
 const AuthorLine: FC<AuthorLineProps> = ({ author, badges }) => {
-  const navigate = useNavigate();
   const earnedBadges = getUserBadges(author, badges);
-  const openProfile = (event: MouseEvent<HTMLElement>) => {
+  const [profileAnchor, setProfileAnchor] = useState<HTMLElement | null>(null);
+
+  const openProfilePreview = (event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();
-    navigate(`/community-hub/users/${author._id}`);
+    setProfileAnchor(event.currentTarget);
+  };
+
+  const closeProfilePreview = () => {
+    setProfileAnchor(null);
   };
 
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
       <Avatar
         src={author.avatar}
-        onClick={openProfile}
+        onClick={openProfilePreview}
         sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14, cursor: 'pointer' }}
       >
         {author.name[0]?.toUpperCase()}
       </Avatar>
       <Typography
         variant="body2"
-        onClick={openProfile}
+        onClick={openProfilePreview}
         sx={{ fontWeight: 900, cursor: 'pointer', '&:hover': { color: 'primary.main', textDecoration: 'underline' } }}
       >
         {author.name}
@@ -112,6 +117,7 @@ const AuthorLine: FC<AuthorLineProps> = ({ author, badges }) => {
           />
         </Tooltip>
       ))}
+      <CommunityProfilePreviewPopover anchorEl={profileAnchor} userId={author._id} onClose={closeProfilePreview} />
     </Stack>
   );
 };
