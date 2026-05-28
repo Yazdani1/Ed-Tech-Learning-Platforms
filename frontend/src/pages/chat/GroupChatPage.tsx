@@ -19,15 +19,12 @@ import {
 	Paper,
 	Select,
 	Stack,
-	Tab,
-	Tabs,
 	TextField,
 	Tooltip,
 	Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
-import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DescriptionIcon from '@mui/icons-material/Description';
 import EditIcon from '@mui/icons-material/Edit';
@@ -44,6 +41,8 @@ import AppModal from '../../components/common/AppModal';
 import DestructiveActionConfirmModal from '../../components/common/DestructiveActionConfirmModal';
 import toast from 'react-hot-toast';
 import ItemActionMenu, { type ItemAction } from '../../components/common/ItemActionMenu';
+import GroupChannelDetailsModal from '../../components/chat/GroupChannelDetailsModal';
+import GroupChannelJoinPreview from '../../components/chat/GroupChannelJoinPreview';
 import SelectedChatFilePreview from '../../components/chat/SelectedChatFilePreview';
 import TypingIndicator from '../../components/chat/TypingIndicator';
 import { useAuth } from '../../context/useAuth';
@@ -76,16 +75,6 @@ interface AddMembersModalProps {
 	onSaved: (channel: IGroupChatChannel) => void;
 }
 
-interface MembersModalProps {
-	open: boolean;
-	channel: IGroupChatChannel | null;
-	currentUserId?: string;
-	canManage: boolean;
-	onClose: () => void;
-	onApprove: (userId: string) => Promise<void>;
-	onRemove: (userId: string, userName: string) => void;
-}
-
 type GroupChatConfirmAction =
 	| { type: 'archiveChannel'; channelName: string }
 	| { type: 'leaveChannel'; channelName: string }
@@ -102,6 +91,12 @@ const getMemberUnread = (channel: IGroupChatChannel, userId?: string) =>
 
 const getMemberCountLabel = (channel: IGroupChatChannel) =>
 	`${channel.members.length} ${channel.members.length === 1 ? 'member' : 'members'}`;
+
+const isChannelMember = (channel: IGroupChatChannel | null, userId?: string) =>
+	Boolean(channel?.members.some((member) => member.user._id === userId));
+
+const hasPendingJoinRequest = (channel: IGroupChatChannel | null, userId?: string) =>
+	Boolean(channel?.joinRequests.some((request) => request.user._id === userId && request.status === 'Pending'));
 
 const ChannelModal: FC<ChannelModalProps> = ({ open, channel, onClose, onSaved }) => {
 	const [name, setName] = useState('');
@@ -244,84 +239,6 @@ const AddMembersModal: FC<AddMembersModalProps> = ({ open, channel, onClose, onS
 	);
 };
 
-const MembersModal: FC<MembersModalProps> = ({ open, channel, currentUserId, canManage, onClose, onApprove, onRemove }) => {
-	const [activeTab, setActiveTab] = useState(0);
-	const pendingRequests = channel?.joinRequests.filter((request) => request.status === 'Pending') ?? [];
-
-	useEffect(() => {
-		if (!open) return;
-		// eslint-disable-next-line react-hooks/set-state-in-effect
-		setActiveTab(0);
-	}, [open]);
-
-	return (
-		<AppModal open={open} title={channel?.name ?? 'Channel Members'} onClose={onClose} cancelText="Close" maxWidth="sm">
-			<Tabs value={activeTab} onChange={(_, value: number) => setActiveTab(value)} sx={{ borderBottom: '1px solid', borderColor: 'divider', mb: 2 }}>
-				<Tab label="Description" />
-				<Tab label={`Members (${channel?.members.length ?? 0})`} />
-			</Tabs>
-			{activeTab === 0 && (
-				<Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'grey.50', border: '1px solid', borderColor: 'divider' }}>
-					<Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-						{channel?.description?.trim() || 'No description added yet.'}
-					</Typography>
-				</Box>
-			)}
-			{activeTab === 1 && (
-				<Stack spacing={2}>
-					<List sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-						{channel?.members.map((member, index) => (
-							<Fragment key={member.user._id}>
-								<ListItemButton>
-									<ListItemAvatar>
-										<Badge
-											overlap="circular"
-											variant="dot"
-											anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-											sx={{ '& .MuiBadge-badge': { bgcolor: 'success.main', border: '2px solid white' } }}
-										>
-											<Avatar src={member.user.avatar}>{member.user.name[0]}</Avatar>
-										</Badge>
-									</ListItemAvatar>
-									<ListItemText primary={member.user.name} secondary={`${member.user.role} - Online status active`} />
-									<Chip label={member.role} size="small" variant="outlined" />
-									{canManage && member.role !== 'Admin' && member.user._id !== currentUserId && (
-										<IconButton color="error" onClick={() => onRemove(member.user._id, member.user.name)}>
-											<CloseIcon />
-										</IconButton>
-									)}
-								</ListItemButton>
-								{channel && index < channel.members.length - 1 && <Divider component="li" sx={{ ml: 9 }} />}
-							</Fragment>
-						))}
-					</List>
-					{canManage && pendingRequests.length > 0 && (
-						<Box>
-							<Typography sx={{ fontWeight: 900, mb: 1 }}>Pending Requests</Typography>
-							<List sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-								{pendingRequests.map((request, index) => (
-									<Fragment key={request.user._id}>
-										<ListItemButton>
-											<ListItemAvatar>
-												<Avatar src={request.user.avatar}>{request.user.name[0]}</Avatar>
-											</ListItemAvatar>
-											<ListItemText primary={request.user.name} secondary={request.user.role} />
-											<Button size="small" variant="contained" onClick={() => void onApprove(request.user._id)}>
-												Approve
-											</Button>
-										</ListItemButton>
-										{index < pendingRequests.length - 1 && <Divider component="li" sx={{ ml: 9 }} />}
-									</Fragment>
-								))}
-							</List>
-						</Box>
-					)}
-				</Stack>
-			)}
-		</AppModal>
-	);
-};
-
 const GroupChatPage = () => {
 	const { user } = useAuth();
 	const { socket } = useChat();
@@ -341,6 +258,7 @@ const GroupChatPage = () => {
 	const [editOpen, setEditOpen] = useState(false);
 	const [addMembersOpen, setAddMembersOpen] = useState(false);
 	const [membersOpen, setMembersOpen] = useState(false);
+	const [membersInitialTab, setMembersInitialTab] = useState(0);
 	const [uploadTrayDismissed, setUploadTrayDismissed] = useState(false);
 	const [confirmAction, setConfirmAction] = useState<GroupChatConfirmAction | null>(null);
 	const [confirmingAction, setConfirmingAction] = useState(false);
@@ -349,6 +267,10 @@ const GroupChatPage = () => {
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const isPlatformAdmin = isAdminRole(user?.role);
 	const isCreatorSelected = Boolean(selectedChannel && selectedChannel.creator._id === user?._id);
+	const selectedIsMember = isChannelMember(selectedChannel, user?._id);
+	const selectedHasPendingRequest = hasPendingJoinRequest(selectedChannel, user?._id);
+	const canOpenSelectedChat = Boolean(selectedChannel && (selectedIsMember || isPlatformAdmin));
+	const selectedPendingRequests = selectedChannel?.joinRequests.filter((request) => request.status === 'Pending') ?? [];
 
 	const canManageSelected = Boolean(
 		selectedChannel &&
@@ -366,7 +288,7 @@ const GroupChatPage = () => {
 				setChannels(nextChannels);
 				setDiscoverChannels(discoverRes.data ?? []);
 				if (selectedChannel) {
-					const updated = nextChannels.find((channel) => channel._id === selectedChannel._id);
+					const updated = [...nextChannels, ...(discoverRes.data ?? [])].find((channel) => channel._id === selectedChannel._id);
 					if (updated) setSelectedChannel(updated);
 				} else if (nextChannels[0]) {
 					setSelectedChannel(nextChannels[0]);
@@ -385,6 +307,10 @@ const GroupChatPage = () => {
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setTypingUser(null);
 		setMessageSearch('');
+		if (!canOpenSelectedChat) {
+			setMessages([]);
+			return;
+		}
 		setLoadingMessages(true);
 		socket?.emit('groupChat:joinRoom', { channelId: selectedChannel._id });
 		groupChatService
@@ -398,7 +324,7 @@ const GroupChatPage = () => {
 					: channel
 			)));
 		});
-	}, [selectedChannel?._id]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [selectedChannel?._id, canOpenSelectedChat]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -438,7 +364,7 @@ const GroupChatPage = () => {
 	}, [socket, selectedChannel?._id, user?._id, isPlatformAdmin]);
 
 	const emitTyping = (isTyping: boolean) => {
-		if (!selectedChannel?._id) return;
+		if (!selectedChannel?._id || !canOpenSelectedChat) return;
 		socket?.emit('groupChat:typing', { channelId: selectedChannel._id, isTyping });
 	};
 
@@ -462,7 +388,7 @@ const GroupChatPage = () => {
 	};
 
 	const sendMessage = async () => {
-		if (!selectedChannel || (!input.trim() && files.length === 0)) return;
+		if (!selectedChannel || !canOpenSelectedChat || (!input.trim() && files.length === 0)) return;
 		setSending(true);
 		try {
 			const data = new FormData();
@@ -480,10 +406,25 @@ const GroupChatPage = () => {
 	const joinChannel = async (channel: IGroupChatChannel) => {
 		const res = await groupChatService.joinChannel(channel._id);
 		if (res.data) {
-			setChannels((current) => [res.data as IGroupChatChannel, ...current.filter((item) => item._id !== channel._id)]);
+			const joined = isChannelMember(res.data, user?._id);
+			if (joined) {
+				setChannels((current) => [res.data as IGroupChatChannel, ...current.filter((item) => item._id !== channel._id)]);
+				setDiscoverChannels((current) => current.filter((item) => item._id !== channel._id));
+			} else {
+				setDiscoverChannels((current) => current.map((item) => item._id === channel._id ? res.data as IGroupChatChannel : item));
+			}
 			setSelectedChannel(res.data);
 		}
 		toast.success(channel.type === 'Private' ? 'Join request sent' : 'Joined channel');
+	};
+
+	const cancelJoinRequest = async (channel: IGroupChatChannel) => {
+		const res = await groupChatService.cancelJoinRequest(channel._id);
+		if (res.data) {
+			setDiscoverChannels((current) => current.map((item) => item._id === channel._id ? res.data as IGroupChatChannel : item));
+			setSelectedChannel(res.data);
+		}
+		toast.success('Join request cancelled');
 	};
 
 	const updateSelectedChannel = (channel: IGroupChatChannel) => {
@@ -545,7 +486,7 @@ const GroupChatPage = () => {
 	const joinableChannels = discoverChannels.filter((channel) => !ownedOrJoinedIds.has(channel._id));
 	const selectedActions: ItemAction[] = [
 		...(isCreatorSelected || isPlatformAdmin ? [{ label: 'Edit', icon: <EditIcon />, onClick: () => setEditOpen(true) }] : []),
-		...(selectedChannel && selectedChannel.creator._id !== user?._id && !isPlatformAdmin ? [{ label: 'Leave', icon: <ExitToAppIcon />, onClick: () => setConfirmAction({ type: 'leaveChannel', channelName: selectedChannel.name }) }] : []),
+		...(selectedChannel && selectedIsMember && selectedChannel.creator._id !== user?._id && !isPlatformAdmin ? [{ label: 'Leave', icon: <ExitToAppIcon />, onClick: () => setConfirmAction({ type: 'leaveChannel', channelName: selectedChannel.name }) }] : []),
 		...(isCreatorSelected || isPlatformAdmin ? [{ label: 'Delete', icon: <DeleteIcon />, color: 'error' as const, onClick: () => selectedChannel && setConfirmAction({ type: 'archiveChannel', channelName: selectedChannel.name }) }] : []),
 		...(isPlatformAdmin ? [{ label: selectedChannel?.isBlocked ? 'Unblock channel' : 'Block channel', icon: <BlockIcon />, onClick: () => void blockSelected() }] : []),
 	];
@@ -640,7 +581,11 @@ const GroupChatPage = () => {
 									<List disablePadding>
 										{joinableChannels.map((channel, index) => (
 											<Fragment key={channel._id}>
-												<ListItemButton onClick={() => void joinChannel(channel)}>
+												<ListItemButton
+													selected={selectedChannel?._id === channel._id}
+													onClick={() => setSelectedChannel(channel)}
+													sx={{ borderLeft: '4px solid', borderLeftColor: selectedChannel?._id === channel._id ? 'primary.main' : 'transparent' }}
+												>
 													<ListItemAvatar>
 														<Avatar sx={{ bgcolor: channel.type === 'Private' ? 'warning.main' : 'success.main' }}>
 															{channel.type === 'Private' ? <LockIcon /> : <PublicIcon />}
@@ -667,7 +612,10 @@ const GroupChatPage = () => {
 					<>
 						<Box sx={{ px: 3, py: 1.75, background: HEADER_GRADIENT, color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5 }}>
 							<Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}>{selectedChannel.name[0]}</Avatar>
-							<Box sx={{ minWidth: 0, cursor: 'pointer' }} onClick={() => setMembersOpen(true)}>
+							<Box sx={{ minWidth: 0, cursor: 'pointer' }} onClick={() => {
+								setMembersInitialTab(0);
+								setMembersOpen(true);
+							}}>
 								<Typography sx={{ fontWeight: 950 }} noWrap>{selectedChannel.name}</Typography>
 								<Typography sx={{ fontSize: 12, opacity: 0.86 }}>{selectedChannel.members.length} members</Typography>
 							</Box>
@@ -686,6 +634,20 @@ const GroupChatPage = () => {
 										Add Members
 									</Button>
 								)}
+								{canManageSelected && selectedPendingRequests.length > 0 && (
+									<Button
+										variant="contained"
+										color="warning"
+										size="small"
+										onClick={() => {
+											setMembersInitialTab(2);
+											setMembersOpen(true);
+										}}
+										sx={{ fontWeight: 900, textTransform: 'none' }}
+									>
+										Requests ({selectedPendingRequests.length})
+									</Button>
+								)}
 								<ItemActionMenu
 									actions={selectedActions}
 									iconButtonSx={{
@@ -695,17 +657,19 @@ const GroupChatPage = () => {
 								/>
 							</Box>
 						</Box>
-						<Box sx={{ px: 2, py: 1.25, bgcolor: '#fff', borderBottom: '1px solid', borderColor: 'divider' }}>
-							<TextField
-								fullWidth
-								size="small"
-								placeholder="Search messages..."
-								value={messageSearch}
-								onChange={(event) => setMessageSearch(event.target.value)}
-								slotProps={{ input: { startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} /> } }}
-							/>
-						</Box>
-						<Box sx={{ flex: 1, overflowY: 'auto', p: 3, bgcolor: '#f7f8fc' }}>
+						{canOpenSelectedChat ? (
+							<>
+								<Box sx={{ px: 2, py: 1.25, bgcolor: '#fff', borderBottom: '1px solid', borderColor: 'divider' }}>
+									<TextField
+										fullWidth
+										size="small"
+										placeholder="Search messages..."
+										value={messageSearch}
+										onChange={(event) => setMessageSearch(event.target.value)}
+										slotProps={{ input: { startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} /> } }}
+									/>
+								</Box>
+								<Box sx={{ flex: 1, overflowY: 'auto', p: 3, bgcolor: '#f7f8fc' }}>
 							{loadingMessages ? (
 								<Box sx={{ display: 'grid', placeItems: 'center', pt: 8 }}><CircularProgress /></Box>
 							) : visibleMessages.length === 0 ? (
@@ -820,8 +784,8 @@ const GroupChatPage = () => {
 									<div ref={messagesEndRef} />
 								</Stack>
 							)}
-						</Box>
-						<Box sx={{ p: 2, bgcolor: '#fff', borderTop: '1px solid', borderColor: 'divider' }}>
+								</Box>
+								<Box sx={{ p: 2, bgcolor: '#fff', borderTop: '1px solid', borderColor: 'divider' }}>
 							{files.length > 0 && (
 								<Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, mb: 1 }}>
 									{files.map((file, index) => (
@@ -916,7 +880,16 @@ const GroupChatPage = () => {
 								<IconButton color="primary" disabled={sending || (!input.trim() && files.length === 0)} onClick={() => void sendMessage()}><SendIcon /></IconButton>
 							</Stack>
 							<input ref={fileInputRef} hidden multiple type="file" onChange={(event) => addFiles(event.target.files)} />
-						</Box>
+								</Box>
+							</>
+						) : (
+							<GroupChannelJoinPreview
+								channel={selectedChannel}
+								hasPendingRequest={selectedHasPendingRequest}
+								onJoin={() => void joinChannel(selectedChannel)}
+								onCancelRequest={() => void cancelJoinRequest(selectedChannel)}
+							/>
+						)}
 					</>
 				) : (
 					<Box sx={{ flex: 1, display: 'grid', placeItems: 'center' }}>
@@ -936,11 +909,12 @@ const GroupChatPage = () => {
 				onSaved={updateSelectedChannel}
 			/>
 			<AddMembersModal open={addMembersOpen} channel={selectedChannel} onClose={() => setAddMembersOpen(false)} onSaved={updateSelectedChannel} />
-			<MembersModal
+			<GroupChannelDetailsModal
 				open={membersOpen}
 				channel={selectedChannel}
 				currentUserId={user?._id}
 				canManage={canManageSelected}
+				initialTab={membersInitialTab}
 				onClose={() => setMembersOpen(false)}
 				onApprove={async (userId) => {
 					if (!selectedChannel) return;

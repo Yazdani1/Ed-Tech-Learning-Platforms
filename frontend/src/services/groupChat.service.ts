@@ -13,6 +13,7 @@ export const groupChatService = {
 	searchUsers: (search: string) =>
 		api.get<Array<Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'email'>>>('/group-chat/users/search', { params: { search } }),
 	joinChannel: (channelId: string) => api.post<IGroupChatChannel>(`/group-chat/channels/${channelId}/join`),
+	cancelJoinRequest: (channelId: string) => api.delete<IGroupChatChannel>(`/group-chat/channels/${channelId}/join`),
 	approveJoinRequest: (channelId: string, userId: string) =>
 		api.post<IGroupChatChannel>(`/group-chat/channels/${channelId}/approve/${userId}`),
 	addMembers: (channelId: string, userIds: string[]) =>

@@ -133,7 +133,8 @@ export const joinChannel = asyncHandler(async (req: Request, res: Response) => {
 		await channel.save();
 		await emitChannelUpdated(String(channel._id));
 	}
-	res.status(200).json({ success: true, message: 'Join request sent' });
+	const populated = await GroupChatChannel.findById(channel._id).populate(populateChannel);
+	res.status(200).json({ success: true, message: 'Join request sent', data: populated });
 });
 
 export const approveJoinRequest = asyncHandler(async (req: Request, res: Response) => {
@@ -153,6 +154,21 @@ export const approveJoinRequest = asyncHandler(async (req: Request, res: Respons
 	await emitChannelUpdated(String(channel._id));
 	const populated = await GroupChatChannel.findById(channel._id).populate(populateChannel);
 	res.status(200).json({ success: true, message: 'Join request approved', data: populated });
+});
+
+export const cancelJoinRequest = asyncHandler(async (req: Request, res: Response) => {
+	const channel = await GroupChatChannel.findById(req.params.channelId);
+	if (!channel || channel.isArchived || channel.isBlocked) throw new AppError('Channel not found', 404);
+	if (isChannelMember(channel, String(req.user._id))) throw new AppError('You are already a member of this channel', 400);
+
+	const beforeCount = channel.joinRequests.length;
+	channel.joinRequests = channel.joinRequests.filter((request) => !idEquals(request.user, req.user._id) || request.status !== 'Pending');
+	if (channel.joinRequests.length === beforeCount) throw new AppError('Pending join request not found', 404);
+
+	await channel.save();
+	await emitChannelUpdated(String(channel._id));
+	const populated = await GroupChatChannel.findById(channel._id).populate(populateChannel);
+	res.status(200).json({ success: true, message: 'Join request cancelled', data: populated });
 });
 
 export const addMembers = asyncHandler(async (req: Request, res: Response) => {

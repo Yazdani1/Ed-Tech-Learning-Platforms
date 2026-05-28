@@ -5,6 +5,7 @@ import {
 	addMembers,
 	approveJoinRequest,
 	archiveChannel,
+	cancelJoinRequest,
 	createChannel,
 	createMessage,
 	discoverChannels,
@@ -28,6 +29,7 @@ router.post('/channels', createChannel);
 router.patch('/channels/:channelId', updateChannel);
 router.get('/users/search', searchUsers);
 router.post('/channels/:channelId/join', joinChannel);
+router.delete('/channels/:channelId/join', cancelJoinRequest);
 router.post('/channels/:channelId/approve/:userId', approveJoinRequest);
 router.post('/channels/:channelId/members', addMembers);
 router.delete('/channels/:channelId/members/:userId', removeMember);
