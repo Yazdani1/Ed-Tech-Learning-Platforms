@@ -64,6 +64,12 @@ router.post(
 	addSection,
 );
 router.put(
+	'/:courseId/sections/reorder',
+	protect,
+	authorize(...adminRoles),
+	reorderSections,
+);
+router.put(
 	'/:courseId/sections/:sectionId',
 	protect,
 	authorize(...adminRoles),
@@ -88,6 +94,12 @@ router.post(
 	protect,
 	authorize(...adminRoles),
 	addLecture,
+);
+router.put(
+	'/:courseId/sections/:sectionId/lectures/reorder',
+	protect,
+	authorize(...adminRoles),
+	reorderLectures,
 );
 router.put(
 	'/:courseId/sections/:sectionId/lectures/:lectureId',
