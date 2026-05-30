@@ -106,4 +106,28 @@ describe('Teachers API', () => {
       .attach('profileImage', Buffer.from('text'), { filename: 'bad.txt', contentType: 'text/plain' });
     expectError(invalidFile, 400, /Only image files are allowed/);
   });
+
+  it('covers minimal teacher creation and image cleanup on delete', async () => {
+    const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
+
+    const minimal = await request(app).post('/api/teachers').set(authHeaderFor(admin)).send({
+      name: 'Minimal Teacher',
+      bio: 'Bio only',
+    });
+    expectSuccess(minimal, 201);
+    expect(minimal.body.data.expertise).toEqual([]);
+
+    const withImage = await Teacher.create({
+      name: 'Image Teacher',
+      bio: 'Has image',
+      expertise: [],
+      profileImagePublicId: 'teachers/old-image',
+    });
+
+    const remove = await request(app).delete(`/api/teachers/${withImage._id}`).set(authHeaderFor(admin));
+    expectSuccess(remove);
+
+    const missingDelete = await request(app).delete(`/api/teachers/${makeObjectId()}`).set(authHeaderFor(admin));
+    expectError(missingDelete, 404, /Teacher not found/);
+  });
 });

@@ -62,6 +62,47 @@ describe('Announcements API', () => {
     const missing = await request(app).delete(`/api/announcements/${makeObjectId()}`).set(authHeaderFor(admin));
     expectError(missing, 404, /Announcement not found/);
   });
+
+  it('rejects announcement description gaps, unassigned teachers, and non-owner deletes', async () => {
+    const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
+    const teacherUser = await createTestUser({ role: 'Teacher', email: 'teacher@example.com' });
+    await createTeacherProfile({ userId: teacherUser._id });
+    const course = await createCourse(admin);
+    const announcement = await Announcement.create({ course: course._id, title: 'A', description: 'B', postedBy: admin._id });
+
+    const missingDescription = await request(app)
+      .post(`/api/announcements/course/${course._id}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'Only title' });
+    expectError(missingDescription, 400, /Description is required/);
+
+    const unassignedTeacher = await request(app)
+      .post(`/api/announcements/course/${course._id}`)
+      .set(authHeaderFor(teacherUser))
+      .send({ title: 'Teacher', description: 'Blocked' });
+    expectError(unassignedTeacher, 403, /not assigned/i);
+
+    const missingUpdate = await request(app)
+      .put(`/api/announcements/${makeObjectId()}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T', description: 'D' });
+    expectError(missingUpdate, 404, /Announcement not found/);
+
+    const updateMissingTitle = await request(app)
+      .put(`/api/announcements/${announcement._id}`)
+      .set(authHeaderFor(admin))
+      .send({ description: 'D' });
+    expectError(updateMissingTitle, 400, /Title is required/);
+
+    const updateMissingDescription = await request(app)
+      .put(`/api/announcements/${announcement._id}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T' });
+    expectError(updateMissingDescription, 400, /Description is required/);
+
+    const deleteBlocked = await request(app).delete(`/api/announcements/${announcement._id}`).set(authHeaderFor(teacherUser));
+    expectError(deleteBlocked, 403, /not authorized/i);
+  });
 });
 
 describe('Study Curriculum API', () => {
@@ -148,6 +189,79 @@ describe('Study Curriculum API', () => {
     const missingRecord = await request(app).delete(`/api/study-curricula/${makeObjectId()}`).set(authHeaderFor(admin));
     expectError(missingRecord, 404, /Live class not found/);
   });
+
+  it('rejects missing curriculum fields, unassigned teachers, and non-owner deletes', async () => {
+    const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
+    const teacherUser = await createTestUser({ role: 'Teacher', email: 'teacher@example.com' });
+    const student = await createTestUser({ role: 'Student', email: 'student@example.com' });
+    await createTeacherProfile({ userId: teacherUser._id });
+    const course = await createCourse(admin);
+    const curriculum = await StudyCurriculum.create({
+      course: course._id,
+      title: 'Owned',
+      description: 'Body',
+      weekName: 'Week',
+      lectures: [validLecture],
+      postedBy: admin._id,
+    });
+
+    const missingDescription = await request(app)
+      .post(`/api/study-curricula/course/${course._id}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T', weekName: 'W' });
+    expectError(missingDescription, 400, /Description is required/);
+
+    const missingWeek = await request(app)
+      .post(`/api/study-curricula/course/${course._id}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T', description: 'D' });
+    expectError(missingWeek, 400, /Week name is required/);
+
+    const badLectureDay = await request(app)
+      .post(`/api/study-curricula/course/${course._id}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T', description: 'D', weekName: 'W', lectures: [{ title: 'L', time: '10' }] });
+    expectError(badLectureDay, 400, /Lecture day is required/);
+
+    const badLectureTime = await request(app)
+      .post(`/api/study-curricula/course/${course._id}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T', description: 'D', weekName: 'W', lectures: [{ title: 'L', day: 'Monday' }] });
+    expectError(badLectureTime, 400, /Lecture time is required/);
+
+    const missingCourse = await request(app)
+      .post(`/api/study-curricula/course/${makeObjectId()}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T', description: 'D', weekName: 'W' });
+    expectError(missingCourse, 404, /Course not found/);
+
+    const unassignedTeacher = await request(app)
+      .post(`/api/study-curricula/course/${course._id}`)
+      .set(authHeaderFor(teacherUser))
+      .send({ title: 'T', description: 'D', weekName: 'W', lectures: [validLecture] });
+    expectError(unassignedTeacher, 403, /not assigned/i);
+
+    const updateMissing = await request(app)
+      .put(`/api/study-curricula/${makeObjectId()}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T', description: 'D', weekName: 'W', lectures: [validLecture] });
+    expectError(updateMissing, 404, /Live class not found/);
+
+    const updateMissingDescription = await request(app)
+      .put(`/api/study-curricula/${curriculum._id}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T', weekName: 'W', lectures: [validLecture] });
+    expectError(updateMissingDescription, 400, /Description is required/);
+
+    const updateMissingWeek = await request(app)
+      .put(`/api/study-curricula/${curriculum._id}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T', description: 'D', lectures: [validLecture] });
+    expectError(updateMissingWeek, 400, /Week name is required/);
+
+    const deleteBlocked = await request(app).delete(`/api/study-curricula/${curriculum._id}`).set(authHeaderFor(teacherUser));
+    expectError(deleteBlocked, 403, /Not authorized/);
+  });
 });
 
 describe('Study Materials API', () => {
@@ -208,5 +322,51 @@ describe('Study Materials API', () => {
 
     const missing = await request(app).delete(`/api/study-materials/${makeObjectId()}`).set(authHeaderFor(admin));
     expectError(missing, 404, /Study material not found/);
+  });
+
+  it('rejects study material description gaps, unassigned teachers, and non-owner deletes', async () => {
+    const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
+    const teacherUser = await createTestUser({ role: 'Teacher', email: 'teacher@example.com' });
+    await createTeacherProfile({ userId: teacherUser._id });
+    const course = await createCourse(admin);
+    const material = await StudyMaterial.create({
+      course: course._id,
+      title: 'Owned',
+      description: 'Body',
+      postedBy: admin._id,
+    });
+
+    const missingDescription = await request(app)
+      .post(`/api/study-materials/course/${course._id}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T' });
+    expectError(missingDescription, 400, /Description is required/);
+
+    const unassignedTeacher = await request(app)
+      .post(`/api/study-materials/course/${course._id}`)
+      .set(authHeaderFor(teacherUser))
+      .send({ title: 'Teacher material', description: 'D' });
+    expectError(unassignedTeacher, 403, /not assigned/i);
+
+    const missingUpdate = await request(app)
+      .put(`/api/study-materials/${makeObjectId()}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T', description: 'D' });
+    expectError(missingUpdate, 404, /Study material not found/);
+
+    const updateMissingTitle = await request(app)
+      .put(`/api/study-materials/${material._id}`)
+      .set(authHeaderFor(admin))
+      .send({ description: 'D' });
+    expectError(updateMissingTitle, 400, /Title is required/);
+
+    const updateMissingDescription = await request(app)
+      .put(`/api/study-materials/${material._id}`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'T' });
+    expectError(updateMissingDescription, 400, /Description is required/);
+
+    const deleteBlocked = await request(app).delete(`/api/study-materials/${material._id}`).set(authHeaderFor(teacherUser));
+    expectError(deleteBlocked, 403, /Not authorized/);
   });
 });

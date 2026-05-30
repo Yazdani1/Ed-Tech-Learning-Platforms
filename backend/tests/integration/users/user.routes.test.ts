@@ -1,9 +1,11 @@
 import request from 'supertest';
 import app from '../../../src/app';
+import { Enrollment } from '../../../src/models/Enrollment.model';
+import { Subscription } from '../../../src/models/Subscription.model';
 import { User } from '../../../src/models/User.model';
 import { authHeaderFor, createAuthedUser, createTestUser } from '../../helpers/auth.helper';
 import { expectError, expectSuccess } from '../../helpers/assertions.helper';
-import { makeObjectId } from '../../helpers/data.helper';
+import { createCourse, createSubscriptionPlan, makeObjectId } from '../../helpers/data.helper';
 
 describe('Users API', () => {
   it('allows admins to create users with a valid role and safe response', async () => {
@@ -65,6 +67,87 @@ describe('Users API', () => {
     expect(res.body.pagination).toMatchObject({ page: 1, limit: 5, total: 1 });
   });
 
+  it('includes enrollment and spending summaries for Super Admin user lists', async () => {
+    const superAdmin = await createTestUser({ role: 'Super Admin', email: 'super@example.com' });
+    const student = await createTestUser({ name: 'Revenue Student', email: 'revenue.student@example.com', role: 'Student' });
+    const course = await createCourse(superAdmin, { price: 75, pricing: 'Paid' });
+    await Enrollment.create({ student: student._id, course: course._id, enrollmentType: 'paid', paidPrice: 60 });
+    await createSubscriptionPlan(superAdmin, { plan: 'Premium', price: 29 });
+    await Subscription.create({
+      user: student._id,
+      plan: 'Premium',
+      pricePaid: 25,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      status: 'Active',
+      assignedBy: superAdmin._id,
+    });
+
+    const res = await request(app).get('/api/users?search=Revenue&page=10&limit=1').set(authHeaderFor(superAdmin));
+
+    expectSuccess(res);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.pagination.page).toBe(1);
+    expect(res.body.data[0].enrollmentSummary).toMatchObject({ paid: 1, total: 1 });
+    expect(res.body.data[0].spendingSummary).toMatchObject({ paidCourses: 60, subscriptions: 25, total: 85 });
+  });
+
+  it('applies Super Admin advanced user filters', async () => {
+    const superAdmin = await createTestUser({ role: 'Super Admin', email: 'super@example.com' });
+    const activeStudent = await createTestUser({ name: 'Active Paid', email: 'active.paid@example.com', role: 'Student' });
+    const expiredStudent = await createTestUser({ name: 'Expired Free', email: 'expired.free@example.com', role: 'Student' });
+    const emptyStudent = await createTestUser({ name: 'Empty Student', email: 'empty.student@example.com', role: 'Student' });
+    const paidCourse = await createCourse(superAdmin, { price: 100, pricing: 'Paid' });
+    const freeCourse = await createCourse(superAdmin);
+    await Enrollment.create({ student: activeStudent._id, course: paidCourse._id, enrollmentType: 'paid', paidPrice: 80 });
+    await Enrollment.create({ student: expiredStudent._id, course: freeCourse._id, enrollmentType: 'free' });
+    await createSubscriptionPlan(superAdmin, { plan: 'Premium', price: 30 });
+    await Subscription.create({
+      user: activeStudent._id,
+      plan: 'Premium',
+      pricePaid: 30,
+      startDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      endDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+      status: 'Active',
+      assignedBy: superAdmin._id,
+    });
+    await Subscription.create({
+      user: expiredStudent._id,
+      plan: 'Premium',
+      pricePaid: 15,
+      startDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      endDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      status: 'Expired',
+      assignedBy: superAdmin._id,
+    });
+
+    const cases = [
+      'subscriptionStatus=expired',
+      'subscriptionStatus=inactive',
+      'enrollmentFilter=has_total',
+      'enrollmentFilter=has_free',
+      'enrollmentFilter=none_free',
+      'enrollmentFilter=none_paid',
+      'enrollmentFilter=has_subscription',
+      'enrollmentFilter=none_subscription',
+      'spendingFilter=has_paid_course',
+      'spendingFilter=none_paid_course',
+      'spendingFilter=has_subscription',
+      'spendingFilter=none_subscription',
+      'minTotalSpent=1&maxTotalSpent=200',
+      'minPaidCourseSpend=1&maxPaidCourseSpend=100',
+      'minSubscriptionSpend=1&maxSubscriptionSpend=50',
+    ];
+
+    for (const query of cases) {
+      const res = await request(app).get(`/api/users?${query}&limit=5`).set(authHeaderFor(superAdmin));
+      expectSuccess(res);
+      expect(res.body.pagination).toEqual(expect.objectContaining({ limit: 5 }));
+    }
+
+    expect(String(emptyStudent._id)).toBeTruthy();
+  });
+
   it('gets, updates, updates role, and deletes a user with authorization rules', async () => {
     const superAdmin = await createTestUser({ role: 'Super Admin', email: 'super@example.com' });
     const user = await createTestUser({ email: 'managed@example.com' });
@@ -104,6 +187,21 @@ describe('Users API', () => {
 
     const duplicate = await request(app).put(`/api/users/${user._id}`).set(authHeaderFor(admin)).send({ email: 'taken@example.com' });
     expectError(duplicate, 400, /Email is already in use/);
+
+    const emptyName = await request(app).put(`/api/users/${user._id}`).set(authHeaderFor(admin)).send({ name: '   ' });
+    expectError(emptyName, 400, /Name is required/);
+
+    const emptyEmail = await request(app).put(`/api/users/${user._id}`).set(authHeaderFor(admin)).send({ email: '   ' });
+    expectError(emptyEmail, 400, /Email is required/);
+
+    const invalidUpdateRole = await request(app).put(`/api/users/${user._id}`).set(authHeaderFor(admin)).send({ role: 'Owner' });
+    expectError(invalidUpdateRole, 400, /Invalid role/);
+
+    const missingUpdate = await request(app).put(`/api/users/${makeObjectId()}`).set(authHeaderFor(admin)).send({ name: 'Missing' });
+    expectError(missingUpdate, 404, /User not found/);
+
+    const missingRoleUpdate = await request(app).put(`/api/users/${makeObjectId()}/role`).set(authHeaderFor(admin)).send({ role: 'Teacher' });
+    expectError(missingRoleUpdate, 404, /User not found/);
 
     const invalidRole = await request(app).put(`/api/users/${user._id}/role`).set(authHeaderFor(admin)).send({ role: 'Owner' });
     expectError(invalidRole, 400, /Invalid role/);

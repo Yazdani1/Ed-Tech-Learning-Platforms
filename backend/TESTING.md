@@ -9,6 +9,7 @@ This backend test suite uses Jest for the test runner, assertions, mocks, setup/
 - `supertest`: API requests against the Express app
 - `mongodb-memory-server`: isolated MongoDB instance for automated tests
 - `cross-env`: portable `NODE_ENV=test` scripts on Windows and Unix
+- `socket.io-client`: Socket.IO integration tests against the backend socket server
 
 ## Scripts
 
@@ -41,18 +42,47 @@ tests/
   unit/
     config/
       cloudinary.test.ts
+    middleware/
+      errorHandler.test.ts
+      notFound.test.ts
     utils/
       jwt.test.ts
 
   integration/
+    admin/
+      dashboard-performance.routes.test.ts
     auth/
       auth.routes.test.ts
+    chat/
+      chat.routes.test.ts
+    community/
+      community.routes.test.ts
+    content/
+      announcement-study.routes.test.ts
     courses/
+      course-curriculum.routes.test.ts
       course.routes.test.ts
+    coverage-edges/
+      collaboration-quiz.edge.test.ts
+      course-user.edge.test.ts
+    enrollments/
+      enrollment.routes.test.ts
+    groupChat/
+      groupChat.routes.test.ts
     health/
       health.routes.test.ts
+    homeHero/
+      homeHeroPost.routes.test.ts
+    notifications/
+      notification.routes.test.ts
+    qa/
+      qa.routes.test.ts
+    quizzes/
+      quiz.routes.test.ts
     security/
       protected-routes.test.ts
+    socket/
+      socket.test.ts
     studySchedule/
       studySchedule.routes.test.ts
     subscriptions/
@@ -121,33 +151,36 @@ The current suite covers:
 - dashboard and performance reports
 - home hero posts and site logo
 - chat and group chat
+- socket.io authentication, student/staff chat events, presence, and group typing
 - community settings, channels, posts, replies, reactions, badges, and point rules
+- deeper course/user edge cases for filters, bulk operations, image replacement, advanced user analytics, and cleanup paths
 - JWT and Cloudinary adapter contracts
 
 Verified latest run:
 
 ```text
 npm test -- --runInBand
-22 test suites passed
-141 tests passed
+27 test suites passed
+179 tests passed
 
 npm run test:coverage -- --runInBand
-Overall statements: 81.82%
-Overall branches: 58.64%
-Overall functions: 79.24%
-Overall lines: 87.92%
+Overall statements: 95.69%
+Overall branches: 80.97%
+Overall functions: 96.90%
+Overall lines: 98.89%
 ```
 
-The route files are all exercised at 100% coverage. Remaining non-100% coverage is concentrated in branch-heavy controller internals, socket connection behavior, and deeper admin analytics/filter branches.
+The route files, models, shared middleware line coverage, and most API success/error paths are exercised. This is not yet 100% total backend coverage. Remaining non-100% coverage is concentrated in branch-heavy controller internals, socket connection behavior, environment-only branches, and deeper admin analytics/filter branches.
 
 Highest remaining coverage targets:
 
-- `src/socket/index.ts`
-- `src/controllers/course.controller.ts`
-- `src/controllers/user.controller.ts`
 - `src/controllers/community.controller.ts`
 - `src/controllers/quizBank.controller.ts`
-- branch coverage in dashboard, performance, teacher, group chat, Q&A, and curriculum controllers
+- `src/controllers/groupChat.controller.ts`
+- `src/controllers/teacher.controller.ts`
+- `src/controllers/user.controller.ts`
+- `src/socket/index.ts`
+- branch coverage in dashboard, performance, notification, enrollment, subscription, home hero, and environment-specific paths
 
 ## Adding A New API Test
 

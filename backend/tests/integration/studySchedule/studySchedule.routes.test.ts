@@ -99,6 +99,9 @@ describe('Study Schedule API', () => {
     const invalidStatus = await request(app).put(`/api/study-schedules/${schedule._id}`).set(authHeaderFor(owner)).send({ status: 'sleeping' });
     expectError(invalidStatus, 400, /Invalid status/);
 
+    const blockedUpdate = await request(app).put(`/api/study-schedules/${schedule._id}`).set(authHeaderFor(stranger)).send({ title: 'Nope' });
+    expectError(blockedUpdate, 403, /Not authorized/);
+
     const blocked = await request(app).delete(`/api/study-schedules/${schedule._id}`).set(authHeaderFor(stranger));
     expectError(blocked, 403, /Not authorized/);
 

@@ -92,4 +92,26 @@ describe('Course Type API', () => {
     const missing = await request(app).delete(`/api/course-types/${makeObjectId()}`).set(authHeaderFor(admin));
     expectError(missing, 404, /Course type not found/);
   });
+
+  it('rejects invalid generated slugs and update edge cases', async () => {
+    const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
+    const existing = await createCourseType('Bootcamp');
+    const target = await createCourseType('Workshop');
+
+    const invalidSlug = await request(app).post('/api/course-types').set(authHeaderFor(admin)).send({ name: '!!!' });
+    expectError(invalidSlug, 400, /valid characters/);
+
+    const emptyUpdate = await request(app).put(`/api/course-types/${target._id}`).set(authHeaderFor(admin)).send({ name: '   ' });
+    expectError(emptyUpdate, 400, /cannot be empty/);
+
+    const duplicateUpdate = await request(app).put(`/api/course-types/${target._id}`).set(authHeaderFor(admin)).send({ name: existing.name });
+    expectError(duplicateUpdate, 400, /already exists/);
+
+    const descriptionOnly = await request(app).put(`/api/course-types/${target._id}`).set(authHeaderFor(admin)).send({ description: 'Only description' });
+    expectSuccess(descriptionOnly);
+    expect(descriptionOnly.body.data.description).toBe('Only description');
+
+    const missingUpdate = await request(app).put(`/api/course-types/${makeObjectId()}`).set(authHeaderFor(admin)).send({ description: 'No record' });
+    expectError(missingUpdate, 404, /Course type not found/);
+  });
 });

@@ -82,4 +82,53 @@ describe('Course Curriculum API', () => {
     const badReorderLectures = await request(app).put(`/api/courses/${course._id}/sections/${section._id}/lectures/reorder`).set(authHeaderFor(admin)).send({ orderedIds: 'bad' });
     expectError(badReorderLectures, 400, /orderedIds array is required/);
   });
+
+  it('covers delete and partial update edge cases for sections and lectures', async () => {
+    const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
+    const course = await createCourse(admin);
+    const section = await Section.create({ course: course._id, title: 'S', order: 0 });
+    const lecture = await Lecture.create({ section: section._id, title: 'L', order: 0 });
+    section.lectures.push(lecture._id);
+    await section.save();
+
+    const updateWithoutTitle = await request(app)
+      .put(`/api/courses/${course._id}/sections/${section._id}`)
+      .set(authHeaderFor(admin))
+      .send({});
+    expectSuccess(updateWithoutTitle);
+    expect(updateWithoutTitle.body.data.title).toBe('S');
+
+    const missingDeleteSection = await request(app)
+      .delete(`/api/courses/${course._id}/sections/${makeObjectId()}`)
+      .set(authHeaderFor(admin));
+    expectError(missingDeleteSection, 404, /Section not found/);
+
+    const missingSectionForLecture = await request(app)
+      .post(`/api/courses/${course._id}/sections/${makeObjectId()}/lectures`)
+      .set(authHeaderFor(admin))
+      .send({ title: 'L' });
+    expectError(missingSectionForLecture, 404, /Section not found/);
+
+    const updateLectureAllFields = await request(app)
+      .put(`/api/courses/${course._id}/sections/${section._id}/lectures/${lecture._id}`)
+      .set(authHeaderFor(admin))
+      .send({
+        description: 'Updated description',
+        videoUrl: 'https://example.com/updated',
+        isPreview: true,
+        duration: 120,
+      });
+    expectSuccess(updateLectureAllFields);
+    expect(updateLectureAllFields.body.data).toMatchObject({
+      description: 'Updated description',
+      videoUrl: 'https://example.com/updated',
+      isPreview: true,
+      duration: 120,
+    });
+
+    const missingDeleteLecture = await request(app)
+      .delete(`/api/courses/${course._id}/sections/${section._id}/lectures/${makeObjectId()}`)
+      .set(authHeaderFor(admin));
+    expectError(missingDeleteLecture, 404, /Lecture not found/);
+  });
 });

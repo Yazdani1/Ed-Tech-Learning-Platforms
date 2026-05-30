@@ -109,4 +109,75 @@ describe('Q&A API', () => {
     const missingAnswer = await request(app).delete(`/api/qa/answers/${makeObjectId()}`).set(authHeaderFor(admin));
     expectError(missingAnswer, 404, /Answer not found/);
   });
+
+  it('covers Q&A edge cases for staff grouping, assignment, toggles, and missing records', async () => {
+    const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
+    const teacherUser = await createTestUser({ role: 'Teacher', email: 'teacher@example.com' });
+    const student = await createTestUser({ role: 'Student', email: 'student@example.com' });
+    const otherStudent = await createTestUser({ role: 'Student', email: 'other@example.com' });
+    const teacher = await createTeacherProfile({ userId: teacherUser._id });
+    const courseA = await createCourse(admin, { title: 'Alpha Course', teachers: [teacher._id] });
+    const courseB = await createCourse(admin, { title: 'Beta Course' });
+    await Enrollment.create({ student: student._id, course: courseA._id, enrollmentType: 'free' });
+    const question = await Question.create({ course: courseA._id, title: 'Q', description: 'D', postedBy: student._id });
+    await Question.create({ course: courseB._id, title: 'Q2', description: 'D2', postedBy: admin._id });
+    const answer = await Answer.create({ question: question._id, body: 'A', postedBy: admin._id });
+
+    const overview = await request(app).get('/api/qa/admin/course-questions').set(authHeaderFor(admin));
+    expectSuccess(overview);
+    expect(overview.body.data.map((group: { course: { title: string } }) => group.course.title)).toEqual(['Alpha Course', 'Beta Course']);
+
+    const emptyCourse = await createCourse(admin, { title: 'No Questions Course' });
+    const emptyCourseQuestions = await request(app).get(`/api/qa/questions/course/${emptyCourse._id}`).set(authHeaderFor(student));
+    expectSuccess(emptyCourseQuestions);
+    expect(emptyCourseQuestions.body.total).toBe(0);
+
+    const unassignedTeacherAnswer = await request(app)
+      .post(`/api/qa/answers/question/${question._id}`)
+      .set(authHeaderFor(await createTestUser({ role: 'Teacher', email: 'unassigned.teacher@example.com' })))
+      .send({ body: 'Blocked' });
+    expectError(unassignedTeacherAnswer, 403, /not assigned/);
+
+    const missingAnswerQuestion = await request(app)
+      .post(`/api/qa/answers/question/${makeObjectId()}`)
+      .set(authHeaderFor(admin))
+      .send({ body: 'No question' });
+    expectError(missingAnswerQuestion, 404, /Question not found/);
+
+    const teacherResolve = await request(app).patch(`/api/qa/questions/${question._id}/resolve`).set(authHeaderFor(teacherUser)).send({ isResolved: true });
+    expectSuccess(teacherResolve);
+
+    const blockedResolve = await request(app).patch(`/api/qa/questions/${question._id}/resolve`).set(authHeaderFor(otherStudent)).send({ isResolved: false });
+    expectError(blockedResolve, 403, /Not authorized/);
+
+    const missingResolve = await request(app).patch(`/api/qa/questions/${makeObjectId()}/resolve`).set(authHeaderFor(admin)).send({ isResolved: true });
+    expectError(missingResolve, 404, /Question not found/);
+
+    const upvoteQuestion = await request(app).patch(`/api/qa/questions/${question._id}/upvote`).set(authHeaderFor(student));
+    expectSuccess(upvoteQuestion);
+    const unvoteQuestion = await request(app).patch(`/api/qa/questions/${question._id}/upvote`).set(authHeaderFor(student));
+    expectSuccess(unvoteQuestion);
+    expect(unvoteQuestion.body.data.upvotes).not.toContain(String(student._id));
+
+    const missingQuestionUpvote = await request(app).patch(`/api/qa/questions/${makeObjectId()}/upvote`).set(authHeaderFor(student));
+    expectError(missingQuestionUpvote, 404, /Question not found/);
+
+    const blockedAnswerDelete = await request(app).delete(`/api/qa/answers/${answer._id}`).set(authHeaderFor(otherStudent));
+    expectError(blockedAnswerDelete, 403, /not authorized/i);
+
+    const missingAnswerUpdate = await request(app).put(`/api/qa/answers/${makeObjectId()}`).set(authHeaderFor(admin)).send({ body: 'No answer' });
+    expectError(missingAnswerUpdate, 404, /Answer not found/);
+
+    const emptyAnswerUpdate = await request(app).put(`/api/qa/answers/${answer._id}`).set(authHeaderFor(admin)).send({ body: '   ' });
+    expectError(emptyAnswerUpdate, 400, /Answer body is required/);
+
+    const upvoteAnswer = await request(app).patch(`/api/qa/answers/${answer._id}/upvote`).set(authHeaderFor(student));
+    expectSuccess(upvoteAnswer);
+    const unvoteAnswer = await request(app).patch(`/api/qa/answers/${answer._id}/upvote`).set(authHeaderFor(student));
+    expectSuccess(unvoteAnswer);
+    expect(unvoteAnswer.body.data.upvotes).not.toContain(String(student._id));
+
+    const missingAnswerUpvote = await request(app).patch(`/api/qa/answers/${makeObjectId()}/upvote`).set(authHeaderFor(student));
+    expectError(missingAnswerUpvote, 404, /Answer not found/);
+  });
 });

@@ -53,6 +53,27 @@ describe('Quiz Sections API', () => {
     const missingUpdate = await request(app).put(`/api/quiz-sections/${makeObjectId()}`).set(authHeaderFor(admin)).send({ title: 'X' });
     expectError(missingUpdate, 404, /Quiz section not found/);
   });
+
+  it('deletes quiz sections with their banks and attempts', async () => {
+    const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
+    const student = await createTestUser({ role: 'Student', email: 'student@example.com' });
+    const course = await createCourse(admin);
+    const section = await QuizSection.create({ course: course._id, title: 'With Banks', order: 0, createdBy: admin._id });
+    const bank = await QuizBank.create({
+      course: course._id,
+      quizSection: section._id,
+      title: 'Bank to cascade',
+      createdBy: admin._id,
+      questions: [{ question: 'Q', options, correctOptionIndices: [0], order: 0 }],
+    });
+    await QuizAttempt.create({ student: student._id, course: course._id, quizBank: bank._id, answers: [] });
+
+    const remove = await request(app).delete(`/api/quiz-sections/${section._id}`).set(authHeaderFor(admin));
+
+    expectSuccess(remove);
+    expect(await QuizBank.findById(bank._id)).toBeNull();
+    expect(await QuizAttempt.countDocuments({ quizBank: bank._id })).toBe(0);
+  });
 });
 
 describe('Quiz Bank API', () => {
@@ -185,5 +206,135 @@ describe('Quiz Bank API', () => {
 
     const missingPublicCourse = await request(app).get(`/api/quiz-bank/public/course/${makeObjectId()}`);
     expectError(missingPublicCourse, 404, /Course not found/);
+  });
+
+  it('covers quiz bank authorization, missing bank, repeat attempts, and public filters', async () => {
+    const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
+    const student = await createTestUser({ role: 'Student', email: 'student@example.com' });
+    const unassignedTeacher = await createTestUser({ role: 'Teacher', email: 'teacher.unassigned@example.com' });
+    await createTeacherProfile({ userId: unassignedTeacher._id });
+    const course = await createCourse(admin, {
+      title: 'Filtered Quiz Course',
+      status: 'Published',
+      visibility: 'Public',
+      pricing: 'Paid',
+      price: 50,
+    });
+    const section = await QuizSection.create({
+      course: course._id,
+      title: 'Visible Section',
+      order: 0,
+      isFreePreview: true,
+      createdBy: admin._id,
+    });
+    const bank = await QuizBank.create({
+      course: course._id,
+      quizSection: section._id,
+      title: 'Filter Bank',
+      description: 'Initial',
+      isFreePreview: true,
+      createdBy: admin._id,
+      questions: [{ question: 'Pick A', options, correctOptionIndices: [0], order: 0 }],
+    });
+    const questionId = bank.questions[0]._id;
+
+    const missingGet = await request(app).get(`/api/quiz-bank/${makeObjectId()}`).set(authHeaderFor(admin));
+    expectError(missingGet, 404, /Quiz bank not found/);
+
+    const missingUpdateBank = await request(app).put(`/api/quiz-bank/${makeObjectId()}`).set(authHeaderFor(admin)).send({ title: 'No bank' });
+    expectError(missingUpdateBank, 404, /Quiz bank not found/);
+
+    const deniedCreate = await request(app).post('/api/quiz-bank').set(authHeaderFor(unassignedTeacher)).send({
+      course: String(course._id),
+      title: 'Denied',
+      contextType: 'Course',
+      contextId: String(course._id),
+    });
+    expectError(deniedCreate, 403, /Not authorized/);
+
+    const deniedDelete = await request(app).delete(`/api/quiz-bank/${bank._id}`).set(authHeaderFor(student));
+    expectError(deniedDelete, 403, /Not authorized/);
+
+    const missingDeleteBank = await request(app).delete(`/api/quiz-bank/${makeObjectId()}`).set(authHeaderFor(admin));
+    expectError(missingDeleteBank, 404, /Quiz bank not found/);
+
+    const missingAddQuestionBank = await request(app).post(`/api/quiz-bank/${makeObjectId()}/questions`).set(authHeaderFor(admin)).send({
+      question: 'Q',
+      options,
+      correctOptionIndices: [0],
+    });
+    expectError(missingAddQuestionBank, 404, /Quiz bank not found/);
+
+    const deniedAddQuestion = await request(app).post(`/api/quiz-bank/${bank._id}/questions`).set(authHeaderFor(student)).send({
+      question: 'Q',
+      options,
+      correctOptionIndices: [0],
+    });
+    expectError(deniedAddQuestion, 403, /Not authorized/);
+
+    const missingQuestionText = await request(app).post(`/api/quiz-bank/${bank._id}/questions`).set(authHeaderFor(admin)).send({
+      options,
+      correctOptionIndices: [0],
+    });
+    expectError(missingQuestionText, 400, /Question text is required/);
+
+    const updateMissingBankQuestion = await request(app)
+      .put(`/api/quiz-bank/${makeObjectId()}/questions/${questionId}`)
+      .set(authHeaderFor(admin))
+      .send({ question: 'No bank' });
+    expectError(updateMissingBankQuestion, 404, /Quiz bank not found/);
+
+    const deniedUpdateQuestion = await request(app)
+      .put(`/api/quiz-bank/${bank._id}/questions/${questionId}`)
+      .set(authHeaderFor(student))
+      .send({ question: 'Nope' });
+    expectError(deniedUpdateQuestion, 403, /Not authorized/);
+
+    const invalidUpdateOptions = await request(app)
+      .put(`/api/quiz-bank/${bank._id}/questions/${questionId}`)
+      .set(authHeaderFor(admin))
+      .send({ options: options.slice(0, 3) });
+    expectError(invalidUpdateOptions, 400, /Exactly 4 options/);
+
+    const missingDeleteQuestionBank = await request(app)
+      .delete(`/api/quiz-bank/${makeObjectId()}/questions/${questionId}`)
+      .set(authHeaderFor(admin));
+    expectError(missingDeleteQuestionBank, 404, /Quiz bank not found/);
+
+    const deniedDeleteQuestion = await request(app)
+      .delete(`/api/quiz-bank/${bank._id}/questions/${questionId}`)
+      .set(authHeaderFor(student));
+    expectError(deniedDeleteQuestion, 403, /Not authorized/);
+
+    const firstAnswer = await request(app).post(`/api/quiz-bank/${bank._id}/attempt/answer`).set(authHeaderFor(student)).send({
+      questionId,
+      selectedOptionIndices: [0],
+    });
+    expectSuccess(firstAnswer);
+    expect(firstAnswer.body.data.answers[0].isCorrect).toBe(true);
+
+    const changedAnswer = await request(app).post(`/api/quiz-bank/${bank._id}/attempt/answer`).set(authHeaderFor(student)).send({
+      questionId,
+      selectedOptionIndices: [1],
+    });
+    expectSuccess(changedAnswer);
+    expect(changedAnswer.body.data.answers).toHaveLength(1);
+    expect(changedAnswer.body.data.answers[0].isCorrect).toBe(false);
+
+    const missingAttemptBank = await request(app).post(`/api/quiz-bank/${makeObjectId()}/attempt/answer`).set(authHeaderFor(student)).send({
+      questionId,
+      selectedOptionIndices: [0],
+    });
+    expectError(missingAttemptBank, 404, /Quiz bank not found/);
+
+    const byFilters = await request(app).get(
+      `/api/quiz-bank/public/courses?search=Filtered&categories=${course.category}&courseTypes=${course.courseType}&pricing=Paid,Unknown`,
+    );
+    expectSuccess(byFilters);
+    expect(byFilters.body.data).toHaveLength(1);
+
+    const ignoredInvalidFilters = await request(app).get('/api/quiz-bank/public/courses?categories=bad&courseTypes=bad&pricing=Unknown');
+    expectSuccess(ignoredInvalidFilters);
+    expect(ignoredInvalidFilters.body.data.length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -172,6 +172,30 @@ describe('Auth API', () => {
       expectError(wrongPassword, 400, /Current password is incorrect/);
     });
 
+    it('rejects profile update password and email edge cases', async () => {
+      const student = await createTestUser({ email: 'student.profile@example.com', password: 'OldPassword123!' });
+      const admin = await createTestUser({ role: 'Admin', email: 'admin.profile@example.com' });
+
+      const missingCurrentPassword = await request(app).put('/api/auth/me').set(authHeaderFor(student)).send({
+        newPassword: 'NewPassword123!',
+      });
+      expectError(missingCurrentPassword, 400, /Current password is required/);
+
+      const shortPassword = await request(app).put('/api/auth/me').set(authHeaderFor(student)).send({
+        currentPassword: 'OldPassword123!',
+        newPassword: 'short',
+      });
+      expectError(shortPassword, 400, /at least 6 characters/);
+
+      const emptyEmail = await request(app).put('/api/auth/me').set(authHeaderFor(student)).send({ email: '   ' });
+      expectError(emptyEmail, 400, /Email is required/);
+
+      const adminEmailUpdate = await request(app).put('/api/auth/me').set(authHeaderFor(admin)).send({
+        email: 'new.admin@example.com',
+      });
+      expectError(adminEmailUpdate, 403, /Only students can update their email/);
+    });
+
     it('uploads and removes avatars through the Cloudinary adapter', async () => {
       const user = await createTestUser({ email: 'avatar@example.com' });
 
@@ -207,6 +231,17 @@ describe('Auth API', () => {
         });
 
       expectError(res, 400, /Only image files are allowed/);
+    });
+  });
+
+  describe('POST /api/auth/logout', () => {
+    it('clears the auth cookie', async () => {
+      const user = await createTestUser({ email: 'logout@example.com' });
+
+      const res = await request(app).post('/api/auth/logout').set(authHeaderFor(user));
+
+      expectSuccess(res);
+      expect(String(res.headers['set-cookie'])).toContain('token=;');
     });
   });
 });

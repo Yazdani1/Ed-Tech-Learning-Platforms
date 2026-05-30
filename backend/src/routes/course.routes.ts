@@ -81,12 +81,6 @@ router.delete(
 	authorize(...adminRoles),
 	deleteSection,
 );
-router.put(
-	'/:courseId/sections/reorder',
-	protect,
-	authorize(...adminRoles),
-	reorderSections,
-);
 
 // Curriculum – Lectures
 router.post(
@@ -112,12 +106,6 @@ router.delete(
 	protect,
 	authorize(...adminRoles),
 	deleteLecture,
-);
-router.put(
-	'/:courseId/sections/:sectionId/lectures/reorder',
-	protect,
-	authorize(...adminRoles),
-	reorderLectures,
 );
 
 export default router;

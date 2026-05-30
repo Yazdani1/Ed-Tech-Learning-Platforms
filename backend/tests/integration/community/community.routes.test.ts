@@ -211,4 +211,63 @@ describe('Community API', () => {
     const missingUser = await request(app).get(`/api/community/users/${makeObjectId()}`);
     expectError(missingUser, 404, /User not found/);
   });
+
+  it('covers community overview widgets, profile activity summaries, date filters, and archive ownership checks', async () => {
+    const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
+    const author = await createTestUser({ role: 'Student', email: 'author@example.com' });
+    const helper = await createTestUser({ role: 'Student', email: 'helper@example.com' });
+    const outsider = await createTestUser({ role: 'Student', email: 'outsider@example.com' });
+    author.communityPoints = 10;
+    helper.communityPoints = 5;
+    await Promise.all([author.save(), helper.save()]);
+    await CommunityBadge.create({ name: 'Starter', requiredPoints: 1, createdBy: admin._id });
+    const channel = await CommunityChannel.create({ name: 'Widget Channel', slug: 'widget-channel', createdBy: admin._id });
+    const post = await CommunityPost.create({
+      channel: channel._id,
+      title: 'Widget post',
+      description: 'Body',
+      author: author._id,
+      reactions: [{ user: helper._id, type: 'Like' }],
+      createdAt: new Date('2026-01-10T12:00:00.000Z'),
+    });
+    const reply = await CommunityReply.create({
+      post: post._id,
+      body: 'Helpful answer',
+      author: helper._id,
+      reactions: [{ user: author._id, type: 'Helpful' }],
+    });
+    await CommunityAnswerReply.create({ reply: reply._id, body: 'Nested thanks', author: author._id });
+
+    const overview = await request(app)
+      .get('/api/community?dateFrom=2026-01-01&dateTo=2026-01-31&skip=0&limit=5')
+      .set(authHeaderFor(author));
+    expectSuccess(overview);
+    expect(overview.body.data.posts).toHaveLength(1);
+    expect(overview.body.data.posts[0].replies).toHaveLength(1);
+    expect(overview.body.data.channelReplyCounts[String(channel._id)]).toBe(1);
+    expect(overview.body.data.widgets.mostAnsweredPosts[0].replyCount).toBe(1);
+    expect(overview.body.data.widgets.topContributors[0].answerCount).toBe(1);
+
+    const invalidEndDate = await request(app).get('/api/community?dateTo=bad-date').set(authHeaderFor(author));
+    expectError(invalidEndDate, 400, /Invalid end date/);
+
+    const badOffset = await request(app).get('/api/community?skip=-1').set(authHeaderFor(author));
+    expectError(badOffset, 400, /Invalid pagination offset/);
+
+    const helperProfile = await request(app).get(`/api/community/users/${helper._id}`).set(authHeaderFor(author));
+    expectSuccess(helperProfile);
+    expect(helperProfile.body.data.badges.length).toBeGreaterThan(0);
+    expect(helperProfile.body.data.answers.length).toBeGreaterThan(0);
+
+    const authorProfile = await request(app).get(`/api/community/users/${author._id}`).set(authHeaderFor(author));
+    expectSuccess(authorProfile);
+    expect(authorProfile.body.data.discussions).toHaveLength(1);
+    expect(authorProfile.body.data.stats.reactionsReceived).toBe(1);
+
+    const blockedArchiveReply = await request(app).patch(`/api/community/replies/${reply._id}/archive`).set(authHeaderFor(outsider));
+    expectError(blockedArchiveReply, 403, /own answers/);
+
+    const blockedArchivePost = await request(app).patch(`/api/community/posts/${post._id}/archive`).set(authHeaderFor(outsider));
+    expectError(blockedArchivePost, 403, /own discussions/);
+  });
 });
