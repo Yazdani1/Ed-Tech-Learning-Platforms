@@ -5,7 +5,7 @@ import ChatWidget from '../../chat/ChatWidget';
 
 const StudentLayout= () => {
   const location = useLocation();
-  const isChatPage = location.pathname === '/student/chat';
+  const isChatPage = location.pathname === '/student/chat' || location.pathname === '/student/group-chat';
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>

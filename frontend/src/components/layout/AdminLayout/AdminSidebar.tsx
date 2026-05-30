@@ -28,6 +28,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ChatIcon from '@mui/icons-material/Chat';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CollectionsIcon from '@mui/icons-material/Collections';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 import Badge from '@mui/material/Badge';
 import { useAuth } from '../../../context/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -67,6 +68,12 @@ const navItems = [
 		label: 'All Course Q & A',
 		icon: <QuestionAnswerIcon />,
 		path: '/admin/course-qa',
+		roles: ['Super Admin', 'Admin', 'Moderator'],
+	},
+	{
+		label: 'Schedule',
+		icon: <EventNoteIcon />,
+		path: '/admin/schedule',
 		roles: ['Super Admin', 'Admin', 'Moderator'],
 	},
 	{

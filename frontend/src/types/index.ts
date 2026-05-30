@@ -10,6 +10,8 @@ export interface IUser {
   email: string;
   role: UserRole;
   avatar?: string;
+  communityPoints?: number;
+  isCommunityProfilePrivate?: boolean;
   activeSubscription?: {
     plan: SubscriptionPlan;
     billingDuration?: number;
@@ -31,6 +33,165 @@ export interface IUser {
   purchasedCourses: string[];
   createdAt: string;
   updatedAt?: string;
+}
+
+export type CommunityReactionType = 'Like' | 'Love' | 'Wow' | 'Sad' | 'Angry' | 'Helpful';
+
+export interface ICommunityChannel {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  imageUrl?: string;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICommunityBadge {
+  _id: string;
+  name: string;
+  imageUrl?: string;
+  requiredPoints: number;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICommunityReaction {
+  user: string | Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
+  type: CommunityReactionType;
+  createdAt: string;
+}
+
+export interface ICommunityAnswerReply {
+  _id: string;
+  reply: string;
+  body: string;
+  author: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+  isArchived?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICommunityReply {
+  _id: string;
+  post: string;
+  body: string;
+  author: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+  images?: Array<{ url: string }>;
+  childReplies?: ICommunityAnswerReply[];
+  childReplyCount?: number;
+  reactions: ICommunityReaction[];
+  isAccepted: boolean;
+  isArchived?: boolean;
+  acceptedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICommunityPost {
+  _id: string;
+  channel: ICommunityChannel;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  images?: Array<{ url: string }>;
+  author: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+  reactions: ICommunityReaction[];
+  replies: ICommunityReply[];
+  replyCount?: number;
+  isPinned: boolean;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICommunityPointRule {
+  _id: string;
+  key: 'acceptedAnswer' | 'createPost' | 'createReply' | 'receiveReaction';
+  label: string;
+  points: number;
+}
+
+export interface ICommunitySetting {
+  _id: string;
+  title: string;
+  description: string;
+  headerImageUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICommunityOverview {
+  channels: ICommunityChannel[];
+  channelPostCounts: Record<string, number>;
+  channelReplyCounts?: Record<string, number>;
+  settings?: ICommunitySetting;
+  totalPostCount?: number;
+  resultPostCount?: number;
+  postPagination?: {
+    skip: number;
+    limit: number;
+    loaded: number;
+    hasMore: boolean;
+  };
+  totalReplyCount?: number;
+  totalMemberCount?: number;
+  posts: ICommunityPost[];
+  badges: ICommunityBadge[];
+  widgets?: ICommunityHubWidgets;
+  guestLimited: boolean;
+}
+
+export interface ICommunityUserStats {
+  discussionsAsked: number;
+  answersGiven: number;
+  reactionsReceived: number;
+  reactionsGiven: number;
+}
+
+export interface ICommunityHubWidgets {
+  mostAnsweredPosts: ICommunityPost[];
+  topContributors: Array<{
+    user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints' | 'createdAt'>;
+    answerCount: number;
+    stats: ICommunityUserStats;
+    badges: ICommunityBadge[];
+  }>;
+  onlineMembers: Array<{
+    user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints'>;
+    stats: ICommunityUserStats;
+    badges: ICommunityBadge[];
+  }>;
+}
+
+export interface ICommunityUserProfile {
+  user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role' | 'communityPoints' | 'createdAt' | 'isCommunityProfilePrivate'>;
+  isPrivate: boolean;
+  stats?: ICommunityUserStats;
+  badges?: ICommunityBadge[];
+  discussions?: ICommunityPost[];
+  answers?: Array<
+    | ICommunityReply
+    | (ICommunityAnswerReply & {
+        reply?: {
+          post?: Pick<ICommunityPost, '_id' | 'title' | 'channel' | 'isArchived'>;
+        };
+      })
+  >;
+}
+
+export interface ICommunityPostDetail {
+  post: ICommunityPost;
+  badges: ICommunityBadge[];
+  channels: ICommunityChannel[];
+  repliesPagination?: {
+    total: number;
+    limit: number;
+    skip: number;
+    hasMore: boolean;
+  };
 }
 
 export interface IChatConversation {
@@ -66,6 +227,69 @@ export interface IChatTypingEvent {
 export interface IChatPresenceEvent {
   studentId: string;
   isOnline: boolean;
+}
+
+export type GroupChatChannelType = 'Public' | 'Private';
+export type GroupChatMemberRole = 'Admin' | 'Member';
+
+export interface IGroupChatMember {
+  user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
+  role: GroupChatMemberRole;
+  unreadCount: number;
+  joinedAt: string;
+}
+
+export interface IGroupChatJoinRequest {
+  user: Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  requestedAt: string;
+  respondedAt?: string;
+}
+
+export interface IGroupChatChannel {
+  _id: string;
+  name: string;
+  description?: string;
+  type: GroupChatChannelType;
+  creator: Pick<IUser, '_id' | 'name' | 'avatar' | 'role'>;
+  members: IGroupChatMember[];
+  joinRequests: IGroupChatJoinRequest[];
+  lastMessage: string;
+  lastMessageAt: string;
+  isBlocked: boolean;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IGroupChatAttachment {
+  url: string;
+  publicId: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  resourceType: string;
+}
+
+export interface IGroupChatMessage {
+  _id: string;
+  channel: string;
+  sender: string;
+  senderName: string;
+  senderRole: string;
+  senderAvatar: string;
+  content: string;
+  attachments: IGroupChatAttachment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IGroupChatTypingEvent {
+  channelId: string;
+  userId: string;
+  userName: string;
+  userRole: string;
+  isTyping: boolean;
 }
 
 export type NotificationPriority = 'Low' | 'Normal' | 'High' | 'Urgent';
@@ -531,6 +755,26 @@ export interface IPublicCourseQuizTree {
   sections: IPublicQuizSection[];
   lockedBankCount: number;
   lockedQuestionCount: number;
+}
+
+export type ScheduleType = 'timer' | 'reminder';
+export type ScheduleStatus = 'pending' | 'active' | 'paused' | 'completed' | 'cancelled';
+
+export interface IStudySchedule {
+	_id: string;
+	user: string;
+	type: ScheduleType;
+	title: string;
+	description: string;
+	status: ScheduleStatus;
+	duration?: number;
+	elapsedSeconds?: number;
+	completedAt?: string;
+	startDateTime?: string;
+	endDateTime?: string;
+	firedAt?: string;
+	createdAt: string;
+	updatedAt: string;
 }
 
 export interface IAttemptAnswer {

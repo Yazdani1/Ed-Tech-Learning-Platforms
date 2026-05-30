@@ -64,12 +64,13 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateMe = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, currentPassword, newPassword, removeAvatar } = req.body as {
+  const { name, email, currentPassword, newPassword, removeAvatar, isCommunityProfilePrivate } = req.body as {
     name?: string;
     email?: string;
     currentPassword?: string;
     newPassword?: string;
     removeAvatar?: string;
+    isCommunityProfilePrivate?: string;
   };
 
   const user = await User.findById(req.user._id).select('+password +avatarPublicId');
@@ -113,6 +114,10 @@ export const updateMe = asyncHandler(async (req: Request, res: Response) => {
     if (user.avatarPublicId) await deleteFromCloudinary(user.avatarPublicId);
     user.avatar = undefined;
     user.avatarPublicId = undefined;
+  }
+
+  if (isCommunityProfilePrivate !== undefined) {
+    user.isCommunityProfilePrivate = isCommunityProfilePrivate === 'true';
   }
 
   await user.save();

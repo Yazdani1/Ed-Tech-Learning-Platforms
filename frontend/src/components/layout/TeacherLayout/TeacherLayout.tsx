@@ -21,6 +21,7 @@ import ChatIcon from '@mui/icons-material/Chat';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 import Badge from '@mui/material/Badge';
 import { useAuth } from '../../../context/useAuth';
 import { useChat } from '../../../context/ChatContext';
@@ -161,6 +162,31 @@ const TeacherLayout= () => {
 								<PersonIcon />
 							</ListItemIcon>
 							{open && <ListItemText primary='Profile' />}
+						</ListItemButton>
+					</Tooltip>
+					<Tooltip title={open ? '' : 'Schedule'} placement='right'>
+						<ListItemButton
+							onClick={() => navigate('/teacher/schedule')}
+							selected={location.pathname.startsWith('/teacher/schedule')}
+							sx={{
+								mx: 1,
+								borderRadius: 2,
+								mb: 0.5,
+								minHeight: 44,
+								justifyContent: open ? 'initial' : 'center',
+								px: open ? 2 : 1.5,
+							}}
+						>
+							<ListItemIcon
+								sx={{
+									minWidth: 0,
+									mr: open ? 2 : 0,
+									color: location.pathname.startsWith('/teacher/schedule') ? 'primary.main' : 'inherit',
+								}}
+							>
+								<EventNoteIcon />
+							</ListItemIcon>
+							{open && <ListItemText primary='Schedule' />}
 						</ListItemButton>
 					</Tooltip>
 					<Tooltip title={open ? '' : 'Support Chat'} placement='right'>

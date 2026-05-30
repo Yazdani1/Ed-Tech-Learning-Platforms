@@ -1,0 +1,191 @@
+import { useState, type FC, type MouseEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Avatar, Badge, Box, Divider, Paper, Stack, Tooltip, Typography } from '@mui/material';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
+import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined';
+import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
+import type { ICommunityBadge, ICommunityHubWidgets } from '../../types/index';
+import { formatCount } from './communityHelpers';
+import CommunityProfilePreviewPopover from './CommunityProfilePreviewPopover';
+
+interface CommunityRightSidebarProps {
+  widgets?: ICommunityHubWidgets;
+  badges: ICommunityBadge[];
+}
+
+interface SectionCardProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+const SectionCard: FC<SectionCardProps> = ({ title, children }) => (
+  <Paper elevation={0} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
+    <Typography variant="subtitle1" sx={{ fontWeight: 900, mb: 1.5 }}>
+      {title}
+    </Typography>
+    {children}
+  </Paper>
+);
+
+const CommunityRightSidebar: FC<CommunityRightSidebarProps> = ({ widgets, badges }) => {
+  const navigate = useNavigate();
+  const [contributorAnchor, setContributorAnchor] = useState<HTMLElement | null>(null);
+  const [activeContributorId, setActiveContributorId] = useState<string | undefined>();
+  const [onlineMemberAnchor, setOnlineMemberAnchor] = useState<HTMLElement | null>(null);
+  const [activeOnlineMemberId, setActiveOnlineMemberId] = useState<string | undefined>();
+
+  const openContributorPreview = (event: MouseEvent<HTMLElement>, contributor: ICommunityHubWidgets['topContributors'][number]) => {
+    setContributorAnchor(event.currentTarget);
+    setActiveContributorId(contributor.user._id);
+  };
+
+  const closeContributorPreview = () => {
+    setContributorAnchor(null);
+    setActiveContributorId(undefined);
+  };
+
+  const openOnlineMemberPreview = (event: MouseEvent<HTMLElement>, userId: string) => {
+    setOnlineMemberAnchor(event.currentTarget);
+    setActiveOnlineMemberId(userId);
+  };
+
+  const closeOnlineMemberPreview = () => {
+    setOnlineMemberAnchor(null);
+    setActiveOnlineMemberId(undefined);
+  };
+
+  return (
+    <Stack spacing={2}>
+      <SectionCard title="Most Answered Questions">
+        <Stack divider={<Divider />} spacing={0}>
+          {(widgets?.mostAnsweredPosts ?? []).slice(0, 5).map((post) => (
+            <Box
+              key={post._id}
+              onClick={() => navigate(`/community-hub/${post._id}`)}
+              sx={{ py: 1.2, cursor: 'pointer', '&:hover .community-sidebar-title': { color: 'primary.main' } }}
+            >
+              <Tooltip title={post.title} placement="top" arrow>
+                <Typography className="community-sidebar-title" variant="body2" noWrap sx={{ fontWeight: 900, lineHeight: 1.35 }}>
+                  {post.title}
+                </Typography>
+              </Tooltip>
+              <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', mt: 0.75 }}>
+                <QuestionAnswerOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                  {formatCount(post.replyCount ?? post.replies?.length ?? 0)} answers
+                </Typography>
+                <ThumbUpOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                  {formatCount(post.reactions?.length ?? 0)} reactions
+                </Typography>
+              </Stack>
+            </Box>
+          ))}
+          {(widgets?.mostAnsweredPosts ?? []).length === 0 && (
+            <Typography variant="body2" color="text.secondary">
+              No answered discussions yet.
+            </Typography>
+          )}
+        </Stack>
+      </SectionCard>
+
+      <SectionCard title="Top Contributors">
+        <Stack divider={<Divider />} spacing={0}>
+          {(widgets?.topContributors ?? []).slice(0, 5).map((item) => (
+            <Stack
+              key={item.user._id}
+              direction="row"
+              spacing={1.25}
+              onClick={(event) => openContributorPreview(event, item)}
+              sx={{ alignItems: 'center', py: 1, cursor: 'pointer', '&:hover': { bgcolor: 'grey.50' } }}
+            >
+              <Avatar src={item.user.avatar} sx={{ width: 38, height: 38 }}>
+                {item.user.name[0]?.toUpperCase()}
+              </Avatar>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 900 }} noWrap>
+                  {item.user.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {formatCount(item.answerCount)} answers
+                </Typography>
+              </Box>
+            </Stack>
+          ))}
+          {(widgets?.topContributors ?? []).length === 0 && (
+            <Typography variant="body2" color="text.secondary">
+              Contributors will appear here after answers are posted.
+            </Typography>
+          )}
+        </Stack>
+        <CommunityProfilePreviewPopover anchorEl={contributorAnchor} userId={activeContributorId} onClose={closeContributorPreview} />
+      </SectionCard>
+
+      <SectionCard title="Badges">
+        <Stack spacing={1}>
+          {badges.map((badge) => (
+            <Stack key={badge._id} direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
+              <Avatar src={badge.imageUrl} variant="rounded" sx={{ width: 34, height: 34, bgcolor: 'success.light' }}>
+                <EmojiEventsOutlinedIcon fontSize="small" />
+              </Avatar>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="body2" sx={{ fontWeight: 900 }} noWrap>
+                  {badge.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {formatCount(badge.requiredPoints)} pts
+                </Typography>
+              </Box>
+            </Stack>
+          ))}
+          {badges.length === 0 && (
+            <Typography variant="body2" color="text.secondary">
+              No badges configured yet.
+            </Typography>
+          )}
+        </Stack>
+      </SectionCard>
+
+      <SectionCard title="Online Members">
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 1 }}>
+          {(widgets?.onlineMembers ?? []).slice(0, 5).map((item) => (
+            <Paper
+              key={item.user._id}
+              elevation={0}
+              onClick={(event) => openOnlineMemberPreview(event, item.user._id)}
+              sx={{
+                p: 1,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                display: 'grid',
+                placeItems: 'center',
+                cursor: 'pointer',
+                '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.50' },
+              }}
+            >
+              <Badge
+                overlap="circular"
+                variant="dot"
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                sx={{ '& .MuiBadge-badge': { bgcolor: 'success.main', border: '2px solid white', width: 12, height: 12, borderRadius: '50%' } }}
+              >
+                <Avatar src={item.user.avatar} sx={{ width: 38, height: 38 }}>
+                  {item.user.name[0]?.toUpperCase()}
+                </Avatar>
+              </Badge>
+            </Paper>
+          ))}
+        </Box>
+        <CommunityProfilePreviewPopover anchorEl={onlineMemberAnchor} userId={activeOnlineMemberId} onClose={closeOnlineMemberPreview} />
+        {(widgets?.onlineMembers ?? []).length === 0 && (
+          <Typography variant="body2" color="text.secondary">
+            No members are online right now.
+          </Typography>
+        )}
+      </SectionCard>
+    </Stack>
+  );
+};
+
+export default CommunityRightSidebar;
