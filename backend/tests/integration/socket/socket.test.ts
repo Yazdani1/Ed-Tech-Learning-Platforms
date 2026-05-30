@@ -1,7 +1,7 @@
 import http from 'http';
 import { io as Client, type Socket as ClientSocket } from 'socket.io-client';
 import type { Server as SocketServer } from 'socket.io';
-import { AddressInfo } from 'net';
+import type { AddressInfo } from 'net';
 import { setupSocketIO, getOnlineStudentIds } from '../../../src/socket/index';
 import { ChatConversation } from '../../../src/models/ChatConversation.model';
 import { ChatMessage } from '../../../src/models/ChatMessage.model';
@@ -65,7 +65,7 @@ describe('Socket.IO backend', () => {
   });
 
   afterEach((done) => {
-    ioServer.close();
+    void ioServer.close();
     server.close(() => done());
   });
 
@@ -120,12 +120,14 @@ describe('Socket.IO backend', () => {
 
     const conversation = await ChatConversation.findOne({ student: student._id });
     expect(conversation).not.toBeNull();
+    if (!conversation) throw new Error('Expected student conversation to exist');
+    const conversationId = String(conversation._id);
 
     const staffMessagePromise = waitFor<Record<string, unknown>>(staffSocket, 'chat:message');
     studentSocket.emit('chat:send', { content: 'Hello support' });
     const staffMessage = await staffMessagePromise;
     expect(staffMessage.content).toBe('Hello support');
-    expect(await ChatMessage.countDocuments({ conversationId: conversation!._id })).toBe(1);
+    expect(await ChatMessage.countDocuments({ conversationId: conversation._id })).toBe(1);
 
     const studentTypingPromise = waitFor<Record<string, unknown>>(staffSocket, 'chat:typing');
     studentSocket.emit('chat:typing', { isTyping: true });
@@ -133,20 +135,20 @@ describe('Socket.IO backend', () => {
 
     const studentMessagePromise = waitFor<Record<string, unknown>>(studentSocket, 'chat:message');
     staffSocket.emit('chat:send', {
-      conversationId: String(conversation!._id),
+      conversationId,
       content: 'Hi student',
     });
     expect((await studentMessagePromise).content).toBe('Hi student');
 
     const staffTypingPromise = waitFor<Record<string, unknown>>(studentSocket, 'chat:typing');
-    staffSocket.emit('chat:typing', { conversationId: String(conversation!._id), isTyping: true });
+    staffSocket.emit('chat:typing', { conversationId, isTyping: true });
     expect((await staffTypingPromise).userRole).toBe('Admin');
 
     const staffUpdatePromise = waitFor(staffSocket, 'chat:conversationUpdated');
-    staffSocket.emit('chat:markRead', { conversationId: String(conversation!._id) });
+    staffSocket.emit('chat:markRead', { conversationId });
     await staffUpdatePromise;
 
-    studentSocket.emit('chat:markRead', { conversationId: String(conversation!._id) });
+    studentSocket.emit('chat:markRead', { conversationId });
     await delay(50);
 
     const offlinePresencePromise = waitFor<{ studentId: string; isOnline: boolean }>(staffSocket, 'chat:presence');

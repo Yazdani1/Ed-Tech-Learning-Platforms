@@ -8,7 +8,6 @@ import { CommunityReply } from '../../../src/models/CommunityReply.model';
 import { GroupChatChannel } from '../../../src/models/GroupChatChannel.model';
 import { QuizBank } from '../../../src/models/QuizBank.model';
 import { QuizSection } from '../../../src/models/QuizSection.model';
-import { Teacher } from '../../../src/models/Teacher.model';
 import { authHeaderFor, createTestUser } from '../../helpers/auth.helper';
 import { expectError, expectSuccess } from '../../helpers/assertions.helper';
 import { createCourse, createTeacherProfile, makeObjectId } from '../../helpers/data.helper';

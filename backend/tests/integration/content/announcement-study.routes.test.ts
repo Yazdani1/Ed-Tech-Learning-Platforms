@@ -193,7 +193,6 @@ describe('Study Curriculum API', () => {
   it('rejects missing curriculum fields, unassigned teachers, and non-owner deletes', async () => {
     const admin = await createTestUser({ role: 'Admin', email: 'admin@example.com' });
     const teacherUser = await createTestUser({ role: 'Teacher', email: 'teacher@example.com' });
-    const student = await createTestUser({ role: 'Student', email: 'student@example.com' });
     await createTeacherProfile({ userId: teacherUser._id });
     const course = await createCourse(admin);
     const curriculum = await StudyCurriculum.create({
