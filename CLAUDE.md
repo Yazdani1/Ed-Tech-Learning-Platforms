@@ -1,148 +1,137 @@
-# CLAUDE.md
+# Ed-Tech Learning Platform
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Full-stack LMS: Super Admin, Admin, Moderator, Teacher and Student. Admins manage courses (categories, course
+types, curriculum sections and lectures, bulk edits and discounts), teachers, users, homepage showcase posts and
+the site logo. Students browse the public catalog, enrol in courses, learn through the course player (lectures,
+study curricula, study materials, announcements, course Q&A), take quiz banks and practice quizzes, and buy
+subscription plans. Everyone signed in gets 1-to-1 support chat with staff, group chat channels, notifications,
+a study schedule (timers and reminders) and the public Community Hub (posts, replies, reactions, badges, points).
+Super Admins also see a dashboard and performance reports.
 
-## After Every Feature Change
+Source of truth: the user's instructions (in conversation) and this file.
 
-After completing any feature or fix, run all four checks before reporting the task as done. Fix any errors before finishing — do not skip or defer.
+## Layout
 
-```bash
-# 1. Backend — full build (compiles to dist/)
-cd backend && npm run build
+- backend/ Express 5 + TypeScript + Mongoose + MongoDB, Socket.io, Cloudinary. **Its structure and patterns
+  stay as they are** (see .claude/rules/backend.md). Deployed on Render (render.yaml).
+- frontend/ Next.js (App Router) + TypeScript + MUI v9 + TanStack Query + i18next (mobile responsive).
+  Deployed on Vercel (deploy hook in .github/workflows/deploy.yml).
+- legacy-frontend/ the old React 19 + Vite client while pages are migrated (Stage A only; deleted at the end).
+- docker/ dev + test compose files and Dockerfiles. Root compose.yml includes docker/compose.dev.yml.
+- docs/ architecture, backend-features, frontend-features (by hand), database + dependency graph (generated).
 
-# 2. Backend — lint
-cd backend && npm run lint
+## Commands (from the root)
 
-# 3. Frontend — full build (tsc + Vite bundle)
-cd frontend && npm run build
+- npm run dev: mongo + backend in Docker, Next.js on the host. Stop: Ctrl+C, then `npm run dev:down`.
+- npm run test:backend: Vitest + Supertest against the mongo-test container
+- npm run test:frontend: Vitest + React Testing Library + MSW
+- npm run test:e2e: Playwright (desktop AND mobile)
+- npm run lint / npm run typecheck: both apps (+ dependency-cruiser)
+- npm run docs:generate / docs:check
+- npm run check: lint + typecheck + docs:check + all tests + docker build. Must pass before every commit.
+- "It needs Docker" is never a reason to skip a test: check `docker info`, start Docker Desktop, run it.
+- Per app (also used by CI): `npm --prefix backend run build|lint|lint:fix`,
+  `npm --prefix backend run seed:discount-courses|seed:subscriptions`.
+- Port conflict (`EADDRINUSE :5000`) from a backend left running on the host:
+  `Stop-Process -Id (Get-NetTCPConnection -LocalPort 5000 -State Listen).OwningProcess -Force`
 
-# 4. Frontend — lint
-cd frontend && npm run lint
-```
+## Backend (existing patterns, keep them)
 
-If lint errors are auto-fixable, run `npm run lint:fix` first, then re-check. Only report the task complete when all four pass with no errors.
+- `src/app.ts`: Express setup (CORS: CLIENT_URL in production, any localhost port in dev, credentials on),
+  json, urlencoded, cookie-parser, `/api` routes, notFound, errorHandler. `src/server.ts`: HTTP server,
+  Socket.io init, DB connection.
+- `src/routes/index.ts` mounts the 24 feature route files under `/api` (health, auth, users, teachers,
+  categories, course-types, courses, announcements, study-curricula, study-materials, subscriptions,
+  subscription-plans, enrollments, performance, qa, dashboard, chat, notifications, quiz-bank, quiz-sections,
+  home-hero-posts, community, group-chat, study-schedules). Public health check: `GET /api/health`.
+- Controllers: `src/controllers/<feature>.controller.ts` (camelCase), every async handler wrapped in
+  `asyncHandler()`, errors via `throw new AppError(message, statusCode)` (global errorHandler).
+- Models: `src/models/<Entity>.model.ts` (PascalCase), Mongoose schemas with timestamps and indexes.
+- Middleware: `auth.middleware.ts` (`protect`, `optionalProtect`, `authorize(...roles)`),
+  `upload.middleware.ts` (Multer memory storage: `upload` = images <= 5 MB, `uploadAnyFile` = <= 10 MB x 10),
+  files then go to Cloudinary (`config/cloudinary.ts`). `errorHandler.ts`, `notFound.ts`.
+- `src/socket/index.ts`: Socket.io with JWT auth (`handshake.auth.token` or the `token` cookie); rooms
+  `user:<id>`, `staff`, `conv:<id>`, `group:<id>`; events `chat:*` and `groupChat:*`.
+- `src/config/`: db, cloudinary, env (`config` object). `src/utils/`: AppError, asyncHandler, jwt.
+- Response shape: `{ success: boolean; message?: string; data?: T; total?: number; page?: number; limit?: number }`.
+- Auth flow: login/register issue a JWT (`JWT_EXPIRE`, default 7d), set it as the httpOnly `token` cookie
+  (production: `secure`, `sameSite=none`) and also return it in the body. `protect` reads the cookie first,
+  then `Authorization: Bearer`.
+- Env names (never read .env files): NODE_ENV, PORT=5000, MONGO_URI, JWT_SECRET, JWT_EXPIRE, CLIENT_URL,
+  CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET.
+- Subscriptions: no payment gateway yet. `POST /api/subscriptions/subscribe` activates the plan at once
+  (price taken from SubscriptionPlanConfig). A gateway will be added later (Stage B).
 
-> `npm run dev` is a long-running server and cannot be used as a build check. `npm run build` covers everything it would catch at startup.
+## Frontend architecture (Next.js)
 
-**Port conflict (`EADDRINUSE :5000`)** — a previous backend process is still running. Fix with:
-```powershell
-Stop-Process -Id (Get-NetTCPConnection -LocalPort 5000 -State Listen).OwningProcess -Force
-```
+- Folders by layer (frontend/src): app/ (routes only: thin page.tsx / layout.tsx), api/ (<feature>.api.ts:
+  request wrappers + TanStack Query hooks; query-client.ts), services/http.service.ts (the ONE axios client:
+  unwraps { success, data }, turns every failure into an ApiError with a user-ready message), schemas/
+  (Zod schemas matching the backend's real request/response shapes), components/<feature>/ (layout/ =
+  shells, common/ = building blocks), hooks/, context/ (only real UI-wide state: chat socket, notifications),
+  types/index.ts, utils/, theme/, i18n/. Tests in __tests__/ next to the code.
+- Components never call axios and never need try/catch: they use the api hooks.
+- Same URLs as before: public pages, /auth/login, /auth/register, /admin/* (Super Admin, Admin, Moderator;
+  some pages narrower), /student/*, /teacher/*.
+- Auth: requests go to same-origin `/api/*` (next.config rewrites to the backend), so the httpOnly cookie is
+  first-party and sent automatically; the token is never stored in localStorage or URLs. Socket.io connects
+  to NEXT_PUBLIC_SOCKET_URL; its token comes from a Next.js route handler that reads the cookie on the server
+  and is kept in memory only.
+- i18n: English (`en`) and Bangla (`bn`), the same keys as the old client.
+- Layer direction is enforced by dependency-cruiser.
 
-## Dev Commands
+## Code rules
 
-**Frontend** (port 3000):
-```bash
-cd frontend
-npm run dev        # start Vite dev server
-npm run build      # tsc + vite build
-npm run lint       # ESLint check
-npm run lint:fix   # ESLint auto-fix
-```
+- TypeScript strict. No `any`, no `@ts-ignore`, no non-null `!` without a comment.
+- Max 1000 lines per file (post-edit hook + ESLint). Aim for < 300. Functions < 60 lines. A file over the
+  limit is split into focused modules re-exported from an index file.
+- One React component per file. Components with props declare a named `interface` and are typed
+  `FC<Props>`; components without props are plain arrow functions (never a bare `FC`).
+- No magic numbers, no console.log (ESLint no-console), no commented-out code, no TODO without an issue.
+  Consistent type imports, no unused imports (ESLint in both apps).
+- Naming: camelCase variables/functions, PascalCase types/components, kebab-case route folders, UPPER_SNAKE constants.
+  Frontend services/api files camelCase or kebab-case `<feature>.api.ts`; components `PascalCase.tsx`.
+- Dates: Luxon helpers in utils/dateTime; shown in the viewer's own (browser) time zone; the backend stores UTC.
+- NEVER run git commit, push, merge, rebase or reset, and NEVER create, switch or delete branches: the user
+  does that. When work is ready, show a summary and a proposed commit message, then stop.
+- "The changes" = everything not committed yet (`git diff HEAD` + untracked files). The user commits after
+  each feature, so agent reviews cover only the current feature.
 
-**Backend** (port 5000):
-```bash
-cd backend
-npm run dev        # nodemon (watches src/, auto-restarts)
-npm run build      # tsc → dist/
-npm start          # node dist/server.js
-npm run lint
-npm run lint:fix
-npm run seed:discount-courses
-npm run seed:subscriptions
-```
+## UI rules (see .claude/rules/frontend-ui.md)
 
-There is no test suite configured in this project.
+Mobile first (360 / 768 / 1280 px), shared ResponsiveDataView, AppModal + useModal, useConfirm,
+useDeleteConfirm, <Can> / <RequireRole>, no hard-coded text (i18n keys).
 
-## Architecture Overview
+## Testing rules (see .claude/rules/testing.md)
 
-This is a full-stack MERN platform (Ed-Tech / LMS) with role-based access for Super Admin, Admin, Moderator, Teacher, and Student.
+- Every new endpoint: integration tests (success, 400, 401, 403 per role, 404, business rules). Every new
+  page: component tests + a Playwright flow (desktop + mobile).
+- **Definition of done for EVERY change** (run by Claude, never left to the user):
+  1. `npm run lint` and `npm run typecheck` clean (0 errors, 0 warnings); `npm run docs:check` up to date.
+  2. Tests for what changed added/updated and PASSING: backend -> `npm run test:backend`; frontend ->
+     `npm run test:frontend` AND `npm run test:e2e`.
+  3. Review: `test-engineer` and `code-reviewer` agents (plus `security-auditor` for backend, auth, payments,
+     uploads or roles). Fix every Critical/High/Major finding yourself (backend: smallest change in the
+     existing style, never a restructure), re-run tests. Save reports to `.claude/reports/` and show a summary table.
+  4. Docs updated (documentation rules).
+  5. Final message lists each check with its real result. Never "done" while a check failed or did not run.
+- Until the root scripts exist (Stage A, Phases 2-5), run what exists: `npm --prefix backend run build`,
+  `npm --prefix backend run lint`, and the same two for the frontend app.
 
-### Backend (`backend/src/`)
+## Documentation rules (see .claude/rules/documentation.md)
 
-MVC pattern — Express 5 + Mongoose + TypeScript:
+Endpoints in docs/backend-features.md, screens in docs/frontend-features.md, docs/architecture.md per
+feature; database.md and dependency-graph.md are generated. Only what is implemented.
 
-- `app.ts` — Express setup, middleware registration, route mounting
-- `server.ts` — HTTP server entry point, Socket.io init, DB connection
-- `routes/index.ts` — Aggregates all 22 feature route files
-- `controllers/` — One file per domain (e.g. `course.controller.ts`)
-- `models/` — Mongoose schemas named `<Entity>.model.ts`
-- `middleware/` — `auth.ts` (JWT protect + authorize), `errorHandler.ts`, `upload.ts` (Multer)
-- `utils/AppError.ts` — Custom error class; use this instead of throwing plain errors
-- `utils/asyncHandler.ts` — Wraps async route handlers to forward errors
-- `socket/index.ts` — Socket.io with JWT auth, room-based chat, presence tracking
-- `config/` — DB, Cloudinary, env config
+## Current status
 
-**API response shape:**
-```ts
-{ success: boolean; message?: string; data?: T; total?: number; page?: number; limit?: number }
-```
-
-**Auth flow:** JWT issued on login, stored as HTTP-only cookie and sent as Bearer token. `protect` middleware verifies the token; `authorize(...roles)` guards by role.
-
-### Frontend (`frontend/src/`)
-
-React 19 + React Router 7 + Material-UI v9 + Context API:
-
-- `App.tsx` — All routes. Public, role-protected (`ProtectedRoute`), and layout-specific routes
-- `context/` — `AuthContext` (user, isAuthenticated, login/logout/refreshUser), `ChatContext`, `NotificationContext`, `ConfirmModalContext`
-- `services/api.ts` — Axios instance; base URL from `VITE_API_URL` env var; request interceptor injects `Authorization: Bearer`; response interceptor unwraps `data`, shows toast errors, redirects on 401 (silent for `/auth/me` and `/enrollments`)
-- `services/<entity>.service.ts` — 21 domain service files, each exports a default object with `getAll`, `getById`, `create`, `update`, `delete` methods
-- `pages/` — Grouped by role/feature; each folder maps to a layout
-- `components/` — Grouped by feature (course, teacher, chat, home, layout, ui, common)
-- `utils/` — dateTime (Luxon), duration, pricing, urlParams helpers
-- `theme.ts` — MUI theme customization
-- `i18n/` — i18next internationalization
-
-**Route layout groups:**
-- `/admin/*` → `AdminLayout` (Super Admin / Admin / Moderator only)
-- `/student/*` → `StudentLayout`
-- `/teacher/*` → `TeacherLayout`
-- Public pages at root level
-
-### State Management
-
-Context API only — no Redux. Access auth state via the `useAuth()` hook. Real-time chat/notifications use Socket.io via `ChatProvider`.
-
-### File Uploads
-
-Multer handles multipart on the backend; files are stored to Cloudinary. The `upload` middleware is applied per-route.
-
-### Path Alias
-
-Frontend uses `@` as an alias for `src/` (configured in `tsconfig.json` and Vite).
-
-## Environment Variables
-
-**Backend** — copy `.env.example`:
-```
-NODE_ENV, PORT=5000, MONGO_URI, JWT_SECRET, JWT_EXPIRE, CLIENT_URL,
-CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
-```
-
-**Frontend:**
-```
-VITE_API_URL=http://localhost:5000/api
-```
-
-## Key Conventions
-
-- **File size limit: 1000 lines max.** If a file exceeds this, split it into focused modules and re-export from an index file (e.g. `controllers/course/index.ts` re-exporting from `create.ts`, `update.ts`, etc.).
-- Backend models: `PascalCase.model.ts`; controllers: `camelCase.controller.ts`
-- Frontend services: `camelCase.service.ts`; components: `PascalCase.tsx`
-- React components **with props** must declare a named `interface` and type as `FC<InterfaceName>`. Never use inline prop types. Example:
-  ```tsx
-  interface CourseCardProps {
-    title: string;
-    price: number;
-  }
-  const CourseCard: FC<CourseCardProps> = ({ title, price }) => { ... };
-  ```
-- React components **with no props** use a plain arrow function — do not annotate with bare `FC`:
-  ```tsx
-  const PracticeQuizPage = () => { ... };
-  ```
-- Throw `new AppError(message, statusCode)` in backend controllers — the global error handler catches it
-- Wrap async controllers with `asyncHandler()`
-- Frontend lazy-loads page components via `React.lazy()`
-- ESLint enforces `no-console`, consistent type imports, and no unused imports in both packages
+- Stage A (conversion), following EdTech-Claude-Code-Setup-Guide.md.
+- Done: Phase 0 (audit + decisions), Phase 1 (AI workspace: this file, .claude/ settings, hook, rules,
+  agents, skills, reports folder, memory).
+- Next: Phase 2 (root tooling: root package.json, Prettier, husky + lint-staged, dependency-cruiser).
+- Page migration order: shells + auth -> public catalog + course details -> student area -> teacher area ->
+  admin area -> chat and notifications -> everything left (community hub, practice quiz, pricing, schedule).
+- Known issues to fix in Phase 7 (backend baseline): `PUT /api/courses/:courseId/sections/reorder` and
+  `.../lectures/reorder` are shadowed by the `:sectionId` / `:lectureId` routes declared before them;
+  `JWT_SECRET` falls back to a hard-coded default; group-chat uploads accept any file type.
+- Known follow-up (Stage B): payment gateway; until then subscribing activates the plan without payment.

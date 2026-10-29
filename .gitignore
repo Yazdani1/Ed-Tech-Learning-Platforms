@@ -1,4 +1,9 @@
-.claude/
+# Claude Code: commit settings, rules, agents and skills; keep local files and reports out
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+.claude/reports/*
+!.claude/reports/.gitkeep
 node_modules/
 dist/
 .env
