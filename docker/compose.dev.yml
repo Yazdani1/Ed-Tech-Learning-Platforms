@@ -1,0 +1,91 @@
+# Dev stack: mongo + backend (its own `npm run dev`, nodemon), source mounted; Next.js is opt-in here
+# (`npm run dev` runs the frontend on the host, faster on Windows). backend/.env is optional; the values
+# below override it so the local backend always uses the local database.
+# Linux node_modules live in named volumes so they never clash with the Windows install.
+
+x-dev-image: &dev-image
+  build:
+    context: .
+    dockerfile: docker/backend.Dockerfile
+    target: dev
+  image: edtech-learning-platform-dev:latest
+
+x-env-file: &env-file
+  - path: backend/.env
+    required: false
+
+services:
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    # Single-node replica set so Mongoose transactions work like in production (Atlas)
+    command: ['mongod', '--replSet', 'rs0', '--bind_ip_all']
+    # Host port 27018 by default: a MongoDB installed on the computer usually holds 27017.
+    # Connect from Compass/mongosh with mongodb://localhost:27018/?directConnection=true
+    ports:
+      - '127.0.0.1:${MONGO_PORT:-27018}:27017'
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "try { rs.status().ok } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo:27017' }] }).ok }"
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+  backend:
+    <<: *dev-image
+    restart: unless-stopped
+    working_dir: /app/backend
+    command: ['sh', '-c', 'npm ci && npm run dev']
+    env_file: *env-file
+    environment:
+      NODE_ENV: development
+      MONGO_URI: mongodb://mongo:27017/${MONGO_DB:-edtech}?replicaSet=rs0
+      PORT: '5000'
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
+    ports:
+      - '127.0.0.1:${BACKEND_PORT:-5000}:5000'
+    volumes:
+      - ./backend:/app/backend
+      - backend_node_modules:/app/backend/node_modules
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:5000/api/health || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 30s
+
+  frontend:
+    <<: *dev-image
+    profiles: ['frontend']
+    restart: unless-stopped
+    working_dir: /app/frontend
+    # --webpack: Turbopack cannot see file changes from a Windows bind mount; webpack polls
+    command: ['sh', '-c', 'npm ci && npx next dev --port 3000 --hostname 0.0.0.0 --webpack']
+    environment:
+      WATCHPACK_POLLING: 'true'
+      BACKEND_INTERNAL_URL: http://backend:5000
+      NEXT_PUBLIC_SOCKET_URL: http://localhost:${BACKEND_PORT:-5000}
+    ports:
+      - '127.0.0.1:${FRONTEND_PORT:-3000}:3000'
+    volumes:
+      - ./frontend:/app/frontend
+      - frontend_node_modules:/app/frontend/node_modules
+      - frontend_next:/app/frontend/.next
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  mongo_data:
+  backend_node_modules:
+  frontend_node_modules:
+  frontend_next:

@@ -18,7 +18,7 @@ export default {
   'backend/src/**/*.ts': (files) =>
     `node backend/node_modules/eslint/bin/eslint.js ${quote(files)}`,
   // New backend test files are formatted like the rest of the new code
-  'backend/{tests/**/*.ts,vitest.config.ts}': ['prettier --write'],
+  'backend/{tests/**/*.ts,vitest.config.mts}': ['prettier --write'],
   // Everything else Prettier knows (it skips the paths in .prettierignore)
   '*.{js,mjs,cjs,json,md,yml,yaml,css}': ['prettier --write --ignore-unknown'],
   // Once per commit when code changes: type-check both apps, check the frontend architecture rules,

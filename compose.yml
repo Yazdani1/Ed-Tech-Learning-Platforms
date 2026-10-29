@@ -1,0 +1,7 @@
+# Entry point for `docker compose ...` from the root (Docker only looks for a compose file in the current folder).
+# The real development stack lives in docker/compose.dev.yml; paths in it are relative to this folder.
+name: edtech-learning-platform
+
+include:
+  - path: docker/compose.dev.yml
+    project_directory: .

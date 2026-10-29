@@ -23,6 +23,9 @@ Source of truth: the user's instructions (in conversation) and this file.
 ## Commands (from the root)
 
 - npm run dev: mongo + backend in Docker, Next.js on the host. Stop: Ctrl+C, then `npm run dev:down`.
+  Ports (env overrides): frontend 3000 (FRONTEND_PORT), backend 5000 (BACKEND_PORT), Docker MongoDB on host
+  port 27018 (MONGO_PORT; a local mongod already uses 27017). The dev database `edtech` starts empty.
+  backend/.env is optional; MONGO_URI, PORT and CLIENT_URL are overridden to use the local stack.
 - npm run test:backend: Vitest + Supertest against the mongo-test container
 - npm run test:frontend: Vitest + React Testing Library + MSW
 - npm run test:e2e: Playwright (desktop AND mobile)
@@ -128,10 +131,14 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
 - Stage A (conversion), following EdTech-Claude-Code-Setup-Guide.md.
 - Done: Phase 0 (audit + decisions), Phase 1 (AI workspace: this file, .claude/ settings, hook, rules,
   agents, skills, reports folder, memory), Phase 2 (root tooling: root package.json, Prettier, husky +
-  lint-staged, dependency-cruiser; backend Vitest + Supertest setup in backend/vitest.config.ts and
-  backend/tests/setup.ts).
-- Next: Phase 3 (Docker dev + test stacks, scripts/dev.mjs, scripts/docker-test.mjs). Until then
-  `npm run dev`, `test:*`, `docker:build` and `check` have no script behind them; `docs:*` arrive in Phase 6.
+  lint-staged, dependency-cruiser; backend Vitest + Supertest setup in backend/vitest.config.mts and
+  backend/tests/setup.ts), Phase 3 (Docker: compose.yml, docker/compose.dev.yml, docker/compose.test.yml,
+  docker/backend.Dockerfile with dev + prod stages, scripts/dev.mjs, scripts/docker-test.mjs).
+- Frontend hosting is Vercel, so there is no frontend Dockerfile; `docker:build` builds the backend prod image.
+- Until Phase 4, `npm run dev` starts the old Vite client (pointed at the Docker backend) instead of Next.js.
+- Next: Phase 4 (`git mv frontend legacy-frontend`, Next.js skeleton in frontend/). Not set up yet:
+  `test:frontend` and `test:e2e` (Phase 5), `docs:*` (Phase 6); `test:backend` reports "No test files found"
+  until Phase 7, so `npm run check` cannot pass before then.
 - While frontend/ is still the old Vite app, dependency-cruiser reports its 21 violations (8 circular imports,
   components calling services directly) as warnings; they become errors once Phase 4 replaces it.
 - Existing lint warnings (not errors): backend 9, old frontend 136.

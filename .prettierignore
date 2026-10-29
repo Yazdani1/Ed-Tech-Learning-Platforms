@@ -10,7 +10,7 @@ test-results
 # Backend: existing code keeps its own style (no Prettier). Only new test files are formatted.
 backend/*
 !backend/tests/
-!backend/vitest.config.ts
+!backend/vitest.config.mts
 
 # Old React + Vite client: never reformatted (moved to legacy-frontend/ in Phase 4, deleted at the end)
 frontend/

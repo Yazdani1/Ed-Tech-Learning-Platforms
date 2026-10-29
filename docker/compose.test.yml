@@ -1,0 +1,126 @@
+# Test stack (npm run test:backend / test:frontend / test:e2e, and CI). Paths are relative to this docker/ folder.
+# Run with: docker compose -p edtech-learning-platform-test -f docker/compose.test.yml ...
+# (scripts/docker-test.mjs does this and removes the stack afterwards).
+# The database lives on tmpfs: fast and wiped on every run. No .env file is used: test-only values below.
+name: edtech-learning-platform-test
+
+x-dev-image: &dev-image
+  build:
+    context: ..
+    dockerfile: docker/backend.Dockerfile
+    target: dev
+  image: edtech-learning-platform-dev:latest
+
+x-backend-volumes: &backend-volumes
+  - ../backend:/app/backend
+  - test_backend_node_modules:/app/backend/node_modules
+
+x-frontend-volumes: &frontend-volumes
+  - ../frontend:/app/frontend
+  - test_frontend_node_modules:/app/frontend/node_modules
+
+x-test-env: &test-env
+  NODE_ENV: test
+  PORT: '5000'
+  MONGO_URI: mongodb://mongo-test:27017/edtech_test?replicaSet=rs0
+  JWT_SECRET: test-only-jwt-secret-not-used-anywhere-else # gitleaks:allow
+  JWT_EXPIRE: 1h
+  CLIENT_URL: http://frontend-e2e:3000
+  CLOUDINARY_CLOUD_NAME: test-cloud
+  CLOUDINARY_API_KEY: test-key # gitleaks:allow
+  CLOUDINARY_API_SECRET: test-secret # gitleaks:allow
+
+services:
+  mongo-test:
+    image: mongo:8
+    command: ['mongod', '--replSet', 'rs0', '--bind_ip_all']
+    tmpfs:
+      - /data/db
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "try { rs.status().ok } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo-test:27017' }] }).ok }"
+      interval: 2s
+      timeout: 10s
+      retries: 30
+
+  # Integration tests (Vitest + Supertest) against the real mongo-test
+  backend-test:
+    <<: *dev-image
+    working_dir: /app/backend
+    environment: *test-env
+    command: ['sh', '-c', 'npm ci && npm test']
+    volumes: *backend-volumes
+    depends_on:
+      mongo-test:
+        condition: service_healthy
+
+  # Component tests (Vitest + React Testing Library + MSW); no database needed (set up in Phase 5)
+  frontend-test:
+    <<: *dev-image
+    working_dir: /app/frontend
+    environment:
+      NODE_ENV: test
+    command: ['sh', '-c', 'npm ci && npm test']
+    volumes: *frontend-volumes
+
+  # --- E2E: running backend + Next.js against mongo-test, driven by Playwright (completed in Phase 5) ---
+  backend-e2e:
+    <<: *dev-image
+    working_dir: /app/backend
+    environment: *test-env
+    command: ['sh', '-c', 'npm ci && npm run dev']
+    volumes: *backend-volumes
+    profiles: ['e2e']
+    depends_on:
+      mongo-test:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:5000/api/health || exit 1']
+      interval: 3s
+      timeout: 3s
+      retries: 60
+
+  frontend-e2e:
+    <<: *dev-image
+    working_dir: /app/frontend
+    environment:
+      BACKEND_INTERNAL_URL: http://backend-e2e:5000
+      NEXT_PUBLIC_SOCKET_URL: http://backend-e2e:5000
+    command: ['sh', '-c', 'npm ci && npx next dev --port 3000 --hostname 0.0.0.0']
+    volumes:
+      - ../frontend:/app/frontend
+      - test_frontend_node_modules:/app/frontend/node_modules
+      - test_frontend_next:/app/frontend/.next
+    profiles: ['e2e']
+    depends_on:
+      backend-e2e:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1']
+      interval: 3s
+      timeout: 3s
+      retries: 100
+
+  playwright:
+    # Must match the @playwright/test version in frontend/package.json (added in Phase 5)
+    image: mcr.microsoft.com/playwright:v1.63.0-noble
+    working_dir: /app/frontend
+    environment:
+      BASE_URL: http://frontend-e2e:3000
+      CI: ${CI:-}
+    command: ['npx', 'playwright', 'test']
+    volumes: *frontend-volumes
+    profiles: ['e2e']
+    ipc: host
+    depends_on:
+      frontend-e2e:
+        condition: service_healthy
+
+volumes:
+  test_backend_node_modules:
+  test_frontend_node_modules:
+  test_frontend_next:
