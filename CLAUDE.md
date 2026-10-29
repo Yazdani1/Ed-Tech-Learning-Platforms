@@ -133,18 +133,33 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   agents, skills, reports folder, memory), Phase 2 (root tooling: root package.json, Prettier, husky +
   lint-staged, dependency-cruiser; backend Vitest + Supertest setup in backend/vitest.config.mts and
   backend/tests/setup.ts), Phase 3 (Docker: compose.yml, docker/compose.dev.yml, docker/compose.test.yml,
-  docker/backend.Dockerfile with dev + prod stages, scripts/dev.mjs, scripts/docker-test.mjs).
+  docker/backend.Dockerfile with dev + prod stages, scripts/dev.mjs, scripts/docker-test.mjs), Phase 4
+  (old client moved to legacy-frontend/; Next.js 16 skeleton in frontend/: providers, http.service + Zod-checked
+  responses, TanStack Query, MUI theme, i18n en/bn, /auth/login + /auth/register, Admin/Student/Teacher shells
+  with role-filtered menus, RequireRole/Can, proxy.ts sign-in redirect + per-request nonce CSP).
 - Frontend hosting is Vercel, so there is no frontend Dockerfile; `docker:build` builds the backend prod image.
-- Until Phase 4, `npm run dev` starts the old Vite client (pointed at the Docker backend) instead of Next.js.
-- Next: Phase 4 (`git mv frontend legacy-frontend`, Next.js skeleton in frontend/). Not set up yet:
-  `test:frontend` and `test:e2e` (Phase 5), `docs:*` (Phase 6); `test:backend` reports "No test files found"
-  until Phase 7, so `npm run check` cannot pass before then.
-- While frontend/ is still the old Vite app, dependency-cruiser reports its 21 violations (8 circular imports,
-  components calling services directly) as warnings; they become errors once Phase 4 replaces it.
-- Existing lint warnings (not errors): backend 9, old frontend 136.
+  A production `next build` needs BACKEND_INTERNAL_URL and NEXT_PUBLIC_SOCKET_URL (it fails without them).
+- Signed-in landing pages (/admin/dashboard, /admin/courses, /student/dashboard, /teacher/courses) and `/`
+  show MigratingPage until Phase 8; the other sidebar links 404 until their pages are migrated.
+- Accepted for Stage A: browser-tab titles (metadata) are English only (language is picked in the browser).
+- Next: Phase 5 (merge CI, frontend Vitest + RTL + MSW, Playwright). Not set up yet: `test:frontend`,
+  `test:e2e` (Phase 5), `docs:*` (Phase 6); `test:backend` reports "No test files found" until Phase 7, so
+  `npm run check` cannot pass before then.
+- Existing lint warnings (not errors): backend 9 (legacy-frontend/ is no longer linted).
 - Page migration order: shells + auth -> public catalog + course details -> student area -> teacher area ->
   admin area -> chat and notifications -> everything left (community hub, practice quiz, pricing, schedule).
-- Known issues to fix in Phase 7 (backend baseline): `PUT /api/courses/:courseId/sections/reorder` and
-  `.../lectures/reorder` are shadowed by the `:sectionId` / `:lectureId` routes declared before them;
-  `JWT_SECRET` falls back to a hard-coded default; group-chat uploads accept any file type.
+  Phase 8 also adds YouTube to the CSP (frame-src, img-src) when the course/lecture pages that embed it move.
+- Known issues to fix in Phase 7 (backend baseline, each with a test):
+  - `PUT /api/courses/:courseId/sections/reorder` and `.../lectures/reorder` are shadowed by the `:sectionId` /
+    `:lectureId` routes declared before them.
+  - `JWT_SECRET` falls back to a hard-coded default (Critical: tokens can be forged if it is unset).
+  - Login/register pass `email` straight into `User.findOne` (NoSQL operator injection).
+  - Cookie `sameSite=none` in production + `express.urlencoded`: CSRF exposure now that the app is same-origin
+    (`lax` is enough); Socket.io auth then needs the planned token route.
+  - Token also returned in the JSON body (remove once legacy-frontend/ is deleted); JWTs never revoked on
+    logout/password change; no rate limit or helmet on auth routes (`trust proxy` behind Vercel).
+  - CastError echoes raw input; register reveals whether an email exists.
+  - Group-chat uploads accept any file type; seed-admin.ts hard-codes the Super Admin password.
+  - `npm audit` in backend/: 10 known vulnerabilities (1 critical, 6 high).
+- Reports: .claude/reports/2026-10-29-phase4-nextjs-skeleton-{code-reviewer,security-auditor}.md (git-ignored).
 - Known follow-up (Stage B): payment gateway; until then subscribing activates the plan without payment.

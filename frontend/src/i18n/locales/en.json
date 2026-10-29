@@ -27,7 +27,22 @@
     "subscriptions": "Subscriptions",
     "myCourses": "My Courses",
     "browse": "Browse Courses",
-    "logout": "Logout"
+    "logout": "Logout",
+    "home": "Home",
+    "profile": "Profile",
+    "courseQa": "All Course Q & A",
+    "schedule": "Schedule",
+    "supportChat": "Support Chat",
+    "groupChat": "Create Channel",
+    "notifications": "Notifications",
+    "homepageShowcase": "Homepage Showcase",
+    "courseSetup": "Course Setup",
+    "userList": "User List",
+    "performance": "Performance",
+    "analytics": "Analytics",
+    "pricing": "Pricing",
+    "assignedCourses": "Assigned courses",
+    "mainMenu": "Main menu"
   },
   "auth": {
     "login": "Login",
@@ -40,7 +55,30 @@
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "loginSuccess": "Logged in successfully",
-    "logoutSuccess": "Logged out successfully"
+    "logoutSuccess": "Logged out successfully",
+    "loginHeading": "Welcome back",
+    "loginSubtitle": "Sign in to continue your courses, live classes, and learning dashboard.",
+    "loginSubmit": "Sign in",
+    "loginFormLabel": "Sign in form",
+    "createAccountLink": "Create an account",
+    "registerHeading": "Start learning today",
+    "registerSubtitle": "Create your student account and unlock courses, lectures, live classes, and study materials.",
+    "registerSubmit": "Create account",
+    "registerFormLabel": "Create account form",
+    "signInLink": "Sign in",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "registerSuccess": "Account created successfully",
+    "heroChip": "Trusted learning marketplace",
+    "heroTitle": "Learn job-ready skills from expert-led courses.",
+    "heroBody": "Join live classes, watch structured lessons, access study materials, and track your learning in one place.",
+    "heroLibraryTitle": "Curated course library",
+    "heroLibraryBody": "Browse public, free, paid, and subscription-ready courses.",
+    "heroVideoTitle": "Video and live learning",
+    "heroVideoBody": "Continue lessons, attend classes, and ask questions from your dashboard.",
+    "heroInstructorTitle": "Instructor-led experience",
+    "heroInstructorBody": "Learn from teachers with practical expertise and organized curriculum.",
+    "logoutFailed": "Could not sign out. Check your connection and try again."
   },
   "course": {
     "title": "Course Title",
@@ -75,5 +113,40 @@
     "includedInSubscription": "Included in Subscription",
     "subscriptionPlans": "Allowed Subscription Plans",
     "price": "Price (BDT)"
+  },
+  "app": {
+    "tagline": "Online learning platform"
+  },
+  "roles": {
+    "Super Admin": "Super Admin",
+    "Admin": "Admin",
+    "Moderator": "Moderator",
+    "Teacher": "Teacher",
+    "Student": "Student"
+  },
+  "shell": {
+    "openMenu": "Open menu",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar"
+  },
+  "pages": {
+    "migrating": "This page is being moved to the new app. It will appear here soon.",
+    "home": "Home"
+  },
+  "errors": {
+    "network": "Cannot reach the server. Check your connection and try again.",
+    "unknown": "Something went wrong. Please try again.",
+    "title": "Something went wrong",
+    "body": "An unexpected error stopped this page. Try again, or go back to the start page.",
+    "retry": "Try again",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The page you are looking for does not exist or has moved.",
+    "goHome": "Go to the start page",
+    "reference": "Reference: {{digest}}"
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Enter a valid email address",
+    "passwordMin": "Password must be at least {{min}} characters"
   }
 }

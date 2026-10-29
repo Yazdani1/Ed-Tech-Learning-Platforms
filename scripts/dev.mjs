@@ -9,7 +9,6 @@
 //   3. waits until the backend answers, then starts the frontend here (Ctrl+C stops it)
 //
 // Docker keeps running after Ctrl+C; `npm run dev:down` stops it.
-// Stage A: while frontend/ is still the old React + Vite client, Vite is started instead of Next.js.
 
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -18,8 +17,6 @@ import { fileURLToPath } from 'node:url';
 
 const FRONTEND_DIR = fileURLToPath(new URL('../frontend/', import.meta.url));
 const NEXT_BIN = `${FRONTEND_DIR}node_modules/next/dist/bin/next`;
-const VITE_BIN = `${FRONTEND_DIR}node_modules/vite/bin/vite.js`;
-const IS_LEGACY_VITE = existsSync(`${FRONTEND_DIR}vite.config.ts`);
 
 // The first start builds the dev image and installs the backend packages: allow a few minutes
 const BACKEND_WAIT_MS = 5 * 60_000;
@@ -98,28 +95,17 @@ async function waitForBackend() {
   fail('The backend did not start. See its logs with: docker compose logs backend');
 }
 
-/** Starts the frontend dev server on this computer with the same Node that runs this script. */
+/** Starts `next dev` on this computer with the same Node that runs this script, against the Docker backend. */
 function startFrontend() {
-  const [bin, args, env] = IS_LEGACY_VITE
-    ? // Old Vite client: point it at the Docker backend (process env wins over frontend/.env in Vite)
-      [
-        VITE_BIN,
-        ['--port', String(FRONTEND_PORT), '--strictPort'],
-        { VITE_API_URL: `${BACKEND_URL}/api` },
-      ]
-    : [
-        NEXT_BIN,
-        ['dev', '--port', String(FRONTEND_PORT), '--hostname', 'localhost'],
-        { BACKEND_INTERNAL_URL: BACKEND_URL, NEXT_PUBLIC_SOCKET_URL: BACKEND_URL },
-      ];
-  return spawn(process.execPath, [bin, ...args], {
+  const args = ['dev', '--port', String(FRONTEND_PORT), '--hostname', 'localhost'];
+  return spawn(process.execPath, [NEXT_BIN, ...args], {
     cwd: FRONTEND_DIR,
     stdio: 'inherit',
-    env: { ...process.env, ...env },
+    env: { ...process.env, BACKEND_INTERNAL_URL: BACKEND_URL, NEXT_PUBLIC_SOCKET_URL: BACKEND_URL },
   });
 }
 
-if (!existsSync(IS_LEGACY_VITE ? VITE_BIN : NEXT_BIN)) {
+if (!existsSync(NEXT_BIN)) {
   fail(
     'The frontend packages are not installed on this computer. Run `npm --prefix frontend ci` first.',
   );
@@ -151,8 +137,7 @@ run(
 );
 await waitForBackend();
 
-const name = IS_LEGACY_VITE ? 'the old Vite frontend' : 'the Next.js frontend';
-console.log(`\nStarting ${name} on http://localhost:${FRONTEND_PORT} (Ctrl+C to stop)\n`);
+console.log(`\nStarting Next.js on http://localhost:${FRONTEND_PORT} (Ctrl+C to stop)\n`);
 const frontend = startFrontend();
 // Ctrl+C reaches the frontend too; wait for it to finish instead of exiting first
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {});

@@ -12,9 +12,9 @@ backend/*
 !backend/tests/
 !backend/vitest.config.mts
 
-# Old React + Vite client: never reformatted (moved to legacy-frontend/ in Phase 4, deleted at the end)
-frontend/
+# Old React + Vite client: never reformatted (deleted at the end of Stage A)
 legacy-frontend/
+next-env.d.ts
 
 # Kept exactly as they are
 render.yaml

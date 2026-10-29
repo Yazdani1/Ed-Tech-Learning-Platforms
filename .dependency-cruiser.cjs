@@ -1,13 +1,7 @@
 // Frontend architecture rules, checked by `npm run arch:check` (part of `npm run lint`) and in CI.
 // The same tool draws docs/dependency-graph.md (`npm run docs:generate`).
-// The backend is not checked here: its structure stays as it is.
-const { existsSync } = require('node:fs');
-const path = require('node:path');
-
-// Stage A: until Phase 4 replaces it with Next.js, frontend/ still holds the old React + Vite client,
-// which predates these rules. Its violations are reported as warnings; for the Next.js app they are errors.
-const LEGACY_VITE_APP = existsSync(path.join(__dirname, 'frontend', 'vite.config.ts'));
-const SEVERITY = LEGACY_VITE_APP ? 'warn' : 'error';
+// The backend and legacy-frontend/ are not checked here.
+const SEVERITY = 'error';
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
