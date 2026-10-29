@@ -6,8 +6,8 @@ paths:
 # Frontend UI rules (Next.js App Router + MUI v9)
 
 - app/ holds only routes: thin page.tsx / layout.tsx rendering a component from components/<feature>/.
-  Same URLs as the old client: public pages at the root, /auth/login, /auth/register, /admin/*, /student/*,
-  /teacher/*; each area has its own layout.tsx (AdminLayout, StudentLayout, TeacherLayout shells). The
+  Same URLs as the old client: public pages at the root, /auth/login, /auth/register, `/admin/*`, `/student/*`,
+  `/teacher/*`; each area has its own layout.tsx (AdminLayout, StudentLayout, TeacherLayout shells). The
   student course player (/student/courses/[courseId]/learn) has no shell, as before.
 - Server components by default; 'use client' only where state, effects or browser APIs are needed.
 - Data fetching only through src/api/<feature>.api.ts hooks (TanStack Query) calling

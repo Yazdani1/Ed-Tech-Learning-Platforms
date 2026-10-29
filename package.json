@@ -1,0 +1,35 @@
+{
+  "name": "edtech-learning-platform",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ed-Tech Learning Platform - root tooling and scripts (backend/ and frontend/ keep their own package.json)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "dev": "node scripts/dev.mjs",
+    "dev:down": "docker compose --profile frontend down",
+    "lint": "npm --prefix backend run lint && npm --prefix frontend run lint && npm run arch:check",
+    "typecheck": "node backend/node_modules/typescript/bin/tsc -p backend --noEmit &&npm --prefix frontend run typecheck",
+    "arch:check": "depcruise frontend/src --config .dependency-cruiser.cjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "docs:generate": "tsx scripts/docs/generate-erd.mjs && node scripts/docs/generate-dependency-graph.mjs",
+    "docs:check": "tsx scripts/docs/generate-erd.mjs --check && node scripts/docs/generate-dependency-graph.mjs --check",
+    "test:backend": "node scripts/docker-test.mjs backend",
+    "test:frontend": "node scripts/docker-test.mjs frontend",
+    "test:e2e": "node scripts/docker-test.mjs e2e",
+    "docker:build": "node scripts/docker-test.mjs build",
+    "check": "node scripts/docker-test.mjs check"
+  },
+  "devDependencies": {
+    "dependency-cruiser": "18.7.0",
+    "husky": "9.1.7",
+    "lint-staged": "16.4.0",
+    "prettier": "3.9.10",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
+  }
+}

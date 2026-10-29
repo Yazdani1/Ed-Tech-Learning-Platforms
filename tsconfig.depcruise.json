@@ -1,0 +1,14 @@
+{
+  "//": "Only used by dependency-cruiser to resolve frontend imports (including the '@/' alias).",
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "allowJs": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["frontend/src/*"]
+    }
+  },
+  "include": ["frontend/src/**/*.ts", "frontend/src/**/*.tsx"]
+}

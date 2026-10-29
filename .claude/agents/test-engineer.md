@@ -43,8 +43,9 @@ Severity: Critical (a bug in the code) / Major (missing test) / Minor.
 
 ## Issues
 
-| # | Severity | File:line | Problem | Fix |
-| - | -------- | --------- | ------- | --- |
+| #   | Severity | File:line | Problem | Fix |
+| --- | -------- | --------- | ------- | --- |
+
 (Write "None found." instead of the table when there are no issues.)
 
 ## Commands run

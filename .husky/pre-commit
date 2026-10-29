@@ -1,0 +1,3 @@
+# --relative and --max-arg-length: Windows limits a command line to ~8000 characters; large commits with
+# absolute paths under "V:\Business Web Project\..." exceed it ("The command line is too long").
+npx lint-staged --relative --max-arg-length 4000

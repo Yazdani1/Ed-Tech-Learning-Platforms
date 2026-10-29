@@ -50,8 +50,9 @@ Severity: Critical / Major / Minor.
 
 ## Issues
 
-| # | Severity | File:line | Problem | Fix |
-| - | -------- | --------- | ------- | --- |
+| #   | Severity | File:line | Problem | Fix |
+| --- | -------- | --------- | ------- | --- |
+
 (Write "None found." instead of the table when there are no issues.)
 
 ## Commands run

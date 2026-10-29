@@ -69,10 +69,10 @@ Source of truth: the user's instructions (in conversation) and this file.
   unwraps { success, data }, turns every failure into an ApiError with a user-ready message), schemas/
   (Zod schemas matching the backend's real request/response shapes), components/<feature>/ (layout/ =
   shells, common/ = building blocks), hooks/, context/ (only real UI-wide state: chat socket, notifications),
-  types/index.ts, utils/, theme/, i18n/. Tests in __tests__/ next to the code.
+  types/index.ts, utils/, theme/, i18n/. Tests in `__tests__/` next to the code.
 - Components never call axios and never need try/catch: they use the api hooks.
-- Same URLs as before: public pages, /auth/login, /auth/register, /admin/* (Super Admin, Admin, Moderator;
-  some pages narrower), /student/*, /teacher/*.
+- Same URLs as before: public pages, /auth/login, /auth/register, `/admin/*` (Super Admin, Admin, Moderator;
+  some pages narrower), `/student/*`, `/teacher/*`.
 - Auth: requests go to same-origin `/api/*` (next.config rewrites to the backend), so the httpOnly cookie is
   first-party and sent automatically; the token is never stored in localStorage or URLs. Socket.io connects
   to NEXT_PUBLIC_SOCKET_URL; its token comes from a Next.js route handler that reads the cookie on the server
@@ -127,8 +127,14 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
 
 - Stage A (conversion), following EdTech-Claude-Code-Setup-Guide.md.
 - Done: Phase 0 (audit + decisions), Phase 1 (AI workspace: this file, .claude/ settings, hook, rules,
-  agents, skills, reports folder, memory).
-- Next: Phase 2 (root tooling: root package.json, Prettier, husky + lint-staged, dependency-cruiser).
+  agents, skills, reports folder, memory), Phase 2 (root tooling: root package.json, Prettier, husky +
+  lint-staged, dependency-cruiser; backend Vitest + Supertest setup in backend/vitest.config.ts and
+  backend/tests/setup.ts).
+- Next: Phase 3 (Docker dev + test stacks, scripts/dev.mjs, scripts/docker-test.mjs). Until then
+  `npm run dev`, `test:*`, `docker:build` and `check` have no script behind them; `docs:*` arrive in Phase 6.
+- While frontend/ is still the old Vite app, dependency-cruiser reports its 21 violations (8 circular imports,
+  components calling services directly) as warnings; they become errors once Phase 4 replaces it.
+- Existing lint warnings (not errors): backend 9, old frontend 136.
 - Page migration order: shells + auth -> public catalog + course details -> student area -> teacher area ->
   admin area -> chat and notifications -> everything left (community hub, practice quiz, pricing, schedule).
 - Known issues to fix in Phase 7 (backend baseline): `PUT /api/courses/:courseId/sections/reorder` and

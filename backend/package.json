@@ -10,7 +10,9 @@
     "seed:discount-courses": "ts-node src/scripts/seed-discount-courses.ts",
     "seed:subscriptions": "ts-node src/scripts/seed-subscriptions.ts",
     "lint": "eslint src",
-    "lint:fix": "eslint src --fix"
+    "lint:fix": "eslint src --fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -36,11 +38,14 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.1.0",
     "@types/node": "^25.6.0",
+    "@types/supertest": "7.2.1",
     "eslint": "^10.3.0",
     "eslint-plugin-unused-imports": "^4.4.1",
     "nodemon": "^3.1.14",
+    "supertest": "7.3.1",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.1"
+    "typescript-eslint": "^8.59.1",
+    "vitest": "5.0.5"
   }
 }
