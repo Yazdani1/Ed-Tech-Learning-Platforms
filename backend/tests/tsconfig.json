@@ -1,0 +1,11 @@
+{
+  "//": "Type-checks the backend tests with the backend's own settings (npm run typecheck from the root).",
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["../src/**/*", "./**/*", "../vitest.config.mts"]
+}

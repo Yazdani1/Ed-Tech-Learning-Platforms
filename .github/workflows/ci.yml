@@ -1,3 +1,10 @@
+# CI: runs on every push and pull request.
+#
+#              ┌─> backend  (lint + build) ──> backend-test (Docker: Vitest + Supertest + mongo) + backend image
+#   checks ────┤
+#              └─> frontend (lint + build) ──> frontend-test (Docker: Vitest + RTL + MSW, then Playwright)
+#
+# Deploys stay in deploy.yml (Vercel deploy hook + Render API).
 name: CI
 
 on:
@@ -5,7 +12,52 @@ on:
   pull_request: {}
   workflow_dispatch: {}
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
+  checks:
+    name: Checks (lint, types, format, docs, audit, secrets)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read # gitleaks lists the commits of a pull request
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # gitleaks scans the history
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
+      - name: Install (root tooling, backend, frontend)
+        run: npm ci && npm --prefix backend ci && npm --prefix frontend ci
+      - name: Lint (both apps + architecture rules)
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Formatting
+        run: npm run format:check
+      - name: Generated docs are up to date
+        run: npm run docs:check
+      - name: Dependency audit, backend (fails on high or critical)
+        run: npm --prefix backend audit --audit-level high
+      - name: Dependency audit, frontend (fails on high or critical)
+        run: npm --prefix frontend audit --audit-level high
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false # report in the job log; no write access needed
+
   backend:
     name: Backend - Lint and Build
     runs-on: ubuntu-latest
@@ -13,15 +65,28 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version-file: .nvmrc
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+
+  backend-test:
+    name: Backend - Tests and image
+    needs: [checks, backend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Let the test containers write to the checkout
+        run: chmod -R a+rwX backend
+      - name: Integration tests against a real MongoDB (Docker)
+        run: npm run test:backend
+      - name: Production image builds
+        run: npm run docker:build
 
   frontend:
     name: Frontend - Lint and Build
@@ -30,10 +95,10 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version-file: .nvmrc
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
@@ -43,3 +108,25 @@ jobs:
           # Build-only values: the real URLs are set in Vercel (frontend/.env.example)
           BACKEND_INTERNAL_URL: http://localhost:5000
           NEXT_PUBLIC_SOCKET_URL: http://localhost:5000
+
+  frontend-test:
+    name: Frontend - Component and E2E tests
+    needs: [checks, frontend]
+    runs-on: ubuntu-latest
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v5
+      # The containers run as the image's `node` user; `next dev` writes next-env.d.ts into the app folder
+      - name: Let the test containers write to the checkout
+        run: chmod -R a+rwX frontend backend
+      - name: Component tests (Vitest + React Testing Library + MSW, Docker)
+        run: npm run test:frontend
+      - name: End-to-end tests (Playwright, desktop + mobile, Docker)
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          retention-days: 7

@@ -31,7 +31,8 @@ Source of truth: the user's instructions (in conversation) and this file.
 - npm run test:e2e: Playwright (desktop AND mobile)
 - npm run lint / npm run typecheck: both apps (+ dependency-cruiser)
 - npm run docs:generate / docs:check
-- npm run check: lint + typecheck + docs:check + all tests + docker build. Must pass before every commit.
+- npm run check: lint + typecheck + format:check + docs:check + all tests + docker build. Must pass
+  before every commit.
 - "It needs Docker" is never a reason to skip a test: check `docker info`, start Docker Desktop, run it.
 - Per app (also used by CI): `npm --prefix backend run build|lint|lint:fix`,
   `npm --prefix backend run seed:discount-courses|seed:subscriptions`.
@@ -142,9 +143,14 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
 - Signed-in landing pages (/admin/dashboard, /admin/courses, /student/dashboard, /teacher/courses) and `/`
   show MigratingPage until Phase 8; the other sidebar links 404 until their pages are migrated.
 - Accepted for Stage A: browser-tab titles (metadata) are English only (language is picked in the browser).
-- Next: Phase 5 (merge CI, frontend Vitest + RTL + MSW, Playwright). Not set up yet: `test:frontend`,
-  `test:e2e` (Phase 5), `docs:*` (Phase 6); `test:backend` reports "No test files found" until Phase 7, so
-  `npm run check` cannot pass before then.
+- Phase 5 done: CI (.github/workflows/ci.yml: checks incl. docs, audits and gitleaks; backend + frontend
+  lint/build; Docker test jobs; Node from .nvmrc), frontend Vitest + RTL + MSW (src/test/), Playwright
+  (desktop + Pixel 7, e2e/ with global-setup warm-up), E2E accounts seeded by backend/tests/e2e/seed.ts
+  (one per role, test database only). Backend `npm audit fix` (lockfile only): 0 vulnerabilities.
+- Phase 6 done: docs/architecture.md, backend-features.md (health only so far), frontend-features.md,
+  generated database.md + dependency-graph.md (scripts/docs/), `npm run docs:check` in CI and `check`.
+- Next: Phase 7 (backend baseline, one module at a time: integration tests for every endpoint, docs, agent
+  reviews in baseline mode, fix Critical/High/Major bugs).
 - Existing lint warnings (not errors): backend 9 (legacy-frontend/ is no longer linted).
 - Page migration order: shells + auth -> public catalog + course details -> student area -> teacher area ->
   admin area -> chat and notifications -> everything left (community hub, practice quiz, pricing, schedule).
@@ -160,6 +166,5 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
     logout/password change; no rate limit or helmet on auth routes (`trust proxy` behind Vercel).
   - CastError echoes raw input; register reveals whether an email exists.
   - Group-chat uploads accept any file type; seed-admin.ts hard-codes the Super Admin password.
-  - `npm audit` in backend/: 10 known vulnerabilities (1 critical, 6 high).
 - Reports: .claude/reports/2026-10-29-phase4-nextjs-skeleton-{code-reviewer,security-auditor}.md (git-ignored).
 - Known follow-up (Stage B): payment gateway; until then subscribing activates the plan without payment.

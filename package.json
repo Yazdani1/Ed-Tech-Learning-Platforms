@@ -12,7 +12,7 @@
     "dev": "node scripts/dev.mjs",
     "dev:down": "docker compose --profile frontend down",
     "lint": "npm --prefix backend run lint && npm --prefix frontend run lint && npm run arch:check",
-    "typecheck": "node backend/node_modules/typescript/bin/tsc -p backend --noEmit &&npm --prefix frontend run typecheck",
+    "typecheck": "node backend/node_modules/typescript/bin/tsc -p backend --noEmit && node backend/node_modules/typescript/bin/tsc -p backend/tests && npm --prefix frontend run typecheck",
     "arch:check": "depcruise frontend/src --config .dependency-cruiser.cjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

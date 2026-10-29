@@ -1,0 +1,97 @@
+# Architecture overview
+
+How the built parts fit together. Updated with every feature; shows only what exists.
+
+Generated diagrams (never edited by hand): [database.md](database.md), [dependency-graph.md](dependency-graph.md).
+
+## System
+
+```mermaid
+flowchart LR
+    subgraph Browser
+        UI[Next.js pages<br/>public · student · teacher · admin]
+    end
+    subgraph Frontend["Next.js (Vercel)"]
+        P[proxy.ts<br/>sign-in redirect · CSP nonce]
+        R["/api/* rewrite"]
+    end
+    subgraph Backend["Express backend (Render)"]
+        API["/api<br/>REST routes"]
+        WS[Socket.io<br/>chat · presence · notifications]
+    end
+    DB[(MongoDB)]
+    CLD[(Cloudinary)]
+    UI -- pages --> P
+    UI -- "/api + httpOnly token cookie" --> R --> API
+    UI -- "websocket" --> WS
+    API --> DB
+    WS --> DB
+    API -- "uploads" --> CLD
+```
+
+- **Hosting.** The Next.js app runs on Vercel, the Express backend on Render (`render.yaml`, database from
+  `MONGO_URI`). Locally, `npm run dev` runs MongoDB and the backend in Docker and Next.js on the host.
+- **How auth travels.** The browser only ever calls `/api/...` on the Next.js origin; `next.config.ts`
+  rewrites it to the backend (`BACKEND_INTERNAL_URL`). The backend's httpOnly `token` cookie is therefore
+  first-party: the browser sends it automatically and frontend code never reads, stores or sends the token.
+  The signed-in user is the result of `GET /api/auth/me`.
+- **Pages.** `proxy.ts` sends visitors without the session cookie away from `/admin`, `/student` and
+  `/teacher` before the page renders, and gives every page a fresh Content-Security-Policy nonce.
+  `RequireRole` then checks the role. Neither is the security boundary: the backend's `protect` and
+  `authorize(...roles)` check every API call.
+- **Socket.io** connects straight to the backend (`NEXT_PUBLIC_SOCKET_URL`), because Vercel rewrites cannot
+  carry websockets.
+
+## Feature map
+
+```mermaid
+flowchart LR
+    Web[Next.js app] -- "sign in · register · me · sign out" --> Auth[Authentication]
+    Auth -- "users" --> DB[(Database)]
+    Docker[Docker dev / CI] -- "is the API up?" --> Health[Health check]
+```
+
+## Key flows
+
+### Signing in
+
+The sign-in form posts the email and password to `/api/auth/login` on the Next.js origin, which forwards
+them to the backend. The backend checks the password, sets the httpOnly `token` cookie (7 days) and returns
+the user. The app stores that user as the "me" query; `GuestGate` then opens the page from `?next=` if it is
+a safe same-site page the role may open, otherwise the role's home page (Super Admin: `/admin/dashboard`,
+Admin and Moderator: `/admin/courses`, Teacher: `/teacher/courses`, Student: `/student/dashboard`).
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant N as Next.js (browser + /api rewrite)
+    participant B as Express backend
+    participant M as MongoDB
+    U->>N: Email + password on /auth/login
+    N->>B: POST /api/auth/login
+    B->>M: Find user, compare bcrypt hash
+    M-->>B: User
+    B-->>N: Set-Cookie token (httpOnly) + { success, data: user }
+    N->>N: Cache user as "me"; GuestGate picks the next page
+    N-->>U: Role home page (or the safe ?next= page)
+    Note over N,B: Every later /api call carries the cookie automatically
+```
+
+### Signing out
+
+The sidebar's sign-out button posts `/api/auth/logout`; the backend clears the cookie. Only then does the
+app mark the user as signed out and drop every cached query; `RequireRole` sends the user to `/auth/login`
+(without `?next=`, so the next person on a shared computer does not land on the previous user's page). If the
+request fails, the user stays signed in and sees "Could not sign out".
+
+<!--
+TEMPLATE: keep these three sections up to date (only what exists).
+## System — services and how they talk.
+## Feature map — one box per BUILT feature; "A --> B" = A uses B, label = what flows
+
+(e.g. Enrollments -- "checks payment" --> Payments).
+
+## Key flows — a sequence diagram per important journey (enrol in a course, finish a lesson, submit a quiz,
+
+chat message), one short paragraph above each.
+-->

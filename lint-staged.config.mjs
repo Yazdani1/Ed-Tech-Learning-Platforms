@@ -1,10 +1,6 @@
 // Runs on staged files before every commit (husky pre-commit hook).
-import { existsSync } from 'node:fs';
-
 const GENERATED_DOCS = 'docs/database.md docs/dependency-graph.md';
-// The docs generators arrive in Stage A Phase 6; until then the docs step is skipped.
-const HAS_DOCS_SCRIPTS = existsSync('scripts/docs/generate-erd.mjs');
-const docsSteps = HAS_DOCS_SCRIPTS ? ['npm run docs:generate', `git add ${GENERATED_DOCS}`] : [];
+const docsSteps = ['npm run docs:generate', `git add ${GENERATED_DOCS}`];
 
 const quote = (files) => files.map((file) => `"${file}"`).join(' ');
 

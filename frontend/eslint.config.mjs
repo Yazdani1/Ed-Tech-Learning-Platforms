@@ -82,5 +82,12 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Tests group many cases in one describe block; Playwright specs run in Node
+    files: ['**/*.test.{ts,tsx}', '**/__tests__/**', 'src/test/**', 'e2e/**'],
+    rules: {
+      'max-lines-per-function': 'off',
+    },
+  },
   prettier,
 );
