@@ -10,8 +10,8 @@ import { resetNavigation } from './next-navigation';
 
 vi.mock('next/navigation', async () => (await import('./next-navigation')).nextNavigationMock);
 
-// MUI + i18next make the first render of a file slow; findBy* waits up to 3 s instead of 1 s
-configure({ asyncUtilTimeout: 3000 });
+// MUI + i18next make the first render of a file slow (much slower in Docker on Windows): findBy* waits up to 10 s
+configure({ asyncUtilTimeout: 10_000 });
 
 // jsdom has no matchMedia (react-hot-toast asks for prefers-reduced-motion): no media query matches
 if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {

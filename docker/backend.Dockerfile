@@ -5,7 +5,8 @@
 #   prod - the backend built like Render builds it; only used by `npm run docker:build` to prove it builds.
 #          Production itself stays on Render (render.yaml).
 
-ARG NODE_VERSION=24
+# Same major as .nvmrc (CI and local); a newer Node changes FormData/File behaviour in the jsdom tests
+ARG NODE_VERSION=22
 
 # ---------- dev / test toolchain (glibc, like the Playwright image) ----------
 FROM node:${NODE_VERSION}-trixie-slim AS dev

@@ -24,6 +24,15 @@ describe('buildCsp', () => {
     );
   });
 
+  it('embeds only YouTube players (free previews) and their thumbnails', () => {
+    expect(directive(production, 'frame-src')).toBe(
+      'frame-src https://www.youtube.com https://www.youtube-nocookie.com',
+    );
+    expect(directive(production, 'img-src')).toBe(
+      "img-src 'self' data: blob: https://res.cloudinary.com https://i.ytimg.com",
+    );
+  });
+
   it('blocks framing, plugins and foreign form targets, and upgrades http', () => {
     expect(production).toContain("frame-ancestors 'none'");
     expect(production).toContain("object-src 'none'");

@@ -18,7 +18,9 @@ export const buildCsp = ({ nonce, isDev, socketUrl }: CspOptions): string => {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://res.cloudinary.com",
+    "img-src 'self' data: blob: https://res.cloudinary.com https://i.ytimg.com",
+    // Free preview lectures and course introductions are YouTube embeds
+    'frame-src https://www.youtube.com https://www.youtube-nocookie.com',
     "font-src 'self' data:",
     `connect-src 'self' ${socketOrigin} ${socketWsOrigin}${isDev ? ' ws:' : ''}`,
     "media-src 'self' https://res.cloudinary.com",

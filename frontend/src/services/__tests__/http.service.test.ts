@@ -108,6 +108,36 @@ describe('http service', () => {
     });
   });
 
+  it('getEnvelope checks the whole envelope (extra fields such as pagination) and passes params', async () => {
+    let query = '';
+    server.use(
+      mock.get('*/api/items/browse', ({ request }) => {
+        query = new URL(request.url).search;
+        return ok([{ _id: '1', title: 'A' }], { pagination: { page: 2, totalPages: 5 } });
+      }),
+    );
+    const envelopeSchema = z.object({
+      data: z.array(itemSchema),
+      pagination: z.object({ page: z.number(), totalPages: z.number() }),
+    });
+
+    await expect(
+      http.getEnvelope('/api/items/browse', envelopeSchema, { params: { page: 2 } }),
+    ).resolves.toEqual({
+      data: [{ _id: '1', title: 'A' }],
+      pagination: { page: 2, totalPages: 5 },
+    });
+    expect(query).toBe('?page=2');
+  });
+
+  it('getEnvelope reports an envelope of the wrong shape as an ApiError', async () => {
+    server.use(mock.get('*/api/items/browse', () => ok([{ _id: '1', title: 'A' }])));
+    const envelopeSchema = z.object({ data: z.array(itemSchema), pagination: z.object({}) });
+
+    const error = await apiErrorOf(http.getEnvelope('/api/items/browse', envelopeSchema));
+    expect(error.status).toBe(UNEXPECTED_RESPONSE_STATUS);
+  });
+
   it('send returns the whole envelope (for calls without data)', async () => {
     server.use(
       mock.post('*/api/auth/logout', () =>

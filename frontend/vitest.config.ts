@@ -11,7 +11,7 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: ['src/test/setup.ts'],
     // MUI renders slowly in jsdom when many files run in parallel
-    testTimeout: 15_000,
+    testTimeout: 30_000,
     css: false,
   },
 });

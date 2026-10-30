@@ -1,8 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import bn from './locales/bn.json';
-import en from './locales/en.json';
+import { bn, en } from './resources';
 
 export const LANGUAGES = ['en', 'bn'] as const;
 export type Language = (typeof LANGUAGES)[number];

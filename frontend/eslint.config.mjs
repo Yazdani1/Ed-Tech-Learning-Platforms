@@ -83,6 +83,11 @@ export default tseslint.config(
     },
   },
   {
+    // The one dedicated viewer that renders user rich text, after DOMPurify sanitising
+    files: ['src/components/common/SafeHtml.tsx'],
+    rules: { 'no-restricted-syntax': 'off' },
+  },
+  {
     // Tests group many cases in one describe block; Playwright specs run in Node
     files: ['**/*.test.{ts,tsx}', '**/__tests__/**', 'src/test/**', 'e2e/**'],
     rules: {

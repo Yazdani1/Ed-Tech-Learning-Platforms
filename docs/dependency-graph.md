@@ -16,6 +16,7 @@ subgraph frontend["frontend"]
       frontend_src_components_auth["auth"]
       frontend_src_components_browse["browse"]
       frontend_src_components_common["common"]
+      frontend_src_components_course_card["course-card"]
       frontend_src_components_errors["errors"]
       frontend_src_components_i18n["i18n"]
       frontend_src_components_layout["layout"]
@@ -66,8 +67,11 @@ frontend_src_components_browse-->frontend_src_hooks
 frontend_src_components_browse-->frontend_src_schemas
 frontend_src_components_browse-->frontend_src_components_common
 frontend_src_components_browse-->frontend_src_utils
+frontend_src_components_browse-->frontend_src_components_course_card
 frontend_src_components_browse-->frontend_src_components_permissions
 frontend_src_components_browse-->frontend_src_services
+frontend_src_components_common-->frontend_src_utils
+frontend_src_components_course_card-->frontend_src_utils
 frontend_src_components_i18n-->frontend_src_i18n
 frontend_src_components_i18n-->frontend_src_utils
 frontend_src_components_layout-->frontend_src_types
@@ -82,16 +86,16 @@ frontend_src_components_permissions-->frontend_src_utils
 frontend_src_components_profile-->frontend_src_api
 frontend_src_components_profile-->frontend_src_components_common
 frontend_src_components_profile-->frontend_src_hooks
-frontend_src_components_profile-->frontend_src_components_student
 frontend_src_components_profile-->frontend_src_schemas
+frontend_src_components_profile-->frontend_src_utils
 frontend_src_components_profile-->frontend_src_components_auth
 frontend_src_components_profile-->frontend_src_types
-frontend_src_components_profile-->frontend_src_utils
 frontend_src_components_public-->frontend_src_api
 frontend_src_components_public-->frontend_src_hooks
 frontend_src_components_public-->frontend_src_utils
 frontend_src_components_public-->frontend_src_components_common
 frontend_src_components_public-->frontend_src_schemas
+frontend_src_components_public-->frontend_src_components_course_card
 frontend_src_components_setup-->frontend_src_components_common
 frontend_src_components_setup-->frontend_src_components_permissions
 frontend_src_components_setup-->frontend_src_schemas
@@ -105,6 +109,7 @@ frontend_src_components_showcase-->frontend_src_api
 frontend_src_components_showcase-->frontend_src_hooks
 frontend_src_components_showcase-->frontend_src_schemas
 frontend_src_components_showcase-->frontend_src_services
+frontend_src_components_student-->frontend_src_components_course_card
 frontend_src_components_student-->frontend_src_schemas
 frontend_src_components_student-->frontend_src_api
 frontend_src_components_student-->frontend_src_components_common

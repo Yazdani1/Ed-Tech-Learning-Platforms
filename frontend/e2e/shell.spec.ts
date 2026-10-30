@@ -48,7 +48,13 @@ test.describe('Signed-in shell', () => {
     }
     const menu = page.getByRole('navigation', { name: 'Main menu' }).filter({ visible: true });
     await expect(menu.getByRole('link', { name: 'My Courses' })).toBeVisible();
-    await expect(page.getByText(ACCOUNTS.student.name).filter({ visible: true })).toBeVisible();
+    // The signed-in name in the sidebar footer (the dashboard greeting in <main> shows it too)
+    await expect(
+      page
+        .locator('.MuiDrawer-paper')
+        .getByText(ACCOUNTS.student.name, { exact: true })
+        .filter({ visible: true }),
+    ).toBeVisible();
   });
 });
 

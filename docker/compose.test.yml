@@ -100,11 +100,14 @@ services:
     depends_on:
       backend-e2e:
         condition: service_healthy
+    # Ready when Next.js answers and its /api rewrite reaches the backend (no page needs compiling for this).
+    # npm ci + the first compile can take minutes on Docker Desktop: start_period gives it time.
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1']
-      interval: 3s
-      timeout: 3s
-      retries: 100
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1']
+      interval: 5s
+      timeout: 20s
+      start_period: 600s
+      retries: 60
 
   playwright:
     # Must match the @playwright/test version in frontend/package.json

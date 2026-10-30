@@ -132,6 +132,15 @@ export const http = {
       limit: envelope.limit ?? items.length,
     };
   },
+  /**
+   * GET whose envelope carries more than data/total/page/limit (e.g. pagination, counts): the whole
+   * envelope (minus success) is checked against the schema.
+   */
+  getEnvelope: async <S extends z.ZodType>(
+    url: string,
+    envelopeSchema: S,
+    options?: RequestOptions,
+  ) => parseData(envelopeSchema, await send<unknown>('GET', url, undefined, options)),
   send: (method: Method, url: string, body?: unknown, options?: RequestOptions) =>
     send<unknown>(method, url, body, options),
 };

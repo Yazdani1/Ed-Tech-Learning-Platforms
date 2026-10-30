@@ -72,7 +72,44 @@ flowchart LR
     Docker[Docker dev / CI] -- "is the API up?" --> Health[Health check]
 ```
 
+Frontend features (Next.js, `frontend/src`): each screen group calls its own API module, and the reads that
+several screens share (categories, course types, plans, the student's enrolments and subscription) live in
+ONE module, `api/catalog.api.ts`, with one query key each, so an enrol, unenrol, subscribe or cancel refreshes
+every screen at once. "A --> B" means A uses B.
+
+```mermaid
+flowchart LR
+    PublicSite[Public site: home, teachers, pricing] -- "logo, hero posts, discount, courses, teachers" --> PublicApi[public.api]
+    Browse[Course browse + details] -- "courses, course, live classes, quiz preview, enrolment check" --> BrowseApi[browse.api]
+    Student[Student area: dashboard, My Courses] -- "enrolments, unenrol" --> CatalogApi[catalog.api]
+    Profile[Profile] -- "me, update, teacher course count" --> ProfileApi[profile.api]
+    Setup[Course setup] -- "create, edit, delete" --> SetupApi[setup.api]
+    Showcase[Homepage showcase] -- "hero posts, logo" --> ShowcaseApi[showcase.api]
+    PublicSite -- "categories, types, plans, subscribe" --> CatalogApi
+    Browse -- "categories, types, plans, enrol" --> CatalogApi
+    Profile -- "plans, enrolments, cancel plan" --> CatalogApi
+    Setup -- "the lists" --> CatalogApi
+    PublicApi --> BeShowcase[Hero posts + logo] & BeCourses[Courses] & BeTeachers[Teachers]
+    BrowseApi --> BeCourses & BeEnrol[Enrollments] & BeCurr[Study curricula] & BeQuiz[Quiz banks]
+    CatalogApi --> BeSetup[Categories + course types] & BePlans[Subscription plans] & BeEnrol & BeSubs[Subscriptions]
+    ProfileApi --> BeAuth[Authentication] & BeTeachers
+    SetupApi --> BeSetup
+    ShowcaseApi --> BeShowcase
+```
+
 ## Key flows
+
+### Rich text and embeds
+
+Rich text that users write (course descriptions, announcements, and so on) is stored as HTML and reaches the
+page only through `components/common/SafeHtml`. It runs DOMPurify in the browser with an allow-list
+(`utils/sanitizeHtml.ts`): formatting tags only, links only to `http(s):` or `mailto:`, no scripts, event
+handlers, iframes or inline styles. Two DOMPurify hooks (added once) keep paragraph alignment (`text-align:
+left|center|right|justify` and nothing else) and give `http(s)` links `target="_blank"` with `rel="noopener
+noreferrer"`. Videos are never embedded from stored HTML: the course page reads the 11-character YouTube id
+from a lecture's video address and builds the player address itself on `https://www.youtube-nocookie.com`;
+the Content-Security-Policy (`utils/csp.ts`) allows frames only from YouTube (`frame-src`), so any other
+embed is blocked by the browser too.
 
 ### Signing in
 

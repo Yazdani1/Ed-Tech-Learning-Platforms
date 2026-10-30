@@ -1,9 +1,9 @@
-import { MigratingPage } from '@/components/common/MigratingPage';
+import { StudentDashboard } from '@/components/student/StudentDashboard';
 
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Dashboard' };
 
-const StudentDashboardPage = () => <MigratingPage titleKey="nav.dashboard" />;
+const StudentDashboardPage = () => <StudentDashboard />;
 
 export default StudentDashboardPage;
