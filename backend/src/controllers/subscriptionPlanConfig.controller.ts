@@ -66,6 +66,31 @@ export const upsertPlanConfig = asyncHandler(async (req: Request, res: Response)
     color?: string;
   };
 
+  if (typeof plan !== 'string' || !plan.trim()) throw new AppError('plan is required', 400);
+  if (price !== undefined && (typeof price !== 'number' || !Number.isFinite(price) || price < 0))
+    throw new AppError('price must be a number of 0 or more', 400);
+  if (duration !== undefined && (!Number.isInteger(duration) || Number(duration) < 1))
+    throw new AppError('duration must be a whole number of 1 or more', 400);
+  if (billingOptions !== undefined) {
+    if (!Array.isArray(billingOptions)) throw new AppError('billingOptions must be an array', 400);
+    const invalid = billingOptions.some(
+      (option) =>
+        typeof option?.label !== 'string' ||
+        !option.label.trim() ||
+        !Number.isInteger(option.duration) ||
+        Number(option.duration) < 1 ||
+        typeof option.price !== 'number' ||
+        !Number.isFinite(option.price) ||
+        option.price < 0,
+    );
+    if (invalid) {
+      throw new AppError(
+        'each billing option needs a label, a whole-number duration of 1 or more and a price of 0 or more',
+        400,
+      );
+    }
+  }
+
   const planName = String(plan ?? '').trim();
   const normalizedBillingOptions = normalizeBillingOptions(billingOptions, price, duration);
 
@@ -87,7 +112,7 @@ export const upsertPlanConfig = asyncHandler(async (req: Request, res: Response)
       isActive: true,
       createdBy: new Types.ObjectId(String(req.user._id)),
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
   );
 
   res.status(200).json({ success: true, data: config });

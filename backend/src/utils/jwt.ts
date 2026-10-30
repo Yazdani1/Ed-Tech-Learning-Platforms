@@ -13,7 +13,7 @@ export const sendTokenCookie = (token: string, res: Response): void => {
   res.cookie('token', token, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'none' : 'strict',
+    sameSite: isProduction ? 'lax' : 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
@@ -22,7 +22,7 @@ export const clearTokenCookie = (res: Response): void => {
   res.cookie('token', '', {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'none' : 'strict',
+    sameSite: isProduction ? 'lax' : 'strict',
     expires: new Date(0),
   });
 };

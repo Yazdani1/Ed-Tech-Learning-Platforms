@@ -29,8 +29,9 @@ const formatNotificationForUser = (
 	notification: INotification & { toObject: () => NotificationObject },
 	userId: string,
 ) => {
-	const obj = notification.toObject();
-	const recipient = obj.recipients.find(
+	// The recipients list (other users' ids and read times) is never sent to a recipient.
+	const { recipients, ...obj } = notification.toObject();
+	const recipient = recipients.find(
 		(item: { user: { toString: () => string }; readAt?: Date }) => item.user.toString() === userId,
 	);
 	return {
@@ -53,8 +54,10 @@ export const createNotification = asyncHandler(async (req: Request, res: Respons
 		targetRoles?: UserRole[];
 	};
 
-	if (!title?.trim()) throw new AppError('Notification title is required', 400);
-	if (!message?.trim()) throw new AppError('Notification message is required', 400);
+	if (typeof title !== 'string' || !title.trim()) throw new AppError('Notification title is required', 400);
+	if (typeof message !== 'string' || !message.trim()) {
+		throw new AppError('Notification message is required', 400);
+	}
 	if (!PRIORITIES.includes(priority)) throw new AppError('Invalid notification priority', 400);
 
 	const roles = sanitizeRoles(targetRoles);
@@ -181,11 +184,13 @@ export const updateNotification = asyncHandler(async (req: Request, res: Respons
 		recipients: Array<{ user: Types.ObjectId; readAt?: Date }>;
 	}> = {};
 	if (title !== undefined) {
-		if (!title.trim()) throw new AppError('Notification title is required', 400);
+		if (typeof title !== 'string' || !title.trim()) throw new AppError('Notification title is required', 400);
 		update.title = title.trim();
 	}
 	if (message !== undefined) {
-		if (!message.trim()) throw new AppError('Notification message is required', 400);
+		if (typeof message !== 'string' || !message.trim()) {
+			throw new AppError('Notification message is required', 400);
+		}
 		update.message = message.trim();
 	}
 	if (priority !== undefined) {
@@ -211,7 +216,7 @@ export const updateNotification = asyncHandler(async (req: Request, res: Respons
 		}));
 	}
 
-	const notification = await Notification.findByIdAndUpdate(id, update, { new: true }).populate(
+	const notification = await Notification.findByIdAndUpdate(id, update, { new: true, runValidators: true }).populate(
 		'sentBy',
 		'name role avatar',
 	);

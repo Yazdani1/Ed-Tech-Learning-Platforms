@@ -7,6 +7,7 @@ import { Course } from '../models/Course.model';
 import { Teacher } from '../models/Teacher.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { canAccessCourseContent } from '../utils/courseAccess';
 
 async function canManage(userId: Types.ObjectId, courseId: string, role: string): Promise<boolean> {
   if (['Super Admin', 'Admin', 'Moderator'].includes(role)) return true;
@@ -23,9 +24,23 @@ async function canManage(userId: Types.ObjectId, courseId: string, role: string)
 }
 
 export const getCourseQuizSections = asyncHandler(async (req: Request, res: Response) => {
-  const sections = await QuizSection.find({ course: req.params.courseId })
+  const { courseId } = req.params;
+  if (typeof courseId !== 'string' || !Types.ObjectId.isValid(courseId))
+    throw new AppError('Invalid course id', 400);
+  const course = await Course.findById(courseId, '_id teachers status visibility');
+  if (!course) throw new AppError('Course not found', 404);
+  // Without course access only the free-preview sections of a Published + Public course are listed.
+  const filter: Record<string, unknown> = { course: courseId };
+  if (!(await canAccessCourseContent(req.user, course))) {
+    if (course.status !== 'Published' || course.visibility !== 'Public')
+      throw new AppError('You do not have access to this course', 403);
+    filter.isFreePreview = true;
+  }
+  const sections = await QuizSection.find(filter)
     .populate('createdBy', 'name avatar role')
     .sort({ order: 1, createdAt: 1 });
+  if (filter.isFreePreview && sections.length === 0)
+    throw new AppError('You do not have access to this course', 403);
   res.status(200).json({ success: true, data: sections, total: sections.length });
 });
 
@@ -36,6 +51,9 @@ export const createQuizSection = asyncHandler(async (req: Request, res: Response
     isFreePreview?: boolean;
   };
   if (!courseId || !title?.trim()) throw new AppError('course and title are required', 400);
+  if (typeof courseId !== 'string' || !Types.ObjectId.isValid(courseId))
+    throw new AppError('Invalid course id', 400);
+  if (!(await Course.exists({ _id: courseId }))) throw new AppError('Course not found', 404);
 
   const allowed = await canManage(req.user._id as Types.ObjectId, courseId, req.user.role);
   if (!allowed) throw new AppError('Not authorized', 403);

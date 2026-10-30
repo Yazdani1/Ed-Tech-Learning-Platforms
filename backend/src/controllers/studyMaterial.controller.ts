@@ -4,9 +4,38 @@ import { StudyMaterial } from '../models/StudyMaterial.model';
 import { Course } from '../models/Course.model';
 import { Teacher } from '../models/Teacher.model';
 import { AppError } from '../utils/AppError';
+import type { IUser } from '../models/User.model';
 import { asyncHandler } from '../utils/asyncHandler';
+import { assertCourseContentAccess, isCourseTeacher } from '../utils/courseAccess';
+
+/** A Teacher who posted the item must still be a teacher of its course to change or delete it. */
+const isCourseTeacherOf = async (user: IUser, courseId: Types.ObjectId): Promise<boolean> => {
+  const course = await Course.findById(courseId).select('teachers');
+  return Boolean(course && (await isCourseTeacher(user, course)));
+};
+
+const isText = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
+
+/** Optional link: empty -> undefined; otherwise it must be an http(s) URL (no javascript:, data:, ...). */
+const parseFileUrl = (fileUrl: unknown): string | undefined => {
+  if (fileUrl === undefined || fileUrl === null) return undefined;
+  if (typeof fileUrl !== 'string') throw new AppError('File URL must be an http or https link', 400);
+  const trimmed = fileUrl.trim();
+  if (!trimmed) return undefined;
+  let protocol: string;
+  try {
+    protocol = new URL(trimmed).protocol;
+  } catch {
+    throw new AppError('File URL must be an http or https link', 400);
+  }
+  if (protocol !== 'http:' && protocol !== 'https:') {
+    throw new AppError('File URL must be an http or https link', 400);
+  }
+  return trimmed;
+};
 
 export const getCourseStudyMaterials = asyncHandler(async (req: Request, res: Response) => {
+  await assertCourseContentAccess(req.user, req.params.courseId);
   const materials = await StudyMaterial.find({ course: req.params.courseId })
     .populate('postedBy', 'name avatar role')
     .sort({ createdAt: -1 });
@@ -17,8 +46,9 @@ export const createStudyMaterial = asyncHandler(async (req: Request, res: Respon
   const { title, description, fileUrl } = req.body as { title: string; description: string; fileUrl?: string };
   const courseId = req.params.courseId as string;
 
-  if (!title?.trim()) throw new AppError('Title is required', 400);
-  if (!description?.trim()) throw new AppError('Description is required', 400);
+  if (!isText(title)) throw new AppError('Title is required', 400);
+  if (!isText(description)) throw new AppError('Description is required', 400);
+  const safeFileUrl = parseFileUrl(fileUrl);
 
   const course = await Course.findById(courseId);
   if (!course) throw new AppError('Course not found', 404);
@@ -36,7 +66,7 @@ export const createStudyMaterial = asyncHandler(async (req: Request, res: Respon
     course: new Types.ObjectId(courseId),
     title: title.trim(),
     description: description.trim(),
-    fileUrl: fileUrl?.trim() || undefined,
+    fileUrl: safeFileUrl,
     postedBy: req.user._id,
   });
 
@@ -52,6 +82,7 @@ export const deleteStudyMaterial = asyncHandler(async (req: Request, res: Respon
   const isAdmin = req.user.role === 'Super Admin' || req.user.role === 'Admin' || req.user.role === 'Moderator';
 
   if (!isOwner && !isAdmin) throw new AppError('Not authorized to delete this study material', 403);
+  if (!isAdmin && !(await isCourseTeacherOf(req.user, material.course))) throw new AppError('You are no longer a teacher of this course', 403);
 
   await material.deleteOne();
   res.status(200).json({ success: true, message: 'Study material deleted' });
@@ -66,12 +97,14 @@ export const updateStudyMaterial = asyncHandler(async (req: Request, res: Respon
   const isAdmin = req.user.role === 'Super Admin' || req.user.role === 'Admin' || req.user.role === 'Moderator';
 
   if (!isOwner && !isAdmin) throw new AppError('Not authorized to update this study material', 403);
-  if (!title?.trim()) throw new AppError('Title is required', 400);
-  if (!description?.trim()) throw new AppError('Description is required', 400);
+  if (!isAdmin && !(await isCourseTeacherOf(req.user, material.course))) throw new AppError('You are no longer a teacher of this course', 403);
+  if (!isText(title)) throw new AppError('Title is required', 400);
+  if (!isText(description)) throw new AppError('Description is required', 400);
+  const safeFileUrl = parseFileUrl(fileUrl);
 
   material.title = title.trim();
   material.description = description.trim();
-  material.fileUrl = fileUrl?.trim() || undefined;
+  material.fileUrl = safeFileUrl;
   await material.save();
 
   const populated = await material.populate('postedBy', 'name avatar role');

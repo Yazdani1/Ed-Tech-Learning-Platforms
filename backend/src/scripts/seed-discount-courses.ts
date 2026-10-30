@@ -11,6 +11,13 @@ import { Teacher } from '../models/Teacher.model';
 import { User } from '../models/User.model';
 import type { SubscriptionPlan } from '../types/index';
 
+// Seed accounts never use a password written in the code.
+const requireSeedPassword = (name: string): string => {
+	const value = process.env[name];
+	if (!value) throw new Error(`Set ${name} to create seed accounts`);
+	return value;
+};
+
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const TOTAL_COURSES = 50;
@@ -130,7 +137,7 @@ async function ensureSeedBasics() {
 		(await User.create({
 			name: 'Seed Admin',
 			email: 'seed-admin@medhabee.local',
-			password: await bcrypt.hash('ChangeMe123!', 10),
+			password: await bcrypt.hash(requireSeedPassword('SEED_ADMIN_PASSWORD'), 10),
 			role: 'Super Admin',
 			purchasedCourses: [],
 		}));

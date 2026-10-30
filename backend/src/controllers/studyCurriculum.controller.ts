@@ -5,6 +5,14 @@ import { StudyCurriculum } from '../models/StudyCurriculum.model';
 import { Teacher } from '../models/Teacher.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { canAccessCourseContent, isCourseTeacher } from '../utils/courseAccess';
+import type { IUser } from '../models/User.model';
+
+/** A Teacher who posted the item must still be a teacher of its course to change or delete it. */
+const isCourseTeacherOf = async (user: IUser, courseId: Types.ObjectId): Promise<boolean> => {
+	const course = await Course.findById(courseId).select('teachers');
+	return Boolean(course && (await isCourseTeacher(user, course)));
+};
 
 type CurriculumLectureInput = {
 	title?: string;
@@ -35,11 +43,19 @@ const assertTeacherAssigned = async (courseId: string, userId: Types.ObjectId) =
 	if (!isAssigned) throw new AppError('You are not assigned to this course', 403);
 };
 
-const normalizeLectures = (lectures: CurriculumLectureInput[] = []) =>
-	lectures.map((lecture) => {
-		if (!lecture.title?.trim()) throw new AppError('Lecture title is required', 400);
-		if (!lecture.day?.trim()) throw new AppError('Lecture day is required', 400);
-		if (!lecture.time?.trim()) throw new AppError('Lecture time is required', 400);
+const isText = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
+
+const normalizeLectures = (lectures: unknown = []) => {
+	if (!Array.isArray(lectures)) throw new AppError('Lectures must be a list', 400);
+
+	return (lectures as unknown[]).map((item) => {
+		const lecture = (item ?? {}) as CurriculumLectureInput;
+		if (!isText(lecture.title)) throw new AppError('Lecture title is required', 400);
+		if (!isText(lecture.day)) throw new AppError('Lecture day is required', 400);
+		if (!isText(lecture.time)) throw new AppError('Lecture time is required', 400);
+		if (lecture.description !== undefined && typeof lecture.description !== 'string') {
+			throw new AppError('Lecture description must be text', 400);
+		}
 
 		return {
 			title: lecture.title.trim(),
@@ -48,12 +64,34 @@ const normalizeLectures = (lectures: CurriculumLectureInput[] = []) =>
 			time: lecture.time.trim(),
 		};
 	});
+};
+
+// Fields everyone may see (the public course page shows the live-class schedule). Anything else, such as a
+// future meeting or recording link, is only for users with access to the course content.
+const PUBLIC_CURRICULUM_FIELDS =
+	'course title description weekName lectures._id lectures.title lectures.description lectures.day lectures.time createdAt updatedAt';
 
 export const getCourseStudyCurricula = asyncHandler(async (req: Request, res: Response) => {
-	const curricula = await StudyCurriculum.find({ course: req.params.courseId })
-		.populate('postedBy', 'name avatar role')
-		.sort({ createdAt: 1 });
+	const courseId = req.params.courseId;
+	if (typeof courseId !== 'string' || !Types.ObjectId.isValid(courseId)) {
+		throw new AppError('Invalid course id', 400);
+	}
+	const course = await Course.findById(courseId).select('teachers');
+	if (!course) throw new AppError('Course not found', 404);
 
+	const viewer = req.user as IUser | undefined;
+	if (viewer && (await canAccessCourseContent(viewer, course))) {
+		const curricula = await StudyCurriculum.find({ course: courseId })
+			.populate('postedBy', 'name avatar role')
+			.sort({ createdAt: 1 });
+		res.status(200).json({ success: true, data: curricula, total: curricula.length });
+		return;
+	}
+
+	const curricula = await StudyCurriculum.find({ course: courseId })
+		.select(PUBLIC_CURRICULUM_FIELDS)
+		.sort({ createdAt: 1 })
+		.lean();
 	res.status(200).json({ success: true, data: curricula, total: curricula.length });
 });
 
@@ -61,9 +99,9 @@ export const createStudyCurriculum = asyncHandler(async (req: Request, res: Resp
 	const { title, description, weekName, lectures } = req.body as CurriculumInput;
 	const courseId = req.params.courseId as string;
 
-	if (!title?.trim()) throw new AppError('Title is required', 400);
-	if (!description?.trim()) throw new AppError('Description is required', 400);
-	if (!weekName?.trim()) throw new AppError('Week name is required', 400);
+	if (!isText(title)) throw new AppError('Title is required', 400);
+	if (!isText(description)) throw new AppError('Description is required', 400);
+	if (!isText(weekName)) throw new AppError('Week name is required', 400);
 
 	const course = await Course.findById(courseId);
 	if (!course) throw new AppError('Course not found', 404);
@@ -93,10 +131,11 @@ export const updateStudyCurriculum = asyncHandler(async (req: Request, res: Resp
 	const isOwner = curriculum.postedBy.toString() === (req.user._id as Types.ObjectId).toString();
 	const isAdmin = adminRoles.includes(req.user.role);
 	if (!isOwner && !isAdmin) throw new AppError('Not authorized to update this live class', 403);
+	if (!isAdmin && !(await isCourseTeacherOf(req.user, curriculum.course))) throw new AppError('You are no longer a teacher of this course', 403);
 
-	if (!title?.trim()) throw new AppError('Title is required', 400);
-	if (!description?.trim()) throw new AppError('Description is required', 400);
-	if (!weekName?.trim()) throw new AppError('Week name is required', 400);
+	if (!isText(title)) throw new AppError('Title is required', 400);
+	if (!isText(description)) throw new AppError('Description is required', 400);
+	if (!isText(weekName)) throw new AppError('Week name is required', 400);
 
 	curriculum.title = title.trim();
 	curriculum.description = description.trim();
@@ -115,6 +154,7 @@ export const deleteStudyCurriculum = asyncHandler(async (req: Request, res: Resp
 	const isOwner = curriculum.postedBy.toString() === (req.user._id as Types.ObjectId).toString();
 	const isAdmin = adminRoles.includes(req.user.role);
 	if (!isOwner && !isAdmin) throw new AppError('Not authorized to delete this live class', 403);
+	if (!isAdmin && !(await isCourseTeacherOf(req.user, curriculum.course))) throw new AppError('You are no longer a teacher of this course', 403);
 
 	await curriculum.deleteOne();
 	res.status(200).json({ success: true, message: 'Live class deleted' });

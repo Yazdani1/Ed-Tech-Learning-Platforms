@@ -41,8 +41,9 @@ export const getMySchedules = asyncHandler(async (req: Request, res: Response) =
 export const createTimer = asyncHandler(async (req: Request, res: Response) => {
 	const { title, description, duration } = req.body as TimerInput;
 
-	if (!title?.trim()) throw new AppError('Title is required', 400);
+	if (typeof title !== 'string' || !title.trim()) throw new AppError('Title is required', 400);
 	if (!duration || duration <= 0) throw new AppError('Duration must be greater than 0', 400);
+	if (description !== undefined && typeof description !== 'string') throw new AppError('Description must be text', 400);
 
 	const timer = await StudySchedule.create({
 		user: req.user._id,
@@ -60,8 +61,9 @@ export const createTimer = asyncHandler(async (req: Request, res: Response) => {
 export const createReminder = asyncHandler(async (req: Request, res: Response) => {
 	const { title, description, startDateTime, endDateTime } = req.body as ReminderInput;
 
-	if (!title?.trim()) throw new AppError('Title is required', 400);
+	if (typeof title !== 'string' || !title.trim()) throw new AppError('Title is required', 400);
 	if (!startDateTime) throw new AppError('Start date/time is required', 400);
+	if (description !== undefined && typeof description !== 'string') throw new AppError('Description must be text', 400);
 
 	const start = new Date(startDateTime);
 	if (isNaN(start.getTime())) throw new AppError('Invalid start date/time', 400);
@@ -101,6 +103,16 @@ export const updateSchedule = asyncHandler(async (req: Request, res: Response) =
 		throw new AppError('Invalid status', 400);
 	}
 
+	if (elapsedSeconds !== undefined && (typeof elapsedSeconds !== 'number' || !(elapsedSeconds >= 0))) {
+		throw new AppError('Elapsed seconds must be a number of 0 or more', 400);
+	}
+	if (title !== undefined && (typeof title !== 'string' || !title.trim())) {
+		throw new AppError('Title is required', 400);
+	}
+	if (description !== undefined && typeof description !== 'string') {
+		throw new AppError('Description must be text', 400);
+	}
+
 	if (status) schedule.status = status as ScheduleStatus;
 	if (typeof elapsedSeconds === 'number') schedule.elapsedSeconds = elapsedSeconds;
 	if (completedAt) schedule.completedAt = new Date(completedAt);
@@ -110,6 +122,9 @@ export const updateSchedule = asyncHandler(async (req: Request, res: Response) =
 	if (startDateTime !== undefined) schedule.startDateTime = new Date(startDateTime);
 	if (endDateTime === null) schedule.endDateTime = undefined;
 	else if (endDateTime !== undefined) schedule.endDateTime = new Date(endDateTime);
+	if (schedule.startDateTime && schedule.endDateTime && schedule.endDateTime <= schedule.startDateTime) {
+		throw new AppError('End time must be after start time', 400);
+	}
 
 	await schedule.save();
 	res.status(200).json({ success: true, message: 'Schedule updated', data: schedule });

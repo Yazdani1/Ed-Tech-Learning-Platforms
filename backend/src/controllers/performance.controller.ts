@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { Enrollment } from '../models/Enrollment.model';
 import { Course } from '../models/Course.model';
+import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 
 type DateRange = '7d' | '30d' | 'lifetime';
@@ -27,6 +28,7 @@ function monthKey(d: Date) {
 export const getPerformanceOverview = asyncHandler(async (req: Request, res: Response) => {
   const courseId = String(req.query.courseId ?? 'all');
   const dateRange = (req.query.dateRange ?? '30d') as DateRange;
+  if (!['7d', '30d', 'lifetime'].includes(dateRange)) throw new AppError('Invalid date range', 400);
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -65,7 +67,7 @@ export const getPerformanceOverview = asyncHandler(async (req: Request, res: Res
     const earliest =
       inRange.length > 0
         ? new Date(Math.min(...inRange.map((e) => new Date(e.createdAt).getTime())))
-        : start;
+        : now;
     let d = new Date(earliest.getFullYear(), earliest.getMonth(), 1);
     while (d <= now) {
       buckets.set(monthKey(d), { revenue: 0, enrollments: 0 });

@@ -12,6 +12,7 @@ import { deleteFromCloudinary, uploadToCloudinary } from '../config/cloudinary';
 import { getOnlineStudentIds } from '../socket/index';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { escapeRegex } from '../utils/escapeRegex';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin'];
 const MODERATION_ROLES = ['Super Admin', 'Admin', 'Moderator'];
@@ -53,6 +54,31 @@ const awardPoints = async (userId: Types.ObjectId, key: CommunityPointRuleKey) =
   const rule = await CommunityPointRule.findOne({ key });
   const points = rule?.points ?? DEFAULT_RULES.find((item) => item.key === key)?.points ?? 0;
   if (points > 0) await User.findByIdAndUpdate(userId, { $inc: { communityPoints: points } });
+};
+
+// Takes back points given by a rule (a removed reaction); the balance never drops below 0.
+const revokePoints = async (userId: Types.ObjectId, key: CommunityPointRuleKey) => {
+  const rule = await CommunityPointRule.findOne({ key });
+  const points = rule?.points ?? DEFAULT_RULES.find((item) => item.key === key)?.points ?? 0;
+  if (points > 0) {
+    await User.updateOne({ _id: userId }, { $inc: { communityPoints: -points } });
+    await User.updateOne({ _id: userId, communityPoints: { $lt: 0 } }, { communityPoints: 0 });
+  }
+};
+
+// A reaction counts for the author only when someone else gives it.
+const updateReactionPoints = async (authorId: Types.ObjectId, reactorId: Types.ObjectId, added: boolean) => {
+  if (idEquals(authorId, reactorId)) return;
+  if (added) await awardPoints(authorId, 'receiveReaction');
+  else await revokePoints(authorId, 'receiveReaction');
+};
+
+const isOptionalString = (value: unknown) => value === undefined || typeof value === 'string';
+// Cloudinary public ids are internal: never sent to the browser.
+const withoutImagePublicId = (doc: { toObject: () => object }) => {
+  const data = { ...doc.toObject() } as Record<string, unknown>;
+  delete data.imagePublicId;
+  return data;
 };
 
 const getPublicBadges = () => CommunityBadge.find({ isArchived: false }).sort({ requiredPoints: 1 }).lean();
@@ -288,8 +314,8 @@ export const getCommunityOverview = asyncHandler(async (req: Request, res: Respo
   }
   if (search) {
     postQuery.$or = [
-      { title: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } },
+      { title: { $regex: escapeRegex(search), $options: 'i' } },
+      { description: { $regex: escapeRegex(search), $options: 'i' } },
     ];
   }
 
@@ -478,7 +504,8 @@ export const updateCommunitySettings = asyncHandler(async (req: Request, res: Re
 
 export const createChannel = asyncHandler(async (req: Request, res: Response) => {
   const { name, description } = req.body as { name?: string; description?: string };
-  if (!name?.trim()) throw new AppError('Channel name is required', 400);
+  if (typeof name !== 'string' || !name.trim()) throw new AppError('Channel name is required', 400);
+  if (!isOptionalString(description)) throw new AppError('Invalid description', 400);
 
   const slug = toSlug(name);
   const existing = await CommunityChannel.findOne({ slug });
@@ -495,7 +522,7 @@ export const createChannel = asyncHandler(async (req: Request, res: Response) =>
     createdBy: req.user._id,
   });
 
-  res.status(201).json({ success: true, message: 'Channel created', data: channel });
+  res.status(201).json({ success: true, message: 'Channel created', data: withoutImagePublicId(channel) });
 });
 
 export const updateChannel = asyncHandler(async (req: Request, res: Response) => {
@@ -503,7 +530,10 @@ export const updateChannel = asyncHandler(async (req: Request, res: Response) =>
   if (!channel) throw new AppError('Channel not found', 404);
 
   const { name, description } = req.body as { name?: string; description?: string };
+  if (!isOptionalString(name) || !isOptionalString(description)) throw new AppError('Invalid channel details', 400);
   if (name) {
+    const existing = await CommunityChannel.findOne({ slug: toSlug(name), _id: { $ne: channel._id } });
+    if (existing) throw new AppError('Channel already exists', 400);
     channel.name = name;
     channel.slug = toSlug(name);
   }
@@ -516,7 +546,7 @@ export const updateChannel = asyncHandler(async (req: Request, res: Response) =>
   }
 
   await channel.save();
-  res.status(200).json({ success: true, message: 'Channel updated', data: channel });
+  res.status(200).json({ success: true, message: 'Channel updated', data: withoutImagePublicId(channel) });
 });
 
 export const archiveChannel = asyncHandler(async (req: Request, res: Response) => {
@@ -536,7 +566,9 @@ export const getAdminChannels = asyncHandler(async (_req: Request, res: Response
 
 export const createPost = asyncHandler(async (req: Request, res: Response) => {
   const { channel, title, description } = req.body as { channel?: string; title?: string; description?: string };
-  if (!channel || !title?.trim() || !description?.trim()) throw new AppError('Channel, title, and description are required', 400);
+  if (typeof channel !== 'string' || typeof title !== 'string' || typeof description !== 'string' || !channel || !title.trim() || !description.trim()) {
+    throw new AppError('Channel, title, and description are required', 400);
+  }
 
   const activeChannel = await CommunityChannel.findOne({ _id: channel, isArchived: false });
   if (!activeChannel) throw new AppError('Channel not found', 404);
@@ -632,6 +664,9 @@ export const updatePost = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const { title, description, channel } = req.body as { title?: string; description?: string; channel?: string };
+  if (!isOptionalString(title) || !isOptionalString(description) || !isOptionalString(channel)) {
+    throw new AppError('Invalid discussion details', 400);
+  }
   if (channel) {
     const activeChannel = await CommunityChannel.findOne({ _id: channel, isArchived: false });
     if (!activeChannel) throw new AppError('Channel not found', 404);
@@ -656,7 +691,7 @@ export const updatePost = asyncHandler(async (req: Request, res: Response) => {
 
 export const createReply = asyncHandler(async (req: Request, res: Response) => {
   const { body } = req.body as { body?: string };
-  if (!body?.trim()) throw new AppError('Reply body is required', 400);
+  if (typeof body !== 'string' || !body.trim()) throw new AppError('Reply body is required', 400);
 
   const post = await CommunityPost.findOne({ _id: req.params.postId, isArchived: false });
   if (!post) throw new AppError('Discussion not found', 404);
@@ -700,7 +735,7 @@ export const getAnswerReplies = asyncHandler(async (req: Request, res: Response)
 
 export const createAnswerReply = asyncHandler(async (req: Request, res: Response) => {
   const { body } = req.body as { body?: string };
-  if (!body?.trim()) throw new AppError('Reply body is required', 400);
+  if (typeof body !== 'string' || !body.trim()) throw new AppError('Reply body is required', 400);
 
   const reply = await CommunityReply.findOne({ _id: req.params.replyId, isArchived: false });
   if (!reply) throw new AppError('Answer not found', 404);
@@ -726,12 +761,13 @@ export const reactToPost = asyncHandler(async (req: Request, res: Response) => {
   if (existing) {
     if (existing.type === type) {
       post.reactions = post.reactions.filter((reaction) => !idEquals(reaction.user, req.user._id));
+      await updateReactionPoints(post.author, req.user._id, false);
     } else {
       existing.type = type;
     }
   } else {
     post.reactions.push({ user: req.user._id, type, createdAt: new Date() });
-    await awardPoints(post.author, 'receiveReaction');
+    await updateReactionPoints(post.author, req.user._id, true);
   }
   await post.save();
   const populated = await CommunityPost.findById(post._id).populate(populatePost).lean();
@@ -751,12 +787,13 @@ export const reactToReply = asyncHandler(async (req: Request, res: Response) => 
   if (existing) {
     if (existing.type === type) {
       reply.reactions = reply.reactions.filter((reaction) => !idEquals(reaction.user, req.user._id));
+      await updateReactionPoints(reply.author, req.user._id, false);
     } else {
       existing.type = type;
     }
   } else {
     reply.reactions.push({ user: req.user._id, type, createdAt: new Date() });
-    await awardPoints(reply.author, 'receiveReaction');
+    await updateReactionPoints(reply.author, req.user._id, true);
   }
   await reply.save();
   const populated = await CommunityReply.findById(reply._id).populate(populateReply).lean();
@@ -772,7 +809,8 @@ export const toggleAcceptedReply = asyncHandler(async (req: Request, res: Respon
 
   reply.isAccepted = !reply.isAccepted;
   reply.acceptedAt = reply.isAccepted ? new Date() : undefined;
-  if (reply.isAccepted && !reply.acceptedPointsAwarded) {
+  // Accepting your own reply on your own post earns no points.
+  if (reply.isAccepted && !reply.acceptedPointsAwarded && !idEquals(reply.author, req.user._id)) {
     await awardPoints(reply.author, 'acceptedAnswer');
     reply.acceptedPointsAwarded = true;
   }
@@ -863,7 +901,7 @@ export const createBadge = asyncHandler(async (req: Request, res: Response) => {
     requiredPoints: Number(requiredPoints ?? 0),
     createdBy: req.user._id,
   });
-  res.status(201).json({ success: true, message: 'Badge created', data: badge });
+  res.status(201).json({ success: true, message: 'Badge created', data: withoutImagePublicId(badge) });
 });
 
 export const updateBadge = asyncHandler(async (req: Request, res: Response) => {
@@ -883,7 +921,7 @@ export const updateBadge = asyncHandler(async (req: Request, res: Response) => {
     badge.imagePublicId = uploaded.publicId;
   }
   await badge.save();
-  res.status(200).json({ success: true, message: 'Badge updated', data: badge });
+  res.status(200).json({ success: true, message: 'Badge updated', data: withoutImagePublicId(badge) });
 });
 
 export const archiveBadge = asyncHandler(async (req: Request, res: Response) => {
@@ -906,6 +944,15 @@ export const updatePointRules = asyncHandler(async (req: Request, res: Response)
     ? (req.body.rules as Array<{ key: CommunityPointRuleKey; points: number }>)
     : [];
   if (rules.length === 0) throw new AppError('Point rules are required', 400);
+  const knownKeys: unknown[] = DEFAULT_RULES.map((rule) => rule.key);
+  const isValidRule = (rule: unknown) => {
+    const item = rule as { key?: unknown; points?: unknown } | null;
+    if (!item || typeof item.key !== 'string' || !knownKeys.includes(item.key)) return false;
+    if (typeof item.points !== 'number' && typeof item.points !== 'string') return false;
+    const points = Number(item.points);
+    return item.points !== '' && Number.isFinite(points) && points >= 0;
+  };
+  if (!rules.every(isValidRule)) throw new AppError('Each rule needs a known key and points of 0 or more', 400);
 
   await ensurePointRules();
   await Promise.all(

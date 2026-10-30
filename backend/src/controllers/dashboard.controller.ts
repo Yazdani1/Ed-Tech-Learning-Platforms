@@ -114,7 +114,10 @@ export const getDashboardSummary = asyncHandler(
 
 		const thisMonthSubscriptionRevenue = subscriptions
 			.filter((subscription) => new Date(subscription.createdAt) >= monthStart)
-			.reduce((sum, subscription) => sum + (planPrices.get(subscription.plan) ?? 0), 0);
+			.reduce(
+				(sum, subscription) => sum + (subscription.pricePaid ?? planPrices.get(subscription.plan) ?? 0),
+				0,
+			);
 
 		const timeline = new Map<
 			string,
@@ -146,7 +149,7 @@ export const getDashboardSummary = asyncHandler(
 			if (date < chartStart) return;
 			const bucket = timeline.get(dayKey(date));
 			if (!bucket) return;
-			bucket.subscriptionRevenue += planPrices.get(subscription.plan) ?? 0;
+			bucket.subscriptionRevenue += subscription.pricePaid ?? planPrices.get(subscription.plan) ?? 0;
 		});
 
 		const courseIds = topCourseAgg.map((item) => item._id);

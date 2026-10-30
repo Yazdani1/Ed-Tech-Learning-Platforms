@@ -21,18 +21,18 @@ import {
 	deleteLecture,
 	reorderLectures,
 } from '../controllers/curriculum.controller';
-import { protect, authorize } from '../middleware/auth.middleware';
+import { protect, optionalProtect, authorize } from '../middleware/auth.middleware';
 import { upload } from '../middleware/upload.middleware';
 
 const router = Router();
 const adminRoles = ['Super Admin', 'Admin'] as const;
 
-router.get('/', getCourses);
+router.get('/', optionalProtect, getCourses);
 router.get('/browse', browseCourses);
 router.get('/discounts/active', getActiveDiscountSummary);
 router.patch('/bulk', protect, authorize(...adminRoles), bulkUpdateCourses);
 router.patch('/bulk/discount', protect, authorize(...adminRoles), bulkApplyCourseDiscount);
-router.get('/:id', getCourseById);
+router.get('/:id', optionalProtect, getCourseById);
 
 router.post(
 	'/',
@@ -57,6 +57,12 @@ router.patch(
 router.delete('/:id', protect, authorize(...adminRoles), deleteCourse);
 
 // Curriculum – Sections
+router.put(
+	'/:courseId/sections/reorder',
+	protect,
+	authorize(...adminRoles),
+	reorderSections,
+);
 router.post(
 	'/:courseId/sections',
 	protect,
@@ -75,14 +81,14 @@ router.delete(
 	authorize(...adminRoles),
 	deleteSection,
 );
-router.put(
-	'/:courseId/sections/reorder',
-	protect,
-	authorize(...adminRoles),
-	reorderSections,
-);
 
 // Curriculum – Lectures
+router.put(
+	'/:courseId/sections/:sectionId/lectures/reorder',
+	protect,
+	authorize(...adminRoles),
+	reorderLectures,
+);
 router.post(
 	'/:courseId/sections/:sectionId/lectures',
 	protect,
@@ -100,12 +106,6 @@ router.delete(
 	protect,
 	authorize(...adminRoles),
 	deleteLecture,
-);
-router.put(
-	'/:courseId/sections/:sectionId/lectures/reorder',
-	protect,
-	authorize(...adminRoles),
-	reorderLectures,
 );
 
 export default router;

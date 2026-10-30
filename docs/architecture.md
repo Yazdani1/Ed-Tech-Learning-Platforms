@@ -44,10 +44,31 @@ flowchart LR
 
 ## Feature map
 
+Backend modules (all baselined with integration tests; details in [backend-features.md](backend-features.md)).
+"A --> B" means A uses B.
+
 ```mermaid
 flowchart LR
-    Web[Next.js app] -- "sign in · register · me · sign out" --> Auth[Authentication]
-    Auth -- "users" --> DB[(Database)]
+    Web[Next.js app] -- "sign in · me · profile" --> Auth[Authentication]
+    Admin[User management] -- "accounts, roles" --> Auth
+    Courses -- "category, type" --> Setup[Categories + course types]
+    Courses -- "teachers" --> Teachers
+    Courses -- "sections, lectures" --> Curriculum
+    Enrollments -- "course, price snapshot" --> Courses
+    Enrollments -- "active plan" --> Subscriptions
+    Subscriptions -- "plan price" --> Plans[Subscription plans]
+    Content[Announcements · materials · live classes · Q&A] -- "course access" --> Access{{courseAccess}}
+    Quiz[Quiz banks + sections] -- "course access, free preview" --> Access
+    Access -- "enrolled?" --> Enrollments
+    Access -- "teacher of course?" --> Teachers
+    Dashboard[Dashboard + performance] -- "revenue, counts" --> Enrollments
+    Dashboard -- "revenue" --> Subscriptions
+    Chat[Support chat] -- "members" --> Socket[Socket.io]
+    Group[Group chat] -- "channel rooms" --> Socket
+    Notifications -- "live push" --> Socket
+    Community[Community hub] -- "points, badges" --> Auth
+    Showcase[Hero posts + logo] -- "images" --> CLD[(Cloudinary)]
+    Group -- "attachments" --> CLD
     Docker[Docker dev / CI] -- "is the API up?" --> Health[Health check]
 ```
 
@@ -56,7 +77,7 @@ flowchart LR
 ### Signing in
 
 The sign-in form posts the email and password to `/api/auth/login` on the Next.js origin, which forwards
-them to the backend. The backend checks the password, sets the httpOnly `token` cookie (7 days) and returns
+them to the backend. The backend checks the password (after 10 wrong passwords for one email within 15 minutes it answers 429 until the window ends), sets the httpOnly `token` cookie (7 days) and returns
 the user. The app stores that user as the "me" query; `GuestGate` then opens the page from `?next=` if it is
 a safe same-site page the role may open, otherwise the role's home page (Super Admin: `/admin/dashboard`,
 Admin and Moderator: `/admin/courses`, Teacher: `/teacher/courses`, Student: `/student/dashboard`).
@@ -69,6 +90,7 @@ sequenceDiagram
     participant M as MongoDB
     U->>N: Email + password on /auth/login
     N->>B: POST /api/auth/login
+    B->>B: Email locked (10 failures / 15 min)? -> 429
     B->>M: Find user, compare bcrypt hash
     M-->>B: User
     B-->>N: Set-Cookie token (httpOnly) + { success, data: user }
@@ -83,6 +105,38 @@ The sidebar's sign-out button posts `/api/auth/logout`; the backend clears the c
 app mark the user as signed out and drop every cached query; `RequireRole` sends the user to `/auth/login`
 (without `?next=`, so the next person on a shared computer does not land on the previous user's page). If the
 request fails, the user stays signed in and sees "Could not sign out".
+
+### Opening course content
+
+Lectures' videos, study materials, live classes, quizzes, announcements and Q&A belong to a course. Every such
+request passes one check (`backend/src/utils/courseAccess.ts`): Super Admin, Admin and Moderator always pass;
+a Teacher passes only for courses whose `teachers` list holds their teacher profile; a Student passes only
+with an enrolment (a subscription enrolment only while the plan is active and still covers the course).
+Free-preview quiz banks and preview lectures are the exceptions anyone may open. Quiz answers are removed
+from every question the student has not answered yet.
+
+```mermaid
+sequenceDiagram
+    actor S as Student
+    participant B as Express backend
+    participant M as MongoDB
+    S->>B: GET /api/study-materials/course/:id (cookie)
+    B->>M: Course exists?
+    alt staff
+        B-->>S: 200 materials
+    else teacher of the course / enrolled student
+        B->>M: Teacher profile or Enrollment
+        B-->>S: 200 materials
+    else anyone else
+        B-->>S: 403
+    end
+```
+
+### Changing a password
+
+A password change (own profile or reset by a Super Admin/Admin) stores `passwordChangedAt`. Every token
+issued before it is refused (HTTP and Socket.io), live socket connections of that user are closed, and the
+browser that made the change gets a fresh cookie, so only that device stays signed in.
 
 <!--
 TEMPLATE: keep these three sections up to date (only what exists).

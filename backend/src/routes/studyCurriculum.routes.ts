@@ -5,11 +5,11 @@ import {
 	getCourseStudyCurricula,
 	updateStudyCurriculum,
 } from '../controllers/studyCurriculum.controller';
-import { authorize, protect } from '../middleware/auth.middleware';
+import { authorize, optionalProtect, protect } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/course/:courseId', getCourseStudyCurricula);
+router.get('/course/:courseId', optionalProtect, getCourseStudyCurricula);
 router.post('/course/:courseId', protect, authorize('Teacher', 'Admin', 'Super Admin'), createStudyCurriculum);
 router.put('/:id', protect, authorize('Teacher', 'Admin', 'Super Admin', 'Moderator'), updateStudyCurriculum);
 router.delete('/:id', protect, authorize('Teacher', 'Admin', 'Super Admin', 'Moderator'), deleteStudyCurriculum);

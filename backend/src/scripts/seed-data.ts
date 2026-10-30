@@ -819,7 +819,9 @@ async function seed() {
 	let admin = await User.findOne({ email: 'admin@medhabee.com' });
 	if (!admin) {
 		console.log('👤 Admin user not found. Creating default admin...');
-		const hashedPassword = await bcrypt.hash('Admin@1234', 12);
+		const seedPassword = process.env.SEED_ADMIN_PASSWORD;
+		if (!seedPassword) throw new Error('Set SEED_ADMIN_PASSWORD to create the Super Admin account');
+		const hashedPassword = await bcrypt.hash(seedPassword, 12);
 		admin = await User.create({
 			name: 'Admin User',
 			email: 'admin@medhabee.com',

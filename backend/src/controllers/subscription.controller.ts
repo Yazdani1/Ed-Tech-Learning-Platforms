@@ -5,6 +5,7 @@ import { SubscriptionPlanConfig, type ISubscriptionPlanConfig } from '../models/
 import { User } from '../models/User.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { escapeRegex } from '../utils/escapeRegex';
 import type { SubscriptionPlan } from '../types/index';
 
 const getBillingOption = (
@@ -39,10 +40,10 @@ export const getAllSubscriptions = asyncHandler(async (req: Request, res: Respon
   const now = new Date();
 
   const baseFilter: Record<string, unknown> = {};
-  if (plan) baseFilter.plan = plan;
+  if (typeof plan === 'string' && plan) baseFilter.plan = plan;
   if (billingDuration) baseFilter.billingDuration = Number(billingDuration);
-  if (search?.trim()) {
-    const regex = new RegExp(search.trim(), 'i');
+  if (typeof search === 'string' && search.trim()) {
+    const regex = new RegExp(escapeRegex(search.trim()), 'i');
     const matchedUsers = await User.find({ $or: [{ name: regex }, { email: regex }] }).select('_id');
     baseFilter.$or = [
       { plan: regex },
@@ -127,6 +128,9 @@ export const assignSubscription = asyncHandler(async (req: Request, res: Respons
   };
 
   if (!userId || !plan || !endDate) throw new AppError('userId, plan and endDate are required', 400);
+  const endDateObj = new Date(endDate);
+  if (Number.isNaN(endDateObj.getTime()) || endDateObj <= new Date())
+    throw new AppError('endDate must be a valid date in the future', 400);
 
   const user = await User.findById(userId);
   if (!user) throw new AppError('User not found', 404);
@@ -140,7 +144,6 @@ export const assignSubscription = asyncHandler(async (req: Request, res: Respons
   await Subscription.updateMany({ user: userObjId, status: 'Active' }, { status: 'Cancelled' });
 
   const startDate = new Date();
-  const endDateObj = new Date(endDate);
 
   const sub = await Subscription.create({
     user: userObjId,
@@ -173,7 +176,20 @@ export const cancelSubscription = asyncHandler(async (req: Request, res: Respons
   sub.status = 'Cancelled';
   await sub.save();
 
-  await User.findByIdAndUpdate(sub.user, { $unset: { activeSubscription: 1 } });
+  const remaining = await Subscription.findOne({ user: sub.user, status: 'Active' }).sort({ endDate: -1 });
+  if (remaining) {
+    await User.findByIdAndUpdate(sub.user, {
+      activeSubscription: {
+        plan: remaining.plan,
+        billingDuration: remaining.billingDuration,
+        billingLabel: remaining.billingLabel,
+        startDate: remaining.startDate,
+        endDate: remaining.endDate,
+      },
+    });
+  } else {
+    await User.findByIdAndUpdate(sub.user, { $unset: { activeSubscription: 1 } });
+  }
   res.status(200).json({ success: true, message: 'Subscription cancelled' });
 });
 

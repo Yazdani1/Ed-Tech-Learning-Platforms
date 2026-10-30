@@ -13,8 +13,9 @@ export const getConversations = asyncHandler(async (req: Request, res: Response)
 	const isStaff = STAFF_ROLES.includes(user.role);
 
 	if (isStaff) {
+		// Teachers answer support chat but do not get the students' email addresses.
 		const conversations = await ChatConversation.find()
-			.populate('student', 'name avatar email')
+			.populate('student', user.role === 'Teacher' ? 'name avatar' : 'name avatar email')
 			.sort({ lastMessageAt: -1 });
 		res.json({ success: true, data: conversations });
 	} else {

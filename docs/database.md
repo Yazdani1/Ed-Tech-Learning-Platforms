@@ -470,6 +470,7 @@ erDiagram
     String name "required"
     String email "required, unique"
     String password "required"
+    Date passwordChangedAt
     String role
     String avatar
     String avatarPublicId

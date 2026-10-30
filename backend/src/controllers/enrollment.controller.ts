@@ -5,6 +5,7 @@ import { Enrollment, type EnrollmentType } from '../models/Enrollment.model';
 import { User } from '../models/User.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { isCourseTeacher } from '../utils/courseAccess';
 
 const money = (value: number) => Math.round(value * 100) / 100;
 
@@ -39,7 +40,7 @@ export const enroll = asyncHandler(async (req: Request, res: Response) => {
 
 	const course = await Course.findById(courseId);
 	if (!course) throw new AppError('Course not found', 404);
-	if (course.status !== 'Published')
+	if (course.status !== 'Published' || course.visibility === 'Private')
 		throw new AppError('This course is not available for enrollment', 400);
 
 	const existing = await Enrollment.findOne({
@@ -173,6 +174,14 @@ export const getCourseEnrolledStudents = asyncHandler(
 		const courseId = String(req.params.courseId);
 		const includeEmail = req.user.role !== 'Teacher';
 
+		if (req.user.role === 'Teacher') {
+			const course = await Course.findById(courseId).select('teachers');
+			if (!course) throw new AppError('Course not found', 404);
+			if (!(await isCourseTeacher(req.user, course))) {
+				throw new AppError('You are not assigned to this course', 403);
+			}
+		}
+
 		const enrollments = await Enrollment.find({ course: courseId })
 			.populate('student', includeEmail ? 'name email avatar' : 'name avatar')
 			.sort({ createdAt: -1 });
@@ -199,7 +208,9 @@ export const exportCourseEnrolledStudents = asyncHandler(
 			.sort({ createdAt: -1 });
 
 		const escapeCsv = (value: unknown) => {
-			const text = String(value ?? '');
+			let text = String(value ?? '');
+			// Neutralise spreadsheet formulas (CSV injection).
+			if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
 			return `"${text.replace(/"/g, '""')}"`;
 		};
 

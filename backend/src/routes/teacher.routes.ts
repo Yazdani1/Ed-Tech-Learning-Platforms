@@ -7,14 +7,14 @@ import {
   updateTeacher,
   deleteTeacher,
 } from '../controllers/teacher.controller';
-import { protect, authorize } from '../middleware/auth.middleware';
+import { protect, optionalProtect, authorize } from '../middleware/auth.middleware';
 import { upload } from '../middleware/upload.middleware';
 
 const router = Router();
 
-router.get('/', getTeachers);
+router.get('/', optionalProtect, getTeachers);
 router.get('/my-courses', protect, authorize('Teacher'), getMyTeacherCourses);
-router.get('/:id', getTeacherById);
+router.get('/:id', optionalProtect, getTeacherById);
 
 router.post('/', protect, authorize('Super Admin', 'Admin'), upload.single('profileImage'), createTeacher);
 router.put('/:id', protect, authorize('Super Admin', 'Admin'), upload.single('profileImage'), updateTeacher);

@@ -7,6 +7,8 @@ import { uploadFileToCloudinary } from '../config/cloudinary';
 import { getSocketIO } from '../socket/index';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { escapeRegex } from '../utils/escapeRegex';
+import { detectFileKind } from '../utils/fileType';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin', 'Moderator'];
 const populateChannel = [
@@ -41,6 +43,25 @@ const emitChannelUpdated = async (channelId: string) => {
 	getSocketIO()?.to(`group:${channelId}`).emit('groupChat:channelUpdated', channel);
 };
 
+/** Removes the users' open sockets from the channel room so they stop receiving its live events. */
+const leaveChannelRoom = (channelId: string, userIds: unknown[]) => {
+	userIds.forEach((userId) => getSocketIO()?.in(`user:${String(userId)}`).socketsLeave(`group:${channelId}`));
+};
+
+// members.user / joinRequests.user may be populated, so compare their _id.
+const refId = (value: unknown) => (value as { _id?: unknown } | null)?._id ?? value;
+
+/** The public card of a channel for non-members: never its members or other users' join requests. */
+const toPublicCard = (channel: Pick<IGroupChatChannel, '_id' | 'name' | 'description' | 'type' | 'members' | 'joinRequests' | 'lastMessageAt'>, userId: string) => ({
+	_id: channel._id,
+	name: channel.name,
+	description: channel.description,
+	type: channel.type,
+	memberCount: channel.members.length,
+	hasPendingRequest: channel.joinRequests.some((request) => idEquals(refId(request.user), userId) && request.status === 'Pending'),
+	lastMessageAt: channel.lastMessageAt,
+});
+
 export const getChannels = asyncHandler(async (req: Request, res: Response) => {
 	const { search, archived } = req.query as Record<string, string>;
 	const query: Record<string, unknown> = {};
@@ -52,10 +73,10 @@ export const getChannels = asyncHandler(async (req: Request, res: Response) => {
 	} else if (archived === 'true') {
 		query.isArchived = true;
 	}
-	if (search?.trim()) {
+	if (typeof search === 'string' && search.trim()) {
 		query.$or = [
-			{ name: { $regex: search.trim(), $options: 'i' } },
-			{ description: { $regex: search.trim(), $options: 'i' } },
+			{ name: { $regex: escapeRegex(search.trim()), $options: 'i' } },
+			{ description: { $regex: escapeRegex(search.trim()), $options: 'i' } },
 		];
 	}
 
@@ -68,17 +89,24 @@ export const discoverChannels = asyncHandler(async (req: Request, res: Response)
 	const query: Record<string, unknown> = { isArchived: false, isBlocked: false };
 	if (search) {
 		query.$or = [
-			{ name: { $regex: search, $options: 'i' } },
-			{ description: { $regex: search, $options: 'i' } },
+			{ name: { $regex: escapeRegex(search), $options: 'i' } },
+			{ description: { $regex: escapeRegex(search), $options: 'i' } },
 		];
 	}
 	const channels = await GroupChatChannel.find(query).sort({ lastMessageAt: -1 }).limit(30).populate(populateChannel).lean();
-	res.status(200).json({ success: true, data: channels });
+	const userId = String(req.user._id);
+	// Non-members only see the public card of a channel: never its members or other users' join requests.
+	const data = channels.map((channel) => {
+		if (channel.members.some((member) => idEquals(refId(member.user), userId))) return channel;
+		return toPublicCard(channel, userId);
+	});
+	res.status(200).json({ success: true, data });
 });
 
 export const createChannel = asyncHandler(async (req: Request, res: Response) => {
 	const { name, description, type } = req.body as { name?: string; description?: string; type?: string };
-	if (!name?.trim()) throw new AppError('Channel name is required', 400);
+	if (typeof name !== 'string' || !name.trim()) throw new AppError('Channel name is required', 400);
+	if (description !== undefined && typeof description !== 'string') throw new AppError('Invalid description', 400);
 	if (!['Public', 'Private'].includes(type ?? '')) throw new AppError('Channel type is required', 400);
 	const channelType = type as 'Public' | 'Private';
 
@@ -98,7 +126,8 @@ export const updateChannel = asyncHandler(async (req: Request, res: Response) =>
 	const channel = await GroupChatChannel.findById(req.params.channelId);
 	if (!channel) throw new AppError('Channel not found', 404);
 	if (!isPlatformAdmin(req.user.role) && !idEquals(channel.creator, req.user._id)) throw new AppError('Not authorized', 403);
-	if (!name?.trim()) throw new AppError('Channel name is required', 400);
+	if (typeof name !== 'string' || !name.trim()) throw new AppError('Channel name is required', 400);
+	if (description !== undefined && typeof description !== 'string') throw new AppError('Invalid description', 400);
 	if (!['Public', 'Private'].includes(type ?? '')) throw new AppError('Channel type is required', 400);
 
 	channel.name = name.trim();
@@ -133,8 +162,7 @@ export const joinChannel = asyncHandler(async (req: Request, res: Response) => {
 		await channel.save();
 		await emitChannelUpdated(String(channel._id));
 	}
-	const populated = await GroupChatChannel.findById(channel._id).populate(populateChannel);
-	res.status(200).json({ success: true, message: 'Join request sent', data: populated });
+	res.status(200).json({ success: true, message: 'Join request sent', data: toPublicCard(channel, String(req.user._id)) });
 });
 
 export const approveJoinRequest = asyncHandler(async (req: Request, res: Response) => {
@@ -167,8 +195,7 @@ export const cancelJoinRequest = asyncHandler(async (req: Request, res: Response
 
 	await channel.save();
 	await emitChannelUpdated(String(channel._id));
-	const populated = await GroupChatChannel.findById(channel._id).populate(populateChannel);
-	res.status(200).json({ success: true, message: 'Join request cancelled', data: populated });
+	res.status(200).json({ success: true, message: 'Join request cancelled', data: toPublicCard(channel, String(req.user._id)) });
 });
 
 export const addMembers = asyncHandler(async (req: Request, res: Response) => {
@@ -177,10 +204,14 @@ export const addMembers = asyncHandler(async (req: Request, res: Response) => {
 	if (!channel) throw new AppError('Channel not found', 404);
 	ensureChannelAdmin(channel, req);
 	if (!Array.isArray(userIds) || userIds.length === 0) throw new AppError('Select at least one user', 400);
+	if (userIds.some((userId) => typeof userId !== 'string' || !Types.ObjectId.isValid(userId))) throw new AppError('Invalid user id', 400);
+	const uniqueIds = [...new Set(userIds)];
+	const foundCount = await User.countDocuments({ _id: { $in: uniqueIds } });
+	if (foundCount !== uniqueIds.length) throw new AppError('One or more users were not found', 400);
 
 	const existingIds = new Set(channel.members.map((member) => String(member.user)));
-	userIds.forEach((userId) => {
-		if (Types.ObjectId.isValid(userId) && !existingIds.has(userId)) {
+	uniqueIds.forEach((userId) => {
+		if (!existingIds.has(userId)) {
 			channel.members.push({ user: new Types.ObjectId(userId), role: 'Member', unreadCount: 0, joinedAt: new Date() });
 		}
 	});
@@ -198,6 +229,7 @@ export const removeMember = asyncHandler(async (req: Request, res: Response) => 
 
 	channel.members = channel.members.filter((member) => !idEquals(member.user, req.params.userId));
 	await channel.save();
+	leaveChannelRoom(String(channel._id), [req.params.userId]);
 	await emitChannelUpdated(String(channel._id));
 	const populated = await GroupChatChannel.findById(channel._id).populate(populateChannel);
 	res.status(200).json({ success: true, message: 'Member removed', data: populated });
@@ -210,6 +242,7 @@ export const leaveChannel = asyncHandler(async (req: Request, res: Response) => 
 
 	channel.members = channel.members.filter((member) => !idEquals(member.user, req.user._id));
 	await channel.save();
+	leaveChannelRoom(String(channel._id), [req.user._id]);
 	await emitChannelUpdated(String(channel._id));
 	res.status(200).json({ success: true, message: 'Left channel' });
 });
@@ -231,6 +264,11 @@ export const toggleBlockChannel = asyncHandler(async (req: Request, res: Respons
 	channel.isBlocked = !channel.isBlocked;
 	await channel.save();
 	await emitChannelUpdated(String(channel._id));
+	if (channel.isBlocked) {
+		// Members who are not platform staff lose live access to a blocked channel.
+		const members = await User.find({ _id: { $in: channel.members.map((member) => member.user) } }).select('_id role').lean();
+		leaveChannelRoom(String(channel._id), members.filter((member) => !isPlatformAdmin(member.role)).map((member) => member._id));
+	}
 	const populated = await GroupChatChannel.findById(channel._id).populate(populateChannel);
 	res.status(200).json({ success: true, message: channel.isBlocked ? 'Channel blocked' : 'Channel unblocked', data: populated });
 });
@@ -249,9 +287,12 @@ export const createMessage = asyncHandler(async (req: Request, res: Response) =>
 	ensureChannelAccess(channel, req);
 	if (channel.isBlocked) throw new AppError('Channel is blocked', 403);
 
+	if (req.body.content !== undefined && typeof req.body.content !== 'string') throw new AppError('Invalid message content', 400);
 	const content = String(req.body.content ?? '').trim();
 	const files = (req.files as Express.Multer.File[] | undefined) ?? [];
 	if (!content && files.length === 0) throw new AppError('Message or file is required', 400);
+	// Check every file first so a bad one in a batch never leaves the others uploaded.
+	if (files.some((file) => !detectFileKind(file.buffer))) throw new AppError('This file type is not allowed', 400);
 
 	const attachments = await Promise.all(
 		files.map(async (file) => {
@@ -306,14 +347,12 @@ export const searchUsers = asyncHandler(async (req: Request, res: Response) => {
 		res.status(200).json({ success: true, data: [] });
 		return;
 	}
+	// Name only; email is shown to platform staff only (never searchable).
 	const users = await User.find({
 		_id: { $ne: req.user._id },
-		$or: [
-			{ name: { $regex: search, $options: 'i' } },
-			{ email: { $regex: search, $options: 'i' } },
-		],
+		name: { $regex: escapeRegex(search), $options: 'i' },
 	})
-		.select('name avatar role email')
+		.select(isPlatformAdmin(req.user.role) ? 'name avatar role email' : 'name avatar role')
 		.limit(20)
 		.lean();
 	res.status(200).json({ success: true, data: users });

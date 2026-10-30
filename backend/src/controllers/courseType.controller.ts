@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { CourseType } from '../models/CourseType.model';
+import { Course } from '../models/Course.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 
@@ -17,7 +18,7 @@ export const getCourseTypes = asyncHandler(async (_req: Request, res: Response) 
 export const createCourseType = asyncHandler(async (req: Request, res: Response) => {
   const { name, description } = req.body as { name: string; description?: string };
 
-  if (!name || !name.trim()) throw new AppError('Course type name is required', 400);
+  if (typeof name !== 'string' || !name.trim()) throw new AppError('Course type name is required', 400);
 
   const slug = toSlug(name.trim());
   if (!slug) throw new AppError('Course type name must contain valid characters', 400);
@@ -35,9 +36,10 @@ export const updateCourseType = asyncHandler(async (req: Request, res: Response)
   const update: Partial<{ name: string; slug: string; description: string }> = {};
 
   if (name !== undefined) {
-    if (!name.trim()) throw new AppError('Course type name cannot be empty', 400);
+    if (typeof name !== 'string' || !name.trim()) throw new AppError('Course type name cannot be empty', 400);
     update.name = name.trim();
     update.slug = toSlug(name.trim());
+    if (!update.slug) throw new AppError('Course type name must contain valid characters', 400);
 
     const existing = await CourseType.findOne({ slug: update.slug, _id: { $ne: req.params.id } });
     if (existing) throw new AppError('A course type with this name already exists', 400);
@@ -52,7 +54,10 @@ export const updateCourseType = asyncHandler(async (req: Request, res: Response)
 });
 
 export const deleteCourseType = asyncHandler(async (req: Request, res: Response) => {
-  const courseType = await CourseType.findByIdAndDelete(req.params.id);
+  const courseType = await CourseType.findById(req.params.id);
   if (!courseType) throw new AppError('Course type not found', 404);
+  const usedBy = await Course.countDocuments({ courseType: courseType._id });
+  if (usedBy > 0) throw new AppError(`Course type is used by ${usedBy} course(s)`, 400);
+  await courseType.deleteOne();
   res.status(200).json({ success: true, message: 'Course type deleted' });
 });

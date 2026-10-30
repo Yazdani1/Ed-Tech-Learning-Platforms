@@ -16,6 +16,7 @@ import {
   getPublicCoursesWithQuizzes,
   getPublicCourseQuizBanks,
   getCourseAttempts,
+  checkPublicAnswer,
 } from '../controllers/quizBank.controller';
 
 const router = Router();
@@ -23,6 +24,7 @@ const router = Router();
 // Public routes (no auth) — must be before /:id
 router.get('/public/courses', getPublicCoursesWithQuizzes);
 router.get('/public/course/:courseId', getPublicCourseQuizBanks);
+router.post('/public/:id/questions/:qId/check', checkPublicAnswer);
 
 router.get('/course/:courseId', protect, getCourseQuizBanks);
 router.get('/course/:courseId/my-attempts', protect, getCourseAttempts);

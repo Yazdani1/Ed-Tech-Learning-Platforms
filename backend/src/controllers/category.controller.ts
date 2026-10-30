@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { Category } from '../models/Category.model';
+import { Course } from '../models/Course.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 
@@ -13,8 +14,10 @@ export const getCategories = asyncHandler(async (_req: Request, res: Response) =
 export const createCategory = asyncHandler(async (req: Request, res: Response) => {
   const { name, description } = req.body as { name: string; description?: string };
   if (!name) throw new AppError('Category name is required', 400);
+  if (typeof name !== 'string') throw new AppError('Category name must be text', 400);
 
   const slug = toSlug(name);
+  if (!slug) throw new AppError('Category name must contain letters or digits', 400);
   const existing = await Category.findOne({ slug });
   if (existing) throw new AppError('Category already exists', 400);
 
@@ -26,7 +29,14 @@ export const updateCategory = asyncHandler(async (req: Request, res: Response) =
   const { name, description } = req.body as { name?: string; description?: string };
 
   const update: Partial<{ name: string; slug: string; description: string }> = {};
-  if (name) { update.name = name; update.slug = toSlug(name); }
+  if (name !== undefined && typeof name !== 'string') throw new AppError('Category name must be text', 400);
+  if (name) {
+    update.name = name;
+    update.slug = toSlug(name);
+    if (!update.slug) throw new AppError('Category name must contain letters or digits', 400);
+    const existing = await Category.findOne({ slug: update.slug, _id: { $ne: req.params.id } });
+    if (existing) throw new AppError('Category already exists', 400);
+  }
   if (description !== undefined) update.description = description;
 
   const category = await Category.findByIdAndUpdate(req.params.id, update, { new: true });
@@ -36,7 +46,10 @@ export const updateCategory = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const deleteCategory = asyncHandler(async (req: Request, res: Response) => {
-  const category = await Category.findByIdAndDelete(req.params.id);
+  const category = await Category.findById(req.params.id);
   if (!category) throw new AppError('Category not found', 404);
+  const usedBy = await Course.countDocuments({ category: category._id });
+  if (usedBy > 0) throw new AppError(`Category is used by ${usedBy} course(s)`, 400);
+  await category.deleteOne();
   res.status(200).json({ success: true, message: 'Category deleted' });
 });

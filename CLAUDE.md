@@ -96,8 +96,9 @@ Source of truth: the user's instructions (in conversation) and this file.
 - Naming: camelCase variables/functions, PascalCase types/components, kebab-case route folders, UPPER_SNAKE constants.
   Frontend services/api files camelCase or kebab-case `<feature>.api.ts`; components `PascalCase.tsx`.
 - Dates: Luxon helpers in utils/dateTime; shown in the viewer's own (browser) time zone; the backend stores UTC.
-- NEVER run git commit, push, merge, rebase or reset, and NEVER create, switch or delete branches: the user
-  does that. When work is ready, show a summary and a proposed commit message, then stop.
+- NEVER run git merge, rebase, reset or force-push, and NEVER create, switch or delete branches: the user does
+  that. Since 2026-10-29 (user's decision) Claude commits each finished, fully checked step itself on the
+  current branch and pushes it to its origin branch (a push runs deploy.yml).
 - "The changes" = everything not committed yet (`git diff HEAD` + untracked files). The user commits after
   each feature, so agent reviews cover only the current feature.
 
@@ -147,24 +148,25 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   lint/build; Docker test jobs; Node from .nvmrc), frontend Vitest + RTL + MSW (src/test/), Playwright
   (desktop + Pixel 7, e2e/ with global-setup warm-up), E2E accounts seeded by backend/tests/e2e/seed.ts
   (one per role, test database only). Backend `npm audit fix` (lockfile only): 0 vulnerabilities.
-- Phase 6 done: docs/architecture.md, backend-features.md (health only so far), frontend-features.md,
+- Phase 6 done: docs/architecture.md, backend-features.md, frontend-features.md,
   generated database.md + dependency-graph.md (scripts/docs/), `npm run docs:check` in CI and `check`.
-- Next: Phase 7 (backend baseline, one module at a time: integration tests for every endpoint, docs, agent
-  reviews in baseline mode, fix Critical/High/Major bugs).
-- Existing lint warnings (not errors): backend 9 (legacy-frontend/ is no longer linted).
-- Page migration order: shells + auth -> public catalog + course details -> student area -> teacher area ->
-  admin area -> chat and notifications -> everything left (community hub, practice quiz, pricing, schedule).
-  Phase 8 also adds YouTube to the CSP (frame-src, img-src) when the course/lecture pages that embed it move.
-- Known issues to fix in Phase 7 (backend baseline, each with a test):
-  - `PUT /api/courses/:courseId/sections/reorder` and `.../lectures/reorder` are shadowed by the `:sectionId` /
-    `:lectureId` routes declared before them.
-  - `JWT_SECRET` falls back to a hard-coded default (Critical: tokens can be forged if it is unset).
-  - Login/register pass `email` straight into `User.findOne` (NoSQL operator injection).
-  - Cookie `sameSite=none` in production + `express.urlencoded`: CSRF exposure now that the app is same-origin
-    (`lax` is enough); Socket.io auth then needs the planned token route.
-  - Token also returned in the JSON body (remove once legacy-frontend/ is deleted); JWTs never revoked on
-    logout/password change; no rate limit or helmet on auth routes (`trust proxy` behind Vercel).
-  - CastError echoes raw input; register reveals whether an email exists.
-  - Group-chat uploads accept any file type; seed-admin.ts hard-codes the Super Admin password.
-- Reports: .claude/reports/2026-10-29-phase4-nextjs-skeleton-{code-reviewer,security-auditor}.md (git-ignored).
+- Phase 7 done: integration tests for every backend endpoint (49 files, 1201 tests incl. Socket.io), every
+  endpoint documented in docs/backend-features.md (177 routes), architecture.md feature map + flows. Shared
+  test helpers: backend/tests/factories, backend/tests/helpers/cloudinary.ts. Agent reviews in baseline mode;
+  every Critical/High/Major fixed in the existing style (new small utils: courseAccess, escapeRegex, fileType,
+  loginThrottle). Reports: .claude/reports/2026-10-29-phase7-* and 2026-10-30-phase7-* (git-ignored).
+- Backend rules added in Phase 7 (the frontend must follow them): course content (videos of non-preview
+  lectures, materials, live-class links, quizzes, announcements, Q&A) only for staff, the course's teachers and
+  enrolled students (subscription enrolments only while the plan covers the course); quiz answers are removed
+  from unanswered questions, a question can be answered once per attempt (409; reset to retry), guests check
+  free-preview answers with POST /api/quiz-bank/public/:id/questions/:qId/check; changing the email needs the
+  current password; passwords 6-72 chars; only a Super Admin manages Admin/Super Admin accounts; at least one
+  Super Admin remains; a course with enrolments cannot be deleted (unpublish instead); uploads are checked by
+  content (images: PNG/JPEG/GIF/WEBP); 10 wrong passwords lock an email for 15 minutes (429).
+- Open decisions for the user: per-IP rate limiting (needs express-rate-limit + the real proxy hop count;
+  today the login lock is per email); the deploy workflow deploys every branch without waiting for CI; seed
+  scripts now need SEED_ADMIN_PASSWORD / SEED_STUDENT_PASSWORD.
+- Existing lint warnings (not errors): backend 4 (legacy-frontend/ is no longer linted).
+- Next: Phase 8 (migrate every page; shared building blocks in frontend/src/components/common, hooks
+  useModal/useConfirm/useUrlListParams, utils/dateTime, per-feature locale files src/i18n/locales/<lang>/<feature>.json).
 - Known follow-up (Stage B): payment gateway; until then subscribing activates the plan without payment.

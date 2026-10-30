@@ -15,7 +15,9 @@ async function seedAdmin() {
     return;
   }
 
-  const hashed = await bcrypt.hash('Admin@1234', 12);
+  const seedPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!seedPassword) throw new Error('Set SEED_ADMIN_PASSWORD to create the Super Admin account');
+  const hashed = await bcrypt.hash(seedPassword, 12);
   await User.create({
     name: 'Super Admin',
     email,

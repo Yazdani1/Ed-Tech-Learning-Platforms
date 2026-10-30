@@ -9,6 +9,13 @@ import { Subscription } from '../models/Subscription.model';
 import { SubscriptionPlanConfig } from '../models/SubscriptionPlanConfig.model';
 import { User } from '../models/User.model';
 
+// Seed accounts never use a password written in the code.
+const requireSeedPassword = (name: string): string => {
+	const value = process.env[name];
+	if (!value) throw new Error(`Set ${name} to create seed accounts`);
+	return value;
+};
+
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const seedPlans = [
@@ -144,7 +151,7 @@ async function ensureAdmin() {
 	return User.create({
 		name: 'Seed Admin',
 		email: 'seed-admin@medhabee.local',
-		password: await bcrypt.hash('ChangeMe123!', 10),
+		password: await bcrypt.hash(requireSeedPassword('SEED_ADMIN_PASSWORD'), 10),
 		role: 'Super Admin',
 		purchasedCourses: [],
 	});
@@ -229,7 +236,7 @@ async function seedSampleSubscriptions(assignedBy: Types.ObjectId) {
 			{
 				name: sample.name,
 				email: sample.email,
-				password: await bcrypt.hash('Student123!', 10),
+				password: await bcrypt.hash(requireSeedPassword('SEED_STUDENT_PASSWORD'), 10),
 				role: 'Student',
 				purchasedCourses: [],
 			},
@@ -285,7 +292,7 @@ async function run() {
 	}
 	console.log(`Seeded ${sampleSubscriptions.length} sample subscription records.`);
 	console.log(`Updated ${updatedCourses} published courses with dynamic plan access.`);
-	console.log('Sample student password: Student123!');
+	console.log('Sample student password: the SEED_STUDENT_PASSWORD value');
 }
 
 run()

@@ -24,7 +24,7 @@ const teacherSchema = new Schema<ITeacher>(
     name: { type: String, required: true, trim: true },
     bio: { type: String, required: true },
     profileImage: String,
-    profileImagePublicId: String,
+    profileImagePublicId: { type: String, select: false },
     expertise: [{ type: String, trim: true }],
     socialLinks: {
       website: String,

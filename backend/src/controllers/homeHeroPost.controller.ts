@@ -133,7 +133,7 @@ export const createHomeHeroPosts = asyncHandler(async (req: Request, res: Respon
 	const publishAt = parsePublishAt(req.body.publishAt);
 	const hasFutureSchedule = Boolean(publishAt && publishAt.getTime() > Date.now());
 	const maxOrder = await HomeHeroPost.findOne().sort({ order: -1 }).select('order').lean();
-	let nextOrder = Number(req.body.order ?? maxOrder?.order ?? 0);
+	let nextOrder = Number(req.body.order ?? (maxOrder?.order ?? -1) + 1);
 
 	const posts = [];
 	for (const file of files) {

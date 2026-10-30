@@ -7,17 +7,54 @@ import { Subscription } from '../models/Subscription.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { UserRole } from '../types/index';
+import { escapeRegex } from '../utils/escapeRegex';
+import { generateToken, sendTokenCookie } from '../utils/jwt';
+import { disconnectUserSockets } from '../socket/index';
+
+// Only a Super Admin may create, promote to, or change Admin and Super Admin accounts (no privilege
+// escalation, no admin taking over another admin's account).
+const PROTECTED_ROLES: UserRole[] = ['Super Admin', 'Admin'];
+const assertCanManageSuperAdmin = (actorRole: UserRole, ...roles: (UserRole | undefined)[]): void => {
+  if (actorRole !== 'Super Admin' && roles.some((role) => role !== undefined && PROTECTED_ROLES.includes(role))) {
+    throw new AppError('Only a Super Admin can manage Admin and Super Admin accounts', 403);
+  }
+};
+
+// The system must always keep one Super Admin (nobody could manage it otherwise).
+const assertNotLastSuperAdmin = async (target: { role: UserRole }, newRole?: UserRole): Promise<void> => {
+  if (target.role !== 'Super Admin' || newRole === 'Super Admin') return;
+  if ((await User.countDocuments({ role: 'Super Admin' })) <= 1) {
+    throw new AppError('At least one Super Admin must remain', 400);
+  }
+};
+
+const MIN_PASSWORD_LENGTH = 6;
+// bcrypt only uses the first 72 bytes
+const MAX_PASSWORD_LENGTH = 72;
+const assertPasswordLength = (password: string): void => {
+  if (password.length < MIN_PASSWORD_LENGTH || password.length > MAX_PASSWORD_LENGTH) {
+    throw new AppError(`Password must be ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} characters`, 400);
+  }
+};
+
+// One second back, so a token issued in the same second as the change is not treated as older.
+const PASSWORD_CHANGE_CLOCK_SKEW_MS = 1000;
 
 export const createUser = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, password, role } = req.body as { name: string; email: string; password: string; role?: UserRole };
-  if (!name || !email || !password) throw new AppError('Name, email and password are required', 400);
+  if (typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string' || !name.trim() || !email.trim() || !password) {
+    throw new AppError('Name, email and password are required', 400);
+  }
+  assertCanManageSuperAdmin(req.user.role, role);
+  assertPasswordLength(password);
+  const normalizedEmail = email.trim().toLowerCase();
 
-  const existing = await User.findOne({ email });
+  const existing = await User.findOne({ email: normalizedEmail });
   if (existing) throw new AppError('Email is already in use', 400);
 
   const hashed = await bcrypt.hash(password, 12);
   const validRoles: UserRole[] = ['Super Admin', 'Admin', 'Moderator', 'Teacher', 'Student'];
-  const user = await User.create({ name, email, password: hashed, role: role && validRoles.includes(role) ? role : 'Student' });
+  const user = await User.create({ name: name.trim(), email: normalizedEmail, password: hashed, role: role && validRoles.includes(role) ? role : 'Student' });
 
   res.status(201).json({ success: true, message: 'User created', data: { _id: user._id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt } });
 });
@@ -44,10 +81,11 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
   const perPage = Math.min(Math.max(Number(limit) || 10, 1), 100);
   const validRoles: UserRole[] = ['Super Admin', 'Admin', 'Moderator', 'Teacher', 'Student'];
   const userFilter: Record<string, unknown> = {};
-  if (search?.trim()) {
+  if (typeof search === 'string' && search.trim()) {
+    const pattern = escapeRegex(search.trim());
     userFilter.$or = [
-      { name: { $regex: search.trim(), $options: 'i' } },
-      { email: { $regex: search.trim(), $options: 'i' } },
+      { name: { $regex: pattern, $options: 'i' } },
+      { email: { $regex: pattern, $options: 'i' } },
     ];
   }
   if (role && validRoles.includes(role as UserRole)) {
@@ -401,8 +439,14 @@ export const updateUserRole = asyncHandler(async (req: Request, res: Response) =
   const validRoles: UserRole[] = ['Super Admin', 'Admin', 'Moderator', 'Teacher', 'Student'];
   if (!validRoles.includes(role)) throw new AppError('Invalid role', 400);
 
+  const target = await User.findById(req.params.id);
+  if (!target) throw new AppError('User not found', 404);
+  assertCanManageSuperAdmin(req.user.role, role, target.role);
+  await assertNotLastSuperAdmin(target, role);
+
   const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-password');
   if (!user) throw new AppError('User not found', 404);
+  if (target.role !== role) disconnectUserSockets(String(user._id));
 
   res.status(200).json({ success: true, message: 'Role updated', data: user });
 });
@@ -419,8 +463,16 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
     name: string;
     email: string;
     password: string;
+    passwordChangedAt: Date;
     role: UserRole;
   }> = {};
+  if (![name, email, password].every((value) => value === undefined || typeof value === 'string')) {
+    throw new AppError('Invalid user data', 400);
+  }
+  const target = await User.findById(req.params.id);
+  if (!target) throw new AppError('User not found', 404);
+  assertCanManageSuperAdmin(req.user.role, role, target.role);
+  if (role !== undefined) await assertNotLastSuperAdmin(target, role);
 
   if (name !== undefined) {
     if (!name.trim()) throw new AppError('Name is required', 400);
@@ -444,7 +496,9 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (password !== undefined && password.trim()) {
+    assertPasswordLength(password);
     updates.password = await bcrypt.hash(password, 12);
+    updates.passwordChangedAt = new Date(Date.now() - PASSWORD_CHANGE_CLOCK_SKEW_MS);
   }
 
   const user = await User.findByIdAndUpdate(req.params.id, updates, {
@@ -452,12 +506,19 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
     runValidators: true,
   }).select('-password');
   if (!user) throw new AppError('User not found', 404);
+  if (updates.password || (updates.role && updates.role !== target.role)) disconnectUserSockets(String(user._id));
+  // An admin who resets their own password stays signed in on this device
+  if (updates.password && String(user._id) === String(req.user._id)) sendTokenCookie(generateToken(String(user._id)), res);
 
   res.status(200).json({ success: true, message: 'User updated', data: user });
 });
 
 export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
+  const target = await User.findById(req.params.id);
+  if (!target) throw new AppError('User not found', 404);
+  await assertNotLastSuperAdmin(target);
   const user = await User.findByIdAndDelete(req.params.id);
   if (!user) throw new AppError('User not found', 404);
+  disconnectUserSockets(String(user._id));
   res.status(200).json({ success: true, message: 'User deleted' });
 });

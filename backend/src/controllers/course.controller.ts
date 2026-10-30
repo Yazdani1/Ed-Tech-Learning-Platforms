@@ -5,8 +5,21 @@ import { Enrollment } from '../models/Enrollment.model';
 import { Section } from '../models/Section.model';
 import { Lecture } from '../models/Lecture.model';
 import { StudyCurriculum } from '../models/StudyCurriculum.model';
+import { StudyMaterial } from '../models/StudyMaterial.model';
+import { Announcement } from '../models/Announcement.model';
+import { QuizSection } from '../models/QuizSection.model';
+import { QuizBank } from '../models/QuizBank.model';
+import { QuizAttempt } from '../models/QuizAttempt.model';
+import { Question } from '../models/Question.model';
+import { Answer } from '../models/Answer.model';
+import { Category } from '../models/Category.model';
+import { CourseType } from '../models/CourseType.model';
+import { Teacher } from '../models/Teacher.model';
+import type { IUser } from '../models/User.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { escapeRegex } from '../utils/escapeRegex';
+import { isStaff, isCourseTeacher, canAccessCourseContent } from '../utils/courseAccess';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 import type { CourseStatus, SubscriptionPlan } from '../types/index';
 
@@ -20,6 +33,53 @@ const normalizeCoursePrices = (pricing: string, listPrice?: number, discountPric
 	const finalPrice = Math.min(safeDiscountPrice, safeListPrice);
 
 	return { listPrice: safeListPrice, discountPrice: finalPrice, price: finalPrice };
+};
+
+const COURSE_VISIBILITIES = ['Public', 'Private'];
+const COURSE_PRICINGS = ['Free', 'Paid'];
+
+// A lecture's video address is only sent for free previews (or to people who may watch the course).
+const hideLockedVideo = <T extends { isPreview?: boolean; videoUrl?: string }>(lecture: T): T => {
+	if (!lecture.isPreview) lecture.videoUrl = undefined;
+	return lecture;
+};
+
+const parseJsonList = (value: unknown, field: string): string[] => {
+	if (typeof value !== 'string') throw new AppError(`Invalid ${field}`, 400);
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(value);
+	} catch {
+		throw new AppError(`Invalid ${field}`, 400);
+	}
+	if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== 'string'))
+		throw new AppError(`Invalid ${field}`, 400);
+	return parsed as string[];
+};
+
+const assertCatalogRef = async (value: unknown, kind: 'category' | 'courseType') => {
+	const label = kind === 'category' ? 'Category' : 'Course type';
+	if (typeof value !== 'string' || !Types.ObjectId.isValid(value))
+		throw new AppError(`Invalid ${label.toLowerCase()} ID`, 400);
+	const exists = kind === 'category' ? await Category.exists({ _id: value }) : await CourseType.exists({ _id: value });
+	if (!exists) throw new AppError(`${label} not found`, 404);
+	return new Types.ObjectId(value);
+};
+
+const parseTeacherIds = async (value: unknown) => {
+	const ids = parseJsonList(value, 'teachers');
+	if (ids.some((id) => !Types.ObjectId.isValid(id))) throw new AppError('Invalid teacher ID', 400);
+	const unique = [...new Set(ids)];
+	const found = await Teacher.countDocuments({ _id: { $in: unique } });
+	if (found !== unique.length) throw new AppError('One or more teachers were not found', 400);
+	return ids.map((id) => new Types.ObjectId(id));
+};
+
+const assertCourseEnums = (body: { visibility?: unknown; pricing?: unknown }) => {
+	if (body.visibility !== undefined && !COURSE_VISIBILITIES.includes(body.visibility as string))
+		throw new AppError('Visibility must be Public or Private', 400);
+	if (body.pricing !== undefined && !COURSE_PRICINGS.includes(body.pricing as string))
+		throw new AppError('Pricing must be Free or Paid', 400);
 };
 
 const expireExpiredCourseDiscounts = async () => {
@@ -56,6 +116,9 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 	await expireExpiredCourseDiscounts();
 	const { category, courseType, teacher, status, pricing, visibility, subscriptionPlans, search, enrollmentFilter, earningFilter } = req.query as Record<string, string>;
 
+	const user = req.user as IUser | undefined;
+	const staff = Boolean(user && isStaff(user));
+
 	const filter: Record<string, unknown> = {};
 	if (category) filter.category = category;
 	if (courseType) filter.courseType = courseType;
@@ -70,13 +133,23 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 			filter.allowedSubscriptionPlans = { $in: plans };
 		}
 	}
-	if (search) filter.title = { $regex: search, $options: 'i' };
+	if (typeof search === 'string' && search) filter.title = { $regex: escapeRegex(search), $options: 'i' };
+	// Security: only staff see drafts, private courses and enrolment / earning figures.
+	if (!staff) {
+		filter.status = 'Published';
+		filter.visibility = 'Public';
+	}
 
 	const courses = await Course.find(filter)
 		.populate('category', 'name slug')
 		.populate('courseType', 'name slug description')
 		.populate('teachers', 'name profileImage')
 		.sort({ createdAt: -1 });
+
+	if (!staff) {
+		res.status(200).json({ success: true, data: courses, total: courses.length });
+		return;
+	}
 
 	const now = new Date();
 	const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -244,8 +317,8 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		...baseFilter,
 	};
 
-	if (search?.trim())
-		filter.title = { $regex: search.trim(), $options: 'i' };
+	if (typeof search === 'string' && search.trim())
+		filter.title = { $regex: escapeRegex(search.trim()), $options: 'i' };
 
 	if (courseTypes) {
 		const ids = courseTypes.split(',').map((s) => s.trim()).filter((s) => Types.ObjectId.isValid(s)).map((s) => new Types.ObjectId(s));
@@ -280,6 +353,7 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 			populate: {
 				path: 'lectures',
 				select: 'title videoUrl isPreview order',
+				transform: hideLockedVideo,
 			},
 		})
 		.sort({ createdAt: -1 });
@@ -348,13 +422,29 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 export const getCourseById = asyncHandler(
 	async (req: Request, res: Response) => {
 		await expireExpiredCourseDiscounts();
+		const user = req.user as IUser | undefined;
+		// The teachers' linked user accounts are only shown to Super Admin and Admin.
+		const teacherFields = user && ['Super Admin', 'Admin'].includes(user.role)
+			? 'name bio profileImage expertise socialLinks userId'
+			: 'name bio profileImage expertise socialLinks';
 		const course = await Course.findById(req.params.id)
 			.populate('category', 'name slug')
 			.populate('courseType', 'name slug description')
-			.populate('teachers', 'name bio profileImage expertise socialLinks userId')
+			.populate('teachers', teacherFields)
 			.populate({ path: 'sections', populate: { path: 'lectures' } });
 
 		if (!course) throw new AppError('Course not found', 404);
+
+		const teacherIds = (course.populated('teachers') as Types.ObjectId[] | undefined) ?? course.teachers;
+		const accessCheck = { _id: course._id, teachers: teacherIds };
+		if (course.status !== 'Published' || course.visibility !== 'Public') {
+			const canSee = user && (isStaff(user) || (await isCourseTeacher(user, accessCheck)));
+			if (!canSee) throw new AppError('Course not found', 404);
+		}
+		if (!user || !(await canAccessCourseContent(user, accessCheck))) {
+			for (const section of course.sections as unknown as { lectures: { isPreview?: boolean; videoUrl?: string }[] }[])
+				section.lectures.forEach(hideLockedVideo);
+		}
 		res.status(200).json({ success: true, data: course });
 	},
 );
@@ -428,6 +518,13 @@ export const createCourse = asyncHandler(
 
 		if (!body.title || !body.category || !body.courseType)
 			throw new AppError('Title, category, and course type are required', 400);
+		assertCourseEnums(body);
+		const category = await assertCatalogRef(body.category, 'category');
+		const courseType = await assertCatalogRef(body.courseType, 'courseType');
+		const teachers = body.teachers ? await parseTeacherIds(body.teachers) : [];
+		const allowedSubscriptionPlans = body.allowedSubscriptionPlans
+			? (parseJsonList(body.allowedSubscriptionPlans, 'allowedSubscriptionPlans') as SubscriptionPlan[])
+			: [];
 
 		let coverImage: string | undefined;
 		let coverImagePublicId: string | undefined;
@@ -451,22 +548,16 @@ export const createCourse = asyncHandler(
 		const course = await Course.create({
 			title: body.title,
 			subtitle: body.subtitle,
-			category: new Types.ObjectId(body.category),
-			courseType: new Types.ObjectId(body.courseType),
+			category,
+			courseType,
 			startDate: body.startDate ? new Date(body.startDate) : undefined,
 			endDate: body.endDate ? new Date(body.endDate) : undefined,
-			teachers: body.teachers
-				? (JSON.parse(body.teachers) as string[]).map(
-						(id) => new Types.ObjectId(id),
-					)
-				: [],
+			teachers,
 			visibility: (body.visibility ?? 'Private') as 'Public' | 'Private',
 			pricing,
 			...prices,
 			includedInSubscription: body.includedInSubscription === 'true',
-			allowedSubscriptionPlans: body.allowedSubscriptionPlans
-				? (JSON.parse(body.allowedSubscriptionPlans) as SubscriptionPlan[])
-				: [],
+			allowedSubscriptionPlans,
 			status: 'Draft',
 			createdBy: new Types.ObjectId(String(req.user._id)),
 			coverImage,
@@ -481,10 +572,20 @@ export const createCourse = asyncHandler(
 
 export const updateCourse = asyncHandler(
 	async (req: Request, res: Response) => {
-		const course = await Course.findById(req.params.id);
+		const course = await Course.findById(req.params.id).select('+coverImagePublicId');
 		if (!course) throw new AppError('Course not found', 404);
 
 		const body = req.body as Record<string, string>;
+		assertCourseEnums(body);
+		const category = body.category !== undefined ? await assertCatalogRef(body.category, 'category') : undefined;
+		const courseType = body.courseType !== undefined ? await assertCatalogRef(body.courseType, 'courseType') : undefined;
+		const teachers = body.teachers ? await parseTeacherIds(body.teachers) : undefined;
+		const allowedSubscriptionPlans = body.allowedSubscriptionPlans
+			? (parseJsonList(body.allowedSubscriptionPlans, 'allowedSubscriptionPlans') as SubscriptionPlan[])
+			: undefined;
+		const whatYouWillLearn = body.whatYouWillLearn ? parseJsonList(body.whatYouWillLearn, 'whatYouWillLearn') : undefined;
+		const whatYouWillGet = body.whatYouWillGet ? parseJsonList(body.whatYouWillGet, 'whatYouWillGet') : undefined;
+		const requirements = body.requirements ? parseJsonList(body.requirements, 'requirements') : undefined;
 
 		if (req.file) {
 			if (course.coverImagePublicId)
@@ -500,10 +601,8 @@ export const updateCourse = asyncHandler(
 		if (body.title !== undefined) course.title = body.title;
 		if (body.subtitle !== undefined) course.subtitle = body.subtitle;
 		if (body.description !== undefined) course.description = body.description;
-		if (body.category !== undefined)
-			course.category = new Types.ObjectId(body.category);
-		if (body.courseType !== undefined)
-			course.courseType = new Types.ObjectId(body.courseType);
+		if (category) course.category = category;
+		if (courseType) course.courseType = courseType;
 		if (body.startDate !== undefined)
 			course.startDate = body.startDate ? new Date(body.startDate) : (null as unknown as Date);
 		if (body.endDate !== undefined)
@@ -535,20 +634,11 @@ export const updateCourse = asyncHandler(
 		}
 		if (body.includedInSubscription !== undefined)
 			course.includedInSubscription = body.includedInSubscription === 'true';
-		if (body.teachers)
-			course.teachers = (JSON.parse(body.teachers) as string[]).map(
-				(id) => new Types.ObjectId(id),
-			);
-		if (body.allowedSubscriptionPlans)
-			course.allowedSubscriptionPlans = JSON.parse(
-				body.allowedSubscriptionPlans,
-			) as SubscriptionPlan[];
-		if (body.whatYouWillLearn)
-			course.whatYouWillLearn = JSON.parse(body.whatYouWillLearn) as string[];
-		if (body.whatYouWillGet)
-			course.whatYouWillGet = JSON.parse(body.whatYouWillGet) as string[];
-		if (body.requirements)
-			course.requirements = JSON.parse(body.requirements) as string[];
+		if (teachers) course.teachers = teachers;
+		if (allowedSubscriptionPlans) course.allowedSubscriptionPlans = allowedSubscriptionPlans;
+		if (whatYouWillLearn) course.whatYouWillLearn = whatYouWillLearn;
+		if (whatYouWillGet) course.whatYouWillGet = whatYouWillGet;
+		if (requirements) course.requirements = requirements;
 
 		await course.save();
 		res
@@ -585,14 +675,28 @@ export const updateCourseStatus = asyncHandler(
 
 export const deleteCourse = asyncHandler(
 	async (req: Request, res: Response) => {
-		const course = await Course.findById(req.params.id);
+		const course = await Course.findById(req.params.id).select('+coverImagePublicId');
 		if (!course) throw new AppError('Course not found', 404);
+		// Enrolments are revenue and learning history (dashboard, reports): never delete them with the course.
+		const enrollmentCount = await Enrollment.countDocuments({ course: course._id });
+		if (enrollmentCount > 0)
+			throw new AppError(`This course has ${enrollmentCount} enrolment(s); unpublish it instead of deleting`, 400);
 
 		if (course.coverImagePublicId)
 			await deleteFromCloudinary(course.coverImagePublicId);
 		await Lecture.deleteMany({ section: { $in: course.sections } });
 		await Section.deleteMany({ course: course._id });
 		await StudyCurriculum.deleteMany({ course: course._id });
+		const questionIds = await Question.find({ course: course._id }).distinct('_id');
+		await Promise.all([
+			Answer.deleteMany({ question: { $in: questionIds } }),
+			Question.deleteMany({ course: course._id }),
+			Announcement.deleteMany({ course: course._id }),
+			StudyMaterial.deleteMany({ course: course._id }),
+			QuizSection.deleteMany({ course: course._id }),
+			QuizBank.deleteMany({ course: course._id }),
+			QuizAttempt.deleteMany({ course: course._id }),
+		]);
 		await course.deleteOne();
 
 		res.status(200).json({ success: true, message: 'Course deleted' });
@@ -627,8 +731,88 @@ export const bulkUpdateCourses = asyncHandler(
 		if (!updates && !announcement)
 			throw new AppError('Provide at least one field to update or an announcement', 400);
 
-		const invalidId = courseIds.find((id) => !Types.ObjectId.isValid(id));
-		if (invalidId) throw new AppError(`Invalid course ID: ${invalidId}`, 400);
+		const invalidId = courseIds.find((id) => typeof id !== 'string' || !Types.ObjectId.isValid(id));
+		if (invalidId !== undefined) throw new AppError(`Invalid course ID: ${String(invalidId)}`, 400);
+
+		// ── Validate everything before any write (all or nothing) ──────
+		if (announcement !== undefined) {
+			if (typeof announcement !== 'object' || announcement === null)
+				throw new AppError('Announcement title is required', 400);
+			const { title, description } = announcement;
+			if (typeof title !== 'string' || !title.trim()) throw new AppError('Announcement title is required', 400);
+			if (typeof description !== 'string' || !description.trim())
+				throw new AppError('Announcement description is required', 400);
+		}
+
+		const $set: Record<string, unknown> = {};
+		// A price sent without a pricing change only applies to the Paid courses.
+		const paidOnlySet: Record<string, unknown> = {};
+
+		if (updates !== undefined) {
+			if (typeof updates !== 'object' || updates === null || Array.isArray(updates))
+				throw new AppError('Updates must be an object', 400);
+
+			if ('courseType' in updates) {
+				if (updates.courseType && (typeof updates.courseType !== 'string' || !Types.ObjectId.isValid(updates.courseType)))
+					throw new AppError('Invalid course type ID', 400);
+				$set.courseType = updates.courseType ? new Types.ObjectId(updates.courseType) : null;
+			}
+			if ('category' in updates) {
+				if (typeof updates.category !== 'string' || !Types.ObjectId.isValid(updates.category))
+					throw new AppError('Invalid category ID', 400);
+				$set.category = new Types.ObjectId(updates.category);
+			}
+			if ('startDate' in updates)
+				$set.startDate = updates.startDate ? new Date(updates.startDate) : null;
+			if ('endDate' in updates)
+				$set.endDate = updates.endDate ? new Date(updates.endDate) : null;
+			if ('status' in updates) {
+				if (!['Draft', 'Published'].includes(updates.status as string))
+					throw new AppError('Status must be Draft or Published', 400);
+				$set.status = updates.status;
+				$set.publishedAt = updates.status === 'Published' ? new Date() : null;
+			}
+			if ('visibility' in updates) {
+				if (!COURSE_VISIBILITIES.includes(updates.visibility as string))
+					throw new AppError('Visibility must be Public or Private', 400);
+				$set.visibility = updates.visibility;
+			}
+			const { price } = updates;
+			if (price != null && (typeof price !== 'number' || !Number.isFinite(price) || price < 0))
+				throw new AppError('Price must be a number of 0 or more', 400);
+			if ('pricing' in updates) {
+				if (!COURSE_PRICINGS.includes(updates.pricing as string))
+					throw new AppError('Pricing must be Free or Paid', 400);
+				if (updates.pricing === 'Paid' && price == null)
+					throw new AppError('Price is required when pricing is Paid', 400);
+				$set.pricing = updates.pricing;
+				// Same rule as the single update: Free zeroes the prices, Paid sets them together.
+				const finalPrice = updates.pricing === 'Paid' ? price : 0;
+				Object.assign($set, { price: finalPrice, listPrice: finalPrice, discountPrice: finalPrice });
+			} else if (price != null) {
+				Object.assign(paidOnlySet, { price, listPrice: price, discountPrice: price });
+			}
+			if ('includedInSubscription' in updates) {
+				if (typeof updates.includedInSubscription !== 'boolean')
+					throw new AppError('includedInSubscription must be true or false', 400);
+				$set.includedInSubscription = updates.includedInSubscription;
+			}
+			if ('allowedSubscriptionPlans' in updates) {
+				const plans: unknown = updates.allowedSubscriptionPlans;
+				if (!Array.isArray(plans) || plans.some((plan) => typeof plan !== 'string'))
+					throw new AppError('allowedSubscriptionPlans must be a list of plan names', 400);
+				$set.allowedSubscriptionPlans = plans;
+			}
+			if ('teachers' in updates) {
+				const teacherIds: unknown = updates.teachers ?? [];
+				if (!Array.isArray(teacherIds)) throw new AppError('teachers must be a list of teacher IDs', 400);
+				const invalidTeacher: unknown = teacherIds.find(
+					(id) => typeof id !== 'string' || !Types.ObjectId.isValid(id),
+				);
+				if (invalidTeacher !== undefined) throw new AppError(`Invalid teacher ID: ${String(invalidTeacher)}`, 400);
+				$set.teachers = (teacherIds as string[]).map((id) => new Types.ObjectId(id));
+			}
+		}
 
 		const objectIds = courseIds.map((id) => new Types.ObjectId(id));
 
@@ -638,62 +822,14 @@ export const bulkUpdateCourses = asyncHandler(
 			throw new AppError('One or more courses were not found', 404);
 
 		// ── Field updates ──────────────────────────────────────────────
-		if (updates && Object.keys(updates).length > 0) {
-			const $set: Record<string, unknown> = {};
-
-			if ('courseType' in updates)
-				$set.courseType = updates.courseType ? new Types.ObjectId(updates.courseType) : null;
-			if ('category' in updates) {
-				if (!Types.ObjectId.isValid(updates.category!))
-					throw new AppError('Invalid category ID', 400);
-				$set.category = new Types.ObjectId(updates.category!);
-			}
-			if ('startDate' in updates)
-				$set.startDate = updates.startDate ? new Date(updates.startDate) : null;
-			if ('endDate' in updates)
-				$set.endDate = updates.endDate ? new Date(updates.endDate) : null;
-			if ('status' in updates) {
-				if (!['Draft', 'Published'].includes(updates.status!))
-					throw new AppError('Status must be Draft or Published', 400);
-				$set.status = updates.status;
-				$set.publishedAt = updates.status === 'Published' ? new Date() : null;
-			}
-			if ('visibility' in updates) {
-				if (!['Public', 'Private'].includes(updates.visibility!))
-					throw new AppError('Visibility must be Public or Private', 400);
-				$set.visibility = updates.visibility;
-			}
-			if ('pricing' in updates) {
-				if (!['Free', 'Paid'].includes(updates.pricing!))
-					throw new AppError('Pricing must be Free or Paid', 400);
-				$set.pricing = updates.pricing;
-				if (updates.pricing === 'Paid' && updates.price == null)
-					throw new AppError('Price is required when pricing is Paid', 400);
-			}
-			if ('price' in updates) $set.price = updates.price;
-			if ('includedInSubscription' in updates)
-				$set.includedInSubscription = updates.includedInSubscription;
-			if ('allowedSubscriptionPlans' in updates)
-				$set.allowedSubscriptionPlans = updates.allowedSubscriptionPlans;
-			if ('teachers' in updates) {
-				const invalidTeacher = (updates.teachers ?? []).find(
-					(id) => !Types.ObjectId.isValid(id),
-				);
-				if (invalidTeacher) throw new AppError(`Invalid teacher ID: ${invalidTeacher}`, 400);
-				$set.teachers = (updates.teachers ?? []).map((id) => new Types.ObjectId(id));
-			}
-
-			if (Object.keys($set).length > 0)
-				await Course.updateMany({ _id: { $in: objectIds } }, { $set });
-		}
+		if (Object.keys($set).length > 0)
+			await Course.updateMany({ _id: { $in: objectIds } }, { $set });
+		if (Object.keys(paidOnlySet).length > 0)
+			await Course.updateMany({ _id: { $in: objectIds }, pricing: 'Paid' }, { $set: paidOnlySet });
 
 		// ── Bulk announcement ──────────────────────────────────────────
 		if (announcement) {
 			const { title, description } = announcement;
-			if (!title?.trim()) throw new AppError('Announcement title is required', 400);
-			if (!description?.trim()) throw new AppError('Announcement description is required', 400);
-
-			const { Announcement } = await import('../models/Announcement.model');
 			await Announcement.insertMany(
 				objectIds.map((courseId) => ({
 					course: courseId,

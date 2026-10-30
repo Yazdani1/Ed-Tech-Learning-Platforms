@@ -38,7 +38,7 @@ const courseSchema = new Schema<ICourse>(
     subtitle: String,
     description: { type: String, default: '' },
     coverImage: String,
-    coverImagePublicId: String,
+    coverImagePublicId: { type: String, select: false },
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     courseType: { type: Schema.Types.ObjectId, ref: 'CourseType' },
     startDate: { type: Date },

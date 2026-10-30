@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { Teacher } from '../models/Teacher.model';
 import { Course } from '../models/Course.model';
-import { User } from '../models/User.model';
+import { User, type IUser } from '../models/User.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
@@ -17,13 +17,25 @@ async function resolveUserId(userId: string): Promise<Types.ObjectId> {
   return new Types.ObjectId(userId);
 }
 
-export const getTeachers = asyncHandler(async (_req: Request, res: Response) => {
-  const teachers = await Teacher.find().sort({ name: 1 });
+function parseSocialLinks(socialLinks: string): object {
+  try {
+    return JSON.parse(socialLinks) as object;
+  } catch {
+    throw new AppError('Social links must be valid JSON', 400);
+  }
+}
+
+// Only Super Admin and Admin see which login account a teacher profile is linked to.
+const userIdSelect = (user: IUser | undefined): string =>
+  user && ['Super Admin', 'Admin'].includes(user.role) ? '' : '-userId';
+
+export const getTeachers = asyncHandler(async (req: Request, res: Response) => {
+  const teachers = await Teacher.find().select(userIdSelect(req.user as IUser | undefined)).sort({ name: 1 });
   res.status(200).json({ success: true, data: teachers, total: teachers.length });
 });
 
 export const getTeacherById = asyncHandler(async (req: Request, res: Response) => {
-  const teacher = await Teacher.findById(req.params.id);
+  const teacher = await Teacher.findById(req.params.id).select(userIdSelect(req.user as IUser | undefined));
   if (!teacher) throw new AppError('Teacher not found', 404);
   res.status(200).json({ success: true, data: teacher });
 });
@@ -51,6 +63,10 @@ export const createTeacher = asyncHandler(async (req: Request, res: Response) =>
     userId?: string;
   };
 
+  if (!body.name || !body.bio) throw new AppError('Name and bio are required', 400);
+  const resolvedUserId = body.userId ? await resolveUserId(body.userId) : undefined;
+  const socialLinks = body.socialLinks ? parseSocialLinks(body.socialLinks) : undefined;
+
   let profileImage: string | undefined;
   let profileImagePublicId: string | undefined;
 
@@ -60,13 +76,11 @@ export const createTeacher = asyncHandler(async (req: Request, res: Response) =>
     profileImagePublicId = result.publicId;
   }
 
-  const resolvedUserId = body.userId ? await resolveUserId(body.userId) : undefined;
-
   const teacher = await Teacher.create({
     name: body.name,
     bio: body.bio,
     expertise: body.expertise ? body.expertise.split(',').map((s) => s.trim()) : [],
-    socialLinks: body.socialLinks ? (JSON.parse(body.socialLinks) as object) : undefined,
+    socialLinks,
     profileImage,
     profileImagePublicId,
     userId: resolvedUserId,
@@ -76,7 +90,7 @@ export const createTeacher = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const updateTeacher = asyncHandler(async (req: Request, res: Response) => {
-  const teacher = await Teacher.findById(req.params.id);
+  const teacher = await Teacher.findById(req.params.id).select('+profileImagePublicId');
   if (!teacher) throw new AppError('Teacher not found', 404);
 
   const body = req.body as {
@@ -87,19 +101,6 @@ export const updateTeacher = asyncHandler(async (req: Request, res: Response) =>
     userId?: string;
   };
 
-  if (req.file) {
-    if (teacher.profileImagePublicId) {
-      await deleteFromCloudinary(teacher.profileImagePublicId);
-    }
-    const result = await uploadToCloudinary(req.file.buffer, 'medhabee/teachers');
-    teacher.profileImage = result.url;
-    teacher.profileImagePublicId = result.publicId;
-  }
-
-  if (body.name) teacher.name = body.name;
-  if (body.bio) teacher.bio = body.bio;
-  if (body.expertise) teacher.expertise = body.expertise.split(',').map((s) => s.trim());
-  if (body.socialLinks) teacher.socialLinks = JSON.parse(body.socialLinks) as typeof teacher.socialLinks;
   if ('userId' in body) {
     if (body.userId) {
       if (!Types.ObjectId.isValid(body.userId)) throw new AppError('Invalid user ID', 400);
@@ -114,18 +115,35 @@ export const updateTeacher = asyncHandler(async (req: Request, res: Response) =>
     }
   }
 
+  const socialLinks = body.socialLinks ? parseSocialLinks(body.socialLinks) : undefined;
+
+  if (req.file) {
+    if (teacher.profileImagePublicId) {
+      await deleteFromCloudinary(teacher.profileImagePublicId);
+    }
+    const result = await uploadToCloudinary(req.file.buffer, 'medhabee/teachers');
+    teacher.profileImage = result.url;
+    teacher.profileImagePublicId = result.publicId;
+  }
+
+  if (body.name) teacher.name = body.name;
+  if (body.bio) teacher.bio = body.bio;
+  if (body.expertise) teacher.expertise = body.expertise.split(',').map((s) => s.trim());
+  if (socialLinks) teacher.socialLinks = socialLinks as typeof teacher.socialLinks;
+
   await teacher.save();
   res.status(200).json({ success: true, message: 'Teacher updated', data: teacher });
 });
 
 export const deleteTeacher = asyncHandler(async (req: Request, res: Response) => {
-  const teacher = await Teacher.findById(req.params.id);
+  const teacher = await Teacher.findById(req.params.id).select('+profileImagePublicId');
   if (!teacher) throw new AppError('Teacher not found', 404);
 
   if (teacher.profileImagePublicId) {
     await deleteFromCloudinary(teacher.profileImagePublicId);
   }
 
+  await Course.updateMany({ teachers: teacher._id }, { $pull: { teachers: teacher._id } });
   await teacher.deleteOne();
   res.status(200).json({ success: true, message: 'Teacher deleted' });
 });

@@ -4,10 +4,11 @@ import connectDB from '../config/db';
 import { User } from '../models/User.model';
 
 const EMAIL = 'test-admin@medhabee.com';
-const PASSWORD = 'Admin@1234';
+const PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? '';
 const NAME = 'Test Super Admin';
 
 const createAdmin = async (): Promise<void> => {
+	if (!PASSWORD) throw new Error('Set SEED_ADMIN_PASSWORD to create the Super Admin account');
 	await connectDB();
 
 	const existing = await User.findOne({ email: EMAIL });
@@ -31,7 +32,6 @@ const createAdmin = async (): Promise<void> => {
 		name: user.name,
 		email: user.email,
 		role: user.role,
-		password: PASSWORD,
 	});
 	process.exit(0);
 };

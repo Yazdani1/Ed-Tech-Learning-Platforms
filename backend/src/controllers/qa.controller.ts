@@ -8,8 +8,11 @@ import { Enrollment } from '../models/Enrollment.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { IUser } from '../models/User.model';
+import { assertCourseContentAccess } from '../utils/courseAccess';
 
 const STAFF_ROLES = ['Admin', 'Super Admin', 'Moderator', 'Teacher'];
+
+const isText = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
 
 const isAdminOrModerator = (role: string): boolean =>
   role === 'Admin' || role === 'Super Admin' || role === 'Moderator';
@@ -107,10 +110,11 @@ async function buildQuestionResponse(question: InstanceType<typeof Question>) {
 async function assertCanPost(user: IUser, courseId: string): Promise<void> {
   const role = user.role;
 
-  if (isAdminOrModerator(role)) return;
-
+  if (!Types.ObjectId.isValid(courseId)) throw new AppError('Invalid course id', 400);
   const course = await Course.findById(courseId).select('teachers');
   if (!course) throw new AppError('Course not found', 404);
+
+  if (isAdminOrModerator(role)) return;
 
   if (role === 'Teacher') {
     if (!(await isAssignedTeacher(user, courseId))) {
@@ -132,6 +136,7 @@ async function assertCanPost(user: IUser, courseId: string): Promise<void> {
 
 export const getCourseQuestions = asyncHandler(async (req: Request, res: Response) => {
   const { courseId } = req.params;
+  await assertCourseContentAccess(req.user, courseId);
 
   const questions = await Question.find({ course: courseId })
     .populate('postedBy', 'name avatar role')
@@ -207,6 +212,7 @@ export const getQuestionWithAnswers = asyncHandler(async (req: Request, res: Res
   const question = await Question.findById(req.params.id)
     .populate('postedBy', 'name avatar role');
   if (!question) throw new AppError('Question not found', 404);
+  await assertCourseContentAccess(req.user, question.course.toString());
 
   const answers = await Answer.find({ question: question._id })
     .populate('postedBy', 'name avatar role')
@@ -222,8 +228,8 @@ export const createQuestion = asyncHandler(async (req: Request, res: Response) =
   const courseId = String(req.params.courseId);
   const { title, description } = req.body as { title: string; description: string };
 
-  if (!title?.trim()) throw new AppError('Title is required', 400);
-  if (!description?.trim()) throw new AppError('Description is required', 400);
+  if (!isText(title)) throw new AppError('Title is required', 400);
+  if (!isText(description)) throw new AppError('Description is required', 400);
 
   await assertCanPost(req.user, courseId);
 
@@ -279,8 +285,8 @@ export const updateQuestion = asyncHandler(async (req: Request, res: Response) =
     req.user.role === 'Moderator';
 
   if (!isOwner && !isAdmin) throw new AppError('Not authorized to update this question', 403);
-  if (!title?.trim()) throw new AppError('Title is required', 400);
-  if (!description?.trim()) throw new AppError('Description is required', 400);
+  if (!isText(title)) throw new AppError('Title is required', 400);
+  if (!isText(description)) throw new AppError('Description is required', 400);
 
   question.title = title.trim();
   question.description = description.trim();
@@ -328,6 +334,7 @@ export const resolveQuestion = asyncHandler(async (req: Request, res: Response) 
 export const upvoteQuestion = asyncHandler(async (req: Request, res: Response) => {
   const question = await Question.findById(req.params.id);
   if (!question) throw new AppError('Question not found', 404);
+  await assertCourseContentAccess(req.user, question.course.toString());
 
   const userId = (req.user._id as Types.ObjectId).toString();
   const idx = question.upvotes.findIndex((id) => id.toString() === userId);
@@ -352,7 +359,7 @@ export const createAnswer = asyncHandler(async (req: Request, res: Response) => 
   const questionId = String(req.params.questionId);
   const { body } = req.body as { body: string };
 
-  if (!body?.trim()) throw new AppError('Answer body is required', 400);
+  if (!isText(body)) throw new AppError('Answer body is required', 400);
 
   const question = await Question.findById(questionId).select('course');
   if (!question) throw new AppError('Question not found', 404);
@@ -399,7 +406,7 @@ export const updateAnswer = asyncHandler(async (req: Request, res: Response) => 
     req.user.role === 'Moderator';
 
   if (!isOwner && !isAdmin) throw new AppError('Not authorized to update this answer', 403);
-  if (!body?.trim()) throw new AppError('Answer body is required', 400);
+  if (!isText(body)) throw new AppError('Answer body is required', 400);
 
   answer.body = body.trim();
   await answer.save();
@@ -411,6 +418,9 @@ export const updateAnswer = asyncHandler(async (req: Request, res: Response) => 
 export const upvoteAnswer = asyncHandler(async (req: Request, res: Response) => {
   const answer = await Answer.findById(req.params.id);
   if (!answer) throw new AppError('Answer not found', 404);
+  const parent = await Question.findById(answer.question).select('course');
+  if (!parent) throw new AppError('Question not found', 404);
+  await assertCourseContentAccess(req.user, parent.course.toString());
 
   const userId = (req.user._id as Types.ObjectId).toString();
   const idx = answer.upvotes.findIndex((id) => id.toString() === userId);

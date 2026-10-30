@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { Error as MongooseError } from 'mongoose';
+import { MulterError } from 'multer';
 import { AppError } from '../utils/AppError';
 
 export const errorHandler = (
@@ -19,16 +20,31 @@ export const errorHandler = (
     return;
   }
 
-  // Mongoose validation error
+  // Body parser errors (malformed JSON, body too large) carry their own 4xx status
+  const status = (err as { status?: unknown }).status;
+  if (typeof status === 'number' && status >= 400 && status < 500) {
+    res.status(status).json({ success: false, message: status === 413 ? 'Request body is too large' : 'Invalid request body' });
+    return;
+  }
+
+  // Upload limits (too many files, file too large): the client's fault, not a server error
+  if (err instanceof MulterError) {
+    res.status(400).json({ success: false, message: err.message });
+    return;
+  }
+
+  // Mongoose validation error (cast/enum messages would echo the input: only the field name is shown)
   if (err instanceof MongooseError.ValidationError) {
-    const messages = Object.values(err.errors).map((e) => e.message).join(', ');
+    const messages = Object.values(err.errors)
+      .map((e) => (e.kind === 'required' ? e.message : `Invalid ${e.path}`))
+      .join(', ');
     res.status(400).json({ success: false, message: messages });
     return;
   }
 
   // Mongoose bad ObjectId
   if (err instanceof MongooseError.CastError) {
-    res.status(400).json({ success: false, message: `Invalid ${err.path}: ${String(err.value)}` });
+    res.status(400).json({ success: false, message: `Invalid ${err.path}` });
     return;
   }
 
