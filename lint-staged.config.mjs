@@ -1,7 +1,5 @@
 // Runs on staged files before every commit (husky pre-commit hook).
-const GENERATED_DOCS = 'docs/database.md docs/dependency-graph.md';
-const docsSteps = ['npm run docs:generate', `git add ${GENERATED_DOCS}`];
-
+// Whole-project checks (typecheck, arch:check, generated docs) run once in .husky/pre-commit.
 const quote = (files) => files.map((file) => `"${file}"`).join(' ');
 
 export default {
@@ -17,7 +15,4 @@ export default {
   'backend/{tests/**/*.ts,vitest.config.mts}': ['prettier --write'],
   // Everything else Prettier knows (it skips the paths in .prettierignore)
   '*.{js,mjs,cjs,json,md,yml,yaml,css}': ['prettier --write --ignore-unknown'],
-  // Once per commit when code changes: type-check both apps, check the frontend architecture rules,
-  // refresh the generated diagrams (database.md comes from backend/src/models) and add them to the commit.
-  '**/*.{ts,tsx}': () => ['npm run typecheck', 'npm run arch:check', ...docsSteps],
 };

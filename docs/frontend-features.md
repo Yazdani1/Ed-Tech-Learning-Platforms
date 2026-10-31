@@ -16,26 +16,40 @@ flowchart LR
 
 ## Screens
 
-| Route                                                    | Screen                                     | Who can use it                              |
-| -------------------------------------------------------- | ------------------------------------------ | ------------------------------------------- |
-| `/auth/login`                                            | Sign in                                    | Visitors who are not signed in              |
-| `/auth/register`                                         | Create account                             | Visitors who are not signed in              |
-| `/admin/*`, `/student/*`, `/teacher/*`                   | Signed-in shell (menu, user, sign out)     | The area's roles                            |
-| `/`                                                      | Home                                       | Everyone                                    |
-| `/teachers`                                              | Our Instructors                            | Everyone                                    |
-| `/pricing`                                               | Choose Your Plan (subscription plans)      | Everyone; only Students can subscribe       |
-| `/courses`                                               | Course catalog (search, filters, pages)    | Everyone                                    |
-| `/free-courses`                                          | Free courses by course type                | Everyone                                    |
-| `/courses/[id]`                                          | Course page (details, previews, enrolment) | Everyone; actions depend on the role        |
-| `/student/dashboard`                                     | Student dashboard                          | Students                                    |
-| `/student/courses`                                       | My Courses                                 | Students                                    |
-| `/admin/profile`, `/student/profile`, `/teacher/profile` | My Profile                                 | Everyone signed in (each in their own area) |
-| `/admin/categories`                                      | Course setup: categories                   | Super Admin, Admin                          |
-| `/admin/course-types`                                    | Course setup: course types                 | Super Admin, Admin                          |
-| `/admin/homepage-showcase`                               | Homepage showcase (logo + slider)          | Super Admin, Admin                          |
-| any unknown address                                      | Page not found                             | Everyone                                    |
-| `/admin/dashboard`, `/admin/courses`, `/teacher/courses` | Placeholder ("being moved") until migrated | The area's roles                            |
-| any page that crashes                                    | Something went wrong                       | Everyone                                    |
+| Route                                                    | Screen                                                                                                                                  | Who can use it                                                      |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `/auth/login`                                            | Sign in                                                                                                                                 | Visitors who are not signed in                                      |
+| `/auth/register`                                         | Create account                                                                                                                          | Visitors who are not signed in                                      |
+| `/admin/*`, `/student/*`, `/teacher/*`                   | Signed-in shell (menu, user, sign out)                                                                                                  | The area's roles                                                    |
+| `/`                                                      | Home                                                                                                                                    | Everyone                                                            |
+| `/teachers`                                              | Our Instructors                                                                                                                         | Everyone                                                            |
+| `/pricing`                                               | Choose Your Plan (subscription plans)                                                                                                   | Everyone; only Students can subscribe                               |
+| `/courses`                                               | Course catalog (search, filters, pages)                                                                                                 | Everyone                                                            |
+| `/free-courses`                                          | Free courses by course type                                                                                                             | Everyone                                                            |
+| `/courses/[id]`                                          | Course page (details, previews, enrolment)                                                                                              | Everyone; actions depend on the role                                |
+| `/student/dashboard`                                     | Student dashboard                                                                                                                       | Students                                                            |
+| `/student/courses`                                       | My Courses                                                                                                                              | Students                                                            |
+| `/admin/profile`, `/student/profile`, `/teacher/profile` | My Profile                                                                                                                              | Everyone signed in (each in their own area)                         |
+| `/admin/categories`                                      | Course setup: categories                                                                                                                | Super Admin, Admin                                                  |
+| `/admin/course-types`                                    | Course setup: course types                                                                                                              | Super Admin, Admin                                                  |
+| `/admin/homepage-showcase`                               | Homepage showcase (logo + slider)                                                                                                       | Super Admin, Admin                                                  |
+| `/admin/courses`                                         | Courses (staff list, filters, bulk edit)                                                                                                | Super Admin, Admin; Moderator (published courses, no manager tools) |
+| `/admin/courses/[id]`                                    | Course details (staff view of the course page)                                                                                          | Super Admin, Admin, Moderator                                       |
+| `/admin/enrollments/[courseId]`                          | Course enrolments (students, revenue, CSV export)                                                                                       | Super Admin, Admin; Moderator (students + CSV only)                 |
+| `/admin/courses/create`                                  | Create a new course (details, cover, learning content) as a Draft                                                                       | Super Admin, Admin                                                  |
+| `/admin/courses/[id]/edit`                               | Edit a course: details, cover, learning content, curriculum, live classes, quiz banks; publish                                          | Super Admin, Admin                                                  |
+| `/student/courses/[courseId]/learn`                      | The course player: video lectures, live classes, announcements, study materials, Q&A and quiz practice (full screen, no sidebar)        | Student (enrolled, or with an active plan that covers the course)   |
+| `/teacher/courses/[courseId]/learn`                      | The same player inside the teacher area; the teacher can also post announcements, study materials and live classes and see the students | Teacher of the course                                               |
+| `/admin/courses/[id]/learn`                              | The same player inside the admin area; staff manage the course content and can download the student list                                | Super Admin, Admin, Moderator                                       |
+| `/admin/users`                                           | Find, create, edit, re-role and (Super Admin) delete user accounts                                                                      | Super Admin, Admin                                                  |
+| `/admin/teachers`                                        | Manage public teacher profiles and link them to Teacher login accounts                                                                  | Super Admin, Admin                                                  |
+| `/admin/subscriptions`                                   | Configure subscription plans; list, assign and cancel member subscriptions                                                              | Super Admin, Admin                                                  |
+| `/admin/course-qa`                                       | See unresolved course questions of every course; open each in the course player to answer and resolve it                                | Super Admin, Admin, Moderator                                       |
+| `/teacher/courses`                                       | The courses the teacher is assigned to, their enrolled students and the way into each course                                            | Teacher                                                             |
+| `/admin/dashboard`                                       | Snapshot of the whole platform: totals, revenue, charts, top courses, newest enrolments                                                 | Super Admin                                                         |
+| `/admin/performance`                                     | Revenue and enrolment report for all courses or one course over 7 days, 30 days or lifetime                                             | Super Admin                                                         |
+| any unknown address                                      | Page not found                                                                                                                          | Everyone                                                            |
+| any page that crashes                                    | Something went wrong                                                                                                                    | Everyone                                                            |
 
 ## Screen details
 
@@ -122,26 +136,6 @@ after choosing a page.
 **Tests:** `components/layout/__tests__/SidebarContent.test.tsx`,
 `components/permissions/__tests__/RequireRole.test.tsx`, `src/__tests__/proxy.test.ts`; Playwright
 `frontend/e2e/shell.spec.ts` and the access rules in `auth.spec.ts`.
-
-### Placeholder pages (Stage A)
-
-**Route:** the signed-in landing pages `/admin/dashboard` (Super Admin), `/admin/courses` and
-`/teacher/courses` · **Menu:** Dashboard, Courses, Assigned courses
-
-**Who can use it:** as the shell above.
-
-**What it is for:** gives sign-in a landing page while the real screens are moved from the old client. Each
-shows the page title and "This page is being moved to the new app. It will appear here soon." The real
-screens replace them in Phase 8; the other menu links show the not-found page until then.
-
-**On mobile:** the same, inside the shell.
-
-**API endpoints used:** none (the shell uses `GET /api/auth/me`).
-
-**Code:** `frontend/src/app/admin/dashboard/page.tsx`, `frontend/src/app/admin/courses/page.tsx`,
-`frontend/src/app/teacher/courses/page.tsx`, `frontend/src/components/common/MigratingPage.tsx`.
-
-**Tests:** Playwright `frontend/e2e/auth.spec.ts` (each role lands on its page and sees its heading).
 
 ### Public site frame (discount banner, navbar, footer)
 
@@ -286,9 +280,9 @@ screen with the filters stacked above the courses.
 
 **Code:** `frontend/src/app/(public)/pricing/page.tsx`, `frontend/src/components/public/pricing/`
 (`PricingPage`, `PricingHero`, `BillingToggle`, `PlanCard`, `PlanCardContent`, `PlanPrice`, `PlanFeatures`,
-`PlanAction`, `PlanCoursesModal`, `PlanCoursesFilters`, `PlanFilterSelect`, `PlanCoursesResults`,
-`GuestSignInBox`, `pricing.utils.ts`), `frontend/src/hooks/usePublicSubscribe.ts`,
-`frontend/src/hooks/usePublicDebouncedValue.ts`.
+`PlanAction`, `PlanCoursesModal`, `PlanCoursesFilters`, `PlanCoursesResults`, `GuestSignInBox`,
+`pricing.utils.ts`), `frontend/src/hooks/usePublicSubscribe.ts`, `frontend/src/hooks/useDebouncedValue.ts`,
+`frontend/src/components/common/FilterSelect.tsx`.
 
 **Tests:** `components/public/__tests__/PricingPage.test.tsx`, `public-utils.test.ts`; Playwright
 `frontend/e2e/public.spec.ts` (guest is sent to sign in, a new Student subscribes).
@@ -492,7 +486,8 @@ and (students only) email.
 `SubscriptionCard`, `ActivePlanDetails`, `RoleDetailsCard`, `EditProfileModal`, `AvatarPicker`,
 `AvatarUploadButton`, `CommunityPrivacySwitch`, `ProfilePasswordFields`, `useProfileForm`,
 `useAvatarChoice`, `profileFormData.ts`), `frontend/src/api/profile.api.ts`, `frontend/src/api/catalog.api.ts`
-(plans, enrolments, cancelling the subscription),
+(plans, enrolments, cancelling the subscription), `frontend/src/api/teacher.api.ts` (a teacher's course count,
+the same request as Assigned courses),
 `frontend/src/schemas/profile.schema.ts`.
 
 **Tests:** `components/profile/__tests__/ProfilePage.test.tsx`, `EditProfileModal.test.tsx`; Playwright
@@ -591,6 +586,585 @@ server, edit, make public, move down (reorder body), Move Up disabled on the fir
 dialog, Moderator sent away); Playwright `frontend/e2e/showcase.spec.ts` (desktop + mobile: page sections,
 non-image file refused in the upload dialog, Moderator blocked). Real uploads are not run end to end because
 the e2e stack has no Cloudinary account.
+
+### Courses (staff list)
+
+**Route:** `/admin/courses` · **Menu:** "Courses" (the landing page of Admin and Moderator)
+
+**Who can use it:** Super Admin, Admin and Moderator. Super Admin and Admin get every course (drafts and
+private courses too) with this month's figures and the manager tools. A Moderator sees published courses only
+(as in the old client) and no manager tools; the backend refuses status, delete and bulk changes from them (403).
+
+**What it is for:** finding a course and acting on it: open its details, its enrolments, the course player
+(student view) or the editor; publish or unpublish it; delete it; change many courses at once.
+
+**How to use it:**
+
+1. The page lists the courses as cards: cover with the course type badge, title (opens the course details),
+   subtitle, status ("Published • date" or "Draft"), price, category, visibility, "Subscription" when the
+   course is part of the subscription, and its teachers.
+2. Super Admin / Admin cards also show **Earned this month** and **Enrollments this month**; both open the
+   course's enrolments page.
+3. **Filter courses** shows how many courses match. **Show filters** opens: search, course type, category,
+   teacher, status (not for Moderators), pricing, visibility, subscription plan, enrolment activity (has / no
+   students ever, this month, previous month) and earning activity (same choices). Filters are kept in the
+   address (`?search=...&status=...`), so reloading or sharing the link keeps them. **Clear filters** resets all.
+4. Card buttons: **Student view** (eye, opens `/admin/courses/[id]/learn`) and **Edit course** (pencil, opens
+   `/admin/courses/[id]/edit`) for Super Admin / Admin; a **View** button (student view) for Moderators.
+5. The ⋮ menu: **View details**, **Enrollments**, and for Super Admin / Admin **Publish** / **Unpublish**
+   (unpublishing asks first) and **Delete** (asks "Delete "<title>"? This cannot be undone."). A course that
+   has enrolments cannot be deleted: the server's message ("This course has N enrolment(s); unpublish it
+   instead of deleting") is shown as a toast.
+6. **Create Course** opens `/admin/courses/create`.
+7. **Bulk Edit** (Super Admin / Admin) opens a dialog. Left: search and filters (status, visibility, pricing,
+   category, course type), **Select all**, and a checkbox per course of the list. Right, three tabs:
+   - **Update Fields**: course type (or "Clear course type"), category, status, visibility, pricing (+ price
+     for Paid), subscription (include + allowed plans; sent only when touched), teachers (replace), start and
+     end date. Every field starts at "No change"; only filled fields are sent.
+   - **Discount Campaign**: a percentage (1 to 99) off each selected course's list price until a future date
+     and time (entered in your own time zone).
+   - **Post Announcement**: one announcement (title + rich text, the same editor as the course player)
+     posted to every selected course.
+     **Apply to N courses** sends it; a toast confirms ("Updated N courses", "Discount applied to N courses")
+     or shows the reason (missing selection, invalid price or percentage, server message).
+
+**On mobile:** cards stack one per row and hide the cover; the filters are one column; the bulk dialog opens
+full screen with the course picker on top of the tabs; every button is at least 44 px high.
+
+**API endpoints used:** `GET /api/courses` (staff view with filters and `enrollmentStats`),
+`PATCH /api/courses/:id/status`, `DELETE /api/courses/:id`, `PATCH /api/courses/bulk`,
+`PATCH /api/courses/bulk/discount`; dropdowns: `GET /api/categories`, `GET /api/course-types`,
+`GET /api/teachers`, `GET /api/subscription-plans`.
+
+**Code:** `frontend/src/app/admin/courses/page.tsx`, `frontend/src/components/admin-courses/list/`
+(`AdminCoursesPage` (Suspense), `AdminCoursesView`, `CourseFilterPanel`, `CourseFilterFields`,
+`FilterStatusChips`, `course-filters.ts`, `AdminCourseList`, `AdminCourseCard`,
+`CourseCardHeading`, `CourseCardChips`, `CourseCardStats`, `CourseStatBox`, `CourseCardFooter`,
+`ManagerCourseButtons`, `CourseCardMenu`, `CourseListActions`, `useCourseActions`, `useReferenceOptions`),
+`frontend/src/components/admin-courses/bulk/` (`BulkEditModal`, `BulkCourseSelector`, `SelectAllBar`,
+`BulkCourseRow`, `BulkEditPanel`, `BulkFieldsForm`, `BulkChoiceFields`, `BulkSubscriptionField`,
+`BulkTeachersField`, `BulkDateFields`, `BulkDiscountForm`, `BulkAnnouncementForm`, `bulk-form.ts`,
+`useBulkEdit`, `useBulkSelection`), shared `components/common/FilterSelect.tsx`,
+`components/common/rich-text/`, `components/course-fields/` (`PlanMultiSelect`, `TeacherMultiSelect`, also
+used by the course editor), `frontend/src/api/admin-courses.api.ts` (lists refreshed through
+`api/course-cache.ts`), `frontend/src/schemas/admin-courses.schema.ts`.
+
+**Tests:** `components/admin-courses/__tests__/AdminCoursesView.test.tsx` (manager list, URL filters,
+Moderator view, empty, error, publish, unpublish with confirm, delete refused with the server message,
+delete), `BulkEditModal.test.tsx` (picker filters + select all, field update, validation messages, discount
+campaign with server error), `bulk-form.test.ts` (request building rules); Playwright
+`frontend/e2e/admin-courses.spec.ts` (desktop + mobile).
+
+### Course details (staff)
+
+**Route:** `/admin/courses/[id]`
+
+**Who can use it:** Super Admin, Admin and Moderator.
+
+**What it is for:** seeing a course exactly as its public page looks, including drafts and private courses
+(the backend shows them to staff).
+
+**How to use it:** **Back to Courses** returns to the list. The page is the public course page
+(`/courses/[id]`): hero, outline with free previews, live class plan, quizzes, description, teachers. The
+side card shows **Edit course** (Super Admin / Admin) and **Student view** (all staff) instead of the
+enrolment options. An unknown id shows "Course not found".
+
+**On mobile:** same as the public course page (side card first, sections stacked).
+
+**API endpoints used:** `GET /api/courses/:id`, `GET /api/study-curricula/course/:id`,
+`GET /api/quiz-bank/public/course/:id`.
+
+**Code:** `frontend/src/app/admin/courses/[id]/page.tsx`,
+`frontend/src/components/admin-courses/detail/AdminCourseDetail.tsx` (reuses
+`components/browse/detail/CourseDetailView`).
+
+**Tests:** covered by `components/browse/__tests__/CourseDetailView.test.tsx` (staff actions) and the
+Moderator flow in `frontend/e2e/admin-courses.spec.ts`.
+
+### Course enrolments
+
+**Route:** `/admin/enrollments/[courseId]` (from a course card's figures or the ⋮ menu → **Enrollments**)
+
+**Who can use it:** Super Admin and Admin see everything. A Moderator sees the student list and the CSV
+export only (the statistics and revenue endpoints are Super Admin / Admin only on the backend).
+
+**What it is for:** seeing who joined a course, how (free, paid, subscription), and what it earned.
+
+**How to use it:**
+
+1. **Back to Courses** returns to the list. The header shows the cover, title, current price (with the
+   discount when one runs) and status, plus **Export CSV**, which downloads the names and emails of every
+   enrolled student (`course-<id>-students.csv`).
+2. Super Admin / Admin: a strip of figures: total students, free, paid, subscription, this month, lifetime
+   earned (BDT).
+3. **Students** view: "Enrolled Students" with tabs All / Free / Paid / Subscription; each row shows the
+   student (avatar + name, or "Deleted account"), email, type, enrolment date and time (your own time zone)
+   and the enrolment id.
+4. **Revenue** view (Super Admin / Admin): every paid enrolment with list price, discount, amount paid, date
+   and id, and the total paid.
+5. A wrong or unknown course id shows "Course not found".
+
+**On mobile:** the figures are two per row; each student / payment is a card instead of a table row (the
+enrolment id is left out); the tabs scroll sideways if needed.
+
+**API endpoints used:** `GET /api/courses/:id`, `GET /api/enrollments/course/:courseId/students`,
+`GET /api/enrollments/course/:courseId/students/export` (plain same-origin download link; the session
+cookie goes with it), `GET /api/enrollments/admin/course/:courseId/stats`,
+`GET /api/enrollments/admin/course/:courseId?type=paid`.
+
+**Code:** `frontend/src/app/admin/enrollments/[courseId]/page.tsx`,
+`frontend/src/components/admin-courses/enrollments/` (`AdminEnrollmentsPage`, `EnrollmentCourseHeader`,
+`EnrollmentStatsStrip`, `StatPill`, `EnrollmentViewTabs`, `EnrolledStudentsPanel`, `RevenuePanel`,
+`useEnrollmentColumns` (revenue)), `components/admin-courses/BackToCoursesButton.tsx`; the student list is shared
+with the course player and the teacher dialog: `components/enrollments/` (`useCourseStudentColumns`,
+`StudentCell`, `enrollment-display.ts`), `frontend/src/api/enrollment.api.ts`, `schemas/enrollment.schema.ts`.
+
+**Tests:** `components/admin-courses/__tests__/AdminEnrollmentsPage.test.tsx` (Admin view with stats,
+students and export link, type filter, revenue view, Moderator view, error with retry, empty, bad id);
+Playwright `frontend/e2e/admin-courses.spec.ts` (a student enrols through the API, the Admin sees them, the
+course then cannot be deleted).
+
+### Course editor (create and edit a course)
+
+**Route:** `/admin/courses/create` and `/admin/courses/[id]/edit` · **Menu:** none (opened from the course list)
+
+**Who can use it:** Super Admin and Admin (the backend's course write routes). Moderators and other roles are
+sent to their home page (a Moderator lands on `/admin/courses`).
+
+**What it is for:** build a course from start to finish: its details, cover image, description and lists,
+the outline (sections and lectures), weekly live classes and the quiz banks, then publish it.
+
+**How to use it:**
+
+1. The page has a menu with six tabs: **Basic Info**, **Media**, **Learning Content**, **Curriculum**,
+   **Live Class**, **Quiz Bank**. The header shows the title, the Draft / Published chip (with "Published on
+   ..."), **Preview** (draft) or **View Live** (published; opens `/courses/<id>` in a new tab), **Save Draft**
+   and **Publish**.
+2. **Basic Info:** title, subtitle, category and course type (a new course starts with the first of each),
+   optional start and end date (the end cannot be before the start), teachers (pick from the list, remove a
+   chip), visibility (Public / Private), pricing (Free / Paid). Paid shows **List Price** (required) and
+   **Discount Price** (the buying price; empty = the list price; it cannot be above the list price) with the
+   "% off" chip. **Included in Subscription** shows the plans to tick.
+3. **Media:** upload a PNG, JPEG, GIF or WEBP cover up to 5 MB (other files are refused with a message). On a
+   new course it is uploaded with the first save; on an existing course it is uploaded at once and replaces
+   the old cover.
+4. **Learning Content:** the description in the rich text editor (bold, italic, underline, headings, lists,
+   alignment) and three lists (what students will learn, what they will get, requirements): type an item and
+   press Enter or **+**, edit items in place, remove with **x**.
+5. **Creating:** on `/admin/courses/create` press **Save Draft** (or **Publish**). The course is created as a
+   Draft (with a title "Untitled Course" if none was typed), gets an "Introduction" section with a free-preview
+   "Course Introduction" lecture (as before), and the edit page opens. If the course was created but a later
+   step failed (description and lists, the Introduction section, publishing), the edit page still opens with
+   a warning to check and save again, so a second try never creates a second course. Curriculum, Live Class
+   and Quiz Bank say "Save the course first" until then.
+6. **Editing:** every change in the details is saved automatically about a second after the last edit; the
+   menu shows "Auto saving..." and "Last saved <time>". **Save Draft** saves and sets the course to Draft;
+   **Publish** saves and publishes (both need a category and a course type).
+7. **Curriculum:** sections with their lectures. **Add Section**, rename and delete (with confirmation) a
+   section; **Add Lecture** (title, YouTube address, Free Preview switch), edit and delete a lecture. Drag a
+   section or a lecture by its handle to change the order (keyboard: space, arrows, space); lectures move only
+   inside their own section. The new order shows at once; if saving it fails the real order comes back.
+8. **Live Class:** weekly plans. **Add Week** opens a form: title, week name, rich text description and one or
+   more classes (title, date, time, description; **Add Class** / **Remove Class**). Each week card shows its
+   classes with date and time, a "⋮" menu (Edit, Delete with confirmation) and **Add Class** (opens the week
+   with an empty class at the end).
+9. **Quiz Bank:** quiz sections with their banks on the left. **+** adds a section; each section has a
+   **Free** switch (free preview), a "⋮" menu (Rename, Delete: also deletes its banks) and **Add Quiz Bank**
+   (title, description). Each bank has its own Free switch and "⋮" menu (Edit, Delete: also deletes student
+   attempts). Click a bank to open it on the right: **Edit Bank**, **Add Question** (question, 4 options with
+   optional explanations, tick every correct option: at least one) and its questions with the correct answers
+   in green; each question can be edited or deleted. Students taking quizzes is a different screen (course
+   player).
+
+**On mobile:** the tab menu becomes a scrollable tab bar above the content; forms are one column; dialogs are
+full screen; all buttons are at least 44 px. In the Quiz Bank tab the list and the open bank take turns, with
+**Back to quiz banks**.
+
+**API endpoints used:** `GET /api/auth/me`, `GET /api/courses/:id`, `POST /api/courses`, `PUT /api/courses/:id`
+(multipart), `PATCH /api/courses/:id/status`, `GET /api/categories`, `GET /api/course-types`,
+`GET /api/teachers`, `GET /api/subscription-plans`, `POST /api/courses/:courseId/sections`,
+`PUT|DELETE /api/courses/:courseId/sections/:sectionId`, `PUT /api/courses/:courseId/sections/reorder`,
+`POST /api/courses/:courseId/sections/:sectionId/lectures`,
+`PUT|DELETE /api/courses/:courseId/sections/:sectionId/lectures/:lectureId`,
+`PUT /api/courses/:courseId/sections/:sectionId/lectures/reorder`, `GET|POST /api/study-curricula/course/:courseId`,
+`PUT|DELETE /api/study-curricula/:id`, `GET /api/quiz-sections/course/:courseId`, `POST /api/quiz-sections`,
+`PUT|DELETE /api/quiz-sections/:id`, `GET /api/quiz-bank/course/:courseId`, `POST /api/quiz-bank`,
+`PUT|DELETE /api/quiz-bank/:id`, `POST /api/quiz-bank/:id/questions`, `PUT|DELETE /api/quiz-bank/:id/questions/:qId`.
+
+**Code:** `frontend/src/app/admin/courses/create/page.tsx`, `frontend/src/app/admin/courses/[id]/edit/page.tsx`,
+`frontend/src/components/course-editor/` (`CourseEditorPage`, `details/`, `curriculum/`, `live-class/` (tab and
+header), `quiz-bank/`), shared `components/live-class/` (week cards and form, also in the course player),
+`components/common/rich-text/` (the one TipTap editor, loaded by `next/dynamic`), `components/course-fields/`;
+data `frontend/src/api/course-editor.api.ts`, the course from `browse.api.ts` (`useCourse`), `quiz.api.ts`,
+`live-class.api.ts`; shapes `frontend/src/schemas/course-editor.schema.ts`, `browse.schema.ts`, `quiz.schema.ts`.
+
+**Tests:** `components/course-editor/__tests__/CourseEditorPage.test.tsx` (create, a failed step after creating
+opens the edit page with a warning and no second course, price checks, edit and publish, not found, error,
+Moderator kept out),
+`components/course-editor/curriculum/__tests__/CurriculumBuilder.test.tsx`,
+`components/course-editor/live-class/__tests__/LiveClassTab.test.tsx`,
+`components/course-editor/quiz-bank/__tests__/QuizBankTab.test.tsx`; Playwright `frontend/e2e/course-editor.spec.ts`.
+
+### Course player
+
+**Route:** `/student/courses/[courseId]/learn` (no sidebar, as before), `/teacher/courses/[courseId]/learn` and
+`/admin/courses/[id]/learn` (inside the area's normal sidebar). The open section is in the address:
+`?tab=overview|lectures|live|teacher|announcements|materials|students|qa|quiz`, and `?questionId=<id>` opens one
+Q&A question (notification links use this).
+
+**Who can use it:** anyone the server lets read the course content: enrolled students (free or paid
+enrolment, or a subscription enrolment while the plan is active and still covers the course), the course's
+teachers and Super Admin / Admin / Moderator. Everybody else sees **"Enrol to open this course"** with a
+**View course & enrol** link to `/courses/[id]`. An unknown, draft or private course shows **"Course not
+found"**.
+
+**What it is for:** learning inside one course, and (for teachers and staff) keeping its content up to date.
+
+**Step-by-step use:**
+
+1. Open a course from **My Courses** (students), **Assigned courses** (teachers) or the admin course list.
+2. The page shows a top bar (back arrow to the course list, course title, the lecture that is playing) and the
+   section menu.
+3. **Video Lectures** (default): the first lecture with a video plays. Pick another lecture in **Course
+   Content** (sections open and close like an accordion). Only YouTube videos the server sent are embedded
+   (locked lectures have a lock icon and cannot be chosen). The course Q&A is under the video.
+4. **Course Overview**: title, subtitle, category, numbers (enrolled students, lectures, total duration,
+   sections, announcements, study materials, live classes, Q&A questions, teachers), "What you'll learn",
+   requirements and the description.
+5. **Live Class**: the weekly plan ("Week 1", "Week 2", ...) with each class's date and time (shown as
+   entered) and who posted it. Super Admin, Admin and the course's teachers **Add Week** (title, week name,
+   description, one or more classes with title, date and time). The author or a staff admin edits or deletes a
+   week from its ⋮ menu or adds one more class with **Add Class** (opens the week with an empty class at the
+   end). The same week cards and form as the course editor's Live Class tab.
+6. **Teacher**: the course's instructors (photo, name, short bio, expertise).
+7. **Announcements**: newest first. Staff admins and the course's teachers **Post Announcement** (title + rich
+   text); the author or a staff admin edits or deletes from the ⋮ menu (deleting asks first).
+8. **Study Materials**: like announcements, with an optional **Resource Link**. Only `http://` / `https://`
+   links are accepted and shown (**Open Resource →** opens a new tab).
+9. **Students** (staff and teachers only): enrolled students with enrolment type and date; staff admins also
+   see emails and enrolment ids and can **Export CSV**.
+10. **Q & A**: filter buttons **Not resolved yet** (default), **All questions**, **Not answered yet** (no
+    teacher or staff answer) and **Already resolved**, 8 per page. Everyone **Asks a Question**; open a
+    question by its title to read the answers and **Add Answer**. Thumbs-up toggles your upvote. The student
+    who asked, teachers and staff admins **Mark solved** / **Mark not solved**. Authors and staff admins edit or
+    delete questions and answers.
+11. **Quiz Bank**: course progress on top, then the quiz sections with their banks (free-preview ones are
+    marked). Each bank has **All**, **Wrong** and **Correct** buttons with progress. Pick one to practise: tick
+    one or more options and press **Check Answer**. The server marks the answer; only then the correct options
+    turn green, wrong picks red, and the explanations appear. Each question can be answered once; the ↻ button
+    resets the bank (asks first) so you can try again. The numbered pager shows answered questions in green
+    or red.
+
+**Mobile behaviour:** the section menu becomes a swipeable tab strip under the top bar. The lecture list moves
+under the video (side column from 1200 px). Live-class weeks are one column (two from 1200 px). In Quiz Bank
+the bank list comes first; after choosing a bank the practice panel replaces it, with **Back to quiz banks**.
+Forms open full screen; the student list becomes cards. Buttons are at least 44 px.
+
+**API endpoints used:**
+
+- `GET /api/courses/:id` (outline; video addresses only for viewers with access)
+- `GET /api/announcements/course/:courseId` (also the access check: 403 = no access), `POST` same,
+  `PUT|DELETE /api/announcements/:id`
+- `GET|POST /api/study-materials/course/:courseId`, `PUT|DELETE /api/study-materials/:id`
+- `GET|POST /api/study-curricula/course/:courseId`, `PUT|DELETE /api/study-curricula/:id`
+- `GET /api/enrollments/course/:courseId/count`, `GET /api/enrollments/course/:courseId/students`,
+  `GET /api/enrollments/course/:courseId/students/export` (plain download link, cookie sent by the browser)
+- `GET|POST /api/qa/questions/course/:courseId`, `GET|PUT|DELETE /api/qa/questions/:id`,
+  `PATCH /api/qa/questions/:id/resolve`, `PATCH /api/qa/questions/:id/upvote`,
+  `POST /api/qa/answers/question/:questionId`, `PUT|DELETE /api/qa/answers/:id`, `PATCH /api/qa/answers/:id/upvote`
+- `GET /api/quiz-sections/course/:courseId`, `GET /api/quiz-bank/course/:courseId`,
+  `GET /api/quiz-bank/course/:courseId/my-attempts`, `POST /api/quiz-bank/:id/attempt/answer`,
+  `DELETE /api/quiz-bank/:id/attempt`
+
+**Code location:** routes `frontend/src/app/student/courses/[courseId]/learn/page.tsx`,
+`frontend/src/app/teacher/courses/[courseId]/learn/page.tsx`, `frontend/src/app/admin/courses/[id]/learn/page.tsx`;
+components `frontend/src/components/learn/` (`LearnPage`, `LearnPlayer`, `LearnNav`, `video/`, `overview/`,
+`live/`, `announcements/`, `materials/`, `students/`, `qa/`, `quiz/`, `common/`), shared `components/live-class/`,
+`components/enrollments/`, `components/common/rich-text/` (TipTap, loaded by `next/dynamic`),
+`components/common/PostedByLine`; data `frontend/src/api/learn.api.ts`, `learn-qa.api.ts`, `learn-quiz.api.ts`,
+`quiz.api.ts`, `live-class.api.ts`, `enrollment.api.ts`, the course and live classes from `browse.api.ts`;
+shapes `frontend/src/schemas/learn.schema.ts`, `quiz.schema.ts`, `enrollment.schema.ts`; texts
+`src/i18n/locales/{en,bn}/learn.json`.
+
+**Tests:** `frontend/src/components/learn/__tests__/` (`LearnPlayer.test.tsx`: lecture player, tabs in the URL,
+role-based Students tab, 403 / 404 / 500 states; `AnnouncementsTab.test.tsx`: list, sanitising, empty/error,
+teacher posts, author deletes, study-material link rules; `QaSection.test.tsx`: filters, resolve rights,
+upvote, question detail via URL; `QuizTab.test.tsx`: answers hidden until checked, 409 message, reset, empty;
+`PlayerTabs.test.tsx`: Live Class read-only for students and author-only for teachers, add a class, empty and
+error; Study Materials add; Students email + export for staff only, empty; Course Overview counts;
+`learn-utils.test.ts`). E2E `frontend/e2e/learn.spec.ts` (desktop + Pixel 7): a student is asked to enrol,
+then watches, reads an announcement, asks a question and answers a quiz; an admin sees the student list.
+
+### User List
+
+**Route:** `/admin/users` · **Menu:** "User List"
+
+**Who can use it:** Super Admin and Admin. A Moderator (or any other role) who opens the address is sent to
+their own home page; the backend refuses their requests too (403).
+
+**What it is for:** finding user accounts and managing them: create, edit, change role and (Super Admin only)
+delete. A Super Admin also sees how much each user has enrolled and spent.
+
+**How to use it:**
+
+1. The list shows 10 users per page, newest first: name, email, role badge and join date. The filter box at
+   the top says how many users match (for example "3 of 42 users match your filters") and shows the total.
+2. **Show filters** opens the filters: search (name or email; the list updates when you stop typing) and
+   role. A Super Admin also gets subscription plan, subscription status (active / expired / inactive),
+   enrolment activity, spending activity and six min/max spend boxes (they apply when you leave the box or
+   press Enter). The filters and the page are kept in the address, so a reload or a shared link keeps them.
+   **Clear filters** resets them.
+3. **Create User** opens a form: name, email, password (6-72 characters) and role. **Create** saves it.
+4. The row menu (⋮):
+   - **View Details** (Super Admin): the account with enrolment counts (total, free, paid, subscription),
+     spending (total, paid courses, subscriptions, in BDT), subscription plan, status, start and end, and the
+     created/updated times.
+   - **Edit**: name, email, role and an optional new password (leave it blank to keep the current one).
+   - **Change Role**: only the role.
+   - **Delete** (Super Admin): after "Delete "<name>"? This cannot be undone.".
+5. An Admin can only give the Moderator, Teacher or Student role, and Admin / Super Admin accounts have no
+   Edit or Change Role for them (the backend refuses it with 403). The backend also keeps at least one Super
+   Admin: trying to demote or delete the last one shows its message ("At least one Super Admin must remain").
+
+**On mobile:** every user is a card (name, email, role, joined, ⋮ menu) instead of a table row; the filters
+are one column; the forms open full screen.
+
+**API endpoints used:** `GET /api/users` (with `page`, `limit`, `search`, `role` and the Super Admin
+filters), `POST /api/users`, `PUT /api/users/:id`, `PUT /api/users/:id/role`, `DELETE /api/users/:id`,
+`GET /api/subscription-plans` (plan filter).
+
+**Code:** `frontend/src/app/admin/users/page.tsx`, `frontend/src/components/people/users/` (`UsersPage`,
+`UsersManager`, `UsersFilterPanel`, `UsersBasicFilters`, `UsersAdvancedFilters`, `UsersList`, `useUserColumns`,
+`UserRowMenu`, `UserFormModal`, `UserFormFields`, `UserRoleModal`, `RoleSelect`, `RoleChip`, `UserDetailsModal`, `UserDetailsGrid`,
+`user-utils`), shared filter pieces in
+`frontend/src/components/people/common/`, `frontend/src/hooks/usePeopleUserParams.ts`,
+`frontend/src/api/people.api.ts`, `frontend/src/schemas/people.schema.ts`.
+
+**Tests:** `components/people/__tests__/UsersPage.test.tsx` (list and counts, Admin cannot manage
+Admin/Super Admin accounts, empty, error, URL filters sent (Super Admin filters not sent for an Admin),
+Super Admin filters and details, create with password check and Admin role choices, edit without empty
+password, change role with the backend refusal shown, delete, Moderator sent away); Playwright
+`frontend/e2e/people.spec.ts` (desktop + mobile: a Super Admin creates, edits and deletes a user).
+
+### Teachers
+
+**Route:** `/admin/teachers` · **Menu:** "Teachers"
+
+**Who can use it:** Super Admin and Admin (others are sent to their home page).
+
+**What it is for:** the public teacher profiles shown on the site and on courses: name, bio, photo,
+expertise, social links, and the Teacher login account the profile belongs to.
+
+**How to use it:**
+
+1. Each teacher is a card: photo, name, short bio, up to three expertise tags (+N for more), how many courses
+   they teach, and the linked account (name, email, role) or "Not linked".
+2. **Add Teacher** opens the form: name and bio (required), expertise (comma separated), social links as a
+   JSON object (for example `{"linkedin": "https://..."}`; anything else is refused before sending), a
+   Teacher account to link (only accounts not linked to another profile are offered; picking one fills in an
+   empty name) and a profile photo (JPG, PNG, WebP or GIF up to 5 MB, previewed before saving).
+3. The card menu (⋮) has **View details** (bio, joined date, number of courses, all expertise, social links
+   (only real http(s) links), and the assigned courses with type, category, status, visibility, students and a
+   **View Course** button), **Edit** (same form, filled in; choosing "None" unlinks the account) and
+   **Delete** (after confirmation; the teacher is also removed from their courses).
+
+**On mobile:** one card per row; the form and the details open full screen; the course rows stack.
+
+**API endpoints used:** `GET /api/teachers`, `POST /api/teachers`, `PUT /api/teachers/:id` (multipart),
+`DELETE /api/teachers/:id`, `GET /api/courses` (staff view, to count and list each teacher's courses),
+`GET /api/users?role=Teacher&limit=100` (accounts to link).
+
+**Code:** `frontend/src/app/admin/teachers/page.tsx`, `frontend/src/components/people/teachers/`
+(`TeachersPage`, `TeachersManager`, `useTeachersData`, `TeacherCard`, `TeacherCardFooter`, `TeacherCardMenu`,
+`TeacherFormModal`, `TeacherTextFields`, `TeacherAccountSelect`, `TeacherImagePicker`, `useTeacherImageChoice`,
+`TeacherDetailsModal`, `TeacherProfileSummary`, `TeacherSocialLinks`, `TeacherCourseRow`, `TeacherCourseThumb`, `teacher-utils`),
+`frontend/src/api/people.api.ts` (save, delete); the profiles are read with `public.api.ts` `useTeachers` and
+the courses with `admin-courses.api.ts` `useAdminCourses` (the same requests as the course pages and the staff
+course list).
+
+**Tests:** `components/people/__tests__/TeachersPage.test.tsx` (cards with course count and linked account,
+empty, error, details with courses and only safe links, add as multipart with only free accounts offered,
+invalid social links JSON refused, delete, Moderator sent away); Playwright `frontend/e2e/people.spec.ts`
+(an Admin sees a teacher, opens the details and deletes it).
+
+### Subscriptions
+
+**Route:** `/admin/subscriptions` (Plans tab), `/admin/subscriptions?tab=members` (Subscription Members) ·
+**Menu:** "Subscriptions"
+
+**Who can use it:** Super Admin and Admin (others are sent to their home page).
+
+**What it is for:** setting up the subscription plans students can buy, and looking after members'
+subscriptions (assign a plan to someone, cancel one).
+
+**How to use it:**
+
+1. **Plans** tab: one card per active plan with its badge, every billing option (label, months, price in BDT
+   and the price per month) and its features. **Add Plan** opens the form: plan name, billing options (label,
+   months (whole number, 1 or more), price (0 or more); add or remove rows, at least one), badge, card colour
+   (hex) and feature lines (empty lines are left out). **Edit** opens the same form (the name cannot be
+   changed: it identifies the plan). The red bin deletes the plan after confirmation.
+2. **Subscription Members** tab: status tabs **Active Members**, **Cancelled**, **Expired**, **All Records**,
+   each with its count. **Show filters** adds search (member name, email or plan), plan, status and billing
+   duration. The list shows user, plan, billing, amount paid, status, start and end dates and who assigned it
+   ("Self" when the student subscribed). Tab, filters and page are kept in the address.
+3. **Assign Subscription** (needs at least one plan): find the user by typing their name or email, pick the
+   plan and one of its billing options, and an end date (today or later; the plan runs until the end of that
+   day). The user's other active subscriptions are cancelled by the server.
+4. The red cancel button on an active record cancels it after confirmation.
+
+**On mobile:** the tabs scroll sideways; plan cards are one per row; each member is a card (start date and
+"assigned by" are left out); forms open full screen.
+
+**API endpoints used:** `GET /api/subscription-plans` (shared catalog read), `POST /api/subscription-plans`,
+`DELETE /api/subscription-plans/:id`, `GET /api/subscriptions` (page, limit, status, search, plan,
+billingDuration), `POST /api/subscriptions/assign`, `PATCH /api/subscriptions/:id/cancel`,
+`GET /api/users?search=` (user picker).
+
+**Code:** `frontend/src/app/admin/subscriptions/page.tsx`, `frontend/src/components/people/subscriptions/`
+(`SubscriptionsPage`, `SubscriptionsView`, `PlansPanel`, `PlanCard`, `PlanBillingTable`, `PlanFeatureList`,
+`PlanCardActions`, `PlanFormModal`, `PlanBillingFields`, `BillingOptionRow`, `PlanFeatureFields`, `MembersPanel`,
+`MemberStatusTabs`, `MembersFilterPanel`, `useMemberFilterSelects`, `MembersList`, `useMemberColumns`, `MemberUserCell`,
+`MemberStatusChip`, `CancelSubscriptionButton`, `AssignSubscriptionModal`, `AssignPlanFields`, `AssignEndDateField`,
+`UserPicker`, `plan-utils`), `frontend/src/hooks/usePeopleSubscriptionParams.ts`,
+`frontend/src/api/people.api.ts` (plans are read with `catalog.api`'s `useSubscriptionPlans`, so a saved
+plan also refreshes the pricing page).
+
+**Tests:** `components/people/__tests__/SubscriptionsPage.test.tsx` (plan cards, plan error, add plan with
+validation and number conversion, delete plan, members with status counts and cancel, empty member view,
+assign with user search and future end date, Moderator sent away); Playwright `frontend/e2e/people.spec.ts`
+(an Admin adds a plan, assigns it to a new student, cancels it and deletes the plan).
+
+### All Course Q & A
+
+**Route:** `/admin/course-qa` · **Menu:** "Course Q&A"
+
+**Who can use it:** Super Admin, Admin and Moderator.
+
+**What it is for:** one place for staff to see the questions students have not had resolved yet, in every
+course, and jump straight to each one to answer or resolve it (as in the old client).
+
+**How to use it:**
+
+1. The page lists one box per course (sorted by title) with its unresolved questions, and shows how many
+   courses and questions there are.
+2. Each box has filter buttons with counts: **Not resolved yet**, **All questions**, **Not answered yet**
+   (no answer from staff) and **Already resolved**. Questions without a staff answer are highlighted and
+   marked "Needs staff answer".
+3. Each question shows its title, Open/Solved, a two-line preview, who asked and when, and the number of
+   answers. Clicking it opens the question's thread in the course player
+   (`/admin/courses/<id>/learn?tab=qa&questionId=<id>`), where staff read every answer, write one and mark
+   the question resolved. Coming back, the list is up to date (a resolved question leaves it).
+
+**On mobile:** the boxes fill the width, the filter buttons wrap.
+
+**API endpoints used:** `GET /api/qa/admin/course-questions` (answering and resolving: see Course player).
+
+**Code:** `frontend/src/app/admin/course-qa/page.tsx`, `frontend/src/components/people/course-qa/`
+(`CourseQaPage`, `CourseQuestionCard`, `QuestionFilterButtons`, `QuestionRow`, `QuestionStatusChips`,
+`qa-utils`); the author line is `components/common/PostedByLine`. The preview is the question's rich text as
+plain text (`utils/html-text.ts`), never HTML.
+
+**Tests:** `components/people/__tests__/CourseQaPage.test.tsx` (groups and filters, empty, error, each
+question links to its thread in the player); Playwright `frontend/e2e/people.spec.ts` (a Moderator opens the
+page and is kept out of the user list).
+
+### Assigned courses (teacher)
+
+**Route:** `/teacher/courses` · **Menu:** Assigned Courses (teacher area; the teacher's landing page after sign-in)
+
+**Who can use it:** Teachers. Other roles never reach the teacher area.
+
+**What it is for:** a teacher sees every course they teach, who is enrolled, and opens a course.
+
+**How to use it:**
+
+1. The page lists one card per course (newest first): cover, title, subtitle, status (Published / Draft),
+   course type, category, visibility, a short plain-text preview of the description and the assigned teachers.
+2. **Students** opens a dialog with the enrolled students: name, picture, how they enrolled (Free, Paid or
+   Subscription) and the date. Teachers never see student emails (the server leaves them out).
+3. **View** opens the course at `/teacher/courses/<courseId>/learn` (the course player).
+4. No courses: a message explains that no course is assigned yet and that an admin may need to link the
+   teacher profile to the account.
+
+**On mobile:** one card per row (two side by side from 1200 px); the cover is hidden on phones; the
+buttons wrap and are 44 px high; the students dialog is full screen and shows students as cards.
+
+**API endpoints used:** `GET /api/teachers/my-courses`, `GET /api/enrollments/course/:courseId/students`
+(only for the teacher's own courses; checked on the server).
+
+**Code:** `frontend/src/app/teacher/courses/page.tsx`, `frontend/src/components/teacher/` (TeacherCoursesPage,
+TeacherCourseCard, TeacherCourseSummary, TeacherCourseFooter, CourseStudentsModal, teacherCourse.utils.ts),
+`frontend/src/api/teacher.api.ts` (students via `useCourseStudents` in `enrollment.api.ts`, columns from
+`components/enrollments/useCourseStudentColumns`),
+`frontend/src/schemas/teacher.schema.ts`.
+
+**Tests:** `components/teacher/__tests__/TeacherCoursesPage.test.tsx`; Playwright `frontend/e2e/teacher.spec.ts`.
+
+### Dashboard (Super Admin)
+
+**Route:** `/admin/dashboard` · **Menu:** Dashboard (admin area; the Super Admin's landing page)
+
+**Who can use it:** Super Admin only. Admins and Moderators who open it are sent to `/admin/courses`.
+
+**What it is for:** one look at the state of the platform.
+
+**How to use it:**
+
+1. Eight number cards: total revenue (and this month), students (and this month's enrolments), courses
+   (published / draft), active subscriptions (and subscription revenue), teachers, categories, open questions,
+   course revenue (and total enrolments). Money is shown in Taka (৳).
+2. Charts: revenue over the last 30 days, paid enrolments over the last 30 days (two separate charts, one
+   scale each), users by role (pie), course status and course pricing (bars). Hover a chart for exact values.
+3. **Top Courses**: the five courses with the most enrolments ("Deleted course" when a course is gone).
+4. **Recent Enrollments**: the six newest enrolments with student, course, type and date/time (your time zone).
+
+**On mobile:** cards in one column (two on tablets, four on desktop); charts stack in one column; recent
+enrolments are cards instead of a table. The charts load after the numbers (separate download).
+
+**API endpoints used:** `GET /api/dashboard/summary`.
+
+**Code:** `frontend/src/app/admin/dashboard/page.tsx`, `frontend/src/components/insights/dashboard/`
+(SuperAdminDashboard, DashboardStatGrid, DashboardCharts, TimelineChart, CountBarChart, TopCoursesCard,
+TopCourseRow, RecentEnrollmentsCard), shared `components/insights/` (InsightStatCard, ChartCard,
+BreakdownPieChart, insights.utils.ts), `frontend/src/api/insights.api.ts`, `frontend/src/schemas/insights.schema.ts`.
+
+**Tests:** `components/insights/__tests__/SuperAdminDashboard.test.tsx`, `DashboardCharts.test.tsx`;
+Playwright `frontend/e2e/insights.spec.ts`.
+
+### Performance reports (Super Admin)
+
+**Route:** `/admin/performance` · **Menu:** Performance
+
+**Who can use it:** Super Admin only. Admins and Moderators who open it are sent to `/admin/courses`.
+
+**What it is for:** how much revenue and how many enrolments all courses, or one course, brought in.
+
+**How to use it:**
+
+1. The heading reads "Overview" followed by the selected course ("All courses" at first). Press the course
+   name to open the course picker: search by title, choose "All courses" or one course (draft courses carry an
+   "Unpublished" tag).
+2. The numbers: this month's revenue (with the all-time total), this month's enrolments (with the all-time
+   total) and total students split into paid / free / subscription.
+3. Pick the metric (Revenue or Enrollments) and the date range (Last 7 days, Last 30 days, Lifetime). Lifetime
+   shows one point per month, the others one per day.
+4. Switch between line, bar and pie chart. The pie always shows the all-time free / paid / subscription split.
+5. Every choice (course, range, metric, chart) is kept in the address, so a reload or a shared link shows the
+   same report. Unknown values in the address fall back to the defaults and are never sent to the server.
+
+**On mobile:** the numbers stack in one column; the metric and range pickers share one row; the chart switch
+buttons are 44 px; the course picker opens full screen.
+
+**API endpoints used:** `GET /api/performance/overview?courseId=<id|all>&dateRange=<7d|30d|lifetime>`,
+`GET /api/performance/courses`.
+
+**Code:** `frontend/src/app/admin/performance/page.tsx`, `frontend/src/components/insights/performance/`
+(PerformancePage, PerformanceHeader, PerformanceStats, PerformanceStatBlock, PerformanceControls,
+ChartTypeToggle, PerformanceChartPanel, PerformanceChart, MetricTimeChart, CourseSelectDrawer,
+CourseSelectHeader, CourseSelectOption, usePerformanceParams.ts), `frontend/src/api/insights.api.ts`.
+
+**Tests:** `components/insights/__tests__/PerformancePage.test.tsx`; Playwright `frontend/e2e/insights.spec.ts`.
 
 ### Something went wrong
 

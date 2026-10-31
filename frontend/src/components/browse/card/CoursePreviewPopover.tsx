@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
-import { toPlainText } from '../course-utils';
+import { htmlToPlainText } from '@/utils/html-text';
 
 import { CourseTypeBadge } from './CourseTypeBadge';
 import { PlanChips } from './PlanChips';
@@ -52,7 +52,7 @@ export const CoursePreviewPopover: FC<CoursePreviewPopoverProps> = ({
   onPointerLeave,
 }) => {
   const { t } = useTranslation();
-  const description = toPlainText(course.description);
+  const description = htmlToPlainText(course.description);
   const hasPlans = course.includedInSubscription && course.allowedSubscriptionPlans.length > 0;
 
   return (

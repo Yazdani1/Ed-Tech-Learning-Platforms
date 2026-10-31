@@ -1,1 +1,203 @@
-{}
+{
+  "back": "কোর্সে ফিরে যান",
+  "post": "পোস্ট করুন",
+  "you": "আপনি",
+  "unknownUser": "মুছে ফেলা ব্যবহারকারী",
+  "actionsFor": "{{title}} এর জন্য অপশন",
+  "nav": {
+    "label": "কোর্সের অংশসমূহ",
+    "overview": "কোর্স পরিচিতি",
+    "lectures": "ভিডিও লেকচার",
+    "live": "লাইভ ক্লাস",
+    "teacher": "শিক্ষক",
+    "announcements": "ঘোষণা",
+    "materials": "স্টাডি ম্যাটেরিয়াল",
+    "students": "শিক্ষার্থী",
+    "qa": "প্রশ্নোত্তর",
+    "quiz": "কুইজ ব্যাংক"
+  },
+  "status": {
+    "noAccessTitle": "কোর্সটি খুলতে ভর্তি হন",
+    "noAccessMessage": "এই কোর্সের পাঠে আপনার প্রবেশাধিকার নেই। শেখা শুরু করতে কোর্সে ভর্তি হন (অথবা আপনার সাবস্ক্রিপশন নবায়ন করুন)।",
+    "notFoundTitle": "কোর্স পাওয়া যায়নি",
+    "notFoundMessage": "এই কোর্সটি নেই অথবা এখন পাওয়া যাচ্ছে না।",
+    "viewCourse": "কোর্স দেখুন ও ভর্তি হন"
+  },
+  "fields": {
+    "title": "শিরোনাম",
+    "description": "বিবরণ"
+  },
+  "validation": {
+    "httpLink": "http:// অথবা https:// দিয়ে শুরু হওয়া একটি লিংক দিন"
+  },
+  "video": {
+    "noVideo": "এই লেকচারের কোনো ভিডিও নেই",
+    "select": "দেখা শুরু করতে একটি লেকচার বেছে নিন",
+    "duration": "সময়কাল: {{duration}}",
+    "content": "কোর্সের বিষয়বস্তু",
+    "contentSummary": "{{sections}}টি সেকশন • {{lectures}}টি লেকচার",
+    "lectureCount_one": "{{count}}টি লেকচার",
+    "lectureCount_other": "{{count}}টি লেকচার",
+    "noLectures": "এই সেকশনে কোনো লেকচার নেই।"
+  },
+  "overview": {
+    "students": "ভর্তি হওয়া শিক্ষার্থী",
+    "lectures": "ভিডিও লেকচার",
+    "duration": "মোট সময়কাল",
+    "durationValue": "{{hours}} ঘণ্টা {{minutes}} মিনিট",
+    "sections": "সেকশন",
+    "announcements": "ঘোষণা",
+    "materials": "স্টাডি ম্যাটেরিয়াল",
+    "live": "লাইভ ক্লাস",
+    "questions": "প্রশ্নোত্তরের প্রশ্ন",
+    "teachers": "মোট শিক্ষক",
+    "whatYouLearn": "আপনি যা শিখবেন",
+    "requirements": "প্রয়োজনীয়তা",
+    "about": "কোর্স সম্পর্কে"
+  },
+  "teachers": {
+    "title_one": "আপনার শিক্ষক",
+    "title_other": "আপনার শিক্ষকগণ",
+    "empty": "এই কোর্সে কোনো শিক্ষক যুক্ত নেই।"
+  },
+  "announcements": {
+    "title": "ঘোষণা ({{count}})",
+    "add": "ঘোষণা পোস্ট করুন",
+    "new": "নতুন ঘোষণা",
+    "edit": "ঘোষণা সম্পাদনা",
+    "placeholder": "ঘোষণার বিবরণ লিখুন...",
+    "empty": "এখনো কোনো ঘোষণা নেই।",
+    "posted": "ঘোষণা পোস্ট হয়েছে",
+    "updated": "ঘোষণা হালনাগাদ হয়েছে",
+    "deleted": "ঘোষণা মুছে ফেলা হয়েছে"
+  },
+  "materials": {
+    "title": "স্টাডি ম্যাটেরিয়াল ({{count}})",
+    "add": "ম্যাটেরিয়াল যোগ করুন",
+    "new": "নতুন স্টাডি ম্যাটেরিয়াল",
+    "edit": "স্টাডি ম্যাটেরিয়াল সম্পাদনা",
+    "placeholder": "স্টাডি ম্যাটেরিয়ালের বিবরণ লিখুন...",
+    "link": "রিসোর্স লিংক (ঐচ্ছিক)",
+    "open": "রিসোর্স খুলুন →",
+    "empty": "কোনো স্টাডি ম্যাটেরিয়াল নেই।",
+    "added": "স্টাডি ম্যাটেরিয়াল যোগ হয়েছে",
+    "updated": "স্টাডি ম্যাটেরিয়াল হালনাগাদ হয়েছে",
+    "deleted": "স্টাডি ম্যাটেরিয়াল মুছে ফেলা হয়েছে"
+  },
+  "live": {
+    "title": "লাইভ ক্লাস ({{count}})",
+    "add": "সপ্তাহ যোগ করুন"
+  },
+  "students": {
+    "title": "ভর্তি হওয়া শিক্ষার্থী ({{count}})",
+    "subtitle": "এই কোর্সে বর্তমানে ভর্তি থাকা শিক্ষার্থীরা।",
+    "label": "ভর্তি হওয়া শিক্ষার্থী",
+    "export": "CSV ডাউনলোড",
+    "empty": "এই কোর্সে এখনো কোনো শিক্ষার্থী ভর্তি হয়নি।"
+  },
+  "qa": {
+    "title": "প্রশ্নোত্তর ({{count}})",
+    "ask": "প্রশ্ন করুন",
+    "newQuestion": "নতুন প্রশ্ন",
+    "editQuestion": "প্রশ্ন সম্পাদনা",
+    "postQuestion": "প্রশ্ন পোস্ট করুন",
+    "questionPlaceholder": "আপনার প্রশ্ন বিস্তারিত লিখুন...",
+    "empty": "এখনো কোনো প্রশ্ন নেই। প্রথম প্রশ্নটি আপনিই করুন!",
+    "filters": "প্রশ্নের ফিল্টার",
+    "filter": {
+      "unresolved": "এখনো সমাধান হয়নি ({{count}})",
+      "all": "সব প্রশ্ন ({{count}})",
+      "needsStaffAnswer": "এখনো উত্তর দেওয়া হয়নি ({{count}})",
+      "resolved": "সমাধান হয়েছে ({{count}})"
+    },
+    "noneInFilter": "এই ফিল্টারে কোনো প্রশ্ন নেই",
+    "solved": "সমাধান হয়েছে",
+    "open": "খোলা",
+    "needsStaff": "স্টাফের উত্তর প্রয়োজন",
+    "markSolved": "সমাধান হয়েছে চিহ্নিত করুন",
+    "markNotSolved": "সমাধান হয়নি চিহ্নিত করুন",
+    "markedSolved": "প্রশ্নটি সমাধান হয়েছে হিসেবে চিহ্নিত",
+    "reopened": "প্রশ্নটি আবার খোলা হয়েছে",
+    "upvote": "আপভোট ({{count}})",
+    "removeUpvote": "আপভোট সরান ({{count}})",
+    "answerCounts_one": "{{count}}টি উত্তর · {{staff}}টি স্টাফের",
+    "answerCounts_other": "{{count}}টি উত্তর · {{staff}}টি স্টাফের",
+    "back": "প্রশ্নের তালিকায় ফিরে যান",
+    "questionLabel": "প্রশ্ন",
+    "addAnswer": "উত্তর দিন",
+    "answers_one": "{{count}}টি উত্তর",
+    "answers_other": "{{count}}টি উত্তর",
+    "answer": "উত্তর",
+    "yourAnswer": "আপনার উত্তর",
+    "editAnswer": "উত্তর সম্পাদনা",
+    "postAnswer": "উত্তর পোস্ট করুন",
+    "answerPlaceholder": "আপনার উত্তর লিখুন...",
+    "answerBy": "{{name}} এর উত্তর",
+    "answerActions": "{{name}} এর উত্তরের অপশন",
+    "thisAnswer": "এই উত্তর",
+    "questionPosted": "প্রশ্ন পোস্ট হয়েছে",
+    "questionUpdated": "প্রশ্ন হালনাগাদ হয়েছে",
+    "questionDeleted": "প্রশ্ন মুছে ফেলা হয়েছে",
+    "answerPosted": "উত্তর পোস্ট হয়েছে",
+    "answerUpdated": "উত্তর হালনাগাদ হয়েছে",
+    "answerDeleted": "উত্তর মুছে ফেলা হয়েছে"
+  },
+  "quiz": {
+    "title": "কুইজ ব্যাংক",
+    "banks": "কুইজ ব্যাংকসমূহ",
+    "sectionCount_one": "{{count}}টি সেকশন",
+    "sectionCount_other": "{{count}}টি সেকশন",
+    "empty": "এই কোর্সে এখনো কোনো কুইজ সেকশন নেই।",
+    "noBanks": "এখনো কোনো কুইজ ব্যাংক নেই।",
+    "freePreview": "ফ্রি প্রিভিউ",
+    "select": "অনুশীলন শুরু করতে একটি কুইজ ব্যাংক বেছে নিন",
+    "backToBanks": "কুইজ ব্যাংকে ফিরে যান",
+    "courseProgress": "কোর্সের কুইজ অগ্রগতি",
+    "bankProgress": "কুইজ ব্যাংকের অগ্রগতি",
+    "stats": {
+      "total": "মোট",
+      "answered": "উত্তর দেওয়া",
+      "correct": "সঠিক",
+      "incorrect": "ভুল",
+      "remaining": "এখনো উত্তর দেওয়া হয়নি",
+      "accuracy": "{{percent}}% নির্ভুলতা"
+    },
+    "subsection": {
+      "all": "সব",
+      "incorrect": "ভুল",
+      "correct": "সঠিক"
+    },
+    "subsectionTitle": {
+      "all": "সব প্রশ্ন",
+      "incorrect": "ভুল উত্তরের প্রশ্ন",
+      "correct": "সঠিক উত্তরের প্রশ্ন"
+    },
+    "progress": {
+      "all": "{{done}}/{{total}} উত্তর দেওয়া",
+      "incorrect": "{{done}}/{{total}} ভুল",
+      "correct": "{{done}}/{{total}} সঠিক"
+    },
+    "wrongCorrect": "ভুল {{wrong}} / সঠিক {{correct}}",
+    "emptySubsection": {
+      "all": "এই কুইজ ব্যাংকে এখনো কোনো প্রশ্ন নেই।",
+      "incorrect": "এখনো কোনো ভুল উত্তর নেই — অনুশীলন চালিয়ে যান!",
+      "correct": "এখনো কোনো সঠিক উত্তর নেই — চালিয়ে যান!"
+    },
+    "questionCount_one": "{{count}}টি প্রশ্ন",
+    "questionCount_other": "{{count}}টি প্রশ্ন",
+    "questionOf": "প্রশ্ন {{number}} / {{total}}",
+    "selectAll": "প্রযোজ্য সবগুলো বেছে নিন",
+    "options": "উত্তরের অপশন",
+    "check": "উত্তর যাচাই করুন",
+    "skip": "বাদ দিন",
+    "correct": "✓ সঠিক!",
+    "incorrect": "✗ ভুল — সঠিক উত্তর উপরে চিহ্নিত করা হয়েছে।",
+    "goToQuestion": "প্রশ্ন {{number}} এ যান",
+    "reset": "রিসেট",
+    "resetTitle": "অনুশীলন রিসেট",
+    "resetMessage": "এই কুইজ ব্যাংকের আপনার সব উত্তর মুছে ফেলবেন?",
+    "resetDone": "অনুশীলন রিসেট হয়েছে",
+    "resetBank": "এই কুইজ ব্যাংকের অগ্রগতি রিসেট করুন",
+    "resetBankNamed": "{{title}} এর অগ্রগতি রিসেট করুন"
+  }
+}

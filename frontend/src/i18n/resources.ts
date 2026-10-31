@@ -1,8 +1,8 @@
 // Every translation, per language. Shared keys live in <lang>.json; each migrated feature owns its own
 // file locales/<lang>/<feature>.json, available as t('<feature>.<key>').
-// Some namespaces (catalog, learn, quiz, people, insights, messaging, community, schedule, teacher) are still
-// empty on purpose: they are created ahead for the features Phase 8 migrates next, so parallel migrations
-// only fill their own files and never edit this one. Keep them until their feature lands.
+// Some namespaces (quiz, messaging, community, schedule) are still empty on purpose: they are created ahead
+// for the features Phase 8 migrates next, so parallel migrations only fill their own files and never edit
+// this one. Keep them until their feature lands.
 import enBase from './locales/en.json';
 import en_public from './locales/en/public.json';
 import en_browse from './locales/en/browse.json';
@@ -18,6 +18,7 @@ import en_showcase from './locales/en/showcase.json';
 import en_profile from './locales/en/profile.json';
 import en_student from './locales/en/student.json';
 import en_teacher from './locales/en/teacher.json';
+import en_adminCourses from './locales/en/adminCourses.json';
 import bnBase from './locales/bn.json';
 import bn_public from './locales/bn/public.json';
 import bn_browse from './locales/bn/browse.json';
@@ -33,6 +34,7 @@ import bn_showcase from './locales/bn/showcase.json';
 import bn_profile from './locales/bn/profile.json';
 import bn_student from './locales/bn/student.json';
 import bn_teacher from './locales/bn/teacher.json';
+import bn_adminCourses from './locales/bn/adminCourses.json';
 
 export const en = {
   ...enBase,
@@ -50,6 +52,7 @@ export const en = {
   profile: en_profile,
   student: en_student,
   teacher: en_teacher,
+  adminCourses: en_adminCourses,
 };
 
 export const bn = {
@@ -68,4 +71,5 @@ export const bn = {
   profile: bn_profile,
   student: bn_student,
   teacher: bn_teacher,
+  adminCourses: bn_adminCourses,
 };

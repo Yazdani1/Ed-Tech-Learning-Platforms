@@ -9,6 +9,9 @@ import { server } from './msw/server';
 import { resetNavigation } from './next-navigation';
 
 vi.mock('next/navigation', async () => (await import('./next-navigation')).nextNavigationMock);
+vi.mock('@/components/common/rich-text/LazyRichTextEditor', async () => ({
+  LazyRichTextEditor: (await import('./fake-rich-text')).FakeRichTextEditor,
+}));
 
 // MUI + i18next make the first render of a file slow (much slower in Docker on Windows): findBy* waits up to 10 s
 configure({ asyncUtilTimeout: 10_000 });

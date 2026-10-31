@@ -95,7 +95,15 @@ describe('ProfilePage', () => {
   it('shows a teacher their assigned courses and no subscription card', async () => {
     server.use(
       profileReturns(makeProfile('Teacher')),
-      http.get('*/api/teachers/my-courses', () => ok([{ _id: 'a' }, { _id: 'b' }], { total: 2 })),
+      http.get('*/api/teachers/my-courses', () =>
+        ok(
+          [
+            { _id: 'a', title: 'Algebra' },
+            { _id: 'b', title: 'Physics' },
+          ],
+          { total: 2 },
+        ),
+      ),
       forbidden('*/api/enrollments'),
     );
     renderPage();

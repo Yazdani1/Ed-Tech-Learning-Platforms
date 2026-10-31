@@ -5,8 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { usePlanCourses } from '@/api/public.api';
 import { AppModal } from '@/components/common/AppModal';
-import { SEARCH_DEBOUNCE_MS } from '@/components/course-card/CourseSearchField';
-import { usePublicDebouncedValue } from '@/hooks/usePublicDebouncedValue';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 import { PlanCoursesFilters } from './PlanCoursesFilters';
 import { PlanCoursesResults } from './PlanCoursesResults';
@@ -27,7 +26,7 @@ const EMPTY_FILTERS: PlanCourseFilters = { search: '', category: '', courseType:
 export const PlanCoursesModal: FC<PlanCoursesModalProps> = ({ open, plan, onClose }) => {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<PlanCourseFilters>(EMPTY_FILTERS);
-  const search = usePublicDebouncedValue(filters.search, SEARCH_DEBOUNCE_MS);
+  const search = useDebouncedValue(filters.search);
   const { data, isPending, error, refetch } = usePlanCourses(open ? plan?.plan : undefined, {
     ...filters,
     search,

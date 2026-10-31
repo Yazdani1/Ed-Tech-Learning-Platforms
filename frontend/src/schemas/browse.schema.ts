@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { postedBySchema } from './learn.schema';
+
 // Public catalog shapes: what GET /api/courses/browse, GET /api/courses/:id and the other public reads really
 // send (only the fields the catalog uses; unknown fields are dropped). A populated reference whose document was
 // deleted comes back as null, so references are nullish.
@@ -34,6 +36,7 @@ export type TeacherRef = z.infer<typeof teacherRefSchema>;
 export const courseLectureSchema = z.object({
   _id: z.string(),
   title: z.string(),
+  description: z.string().nullish(),
   videoUrl: z.string().nullish(),
   isPreview: z.boolean().default(false),
   /** Seconds */
@@ -49,6 +52,14 @@ export const courseSectionSchema = z.object({
 });
 export type CourseSection = z.infer<typeof courseSectionSchema>;
 
+export const courseStatusSchema = z.enum(['Draft', 'Published']);
+export type CourseStatus = z.infer<typeof courseStatusSchema>;
+export const courseVisibilitySchema = z.enum(['Public', 'Private']);
+
+/**
+ * GET /api/courses/:id: one request and cache entry for the course page, the course player and the course
+ * editor (staff also get drafts, private courses and every video address).
+ */
 export const courseSchema = z.object({
   _id: z.string(),
   title: z.string(),
@@ -60,7 +71,9 @@ export const courseSchema = z.object({
   startDate: z.string().nullish(),
   endDate: z.string().nullish(),
   teachers: z.array(teacherRefSchema.nullable()).default([]),
-  status: z.string().default('Published'),
+  status: courseStatusSchema.catch('Published'),
+  publishedAt: z.string().nullish(),
+  visibility: courseVisibilitySchema.catch('Private'),
   pricing: coursePricingSchema,
   price: z.number().nullish(),
   listPrice: z.number().nullish(),
@@ -69,6 +82,7 @@ export const courseSchema = z.object({
   includedInSubscription: z.boolean().default(false),
   allowedSubscriptionPlans: z.array(z.string()).default([]),
   whatYouWillLearn: z.array(z.string()).default([]),
+  whatYouWillGet: z.array(z.string()).default([]),
   requirements: z.array(z.string()).default([]),
   sections: z.array(courseSectionSchema.nullable()).default([]),
 });
@@ -101,7 +115,10 @@ export const browseEnvelopeSchema = z.object({
 });
 export type BrowseResult = z.infer<typeof browseEnvelopeSchema>;
 
-/** GET /api/study-curricula/course/:id items (public fields: guests get no poster or links). */
+/**
+ * GET /api/study-curricula/course/:id items: the course page, the course player and the course editor read
+ * this one list. Guests get no poster; viewers with course access also get `postedBy` and `createdAt`.
+ */
 export const liveClassWeekSchema = z.object({
   _id: z.string(),
   title: z.string().nullish(),
@@ -118,6 +135,8 @@ export const liveClassWeekSchema = z.object({
       }),
     )
     .default([]),
+  postedBy: postedBySchema.nullish(),
+  createdAt: z.string().optional(),
 });
 export type LiveClassWeek = z.infer<typeof liveClassWeekSchema>;
 

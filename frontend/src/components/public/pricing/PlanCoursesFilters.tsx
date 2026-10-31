@@ -7,8 +7,7 @@ import TextField from '@mui/material/TextField';
 import { useTranslation } from 'react-i18next';
 
 import { useCategories, useCourseTypes } from '@/api/catalog.api';
-
-import { PlanFilterSelect } from './PlanFilterSelect';
+import { FilterSelect } from '@/components/common/FilterSelect';
 
 import type { Taxonomy } from '@/schemas/catalog.schema';
 import type { PlanCourseFilters } from '@/schemas/public.schema';
@@ -53,7 +52,8 @@ export const PlanCoursesFilters: FC<PlanCoursesFiltersProps> = ({ value, onChang
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 4, md: 2 }}>
-        <PlanFilterSelect
+        <FilterSelect
+          allLabel={t('public.planCourses.any')}
           label={t('public.planCourses.category')}
           value={value.category}
           options={toOptions(categories)}
@@ -63,7 +63,8 @@ export const PlanCoursesFilters: FC<PlanCoursesFiltersProps> = ({ value, onChang
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 4, md: 2 }}>
-        <PlanFilterSelect
+        <FilterSelect
+          allLabel={t('public.planCourses.any')}
           label={t('public.planCourses.courseType')}
           value={value.courseType}
           options={toOptions(courseTypes)}
@@ -73,7 +74,8 @@ export const PlanCoursesFilters: FC<PlanCoursesFiltersProps> = ({ value, onChang
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 4, md: 2 }}>
-        <PlanFilterSelect
+        <FilterSelect
+          allLabel={t('public.planCourses.any')}
           label={t('public.planCourses.pricing')}
           value={value.pricing}
           options={[

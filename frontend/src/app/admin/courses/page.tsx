@@ -1,9 +1,9 @@
-import { MigratingPage } from '@/components/common/MigratingPage';
+import { AdminCoursesPage as AdminCoursesScreen } from '@/components/admin-courses/list/AdminCoursesPage';
 
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Courses' };
 
-const AdminCoursesPage = () => <MigratingPage titleKey="nav.courses" />;
+const AdminCoursesPage = () => <AdminCoursesScreen />;
 
 export default AdminCoursesPage;

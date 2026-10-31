@@ -141,8 +141,7 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   with role-filtered menus, RequireRole/Can, proxy.ts sign-in redirect + per-request nonce CSP).
 - Frontend hosting is Vercel, so there is no frontend Dockerfile; `docker:build` builds the backend prod image.
   A production `next build` needs BACKEND_INTERNAL_URL and NEXT_PUBLIC_SOCKET_URL (it fails without them).
-- Signed-in landing pages (/admin/dashboard, /admin/courses, /student/dashboard, /teacher/courses) and `/`
-  show MigratingPage until Phase 8; the other sidebar links 404 until their pages are migrated.
+- Pages not migrated yet (wave 3: chat, group chat, notifications, community hub, practice quiz, schedule) 404.
 - Accepted for Stage A: browser-tab titles (metadata) are English only (language is picked in the browser).
 - Phase 5 done: CI (.github/workflows/ci.yml: checks incl. docs, audits and gitleaks; backend + frontend
   lint/build; Docker test jobs; Node from .nvmrc), frontend Vitest + RTL + MSW (src/test/), Playwright
@@ -167,6 +166,11 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   today the login lock is per email); the deploy workflow deploys every branch without waiting for CI; seed
   scripts now need SEED_ADMIN_PASSWORD / SEED_STUDENT_PASSWORD.
 - Existing lint warnings (not errors): backend 4 (legacy-frontend/ is no longer linted).
-- Next: Phase 8 (migrate every page; shared building blocks in frontend/src/components/common, hooks
-  useModal/useConfirm/useUrlListParams, utils/dateTime, per-feature locale files src/i18n/locales/<lang>/<feature>.json).
+- Phase 8 in progress: wave 1 (public site, catalog, course page, student area, profile, course setup,
+  showcase) and wave 2 (admin courses + bulk edit + enrolments, course editor, course player, users,
+  teachers, subscriptions, course Q&A, teacher courses, dashboard, performance) migrated. Shared blocks:
+  frontend/src/components/common (AppModal, ResponsiveDataView, SafeHtml, ...), course-card/, api/catalog.api,
+  hooks useModal/useConfirm/useUrlListParams, utils/dateTime|price|urls|sanitizeHtml, per-feature locales
+  src/i18n/locales/<lang>/<feature>.json. Next: wave 3 (chat + group chat + notifications with the socket
+  token route, community hub, practice quiz, study schedule), then Phase 9.
 - Known follow-up (Stage B): payment gateway; until then subscribing activates the plan without payment.

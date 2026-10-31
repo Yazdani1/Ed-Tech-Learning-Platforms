@@ -62,11 +62,3 @@ export const findIntroVideoId = (course: Course): string | null => {
   );
   return youTubeId(intro?.videoUrl) ?? youTubeId(previewLectures(course)[0]?.videoUrl);
 };
-
-/** Rich text as plain text for short previews (rendered as text, never as HTML). */
-export const toPlainText = (html: string): string =>
-  html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();

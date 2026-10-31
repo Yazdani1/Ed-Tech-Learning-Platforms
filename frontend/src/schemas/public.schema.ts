@@ -52,6 +52,13 @@ export const teacherProfileSchema = z.object({
 });
 export type TeacherProfile = z.infer<typeof teacherProfileSchema>;
 
+/** The same items as Super Admin / Admin get them: also the linked login account id and the creation date. */
+export const adminTeacherSchema = teacherProfileSchema.extend({
+  userId: z.string().nullish(),
+  createdAt: z.string().nullish(),
+});
+export type AdminTeacher = z.infer<typeof adminTeacherSchema>;
+
 const namedRefSchema = z.object({ _id: z.string(), name: z.string() });
 
 /** A course in GET /api/courses/browse (the fields a course card shows). */

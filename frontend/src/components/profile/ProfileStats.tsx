@@ -7,7 +7,7 @@ import SchoolOutlined from '@mui/icons-material/SchoolOutlined';
 import Grid from '@mui/material/Grid';
 import { useTranslation } from 'react-i18next';
 
-import { useTeacherCourseCount } from '@/api/profile.api';
+import { useMyTeacherCourseCount } from '@/api/teacher.api';
 import { useMyEnrollments } from '@/api/catalog.api';
 import { formatDate } from '@/utils/dateTime';
 
@@ -30,7 +30,7 @@ export const ProfileStats: FC<ProfileStatsProps> = ({ profile }) => {
   const isTeacher = profile.role === 'Teacher';
   // Each endpoint only answers its own role (403 otherwise), so only that role asks
   const enrollments = useMyEnrollments(isStudent);
-  const teacherCourses = useTeacherCourseCount(isTeacher);
+  const teacherCourses = useMyTeacherCourseCount(isTeacher);
   const plan = getCurrentPlan(profile.activeSubscription);
 
   const courseCount = isStudent

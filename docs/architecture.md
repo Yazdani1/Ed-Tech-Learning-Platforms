@@ -72,10 +72,14 @@ flowchart LR
     Docker[Docker dev / CI] -- "is the API up?" --> Health[Health check]
 ```
 
-Frontend features (Next.js, `frontend/src`): each screen group calls its own API module, and the reads that
-several screens share (categories, course types, plans, the student's enrolments and subscription) live in
-ONE module, `api/catalog.api.ts`, with one query key each, so an enrol, unenrol, subscribe or cancel refreshes
-every screen at once. "A --> B" means A uses B.
+Frontend features (Next.js, `frontend/src`): each screen group calls its own API module, and every read that
+several screens share has ONE request and ONE query key, in one module: categories, course types, plans, the
+student's enrolments and subscription (`catalog.api`); a course by id and its live classes (`browse.api`,
+used by the course page, the course player and the course editor); teacher profiles (`public.api`); the staff
+course list (`admin-courses.api`, also used by the Teachers page); a course's enrolled students
+(`enrollment.api`); quiz sections and banks (`quiz.api`); the teacher's own courses (`teacher.api`, also the
+profile's course count). So a change made on one screen refreshes every screen that shows it. Course lists
+are refreshed together by `api/course-cache.ts`. "A --> B" means A uses B.
 
 ```mermaid
 flowchart LR
@@ -95,6 +99,40 @@ flowchart LR
     ProfileApi --> BeAuth[Authentication] & BeTeachers
     SetupApi --> BeSetup
     ShowcaseApi --> BeShowcase
+    AdminCourses[Staff courses: list, bulk edit, enrolments] -- "list, status, delete, bulk, stats, revenue" --> AdminCoursesApi[admin-courses.api]
+    AdminCourses -- "enrolled students, CSV" --> EnrollmentApi[enrollment.api]
+    AdminCourses -- "teachers" --> PublicApi
+    Editor[Course editor] -- "create, save, curriculum, quiz management" --> EditorApi[course-editor.api]
+    Editor -- "the course, live classes" --> BrowseApi
+    Editor -- "quiz sections + banks" --> QuizApi[quiz.api]
+    Editor -- "add, edit, delete weeks" --> LiveApi[live-class.api]
+    Player[Course player] -- "the course, live classes" --> BrowseApi
+    Player -- "announcements, materials, counts" --> LearnApi[learn.api]
+    Player -- "questions, answers, upvotes" --> LearnQaApi[learn-qa.api]
+    Player -- "attempts, answer, reset" --> LearnQuizApi[learn-quiz.api]
+    Player -- "quiz sections + banks" --> QuizApi
+    Player -- "add, edit, delete weeks" --> LiveApi
+    Player -- "enrolled students, CSV" --> EnrollmentApi
+    People[People: users, teachers, subscriptions, course Q&A] -- "users, teacher save, members, plans, Q&A overview" --> PeopleApi[people.api]
+    People -- "teachers" --> PublicApi
+    People -- "every course" --> AdminCoursesApi
+    People -- "open a question" --> Player
+    Teacher[Teacher: assigned courses] -- "my courses" --> TeacherApi[teacher.api]
+    Teacher -- "enrolled students" --> EnrollmentApi
+    Teacher -- "open course" --> Player
+    Profile -- "teacher course count" --> TeacherApi
+    Insights[Super Admin dashboard + performance] -- "dashboard, performance" --> InsightsApi[insights.api]
+    AdminCoursesApi --> BeCourses & BeEnrol
+    EnrollmentApi --> BeEnrol
+    EditorApi --> BeCourses & BeQuiz
+    QuizApi --> BeQuiz
+    LiveApi --> BeCurr
+    LearnApi --> BeContent[Announcements + study materials] & BeEnrol
+    LearnQaApi --> BeQa[Course Q&A]
+    LearnQuizApi --> BeQuiz
+    PeopleApi --> BeUsers[Users] & BeTeachers & BeSubs & BePlans & BeQa
+    TeacherApi --> BeTeachers
+    InsightsApi --> BeDash[Dashboard + performance]
 ```
 
 ## Key flows
@@ -166,6 +204,40 @@ sequenceDiagram
         B-->>S: 200 materials
     else anyone else
         B-->>S: 403
+    end
+```
+
+### Course player
+
+The player (`/student/courses/[id]/learn`, `/teacher/courses/[id]/learn`, `/admin/courses/[id]/learn`) first
+reads the course outline, which is public (the same request and cache entry as the course page, read again
+on open because video addresses depend on access). The announcements request is the access check of the
+whole player: a 403 shows "Enrol to open this course", a 404 "Course not found". The other tabs load their
+own lists only when opened. In the Quiz Bank tab the server marks every answer: the bank list arrives without
+the correct answers of unanswered questions; after an answer the player stores the returned attempt and
+reads the banks again, which now carry that question's correct answers and explanations. Staff open a
+question from All Course Q & A straight in the player's Q&A tab (`?tab=qa&questionId=`).
+
+```mermaid
+sequenceDiagram
+    actor S as Student
+    participant P as Course player (Next.js)
+    participant B as Express backend
+    S->>P: Open /student/courses/:id/learn
+    P->>B: GET /api/courses/:id (outline, public)
+    P->>B: GET /api/announcements/course/:id (access check)
+    alt 403 / 404
+        B-->>P: error
+        P-->>S: "Enrol to open this course" / "Course not found"
+    else access
+        B-->>P: 200 announcements
+        P-->>S: Video lectures + tabs
+        S->>P: Quiz Bank tab, picks an answer
+        P->>B: GET quiz sections, banks (no answers yet), my attempts
+        P->>B: POST /api/quiz-bank/:bankId/attempt/answer
+        B-->>P: attempt (isCorrect)
+        P->>B: GET /api/quiz-bank/course/:id (now with this question's answers)
+        P-->>S: Correct / wrong, explanation
     end
 ```
 

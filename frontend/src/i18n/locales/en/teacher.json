@@ -1,1 +1,23 @@
-{}
+{
+  "title": "My Courses",
+  "subtitle": "Courses you are assigned to teach.",
+  "empty": "No courses assigned to you yet. If you expected courses here, ask an admin to link your teacher profile to your account.",
+  "status": {
+    "Published": "Published",
+    "Draft": "Draft"
+  },
+  "visibility": {
+    "Public": "Public",
+    "Private": "Private"
+  },
+  "assignedTeachers": "Assigned teachers",
+  "noTeachers": "No teachers assigned",
+  "view": "View",
+  "viewAria": "Open \"{{title}}\"",
+  "students": "Students",
+  "studentsAria": "Enrolled students of \"{{title}}\"",
+  "studentsTitle": "Enrolled students: {{title}}",
+  "studentsEmpty": "No students enrolled yet.",
+  "studentsLabel": "Enrolled students",
+  "listLabel": "Assigned courses"
+}

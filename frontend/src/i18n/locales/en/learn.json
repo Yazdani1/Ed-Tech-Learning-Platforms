@@ -1,1 +1,203 @@
-{}
+{
+  "back": "Back to courses",
+  "post": "Post",
+  "you": "You",
+  "unknownUser": "Deleted user",
+  "actionsFor": "Actions for {{title}}",
+  "nav": {
+    "label": "Course sections",
+    "overview": "Course Overview",
+    "lectures": "Video Lectures",
+    "live": "Live Class",
+    "teacher": "Teacher",
+    "announcements": "Announcements",
+    "materials": "Study Materials",
+    "students": "Students",
+    "qa": "Q & A",
+    "quiz": "Quiz Bank"
+  },
+  "status": {
+    "noAccessTitle": "Enrol to open this course",
+    "noAccessMessage": "You do not have access to this course's lessons. Enrol in the course (or renew your subscription) to start learning.",
+    "notFoundTitle": "Course not found",
+    "notFoundMessage": "This course does not exist or is not available.",
+    "viewCourse": "View course & enrol"
+  },
+  "fields": {
+    "title": "Title",
+    "description": "Description"
+  },
+  "validation": {
+    "httpLink": "Enter a link that starts with http:// or https://"
+  },
+  "video": {
+    "noVideo": "No video available for this lecture",
+    "select": "Select a lecture to start watching",
+    "duration": "Duration: {{duration}}",
+    "content": "Course Content",
+    "contentSummary": "{{sections}} sections • {{lectures}} lectures",
+    "lectureCount_one": "{{count}} lecture",
+    "lectureCount_other": "{{count}} lectures",
+    "noLectures": "No lectures in this section."
+  },
+  "overview": {
+    "students": "Enrolled Students",
+    "lectures": "Video Lectures",
+    "duration": "Total Duration",
+    "durationValue": "{{hours}}hr {{minutes}}min",
+    "sections": "Sections",
+    "announcements": "Announcements",
+    "materials": "Study Materials",
+    "live": "Live Class",
+    "questions": "Q & A Questions",
+    "teachers": "Total Teachers",
+    "whatYouLearn": "What you'll learn",
+    "requirements": "Requirements",
+    "about": "About this course"
+  },
+  "teachers": {
+    "title_one": "Your Instructor",
+    "title_other": "Your Instructors",
+    "empty": "No instructors listed for this course."
+  },
+  "announcements": {
+    "title": "Announcements ({{count}})",
+    "add": "Post Announcement",
+    "new": "New Announcement",
+    "edit": "Edit Announcement",
+    "placeholder": "Enter announcement description...",
+    "empty": "No announcements yet.",
+    "posted": "Announcement posted",
+    "updated": "Announcement updated",
+    "deleted": "Announcement deleted"
+  },
+  "materials": {
+    "title": "Study Materials ({{count}})",
+    "add": "Add Material",
+    "new": "New Study Material",
+    "edit": "Edit Study Material",
+    "placeholder": "Enter study material description...",
+    "link": "Resource Link (optional)",
+    "open": "Open Resource →",
+    "empty": "No study materials available.",
+    "added": "Study material added",
+    "updated": "Study material updated",
+    "deleted": "Study material deleted"
+  },
+  "live": {
+    "title": "Live Class ({{count}})",
+    "add": "Add Week"
+  },
+  "students": {
+    "title": "Enrolled Students ({{count}})",
+    "subtitle": "Students currently enrolled in this course.",
+    "label": "Enrolled students",
+    "export": "Export CSV",
+    "empty": "No students enrolled in this course yet."
+  },
+  "qa": {
+    "title": "Q & A ({{count}})",
+    "ask": "Ask a Question",
+    "newQuestion": "New Question",
+    "editQuestion": "Edit Question",
+    "postQuestion": "Post Question",
+    "questionPlaceholder": "Describe your question in detail...",
+    "empty": "No questions yet. Be the first to ask a question!",
+    "filters": "Question filters",
+    "filter": {
+      "unresolved": "Not resolved yet ({{count}})",
+      "all": "All questions ({{count}})",
+      "needsStaffAnswer": "Not answered yet ({{count}})",
+      "resolved": "Already resolved ({{count}})"
+    },
+    "noneInFilter": "No questions in this filter",
+    "solved": "Solved",
+    "open": "Open",
+    "needsStaff": "Needs staff answer",
+    "markSolved": "Mark solved",
+    "markNotSolved": "Mark not solved",
+    "markedSolved": "Question marked as solved",
+    "reopened": "Question reopened",
+    "upvote": "Upvote ({{count}})",
+    "removeUpvote": "Remove upvote ({{count}})",
+    "answerCounts_one": "{{count}} answer · {{staff}} staff",
+    "answerCounts_other": "{{count}} answers · {{staff}} staff",
+    "back": "Back to Questions",
+    "questionLabel": "Question",
+    "addAnswer": "Add Answer",
+    "answers_one": "{{count}} Answer",
+    "answers_other": "{{count}} Answers",
+    "answer": "Answer",
+    "yourAnswer": "Your Answer",
+    "editAnswer": "Edit Answer",
+    "postAnswer": "Post Answer",
+    "answerPlaceholder": "Write your answer...",
+    "answerBy": "Answer by {{name}}",
+    "answerActions": "Actions for the answer by {{name}}",
+    "thisAnswer": "this answer",
+    "questionPosted": "Question posted",
+    "questionUpdated": "Question updated",
+    "questionDeleted": "Question deleted",
+    "answerPosted": "Answer posted",
+    "answerUpdated": "Answer updated",
+    "answerDeleted": "Answer deleted"
+  },
+  "quiz": {
+    "title": "Quiz Bank",
+    "banks": "Quiz banks",
+    "sectionCount_one": "{{count}} section",
+    "sectionCount_other": "{{count}} sections",
+    "empty": "No quiz sections in this course yet.",
+    "noBanks": "No quiz banks yet.",
+    "freePreview": "Free Preview",
+    "select": "Select a quiz bank to start practising",
+    "backToBanks": "Back to quiz banks",
+    "courseProgress": "Course quiz progress",
+    "bankProgress": "Quiz bank progress",
+    "stats": {
+      "total": "Total",
+      "answered": "Answered",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "remaining": "Not Answered Yet",
+      "accuracy": "{{percent}}% accuracy"
+    },
+    "subsection": {
+      "all": "All",
+      "incorrect": "Wrong",
+      "correct": "Correct"
+    },
+    "subsectionTitle": {
+      "all": "All Questions",
+      "incorrect": "Incorrect Questions",
+      "correct": "Correct Questions"
+    },
+    "progress": {
+      "all": "{{done}}/{{total}} answered",
+      "incorrect": "{{done}}/{{total}} wrong",
+      "correct": "{{done}}/{{total}} correct"
+    },
+    "wrongCorrect": "Wrong {{wrong}} / Correct {{correct}}",
+    "emptySubsection": {
+      "all": "No questions in this quiz bank yet.",
+      "incorrect": "No incorrect answers yet — keep practising!",
+      "correct": "No correct answers yet — keep going!"
+    },
+    "questionCount_one": "{{count}} question",
+    "questionCount_other": "{{count}} questions",
+    "questionOf": "Q {{number}} of {{total}}",
+    "selectAll": "Select all that apply",
+    "options": "Answer options",
+    "check": "Check Answer",
+    "skip": "Skip",
+    "correct": "✓ Correct!",
+    "incorrect": "✗ Incorrect — correct answer(s) are highlighted above.",
+    "goToQuestion": "Go to question {{number}}",
+    "reset": "Reset",
+    "resetTitle": "Reset Practice",
+    "resetMessage": "Clear all your answers for this quiz bank?",
+    "resetDone": "Practice reset",
+    "resetBank": "Reset progress for this quiz bank",
+    "resetBankNamed": "Reset progress for {{title}}"
+  }
+}

@@ -33,7 +33,7 @@ test.describe('Sign in', () => {
       [ACCOUNTS.superAdmin, '/admin/dashboard', 'Dashboard'],
       [ACCOUNTS.admin, '/admin/courses', 'Courses'],
       [ACCOUNTS.moderator, '/admin/courses', 'Courses'],
-      [ACCOUNTS.teacher, '/teacher/courses', 'Assigned courses'],
+      [ACCOUNTS.teacher, '/teacher/courses', 'My Courses'],
       [ACCOUNTS.student, '/student/dashboard', 'Dashboard'],
     ] as const;
     for (const [account, home, heading] of homes) {
@@ -41,7 +41,9 @@ test.describe('Sign in', () => {
         await signIn(page, account.email);
 
         await expect(page).toHaveURL(new RegExp(`${home}$`));
-        await expect(page.getByRole('heading', { name: heading })).toBeVisible();
+        await expect(
+          page.getByRole('heading', { name: heading, exact: true, level: 1 }),
+        ).toBeVisible();
         await expectNoHorizontalScroll(page);
       });
     }

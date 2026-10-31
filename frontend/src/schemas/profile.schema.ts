@@ -31,9 +31,6 @@ export const profileSchema = userSchema.extend({
 });
 export type Profile = z.infer<typeof profileSchema>;
 
-/** One item of GET /api/teachers/my-courses (the profile only counts them). */
-export const teacherCourseRefSchema = z.object({ _id: z.string() });
-
 /** The edit form (validation messages are i18n keys). */
 export interface ProfileFormValues {
   name: string;

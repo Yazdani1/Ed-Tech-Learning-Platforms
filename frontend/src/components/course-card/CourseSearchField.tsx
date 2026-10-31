@@ -6,6 +6,8 @@ import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
 import { useEffect, useState } from 'react';
 
+import { SEARCH_DEBOUNCE_MS } from '@/hooks/useDebouncedValue';
+
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { FC } from 'react';
 
@@ -22,9 +24,6 @@ interface CourseSearchFieldProps {
   /** Layout of the wrapper (margins, max width) */
   sx?: SxProps<Theme>;
 }
-
-/** Waits this long after the last key before searching (as the old pages did). */
-export const SEARCH_DEBOUNCE_MS = 350;
 
 /** Course search box: types freely, searches (updates the URL) shortly after typing stops. */
 export const CourseSearchField: FC<CourseSearchFieldProps> = ({

@@ -1,3 +1,9 @@
 # --relative and --max-arg-length: Windows limits a command line to ~8000 characters; large commits with
 # absolute paths under "V:\Business Web Project\..." exceed it ("The command line is too long").
 npx lint-staged --relative --max-arg-length 4000
+
+# Whole-project checks run ONCE per commit (inside lint-staged they would run once per file chunk, in
+# parallel): type-check both apps, the frontend architecture rules, and refresh the generated diagrams.
+if git diff --cached --name-only | grep -qE '\.(ts|tsx)$'; then
+  npm run typecheck && npm run arch:check && npm run docs:generate && git add docs/database.md docs/dependency-graph.md
+fi

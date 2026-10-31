@@ -6,7 +6,6 @@ import {
   formatLectureDuration,
   previewLectures,
   splitDuration,
-  toPlainText,
   youTubeId,
 } from '../course-utils';
 import { getSubscriptionState } from '../detail/enrollment/subscription-state';
@@ -54,10 +53,6 @@ describe('durations and videos', () => {
     expect(previewLectures(course).map((lecture) => lecture._id)).toEqual(['l1', 'l2']);
     expect(countLectures(course)).toBe(3);
     expect(findIntroVideoId(makeCourse())).toBeNull();
-  });
-
-  it('strips HTML for previews', () => {
-    expect(toPlainText('<p>Hello&nbsp;<b>world</b></p>')).toBe('Hello world');
   });
 });
 

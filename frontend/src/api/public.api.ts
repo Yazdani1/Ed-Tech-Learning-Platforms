@@ -8,13 +8,13 @@ import {
   coursePageSchema,
   heroPostSchema,
   siteLogoSchema,
-  teacherProfileSchema,
+  adminTeacherSchema,
   type ActiveDiscount,
   type CoursePage,
   type HeroPost,
   type PlanCourseFilters,
   type SiteLogo,
-  type TeacherProfile,
+  type AdminTeacher,
 } from '@/schemas/public.schema';
 import { http, type ApiError } from '@/services/http.service';
 
@@ -40,8 +40,9 @@ export const getHeroPosts = (): Promise<HeroPost[]> =>
 export const getActiveDiscount = (): Promise<ActiveDiscount> =>
   http.get('/api/courses/discounts/active', activeDiscountSchema);
 
-export const getTeachers = (): Promise<TeacherProfile[]> =>
-  http.get('/api/teachers', z.array(teacherProfileSchema));
+/** Every teacher profile (Super Admin / Admin also receive `userId` and `createdAt`). */
+export const getTeachers = (): Promise<AdminTeacher[]> =>
+  http.get('/api/teachers', z.array(adminTeacherSchema));
 
 export const getHomeCourses = (page: number): Promise<CoursePage> =>
   http.getEnvelope('/api/courses/browse', coursePageSchema, {
@@ -79,7 +80,7 @@ export const useActiveDiscount = (): UseQueryResult<ActiveDiscount, ApiError> =>
     staleTime: CHROME_STALE_MS,
   });
 
-export const useTeachers = (): UseQueryResult<TeacherProfile[], ApiError> =>
+export const useTeachers = (): UseQueryResult<AdminTeacher[], ApiError> =>
   useQuery({ queryKey: queryKeys.public.teachers, queryFn: getTeachers });
 
 export const useHomeCourses = (page: number): UseQueryResult<CoursePage, ApiError> =>
