@@ -5,8 +5,11 @@
 //   node scripts/docker-test.mjs backend    (npm run test:backend)   Vitest + Supertest against mongo-test
 //   node scripts/docker-test.mjs frontend   (npm run test:frontend)  Vitest + React Testing Library + MSW
 //   node scripts/docker-test.mjs e2e        (npm run test:e2e)       Playwright, desktop + mobile
+//   node scripts/docker-test.mjs e2e public browse                    only e2e/public.spec.ts + browse.spec.ts
 //   node scripts/docker-test.mjs build      (npm run docker:build)   backend production image builds
 //   node scripts/docker-test.mjs check      (npm run check)          everything above + lint, types, docs
+//   node scripts/docker-test.mjs check:feature public browse        (npm run check:feature -- public browse)
+//        per feature: lint, types, format, docs, ALL backend + frontend tests, e2e of the named specs only
 
 import { spawnSync } from 'node:child_process';
 
@@ -33,8 +36,8 @@ function checkDocker() {
   }
 }
 
-/** One test service in the test stack, then the stack is removed (keeps the test's exit code). */
-function testService(service, extra = []) {
+/** One test service in the test stack (optionally another command), then the stack is removed (keeps the exit code). */
+function testService(service, extra = [], command = []) {
   checkDocker();
   const status = run('docker', [
     'compose',
@@ -44,6 +47,7 @@ function testService(service, extra = []) {
     '--rm',
     '--build',
     service,
+    ...command,
   ]);
   run('docker', ['compose', ...TEST_STACK, ...extra, 'down', '-v', '--remove-orphans']);
   return status;
@@ -64,31 +68,73 @@ function buildImages() {
   ]);
 }
 
+/** Spec names after the target ("public", "public.spec.ts" or "e2e/public.spec.ts") as frontend/e2e paths. */
+function specPaths() {
+  return process.argv.slice(3).map((name) => {
+    const base = name.replace(/^e2e\//, '').replace(/\.spec\.ts$/, '');
+    // Plain file names only: no options, no paths outside frontend/e2e
+    if (!/^[a-z0-9-]+$/i.test(base)) {
+      console.error(`Not an e2e spec name: ${name} (use e.g. "public" for e2e/public.spec.ts)`);
+      process.exit(2);
+    }
+    return `e2e/${base}.spec.ts`;
+  });
+}
+
+/** Playwright: every spec, or only the named ones. */
+function e2e(specs) {
+  if (specs.length === 0) return testService('playwright', E2E);
+  return testService('playwright', E2E, ['npx', 'playwright', 'test', ...specs]);
+}
+
+/** Runs the steps in order and stops at the first failure. */
+function runSteps(label, steps) {
+  for (const [name, step] of steps) {
+    if (step() !== 0) {
+      console.error(`\n${label} FAILED at: ${name}`);
+      return 1;
+    }
+  }
+  console.log(`\n${label} passed`);
+  return 0;
+}
+
+const FAST_CHECKS = [
+  ['lint', () => run(NPM, ['run', 'lint'])],
+  ['typecheck', () => run(NPM, ['run', 'typecheck'])],
+  ['format:check', () => run(NPM, ['run', 'format:check'])],
+  ['docs:check', () => run(NPM, ['run', 'docs:check'])],
+];
+
 const STEPS = {
   backend: () => testService('backend-test'),
   frontend: () => testService('frontend-test'),
-  e2e: () => testService('playwright', E2E),
+  e2e: () => e2e(specPaths()),
   build: buildImages,
   // Fast checks first, then the test suites, then the production build
-  check: () => {
-    const steps = [
-      ['lint', () => run(NPM, ['run', 'lint'])],
-      ['typecheck', () => run(NPM, ['run', 'typecheck'])],
-      ['format:check', () => run(NPM, ['run', 'format:check'])],
-      ['docs:check', () => run(NPM, ['run', 'docs:check'])],
+  check: () =>
+    runSteps('check', [
+      ...FAST_CHECKS,
       ['test:backend', STEPS.backend],
       ['test:frontend', STEPS.frontend],
-      ['test:e2e', STEPS.e2e],
+      ['test:e2e', () => e2e([])],
       ['docker:build', buildImages],
-    ];
-    for (const [name, step] of steps) {
-      if (step() !== 0) {
-        console.error(`\ncheck FAILED at: ${name}`);
-        return 1;
-      }
+    ]),
+  // After each feature: the same, but e2e only for the named specs and no image build (CI runs everything)
+  'check:feature': () => {
+    const specs = specPaths();
+    if (specs.length === 0) {
+      console.error(
+        'Name the e2e specs of the feature, e.g. npm run check:feature -- public browse',
+      );
+      return 2;
     }
-    console.log('\ncheck passed');
-    return 0;
+    return runSteps('check:feature', [
+      ...FAST_CHECKS,
+      ['test:backend', STEPS.backend],
+      ['test:frontend', STEPS.frontend],
+      [`test:e2e (${specs.join(', ')})`, () => e2e(specs)],
+    ]);
   },
 };
 

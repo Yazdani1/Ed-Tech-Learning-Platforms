@@ -22,7 +22,8 @@
     "test:frontend": "node scripts/docker-test.mjs frontend",
     "test:e2e": "node scripts/docker-test.mjs e2e",
     "docker:build": "node scripts/docker-test.mjs build",
-    "check": "node scripts/docker-test.mjs check"
+    "check": "node scripts/docker-test.mjs check",
+    "check:feature": "node scripts/docker-test.mjs check:feature"
   },
   "devDependencies": {
     "dependency-cruiser": "18.7.0",

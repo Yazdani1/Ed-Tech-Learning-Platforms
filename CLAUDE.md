@@ -15,7 +15,7 @@ Source of truth: the user's instructions (in conversation) and this file.
 - backend/ Express 5 + TypeScript + Mongoose + MongoDB, Socket.io, Cloudinary. **Its structure and patterns
   stay as they are** (see .claude/rules/backend.md). Deployed on Render (render.yaml).
 - frontend/ Next.js (App Router) + TypeScript + MUI v9 + TanStack Query + i18next (mobile responsive).
-  Deployed on Vercel (deploy hook in .github/workflows/deploy.yml).
+  Deployed on Vercel (deploy hook in .github/workflows/deploy.yml, called by ci.yml after CI passes).
 - docker/ dev + test compose files and Dockerfiles. Root compose.yml includes docker/compose.dev.yml.
 - docs/ architecture, backend-features, frontend-features (by hand), database + dependency graph (generated).
 
@@ -27,11 +27,15 @@ Source of truth: the user's instructions (in conversation) and this file.
   backend/.env is optional; MONGO_URI, PORT and CLIENT_URL are overridden to use the local stack.
 - npm run test:backend: Vitest + Supertest against the mongo-test container
 - npm run test:frontend: Vitest + React Testing Library + MSW
-- npm run test:e2e: Playwright (desktop AND mobile)
+- npm run test:e2e: Playwright (desktop AND mobile); `npm run test:e2e -- public browse` runs only those specs
 - npm run lint / npm run typecheck: both apps (+ dependency-cruiser)
 - npm run docs:generate / docs:check
-- npm run check: lint + typecheck + format:check + docs:check + all tests + docker build. Must pass
-  before every commit.
+- npm run check:feature -- <specs>: lint + typecheck + format:check + docs:check + ALL backend and frontend
+  tests + e2e of the named specs only (e.g. `-- public browse`). Must pass before every commit.
+- npm run check: the same + ALL e2e specs + docker build (~30 min). Run when the user asks ("run the full
+  check"), before merging to main, and after changes to shared building blocks used across the app (http
+  service, auth, AppShell/layouts, theme, i18n setup). CI runs the full suite on every push anyway.
+- Before any long run: run format:check and docs:check first (seconds) so the long run does not fail late.
 - "It needs Docker" is never a reason to skip a test: check `docker info`, start Docker Desktop, run it.
 - Per app (also used by CI): `npm --prefix backend run build|lint|lint:fix`,
   `npm --prefix backend run seed:discount-courses|seed:subscriptions`. Demo data for local testing (20 courses,
@@ -98,7 +102,7 @@ Source of truth: the user's instructions (in conversation) and this file.
 - Dates: Luxon helpers in utils/dateTime; shown in the viewer's own (browser) time zone; the backend stores UTC.
 - NEVER run git merge, rebase, reset or force-push, and NEVER create, switch or delete branches: the user does
   that. Since 2026-10-29 (user's decision) Claude commits each finished, fully checked step itself on the
-  current branch and pushes it to its origin branch (a push runs deploy.yml).
+  current branch and pushes it to its origin branch (a push runs CI; CI deploys only when everything passed).
 - "The changes" = everything not committed yet (`git diff HEAD` + untracked files). The user commits after
   each feature, so agent reviews cover only the current feature.
 
@@ -113,11 +117,13 @@ useDeleteConfirm, <Can> / <RequireRole>, no hard-coded text (i18n keys).
   page: component tests + a Playwright flow (desktop + mobile).
 - **Definition of done for EVERY change** (run by Claude, never left to the user):
   1. `npm run lint` and `npm run typecheck` clean (0 errors, 0 warnings); `npm run docs:check` up to date.
-  2. Tests for what changed added/updated and PASSING: backend -> `npm run test:backend`; frontend ->
-     `npm run test:frontend` AND `npm run test:e2e`.
-  3. Review: `test-engineer` and `code-reviewer` agents (plus `security-auditor` for backend, auth, payments,
-     uploads or roles). Fix every Critical/High/Major finding yourself (backend: smallest change in the
-     existing style, never a restructure), re-run tests. Save reports to `.claude/reports/` and show a summary table.
+  2. Tests for what changed added/updated and PASSING via `npm run check:feature -- <specs>`: every backend
+     and frontend test, plus the e2e specs of the feature AND of every page that uses shared code the change
+     touched (e.g. a shared card -> the specs of all pages showing it). The full e2e suite runs in CI.
+  3. Review: `code-reviewer` agent; plus `security-auditor` for backend, auth, payments, uploads or roles;
+     plus `test-engineer` for new endpoints/pages or larger features (the agents run in parallel). Fix every
+     Critical/High/Major finding yourself (backend: smallest change in the existing style, never a
+     restructure), re-run tests. Save reports to `.claude/reports/` and show a summary table.
   4. Docs updated (documentation rules).
   5. Final message lists each check with its real result. Never "done" while a check failed or did not run.
 - Until the root scripts exist (Stage A, Phases 2-5), run what exists: `npm --prefix backend run build`,
@@ -164,7 +170,8 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   without JWT_SECRET. Seed scripts need SEED_ADMIN_PASSWORD / SEED_STUDENT_PASSWORD.
 - Accepted: browser-tab titles (metadata) are English only; the Next.js dev badge is off (devIndicators false).
 - Open decisions for the user: per-IP rate limiting (needs express-rate-limit + the real proxy hop count;
-  today the login lock is per email); deploy.yml deploys every branch on push without waiting for CI.
+  today the login lock is per email); every branch deploys on push (now only after CI passed: ci.yml calls
+  deploy.yml; a manual "Run workflow" on Deploy skips CI).
 - Existing lint warnings (not errors): backend 4.
 - Known follow-up (Stage B): payment gateway; until then subscribing activates the plan and paid courses can be
   enrolled in without payment.

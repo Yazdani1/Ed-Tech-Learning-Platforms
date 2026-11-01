@@ -4,7 +4,7 @@
 #   checks ────┤
 #              └─> frontend (lint + build) ──> frontend-test (Docker: Vitest + RTL + MSW, then Playwright)
 #
-# Deploys stay in deploy.yml (Vercel deploy hook + Render API).
+#   all of the above pass ──> deploy (deploy.yml: Vercel deploy hook + Render API; pushes only)
 name: CI
 
 on:
@@ -130,3 +130,11 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report
           retention-days: 7
+
+  deploy:
+    name: Deploy (after every check and test passed)
+    needs: [checks, backend, backend-test, frontend, frontend-test]
+    # Pushes and manual runs deploy; pull requests only run the checks
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit

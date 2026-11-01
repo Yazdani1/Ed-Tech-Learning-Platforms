@@ -1,52 +1,20 @@
+# Deploy: the Vercel deploy hook (frontend) and the Render API (backend).
+# Called by ci.yml only after every CI job passed (lint, types, format, docs, audit, secrets, builds,
+# backend tests, frontend component tests and all Playwright e2e tests), so a failing push never deploys.
+# Can also be started by hand (Actions > Deploy > Run workflow); that skips CI on purpose.
 name: Deploy
 
 on:
-  push: {}
+  workflow_call: {}
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 jobs:
-  ci-backend:
-    name: Backend - Lint and Build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: .nvmrc
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run build
-
-  ci-frontend:
-    name: Frontend - Lint and Build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: .nvmrc
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run build
-        env:
-          # Build-only values: the real URLs are set in Vercel (frontend/.env.example)
-          BACKEND_INTERNAL_URL: http://localhost:5000
-          NEXT_PUBLIC_SOCKET_URL: http://localhost:5000
-
   deploy-frontend:
     name: Deploy Frontend to Vercel
     runs-on: ubuntu-latest
-    needs: ci-frontend
     steps:
       - name: Trigger Vercel deploy
         run: |
@@ -56,7 +24,6 @@ jobs:
   deploy-backend:
     name: Deploy Backend to Render
     runs-on: ubuntu-latest
-    needs: ci-backend
     steps:
       - name: Trigger Render deploy
         run: |
