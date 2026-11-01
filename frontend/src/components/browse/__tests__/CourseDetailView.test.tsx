@@ -41,6 +41,7 @@ const courseHandlers = (overrides: { course?: unknown } = {}) => [
   http.get(`*/api/study-curricula/course/${course._id}`, () => ok([WEEK])),
   http.get(`*/api/quiz-bank/public/course/${course._id}`, () =>
     ok({
+      course,
       sections: [
         {
           _id: 'qs1',

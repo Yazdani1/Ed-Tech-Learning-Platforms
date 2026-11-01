@@ -1,1 +1,99 @@
-{}
+{
+  "chat": {
+    "title": "Support Chat",
+    "subtitle": "Our team is here to help you",
+    "online": "Online",
+    "searchMessages": "Search messages...",
+    "placeholder": "Type your message...",
+    "messageLabel": "Message",
+    "messagesLabel": "Messages",
+    "send": "Send message",
+    "welcomeTitle": "Welcome to Support Chat! 👋",
+    "welcomeBody": "Send us a message and we'll respond as soon as possible.",
+    "noMatch": "No messages match your search.",
+    "you": "You",
+    "typing": "{{name}} is typing",
+    "tooLong": "Message is too long",
+    "sendFailed": "Failed to send message",
+    "inbox": "Support Inbox",
+    "searchStudents": "Search students...",
+    "conversations": "Conversations",
+    "noConversations": "No conversations yet",
+    "activeNow": "Active now",
+    "offline": "Offline",
+    "noMessagesYet": "No messages yet",
+    "studentFallback": "Student",
+    "startConversation": "No messages yet. Start the conversation!",
+    "replyTo": "Reply to {{name}}...",
+    "selectTitle": "Select a conversation",
+    "selectBody": "Choose a student from the list to view their messages",
+    "back": "Back to conversations",
+    "unread": "{{count}} unread",
+    "openWidget": "Open support chat",
+    "closeWidget": "Close support chat"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitleSender": "Send targeted announcements and manage notification history.",
+    "subtitleReader": "Review updates sent by your learning platform team.",
+    "tabsLabel": "Notification sections",
+    "tabs": {
+      "send": "Send Notification",
+      "all": "All Notifications",
+      "sent": "Sent Notifications"
+    },
+    "allTitle": "All Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications yet.",
+    "sentTitle": "Sent Notifications",
+    "sentSubtitle": "Edit, reprioritize, or remove notifications sent by the admin team.",
+    "sentEmpty": "No notifications sent yet.",
+    "sendTitle": "Send Push Notification",
+    "send": "Send Notification",
+    "sentToast": "Notification sent",
+    "updated": "Notification updated",
+    "deleted": "Notification deleted",
+    "allRead": "All notifications marked as read",
+    "editTitle": "Edit Notification",
+    "saveChanges": "Save Changes",
+    "unread": "Unread",
+    "sentBy": "Sent by",
+    "adminFallback": "Admin",
+    "toggle": "Show or hide: {{title}}",
+    "actionsFor": "Actions for {{title}}",
+    "deleteTitle": "Delete Notification",
+    "deleteMessage": "Delete \"{{title}}\"? Recipients will no longer see it.",
+    "priority": {
+      "Low": "Low",
+      "Normal": "Normal",
+      "High": "High",
+      "Urgent": "Urgent"
+    },
+    "roles": {
+      "Super Admin": "Super Admin",
+      "Admin": "Admin",
+      "Moderator": "Moderator",
+      "Teacher": "Teacher",
+      "Student": "Student"
+    },
+    "form": {
+      "title": "Title",
+      "message": "Message",
+      "messagePlaceholder": "Write your notification message...",
+      "priority": "Priority",
+      "roles": "Send to roles",
+      "titleTooLong": "The title can have at most 140 characters",
+      "messageTooLong": "The message is too long (at most 2000 characters with formatting)",
+      "rolesRequired": "Select at least one recipient role"
+    }
+  },
+  "topBar": {
+    "notifications": "Notifications",
+    "notificationsUnread": "Notifications ({{count}} unread)",
+    "chat": "Support Chat",
+    "chatUnread": "Support Chat ({{count}} unread)"
+  },
+  "nav": {
+    "withUnread": "{{label}} ({{count}} unread)"
+  }
+}

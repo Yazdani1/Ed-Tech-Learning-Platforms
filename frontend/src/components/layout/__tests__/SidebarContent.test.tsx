@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { queryKeys } from '@/api/query-keys';
-import { fail, makeUser, signedInAs } from '@/test/msw/handlers';
+import { fail, makeUser, ok, signedInAs } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { setLocation } from '@/test/next-navigation';
 import { renderWithProviders } from '@/test/render';
@@ -115,5 +115,24 @@ describe('SidebarContent', () => {
 
     expect(await screen.findByRole('link', { name: 'Courses' })).toBeInTheDocument();
     expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
+  });
+
+  it('puts the unread counts into the accessible names of the menu items', async () => {
+    server.use(
+      signedInAs(makeUser('Admin')),
+      http.get('*/api/notifications/unread-count', () => ok({ count: 3 })),
+      http.get('*/api/chat/conversations', () =>
+        ok([{ _id: 'c1', student: null, unreadByStaff: 2, lastMessage: '' }]),
+      ),
+    );
+    renderWithProviders(<SidebarContent navItems={ADMIN_NAV} collapsed={false} />);
+    const menu = await screen.findByRole('navigation', { name: 'Main menu' });
+    expect(
+      await within(menu).findByRole('link', { name: 'Notifications (3 unread)' }),
+    ).toBeInTheDocument();
+    expect(
+      await within(menu).findByRole('link', { name: 'Support Chat (2 unread)' }),
+    ).toBeInTheDocument();
+    expect(within(menu).getByRole('link', { name: 'Courses' })).toBeInTheDocument();
   });
 });

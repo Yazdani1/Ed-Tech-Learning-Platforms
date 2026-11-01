@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { isCourseId } from '@/api/browse.api';
 import { isForbiddenError, isNotFoundError, useContentList, useLearnCourse } from '@/api/learn.api';
+import { CHAT_WIDGET_CLEARANCE } from '@/components/chat/chat.utils';
 
 import { AREA_COURSES_PATH, visibleTabs, type LearnArea } from './learn-tabs';
 import { findActiveLecture } from './learn.utils';
@@ -81,7 +82,15 @@ export const LearnPlayer: FC<LearnPlayerProps> = ({ courseId, area }) => {
         <Box component="nav" sx={NAV_SX}>
           <LearnNav tabs={tabs} value={openTab} onChange={setTab} />
         </Box>
-        <Box component="main" sx={{ flex: 1, minWidth: 0 }}>
+        <Box
+          component="main"
+          // Students get the floating support chat button: keep the last controls scrollable clear of it
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            pb: area === 'student' ? `${CHAT_WIDGET_CLEARANCE}px` : undefined,
+          }}
+        >
           <LearnTabContent
             tab={openTab}
             course={course.data}

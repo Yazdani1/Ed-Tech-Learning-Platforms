@@ -38,8 +38,8 @@ const nextConfig: NextConfig = {
   // Dev server only: the Docker E2E stack reaches the app as http://frontend-e2e:3000, and some browsers
   // open http://127.0.0.1:3000 instead of localhost (live reload needs this)
   allowedDevOrigins: ['frontend-e2e', '127.0.0.1'],
-  // Dev tools badge bottom-right, so it never covers the sidebar's sign-out button (bottom-left)
-  devIndicators: { position: 'bottom-right' },
+  // No dev badge: it covered the floating support-chat button and the sign-out button, and blocked E2E clicks
+  devIndicators: false,
   // `next dev` would otherwise write frontend/AGENTS.md; the project's AI rules live in CLAUDE.md
   agentRules: false,
   poweredByHeader: false,

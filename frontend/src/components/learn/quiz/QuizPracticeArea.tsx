@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import { QuizPracticePanel } from './QuizPracticePanel';
 
-import type { AnswerMap } from './quiz.utils';
+import type { AnswerMap } from '@/components/common/quiz/quiz.utils';
 import type { QuizPractice } from './useQuizPractice';
 import type { FC } from 'react';
 import type { QuizBank } from '@/schemas/quiz.schema';

@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 import { QuizBankLink } from './QuizBankLink';
 
-import type { PublicQuizSection } from '@/schemas/browse.schema';
+import type { PublicQuizSection } from '@/schemas/practice-quiz.schema';
 import type { FC } from 'react';
 
 interface QuizSectionListProps {

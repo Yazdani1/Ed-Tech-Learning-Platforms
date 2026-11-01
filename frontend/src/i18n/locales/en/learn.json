@@ -154,50 +154,7 @@
     "backToBanks": "Back to quiz banks",
     "courseProgress": "Course quiz progress",
     "bankProgress": "Quiz bank progress",
-    "stats": {
-      "total": "Total",
-      "answered": "Answered",
-      "correct": "Correct",
-      "incorrect": "Incorrect",
-      "remaining": "Not Answered Yet",
-      "accuracy": "{{percent}}% accuracy"
-    },
-    "subsection": {
-      "all": "All",
-      "incorrect": "Wrong",
-      "correct": "Correct"
-    },
-    "subsectionTitle": {
-      "all": "All Questions",
-      "incorrect": "Incorrect Questions",
-      "correct": "Correct Questions"
-    },
-    "progress": {
-      "all": "{{done}}/{{total}} answered",
-      "incorrect": "{{done}}/{{total}} wrong",
-      "correct": "{{done}}/{{total}} correct"
-    },
-    "wrongCorrect": "Wrong {{wrong}} / Correct {{correct}}",
-    "emptySubsection": {
-      "all": "No questions in this quiz bank yet.",
-      "incorrect": "No incorrect answers yet — keep practising!",
-      "correct": "No correct answers yet — keep going!"
-    },
     "questionCount_one": "{{count}} question",
-    "questionCount_other": "{{count}} questions",
-    "questionOf": "Q {{number}} of {{total}}",
-    "selectAll": "Select all that apply",
-    "options": "Answer options",
-    "check": "Check Answer",
-    "skip": "Skip",
-    "correct": "✓ Correct!",
-    "incorrect": "✗ Incorrect — correct answer(s) are highlighted above.",
-    "goToQuestion": "Go to question {{number}}",
-    "reset": "Reset",
-    "resetTitle": "Reset Practice",
-    "resetMessage": "Clear all your answers for this quiz bank?",
-    "resetDone": "Practice reset",
-    "resetBank": "Reset progress for this quiz bank",
-    "resetBankNamed": "Reset progress for {{title}}"
+    "questionCount_other": "{{count}} questions"
   }
 }

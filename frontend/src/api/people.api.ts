@@ -2,9 +2,7 @@
 
 import {
   keepPreviousData,
-  useMutation,
   useQuery,
-  useQueryClient,
   type QueryKey,
   type UseMutationResult,
   type UseQueryResult,
@@ -27,6 +25,7 @@ import {
 } from '@/schemas/people.schema';
 import { http, type ApiError } from '@/services/http.service';
 
+import { discardResult, useInvalidatingMutation } from './invalidating-mutation';
 import { queryKeys } from './query-keys';
 
 import type { UserRole } from '@/types';
@@ -111,22 +110,12 @@ export const getQuestionGroups = (): Promise<CourseQuestionGroup[]> =>
 
 // ---- Hooks ----
 
-/** A mutation that refreshes these cache entries when it succeeds. */
+/** A mutation that refreshes these cache entries when it succeeds (callers need no result). */
 const useRefreshingMutation = <TVars>(
   mutationFn: (vars: TVars) => Promise<unknown>,
   keys: readonly QueryKey[],
-): UseMutationResult<void, ApiError, TVars> => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (vars: TVars) => {
-      await mutationFn(vars);
-    },
-    onSuccess: () =>
-      Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey }))).then(
-        () => undefined,
-      ),
-  });
-};
+): UseMutationResult<void, ApiError, TVars> =>
+  useInvalidatingMutation(discardResult(mutationFn), keys);
 
 export const useUsers = (params: ListParams, enabled = true): UseQueryResult<UsersPage, ApiError> =>
   useQuery({

@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 import { isCloudinaryUrl } from '@/utils/urls';
 
-import { TEACHER_IMAGE_TYPES } from './teacher-utils';
+import { IMAGE_ACCEPT } from '@/utils/image-files';
 import { useTeacherImageChoice } from './useTeacherImageChoice';
 
 import type { FC } from 'react';
@@ -62,12 +62,7 @@ export const TeacherImagePicker: FC<TeacherImagePickerProps> = ({
           sx={{ minHeight: 44 }}
         >
           {currentUrl ? t('people.teachers.replaceImage') : t('people.teachers.uploadImage')}
-          <input
-            type="file"
-            accept={TEACHER_IMAGE_TYPES.join(',')}
-            hidden
-            onChange={handleSelect}
-          />
+          <input type="file" accept={IMAGE_ACCEPT} hidden onChange={handleSelect} />
         </Button>
         {file && (
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>

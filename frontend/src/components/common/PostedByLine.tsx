@@ -1,13 +1,13 @@
 'use client';
 
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
 import { formatDateTime } from '@/utils/dateTime';
-import { isCloudinaryUrl } from '@/utils/urls';
+
+import { UserAvatar } from './UserAvatar';
 
 import type { PostedBy } from '@/schemas/learn.schema';
 import type { FC } from 'react';
@@ -19,22 +19,13 @@ interface PostedByLineProps {
   userId: string;
 }
 
-/** First letter of a name for an avatar without a picture. */
-const initial = (name: string | undefined): string => name?.charAt(0).toUpperCase() ?? '?';
-
 /** "Avatar Name (You) • Role • date" above every post (course player, staff Q&A, live classes). */
 export const PostedByLine: FC<PostedByLineProps> = ({ postedBy, createdAt, userId }) => {
   const { t, i18n } = useTranslation();
   const name = postedBy?.name ?? t('learn.unknownUser');
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.75, mb: 1 }}>
-      <Avatar
-        src={isCloudinaryUrl(postedBy?.avatar) ? postedBy.avatar : undefined}
-        alt=""
-        sx={{ width: 24, height: 24, fontSize: 12, bgcolor: 'primary.main' }}
-      >
-        {initial(postedBy?.name)}
-      </Avatar>
+      <UserAvatar name={postedBy?.name} avatar={postedBy?.avatar} size={24} color="primary.main" />
       <Typography variant="caption" sx={{ fontWeight: 600 }}>
         {name}
       </Typography>

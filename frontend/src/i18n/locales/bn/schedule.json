@@ -1,1 +1,114 @@
-{}
+{
+  "title": "পড়ার সময়সূচি",
+  "subtitle": "আপনার পড়ার টাইমার পরিচালনা করুন, রিমাইন্ডার সেট করুন এবং সেশনগুলোর হিসাব রাখুন।",
+  "tabs": {
+    "label": "পড়ার সময়সূচির অংশ",
+    "timer": "পড়ার টাইমার",
+    "reminders": "রিমাইন্ডার",
+    "history": "ইতিহাস"
+  },
+  "form": {
+    "titleLabel": "শিরোনাম",
+    "descriptionLabel": "বিবরণ (ঐচ্ছিক)",
+    "titleTooLong": "শিরোনাম সর্বোচ্চ ২০০ অক্ষরের হতে পারে",
+    "invalidDate": "সঠিক তারিখ ও সময় দিন",
+    "startInFuture": "শুরুর সময় ভবিষ্যতে হতে হবে।",
+    "endAfterStart": "শেষের সময় শুরুর সময়ের পরে হতে হবে।"
+  },
+  "duration": {
+    "hms": "{{h}} ঘণ্টা {{m}} মিনিট {{s}} সেকেন্ড",
+    "hm": "{{h}} ঘণ্টা {{m}} মিনিট",
+    "ms": "{{m}} মিনিট {{s}} সেকেন্ড",
+    "s": "{{s}} সেকেন্ড"
+  },
+  "clock": {
+    "hours": "ঘণ্টা",
+    "minutes": "মিনিট",
+    "seconds": "সেকেন্ড"
+  },
+  "timer": {
+    "newTitle": "নতুন পড়ার টাইমার",
+    "titlePlaceholder": "যেমন: গণিত রিভিশন",
+    "descriptionPlaceholder": "আপনি কী পড়বেন?",
+    "setDuration": "সময়কাল নির্ধারণ করুন",
+    "durationRequired": "সময়কাল ০-এর বেশি হতে হবে।",
+    "submit": "টাইমার শুরু করুন",
+    "creating": "তৈরি হচ্ছে…",
+    "created": "টাইমার শুরু হয়েছে",
+    "activeTitle": "চলমান টাইমার",
+    "summary_one": "{{count}}টি টাইমার · মোট {{total}}",
+    "summary_other": "{{count}}টি টাইমার · মোট {{total}}",
+    "empty": "কোনো চলমান টাইমার নেই। শুরু করতে একটি তৈরি করুন!",
+    "timeLeft": "বাকি সময়",
+    "progress": "টাইমারের অগ্রগতি",
+    "statusRunning": "চলছে",
+    "statusPaused": "বিরতিতে",
+    "statusCompleted": "সম্পন্ন",
+    "pause": "বিরতি",
+    "resume": "আবার চালু করুন",
+    "start": "শুরু",
+    "reset": "রিসেট",
+    "stop": "বন্ধ করুন",
+    "dismiss": "সরিয়ে দিন",
+    "stopped": "টাইমার বন্ধ করা হয়েছে",
+    "completedChip": "টাইমার সম্পন্ন!",
+    "completedToast": "টাইমার সম্পন্ন: {{title}}",
+    "notificationTitle": "পড়ার টাইমার শেষ হয়েছে"
+  },
+  "picker": {
+    "units": {
+      "hours": "ঘণ্টা",
+      "minutes": "মিনিট",
+      "seconds": "সেকেন্ড"
+    },
+    "tapToSet": "{{unit}} সেট করতে ঘড়িতে চাপুন",
+    "editUnit": "{{unit}} সেট করুন",
+    "dialLabel": "ঘড়ির ডায়াল: {{unit}}",
+    "hoursHint": "বাইরে: ১–১২ · ভিতরে: ০, ১৩–২৩"
+  },
+  "reminder": {
+    "newTitle": "নতুন রিমাইন্ডার",
+    "titlePlaceholder": "যেমন: রসায়ন পরীক্ষার প্রস্তুতি",
+    "descriptionPlaceholder": "যে বিষয়গুলো পড়বেন, লক্ষ্য…",
+    "start": "শুরুর তারিখ ও সময়",
+    "end": "শেষের তারিখ ও সময় (ঐচ্ছিক)",
+    "submit": "রিমাইন্ডার সেট করুন",
+    "saving": "সংরক্ষণ হচ্ছে…",
+    "created": "রিমাইন্ডার সেট হয়েছে",
+    "listTitle": "আপনার রিমাইন্ডার",
+    "activeSummary": "{{count}}টি সক্রিয় · {{time}} পড়া হয়েছে",
+    "empty": "এখনো কোনো রিমাইন্ডার নেই। পড়ার সেশন নির্ধারণ করতে একটি সেট করুন!",
+    "statusActive": "সক্রিয়",
+    "statusUpcoming": "আসন্ন",
+    "startsIn": "শুরু হবে",
+    "starts": "শুরু:",
+    "ends": "শেষ:",
+    "studyTime": "পড়ার সময়",
+    "complete": "সেশন সম্পন্ন করুন",
+    "completed": "সেশন সম্পন্ন হয়েছে",
+    "edit": "রিমাইন্ডার সম্পাদনা",
+    "editTitle": "রিমাইন্ডার সম্পাদনা",
+    "saveChanges": "পরিবর্তন সংরক্ষণ করুন",
+    "saved": "রিমাইন্ডার হালনাগাদ হয়েছে",
+    "deleted": "রিমাইন্ডার মুছে ফেলা হয়েছে",
+    "actionsFor": "{{title}}-এর অ্যাকশন",
+    "alarm": "পড়ার সেশন শুরু হয়েছে: {{title}}",
+    "notificationTitle": "পড়ার রিমাইন্ডার"
+  },
+  "history": {
+    "tabsLabel": "ইতিহাসের ধরন",
+    "timersTab": "টাইমার ({{count}})",
+    "remindersTab": "রিমাইন্ডার ({{count}})",
+    "totalTimers": "মোট পড়ার সময়:",
+    "totalReminders": "মোট পড়া হয়েছে:",
+    "empty": "এখনো কোনো সম্পন্ন সেশন নেই। আপনার ইতিহাস এখানে দেখা যাবে।",
+    "emptyTimers": "এখনো কোনো টাইমার সম্পন্ন হয়নি।",
+    "emptyReminders": "এখনো কোনো রিমাইন্ডার সম্পন্ন হয়নি।",
+    "completedOn": "সম্পন্ন: {{date}}",
+    "startedOn": "শুরু: {{date}}",
+    "endedOn": "শেষ: {{date}}",
+    "delete": "ইতিহাস থেকে মুছুন",
+    "deleted": "ইতিহাস থেকে সরানো হয়েছে",
+    "actionsFor": "{{title}}-এর অ্যাকশন"
+  }
+}

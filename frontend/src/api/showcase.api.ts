@@ -17,6 +17,7 @@ import {
 } from '@/schemas/showcase.schema';
 import { http, type ApiError } from '@/services/http.service';
 
+import { useInvalidatingMutation } from './invalidating-mutation';
 import { queryKeys } from './query-keys';
 
 const HERO = '/api/home-hero-posts';
@@ -65,20 +66,14 @@ export const useHeroPosts = (): UseQueryResult<HeroPost[], ApiError> =>
 export const useSiteLogo = (): UseQueryResult<SiteLogo | null, ApiError> =>
   useQuery({ queryKey: queryKeys.showcase.logo, queryFn: getSiteLogo });
 
-/** A mutation that refreshes the post list when it succeeds. */
+/** The admin post list and the public homepage carousel. */
+const POST_KEYS = [queryKeys.showcase.posts, queryKeys.public.heroPosts] as const;
+
+/** A mutation that refreshes the post lists when it settles. */
 const usePostsMutation = <TData, TInput>(
   mutationFn: (input: TInput) => Promise<TData>,
-): UseMutationResult<TData, ApiError, TInput> => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn,
-    onSettled: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.showcase.posts }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.public.heroPosts }),
-      ]),
-  });
-};
+): UseMutationResult<TData, ApiError, TInput> =>
+  useInvalidatingMutation(mutationFn, POST_KEYS, { refreshOn: 'settled' });
 
 export const useUploadHeroPosts = (): UseMutationResult<HeroPost[], ApiError, FormData> =>
   usePostsMutation(uploadHeroPosts);

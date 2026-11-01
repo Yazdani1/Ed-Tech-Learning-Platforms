@@ -2,7 +2,7 @@
 
 import Button from '@mui/material/Button';
 
-import { IMAGE_ACCEPT } from '../image-files';
+import { IMAGE_ACCEPT } from '@/utils/image-files';
 
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { ChangeEvent, FC, ReactNode } from 'react';

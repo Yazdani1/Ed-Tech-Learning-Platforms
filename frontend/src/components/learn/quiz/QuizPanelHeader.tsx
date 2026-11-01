@@ -5,9 +5,9 @@ import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import { QuizResetButton } from './QuizResetButton';
+import { QuizResetButton } from '@/components/common/quiz/QuizResetButton';
 
-import type { Subsection } from './quiz.utils';
+import type { Subsection } from '@/components/common/quiz/quiz.utils';
 import type { FC } from 'react';
 import type { QuizBank } from '@/schemas/quiz.schema';
 
@@ -51,7 +51,7 @@ export const QuizPanelHeader: FC<QuizPanelHeaderProps> = ({
       </Box>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
         <Chip
-          label={t(`learn.quiz.subsectionTitle.${subsection}`)}
+          label={t(`quiz.common.subsectionTitle.${subsection}`)}
           color={CHIP_COLOR[subsection]}
           size="small"
           sx={{ fontWeight: 700 }}

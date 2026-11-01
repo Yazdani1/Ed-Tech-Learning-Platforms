@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { COVER_MAX_BYTES, COVER_MAX_MB, COVER_TYPES } from '@/schemas/course-editor.schema';
+import { useImagePreview } from '@/hooks/useImagePreview';
+import { IMAGE_MAX_BYTES, IMAGE_MAX_MB, isAllowedImageType } from '@/utils/image-files';
 
 export interface CoverImage {
   /** The picked file not uploaded yet */
@@ -23,22 +24,13 @@ export interface CoverImage {
   uploaded: () => void;
 }
 
-const isAllowedType = (type: string): boolean => (COVER_TYPES as readonly string[]).includes(type);
-
 /** The course cover picked in the Media tab, checked before it is uploaded with the next save. */
 export const useCoverImage = (): CoverImage => {
   const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<File | null>(null);
-  const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
-
-  useEffect(
-    () => () => {
-      if (preview) URL.revokeObjectURL(preview);
-    },
-    [preview],
-  );
+  const preview = useImagePreview(file);
 
   const set = useCallback((next: File | null) => {
     fileRef.current = next;
@@ -47,12 +39,12 @@ export const useCoverImage = (): CoverImage => {
 
   const pick = useCallback(
     (picked: File): boolean => {
-      if (!isAllowedType(picked.type)) {
+      if (!isAllowedImageType(picked.type)) {
         setError(t('catalog.media.badType'));
         return false;
       }
-      if (picked.size > COVER_MAX_BYTES) {
-        setError(t('catalog.media.tooLarge', { max: COVER_MAX_MB }));
+      if (picked.size > IMAGE_MAX_BYTES) {
+        setError(t('catalog.media.tooLarge', { max: IMAGE_MAX_MB }));
         return false;
       }
       setError(null);

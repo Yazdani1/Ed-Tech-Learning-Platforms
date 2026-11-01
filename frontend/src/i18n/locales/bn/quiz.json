@@ -1,1 +1,112 @@
-{}
+{
+  "common": {
+    "stats": {
+      "total": "মোট",
+      "answered": "উত্তর দেওয়া",
+      "correct": "সঠিক",
+      "incorrect": "ভুল",
+      "remaining": "এখনো উত্তর দেওয়া হয়নি",
+      "accuracy": "{{percent}}% নির্ভুলতা"
+    },
+    "subsection": {
+      "all": "সব",
+      "incorrect": "ভুল",
+      "correct": "সঠিক"
+    },
+    "subsectionTitle": {
+      "all": "সব প্রশ্ন",
+      "incorrect": "ভুল উত্তরের প্রশ্ন",
+      "correct": "সঠিক উত্তরের প্রশ্ন"
+    },
+    "progress": {
+      "all": "{{done}}/{{total}} উত্তর দেওয়া",
+      "incorrect": "{{done}}/{{total}} ভুল",
+      "correct": "{{done}}/{{total}} সঠিক"
+    },
+    "wrongCorrect": "ভুল {{wrong}} / সঠিক {{correct}}",
+    "emptySubsection": {
+      "all": "এই কুইজ ব্যাংকে এখনো কোনো প্রশ্ন নেই।",
+      "incorrect": "এখনো কোনো ভুল উত্তর নেই — অনুশীলন চালিয়ে যান!",
+      "correct": "এখনো কোনো সঠিক উত্তর নেই — চালিয়ে যান!"
+    },
+    "questionOf": "প্রশ্ন {{number}} / {{total}}",
+    "selectAll": "প্রযোজ্য সবগুলো বেছে নিন",
+    "options": "উত্তরের অপশন",
+    "check": "উত্তর যাচাই করুন",
+    "skip": "বাদ দিন",
+    "correct": "✓ সঠিক!",
+    "incorrect": "✗ ভুল — সঠিক উত্তর উপরে চিহ্নিত করা হয়েছে।",
+    "goToQuestion": "প্রশ্ন {{number}} এ যান",
+    "reset": "রিসেট",
+    "resetTitle": "অনুশীলন রিসেট",
+    "resetMessage": "এই কুইজ ব্যাংকের আপনার সব উত্তর মুছে ফেলবেন?",
+    "resetDone": "অনুশীলন রিসেট হয়েছে",
+    "resetBank": "এই কুইজ ব্যাংকের অগ্রগতি রিসেট করুন",
+    "resetBankNamed": "{{title}} এর অগ্রগতি রিসেট করুন"
+  },
+  "practice": {
+    "courses": {
+      "title": "ফ্রি কুইজ ব্রাউজ করুন",
+      "loading": "কোর্স লোড হচ্ছে...",
+      "count_one": "{{count}}টি কোর্স",
+      "count_other": "{{count}}টি কোর্স",
+      "activeFilters_one": "{{count}}টি ফিল্টার চালু",
+      "activeFilters_other": "{{count}}টি ফিল্টার চালু",
+      "noFilters": "কোনো ফিল্টার চালু নেই",
+      "filter": "ফিল্টার",
+      "clearAll": "সব মুছুন",
+      "search": "কোর্স খুঁজুন...",
+      "searchLabel": "কোর্স খুঁজুন",
+      "category": "ক্যাটাগরি",
+      "allCategories": "সব ক্যাটাগরি",
+      "pricing": "মূল্য",
+      "allPricing": "সব মূল্য",
+      "freeOnly": "শুধু ফ্রি",
+      "paidOnly": "শুধু পেইড",
+      "courseType": "কোর্সের ধরন",
+      "allCourseTypes": "সব কোর্সের ধরন",
+      "empty": "এখনো কোনো ফ্রি প্রিভিউ কুইজ নেই।",
+      "list": "ফ্রি কুইজসহ কোর্স",
+      "subscription": "সাবস্ক্রিপশন",
+      "subscriptionTitle": "সাবস্ক্রিপশনে অন্তর্ভুক্ত"
+    },
+    "tree": {
+      "title": "সেকশন",
+      "label": "কুইজ ব্যাংক",
+      "selectCourse": "একটি কোর্স বেছে নিন",
+      "bankCount_one": "{{count}}টি কুইজ ব্যাংক",
+      "bankCount_other": "{{count}}টি কুইজ ব্যাংক",
+      "pickCourse": "ফ্রি প্রিভিউ কুইজ দেখতে বাঁ দিক থেকে একটি কোর্স বেছে নিন।",
+      "empty": "এই কোর্সে কোনো ফ্রি প্রিভিউ কুইজ নেই।",
+      "free": "ফ্রি"
+    },
+    "bar": {
+      "totalQuiz": "মোট কুইজ",
+      "locked_one": "{{count}}টি লক করা",
+      "locked_other": "{{count}}টি লক করা",
+      "price": "মূল্য",
+      "unlock": "কোর্স আনলক করুন",
+      "view": "কোর্স দেখুন"
+    },
+    "panel": {
+      "pickCourse": "অনুশীলন শুরু করতে একটি কোর্স ও কুইজ বেছে নিন",
+      "pickBank": "শুরু করতে প্যানেল থেকে একটি কুইজ বেছে নিন",
+      "signInHint": "আপনার অগ্রগতি সংরক্ষণ করতে এবং ভুল / সঠিক উত্তর ট্র্যাক করতে সাইন ইন করুন।",
+      "signIn": "সাইন ইন",
+      "bankMissing": "ওই কুইজটি ফ্রি প্রিভিউর অংশ নয়। তার বদলে প্রথম ফ্রি কুইজ দেখানো হচ্ছে।",
+      "savedError": "আপনার সংরক্ষিত উত্তর লোড করা যায়নি: {{message}}",
+      "course": "কোর্স",
+      "bank": "কুইজ ব্যাংক"
+    },
+    "mobile": {
+      "courses": "কোর্স",
+      "banks": "কুইজ ব্যাংক"
+    },
+    "sidebar": {
+      "expandCourses": "কোর্স তালিকার সাইডবার খুলুন",
+      "collapseCourses": "কোর্স তালিকার সাইডবার বন্ধ করুন",
+      "expandBanks": "কুইজ ব্যাংকের সাইডবার খুলুন",
+      "collapseBanks": "কুইজ ব্যাংকের সাইডবার বন্ধ করুন"
+    }
+  }
+}

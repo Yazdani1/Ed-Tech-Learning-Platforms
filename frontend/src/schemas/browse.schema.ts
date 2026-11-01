@@ -140,29 +140,6 @@ export const liveClassWeekSchema = z.object({
 });
 export type LiveClassWeek = z.infer<typeof liveClassWeekSchema>;
 
-/** GET /api/quiz-bank/public/course/:id: the free-preview quiz sections (no questions are used here). */
-export const publicQuizTreeSchema = z.object({
-  sections: z
-    .array(
-      z.object({
-        _id: z.string(),
-        title: z.string(),
-        isFreePreview: z.boolean().default(false),
-        banks: z
-          .array(
-            z.object({
-              _id: z.string(),
-              title: z.string(),
-              isFreePreview: z.boolean().default(false),
-            }),
-          )
-          .default([]),
-      }),
-    )
-    .default([]),
-});
-export type PublicQuizSection = z.infer<typeof publicQuizTreeSchema>['sections'][number];
-
 /** GET /api/enrollments/:courseId/check */
 export const enrollmentCheckSchema = z.object({
   isEnrolled: z.boolean(),

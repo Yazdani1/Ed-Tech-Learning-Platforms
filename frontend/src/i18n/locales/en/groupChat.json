@@ -1,0 +1,112 @@
+{
+  "title": "Group Chat",
+  "searchChannels": "Search channels...",
+  "searchChannelsLabel": "Search channels",
+  "createChannel": "Create Channel",
+  "editChannel": "Edit Channel",
+  "myChannels": "My Channels",
+  "discoverChannels": "Discover Channels",
+  "noChannels": "You have not joined any channel yet.",
+  "memberCount_one": "{{count}} member",
+  "memberCount_other": "{{count}} members",
+  "unreadCount": "{{count}} unread",
+  "selectPrompt": "Create or select a channel to start chatting.",
+  "backToChannels": "Back to channels",
+  "channelActions": "Channel actions",
+  "type": {
+    "Public": "Public",
+    "Private": "Private"
+  },
+  "blocked": "Blocked",
+  "addMembers": "Add Members",
+  "requestsCount": "Requests ({{count}})",
+  "actions": {
+    "edit": "Edit",
+    "leave": "Leave",
+    "delete": "Delete",
+    "block": "Block channel",
+    "unblock": "Unblock channel"
+  },
+  "form": {
+    "name": "Channel name",
+    "description": "Description",
+    "type": "Channel type",
+    "public": "Public Channel",
+    "private": "Private Channel",
+    "create": "Create",
+    "update": "Update"
+  },
+  "addMembersModal": {
+    "search": "Search users",
+    "searchHint": "Type at least 2 letters of a name.",
+    "noUsers": "No users found.",
+    "alreadyMember": "Already a member",
+    "addSelected": "Add Selected",
+    "addSelectedCount": "Add Selected ({{count}})",
+    "results": "Search results"
+  },
+  "details": {
+    "description": "Description",
+    "members": "Members ({{count}})",
+    "requests": "Requests ({{count}})",
+    "noDescription": "No description added yet.",
+    "noRequests": "No pending requests.",
+    "accept": "Accept",
+    "remove": "Remove {{name}}",
+    "memberRole": {
+      "Admin": "Admin",
+      "Member": "Member"
+    }
+  },
+  "join": {
+    "fallbackDescription": "Join this channel to view messages and chat with members.",
+    "joinPublic": "Join this channel",
+    "requestPrivate": "Request to join",
+    "requestSent": "Join request sent",
+    "cancelRequest": "Cancel request"
+  },
+  "messages": {
+    "search": "Search messages...",
+    "searchLabel": "Search messages",
+    "empty": "No messages yet.",
+    "you": "You",
+    "placeholder": "Type a message...",
+    "inputLabel": "Message",
+    "send": "Send",
+    "attach": "Show upload options",
+    "uploadImage": "Upload image",
+    "uploadPdf": "Upload PDF",
+    "uploadFile": "Upload files/documents",
+    "removeFile": "Remove {{name}}",
+    "typing": "{{name}} is typing",
+    "tooManyFiles": "You can attach up to {{count}} files.",
+    "fileTooLarge": "{{name}} is larger than {{size}} MB.",
+    "openFile": "Open {{name}}",
+    "listLabel": "Messages"
+  },
+  "confirm": {
+    "leaveTitle": "Leave channel",
+    "leaveMessage": "Are you sure you want to leave \"{{name}}\"?",
+    "leave": "Leave",
+    "removeTitle": "Remove member",
+    "removeMessage": "Are you sure you want to remove {{name}} from this channel?",
+    "remove": "Remove",
+    "deleteTitle": "Delete channel",
+    "deleteMessage": "Are you sure you want to delete \"{{name}}\"? This will archive the channel.",
+    "delete": "Delete"
+  },
+  "toast": {
+    "created": "Channel created",
+    "updated": "Channel updated",
+    "joined": "Joined channel",
+    "requestSent": "Join request sent",
+    "requestCancelled": "Join request cancelled",
+    "approved": "Join request approved",
+    "membersAdded": "Members added",
+    "memberRemoved": "Member removed",
+    "left": "Left channel",
+    "archived": "Channel archived",
+    "blocked": "Channel blocked",
+    "unblocked": "Channel unblocked"
+  }
+}

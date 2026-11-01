@@ -20,12 +20,6 @@ export type SavedCourse = z.infer<typeof savedCourseSchema>;
 /** POST .../sections and POST .../lectures answer the new item. */
 export const createdItemSchema = z.object({ _id: z.string() });
 
-/** Cover images the backend accepts (it checks the file content too): PNG/JPEG/GIF/WEBP up to 5 MB. */
-export const COVER_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'] as const;
-export const COVER_MAX_MB = 5;
-const BYTES_PER_MB = 1024 * 1024;
-export const COVER_MAX_BYTES = COVER_MAX_MB * BYTES_PER_MB;
-
 // ---- Course details form ----
 
 const PRICE_PATTERN = /^\d+(\.\d{1,2})?$/;

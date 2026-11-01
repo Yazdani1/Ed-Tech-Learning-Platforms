@@ -149,7 +149,7 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 				await ChatConversation.findByIdAndUpdate(conv._id, updateFields);
 				const updatedConv = await ChatConversation.findById(conv._id).populate(
 					'student',
-					'name avatar email',
+					'name avatar', // the staff room includes teachers, who never get student emails
 				);
 
 				const msgObj = msg.toObject();
@@ -199,7 +199,7 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 					await ChatConversation.findByIdAndUpdate(conversationId, { unreadByStaff: 0 });
 					const conv = await ChatConversation.findById(conversationId).populate(
 						'student',
-						'name avatar email',
+						'name avatar', // the staff room includes teachers, who never get student emails
 					);
 					io.to('staff').emit('chat:conversationUpdated', conv);
 				} else {

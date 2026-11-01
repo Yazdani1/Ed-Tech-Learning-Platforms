@@ -12,12 +12,8 @@ import { RecordedLectureList } from './RecordedLectureList';
 import { useContentSummary } from './useContentSummary';
 import { useContentTabs } from './useContentTabs';
 
-import type {
-  CourseLecture,
-  CourseSection,
-  LiveClassWeek,
-  PublicQuizSection,
-} from '@/schemas/browse.schema';
+import type { CourseLecture, CourseSection, LiveClassWeek } from '@/schemas/browse.schema';
+import type { PublicQuizSection } from '@/schemas/practice-quiz.schema';
 import type { FC } from 'react';
 
 interface CourseContentTabsProps {

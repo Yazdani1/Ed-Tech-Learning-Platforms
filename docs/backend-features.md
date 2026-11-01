@@ -1249,8 +1249,36 @@ answer every student's support conversation, like Super Admin, Admin and Moderat
 **Fixed issues:**
 
 - Teachers no longer receive students' email addresses in the conversation list.
+- The live `chat:conversationUpdated` event (sent to the `staff` room, which teachers are in) carried the
+  student's email; it now has only the student's name and avatar (`backend/src/socket/index.ts`, after
+  `chat:send` and `chat:markRead`). Admins keep the email from the REST list.
 
-**Tests:** `backend/tests/integration/chat.rest.test.ts`.
+**Socket.io events (live chat, group chat, notifications).** The client connects to the backend with
+`auth.token` (the frontend fetches it from its own `/api/socket-token` route) or the `token` cookie. A
+missing, invalid or revoked token is refused with `Not authorized`. On connect every user joins
+`user:<id>`; staff (Super Admin, Admin, Moderator, Teacher) also join `staff`; a student joins their own
+conversation room `conv:<id>`; everyone joins `group:<id>` of the channels they may read (platform admins:
+every channel that is not archived). After a password change the user's sockets are disconnected.
+
+| Event                                       | Direction        | Room / receivers                                                                 | Payload                                                                                                                     |
+| ------------------------------------------- | ---------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `chat:send`                                 | client -> server | (student: own conversation; staff: `conversationId`)                             | `{ content, conversationId? }`, at most 2000 characters                                                                     |
+| `chat:message`                              | server -> client | `conv:<id>` and `staff`                                                          | the saved message (`_id`, `conversationId`, `senderId`, `senderName`, `senderRole`, `senderAvatar`, `content`, `createdAt`) |
+| `chat:conversationUpdated`                  | server -> client | `staff`                                                                          | the conversation; `student` has `_id`, `name`, `avatar` only (no email)                                                     |
+| `chat:typing`                               | both             | staff typing -> `conv:<id>`; student typing -> `staff`                           | sent `{ conversationId?, isTyping }`; received `{ conversationId, userId, userName, userRole, isTyping }`                   |
+| `chat:markRead`                             | client -> server | (sets the reader's unread count to 0; staff: `chat:conversationUpdated` follows) | `{ conversationId }`                                                                                                        |
+| `chat:presence`                             | server -> client | `staff`                                                                          | `{ studentId, isOnline }` when a student's first tab connects or last tab leaves                                            |
+| `chat:presenceSnapshot`                     | server -> client | the connecting staff socket                                                      | ids of the students online now                                                                                              |
+| `chat:error`                                | server -> client | the sender                                                                       | `Message is too long` or `Failed to send message`                                                                           |
+| `groupChat:joinRoom`                        | client -> server | joins `group:<id>` when the user may read the channel                            | `{ channelId }`                                                                                                             |
+| `groupChat:typing`                          | both             | `group:<id>` (others)                                                            | sent `{ channelId, isTyping }`; received `{ channelId, userId, userName, userRole, isTyping }`                              |
+| `groupChat:message`                         | server -> client | `group:<id>`                                                                     | the new message (after `POST .../messages`)                                                                                 |
+| `groupChat:channelUpdated`                  | server -> client | `group:<id>`                                                                     | the channel with members (after membership, settings, block, archive or a new message)                                      |
+| `notification:new` / `notification:updated` | server -> client | `user:<id>` of each recipient                                                    | `{ notification }` as that user sees it                                                                                     |
+| `notification:deleted`                      | server -> client | `user:<id>` of each recipient                                                    | `{ notificationId }`                                                                                                        |
+
+**Tests:** `backend/tests/integration/chat.rest.test.ts`; Socket.io events in `socket.test.ts` (including
+"the staff room's conversation update carries no student email").
 
 ---
 

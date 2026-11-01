@@ -1,0 +1,112 @@
+{
+  "title": "গ্রুপ চ্যাট",
+  "searchChannels": "চ্যানেল খুঁজুন...",
+  "searchChannelsLabel": "চ্যানেল খুঁজুন",
+  "createChannel": "চ্যানেল তৈরি করুন",
+  "editChannel": "চ্যানেল সম্পাদনা",
+  "myChannels": "আমার চ্যানেল",
+  "discoverChannels": "চ্যানেল খুঁজে দেখুন",
+  "noChannels": "আপনি এখনো কোনো চ্যানেলে যোগ দেননি।",
+  "memberCount_one": "{{count}} জন সদস্য",
+  "memberCount_other": "{{count}} জন সদস্য",
+  "unreadCount": "{{count}}টি অপঠিত",
+  "selectPrompt": "চ্যাট শুরু করতে একটি চ্যানেল তৈরি বা নির্বাচন করুন।",
+  "backToChannels": "চ্যানেলের তালিকায় ফিরুন",
+  "channelActions": "চ্যানেলের কাজ",
+  "type": {
+    "Public": "পাবলিক",
+    "Private": "প্রাইভেট"
+  },
+  "blocked": "ব্লক করা",
+  "addMembers": "সদস্য যোগ করুন",
+  "requestsCount": "অনুরোধ ({{count}})",
+  "actions": {
+    "edit": "সম্পাদনা",
+    "leave": "চ্যানেল ছাড়ুন",
+    "delete": "মুছুন",
+    "block": "চ্যানেল ব্লক করুন",
+    "unblock": "চ্যানেল আনব্লক করুন"
+  },
+  "form": {
+    "name": "চ্যানেলের নাম",
+    "description": "বিবরণ",
+    "type": "চ্যানেলের ধরন",
+    "public": "পাবলিক চ্যানেল",
+    "private": "প্রাইভেট চ্যানেল",
+    "create": "তৈরি করুন",
+    "update": "হালনাগাদ করুন"
+  },
+  "addMembersModal": {
+    "search": "ব্যবহারকারী খুঁজুন",
+    "searchHint": "নামের অন্তত ২টি অক্ষর লিখুন।",
+    "noUsers": "কোনো ব্যবহারকারী পাওয়া যায়নি।",
+    "alreadyMember": "ইতিমধ্যে সদস্য",
+    "addSelected": "নির্বাচিতদের যোগ করুন",
+    "addSelectedCount": "নির্বাচিতদের যোগ করুন ({{count}})",
+    "results": "খোঁজের ফলাফল"
+  },
+  "details": {
+    "description": "বিবরণ",
+    "members": "সদস্য ({{count}})",
+    "requests": "অনুরোধ ({{count}})",
+    "noDescription": "এখনো কোনো বিবরণ যোগ করা হয়নি।",
+    "noRequests": "কোনো অপেক্ষমাণ অনুরোধ নেই।",
+    "accept": "গ্রহণ করুন",
+    "remove": "{{name}}-কে সরান",
+    "memberRole": {
+      "Admin": "অ্যাডমিন",
+      "Member": "সদস্য"
+    }
+  },
+  "join": {
+    "fallbackDescription": "বার্তা দেখতে ও সদস্যদের সাথে চ্যাট করতে এই চ্যানেলে যোগ দিন।",
+    "joinPublic": "এই চ্যানেলে যোগ দিন",
+    "requestPrivate": "যোগদানের অনুরোধ করুন",
+    "requestSent": "যোগদানের অনুরোধ পাঠানো হয়েছে",
+    "cancelRequest": "অনুরোধ বাতিল করুন"
+  },
+  "messages": {
+    "search": "বার্তা খুঁজুন...",
+    "searchLabel": "বার্তা খুঁজুন",
+    "empty": "এখনো কোনো বার্তা নেই।",
+    "you": "আপনি",
+    "placeholder": "একটি বার্তা লিখুন...",
+    "inputLabel": "বার্তা",
+    "send": "পাঠান",
+    "attach": "আপলোডের অপশন দেখুন",
+    "uploadImage": "ছবি আপলোড করুন",
+    "uploadPdf": "পিডিএফ আপলোড করুন",
+    "uploadFile": "ফাইল/ডকুমেন্ট আপলোড করুন",
+    "removeFile": "{{name}} সরান",
+    "typing": "{{name}} লিখছেন",
+    "tooManyFiles": "আপনি সর্বোচ্চ {{count}}টি ফাইল সংযুক্ত করতে পারেন।",
+    "fileTooLarge": "{{name}} {{size}} এমবির চেয়ে বড়।",
+    "openFile": "{{name}} খুলুন",
+    "listLabel": "বার্তাসমূহ"
+  },
+  "confirm": {
+    "leaveTitle": "চ্যানেল ছাড়ুন",
+    "leaveMessage": "আপনি কি নিশ্চিতভাবে \"{{name}}\" চ্যানেল ছাড়তে চান?",
+    "leave": "ছাড়ুন",
+    "removeTitle": "সদস্য সরান",
+    "removeMessage": "আপনি কি নিশ্চিতভাবে {{name}}-কে এই চ্যানেল থেকে সরাতে চান?",
+    "remove": "সরান",
+    "deleteTitle": "চ্যানেল মুছুন",
+    "deleteMessage": "আপনি কি নিশ্চিতভাবে \"{{name}}\" মুছতে চান? এতে চ্যানেলটি আর্কাইভ হয়ে যাবে।",
+    "delete": "মুছুন"
+  },
+  "toast": {
+    "created": "চ্যানেল তৈরি হয়েছে",
+    "updated": "চ্যানেল হালনাগাদ হয়েছে",
+    "joined": "চ্যানেলে যোগ দিয়েছেন",
+    "requestSent": "যোগদানের অনুরোধ পাঠানো হয়েছে",
+    "requestCancelled": "যোগদানের অনুরোধ বাতিল হয়েছে",
+    "approved": "যোগদানের অনুরোধ গৃহীত হয়েছে",
+    "membersAdded": "সদস্য যোগ করা হয়েছে",
+    "memberRemoved": "সদস্য সরানো হয়েছে",
+    "left": "চ্যানেল ছেড়েছেন",
+    "archived": "চ্যানেল আর্কাইভ হয়েছে",
+    "blocked": "চ্যানেল ব্লক করা হয়েছে",
+    "unblocked": "চ্যানেল আনব্লক করা হয়েছে"
+  }
+}

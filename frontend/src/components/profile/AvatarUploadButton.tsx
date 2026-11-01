@@ -4,7 +4,7 @@ import PhotoCameraOutlined from '@mui/icons-material/PhotoCameraOutlined';
 import Button from '@mui/material/Button';
 import { useTranslation } from 'react-i18next';
 
-import { AVATAR_ACCEPT } from '@/schemas/profile.schema';
+import { IMAGE_ACCEPT } from '@/utils/image-files';
 
 import type { FC } from 'react';
 
@@ -28,7 +28,7 @@ export const AvatarUploadButton: FC<AvatarUploadButtonProps> = ({ disabled, onPi
       <input
         hidden
         type="file"
-        accept={AVATAR_ACCEPT}
+        accept={IMAGE_ACCEPT}
         aria-label={t('profile.uploadAvatar')}
         onChange={(event) => {
           onPick(event.target.files?.[0]);

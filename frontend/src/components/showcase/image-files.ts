@@ -1,4 +1,4 @@
-import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGE_MB } from '@/schemas/showcase.schema';
+import { findImageProblem, IMAGE_MAX_MB } from '@/utils/image-files';
 
 const BYTES_PER_KB = 1024;
 
@@ -8,26 +8,21 @@ export interface FileProblem {
   values: Record<string, string | number>;
 }
 
-const isAllowedType = (type: string): boolean =>
-  (ALLOWED_IMAGE_TYPES as readonly string[]).includes(type);
-
 /**
  * Checks picked files before upload: PNG/JPEG/GIF/WEBP, at most 5 MB each, at most `maxFiles`.
  * (The backend checks the file content again; this only saves a useless upload.)
  */
 export const findFileProblem = (files: File[], maxFiles: number): FileProblem | null => {
-  if (files.length > maxFiles) return { key: 'showcase.file.tooMany', values: { max: maxFiles } };
-  const badType = files.find((file) => !isAllowedType(file.type));
-  if (badType) return { key: 'showcase.file.badType', values: { name: badType.name } };
-  const tooLarge = files.find((file) => file.size > MAX_IMAGE_BYTES);
-  if (tooLarge) {
-    return { key: 'showcase.file.tooLarge', values: { name: tooLarge.name, max: MAX_IMAGE_MB } };
+  const problem = findImageProblem(files, maxFiles);
+  if (!problem) return null;
+  if (problem.reason === 'tooMany') {
+    return { key: 'showcase.file.tooMany', values: { max: maxFiles } };
   }
-  return null;
+  return {
+    key: `showcase.file.${problem.reason}`,
+    values: { name: problem.file.name, max: IMAGE_MAX_MB },
+  };
 };
 
 /** File size in whole KB, as the old page showed it. */
 export const toKb = (bytes: number): number => Math.round(bytes / BYTES_PER_KB);
-
-/** What the file inputs accept. */
-export const IMAGE_ACCEPT = ALLOWED_IMAGE_TYPES.join(',');

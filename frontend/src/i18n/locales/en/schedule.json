@@ -1,1 +1,114 @@
-{}
+{
+  "title": "Study Schedule",
+  "subtitle": "Manage your study timers, set reminders, and track your sessions.",
+  "tabs": {
+    "label": "Study schedule sections",
+    "timer": "Study Timer",
+    "reminders": "Reminders",
+    "history": "History"
+  },
+  "form": {
+    "titleLabel": "Title",
+    "descriptionLabel": "Description (optional)",
+    "titleTooLong": "Title can be at most 200 characters",
+    "invalidDate": "Enter a valid date and time",
+    "startInFuture": "Start time must be in the future.",
+    "endAfterStart": "End time must be after start time."
+  },
+  "duration": {
+    "hms": "{{h}}h {{m}}m {{s}}s",
+    "hm": "{{h}}h {{m}}m",
+    "ms": "{{m}}m {{s}}s",
+    "s": "{{s}}s"
+  },
+  "clock": {
+    "hours": "HH",
+    "minutes": "MM",
+    "seconds": "SS"
+  },
+  "timer": {
+    "newTitle": "New Study Timer",
+    "titlePlaceholder": "e.g. Math Revision",
+    "descriptionPlaceholder": "What will you study?",
+    "setDuration": "Set Duration",
+    "durationRequired": "Duration must be greater than 0.",
+    "submit": "Start Timer",
+    "creating": "Creating…",
+    "created": "Timer started",
+    "activeTitle": "Active Timers",
+    "summary_one": "{{count}} timer · {{total}} total",
+    "summary_other": "{{count}} timers · {{total}} total",
+    "empty": "No active timers. Create one to get started!",
+    "timeLeft": "Time left",
+    "progress": "Timer progress",
+    "statusRunning": "RUNNING",
+    "statusPaused": "PAUSED",
+    "statusCompleted": "COMPLETED",
+    "pause": "Pause",
+    "resume": "Resume",
+    "start": "Start",
+    "reset": "Reset",
+    "stop": "Stop",
+    "dismiss": "Dismiss",
+    "stopped": "Timer stopped",
+    "completedChip": "Timer completed!",
+    "completedToast": "Timer completed: {{title}}",
+    "notificationTitle": "Study timer finished"
+  },
+  "picker": {
+    "units": {
+      "hours": "hours",
+      "minutes": "minutes",
+      "seconds": "seconds"
+    },
+    "tapToSet": "Tap clock to set {{unit}}",
+    "editUnit": "Set {{unit}}",
+    "dialLabel": "Clock dial: {{unit}}",
+    "hoursHint": "Outer: 1–12 · Inner: 0, 13–23"
+  },
+  "reminder": {
+    "newTitle": "New Reminder",
+    "titlePlaceholder": "e.g. Chemistry Exam Prep",
+    "descriptionPlaceholder": "Topics to cover, goals…",
+    "start": "Start Date & Time",
+    "end": "End Date & Time (optional)",
+    "submit": "Set Reminder",
+    "saving": "Saving…",
+    "created": "Reminder set",
+    "listTitle": "Your Reminders",
+    "activeSummary": "{{count}} active · {{time}} studied",
+    "empty": "No reminders yet. Set one above to schedule a study session!",
+    "statusActive": "ACTIVE",
+    "statusUpcoming": "UPCOMING",
+    "startsIn": "Starts in",
+    "starts": "Starts:",
+    "ends": "Ends:",
+    "studyTime": "Study time",
+    "complete": "Complete Session",
+    "completed": "Session completed",
+    "edit": "Edit reminder",
+    "editTitle": "Edit Reminder",
+    "saveChanges": "Save Changes",
+    "saved": "Reminder updated",
+    "deleted": "Reminder deleted",
+    "actionsFor": "Actions for {{title}}",
+    "alarm": "Study session started: {{title}}",
+    "notificationTitle": "Study reminder"
+  },
+  "history": {
+    "tabsLabel": "History type",
+    "timersTab": "Timers ({{count}})",
+    "remindersTab": "Reminders ({{count}})",
+    "totalTimers": "Total study time:",
+    "totalReminders": "Total studied:",
+    "empty": "No completed sessions yet. Your history will appear here.",
+    "emptyTimers": "No completed timers yet.",
+    "emptyReminders": "No completed reminders yet.",
+    "completedOn": "Completed: {{date}}",
+    "startedOn": "Started: {{date}}",
+    "endedOn": "Ended: {{date}}",
+    "delete": "Delete from history",
+    "deleted": "Removed from history",
+    "actionsFor": "Actions for {{title}}"
+  }
+}

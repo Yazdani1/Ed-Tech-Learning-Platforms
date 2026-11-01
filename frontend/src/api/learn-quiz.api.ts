@@ -47,10 +47,14 @@ export const resetQuizAttempt = async (bankId: string): Promise<void> => {
 
 // ---- Hooks ----
 
-export const useMyQuizAttempts = (courseId: string): UseQueryResult<QuizAttempt[], ApiError> =>
+export const useMyQuizAttempts = (
+  courseId: string,
+  enabled = true,
+): UseQueryResult<QuizAttempt[], ApiError> =>
   useQuery({
     queryKey: queryKeys.learn.quizAttempts(courseId),
     queryFn: () => getMyQuizAttempts(courseId),
+    enabled,
   });
 
 /**

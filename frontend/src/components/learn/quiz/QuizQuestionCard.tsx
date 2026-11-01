@@ -8,8 +8,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import { QuizOption } from './QuizOption';
-import { QuizQuestionButtons } from './QuizQuestionButtons';
+import { QuizOption } from '@/components/common/quiz/QuizOption';
+import { QuizQuestionButtons } from '@/components/common/quiz/QuizQuestionButtons';
 
 import type { QuizPractice } from './useQuizPractice';
 import type { FC } from 'react';
@@ -39,18 +39,18 @@ export const QuizQuestionCard: FC<QuizQuestionCardProps> = ({
   const selected = answer?.selectedOptionIndices ?? practice.picked;
   // Arrive with the bank list once the question is answered (never before)
   const correct = question.correctOptionIndices ?? [];
-  const label = t('learn.quiz.questionOf', { number, total });
+  const label = t('quiz.common.questionOf', { number, total });
 
   return (
     <Paper variant="outlined" component="article" aria-label={label} sx={{ p: { xs: 2, sm: 2.5 } }}>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
         <Chip label={label} size="small" sx={{ fontWeight: 700 }} />
-        <Chip label={t('learn.quiz.selectAll')} size="small" color="info" variant="outlined" />
+        <Chip label={t('quiz.common.selectAll')} size="small" color="info" variant="outlined" />
       </Box>
       <Typography component="h3" variant="h6" sx={{ fontWeight: 600, mb: 3, fontSize: '1.05rem' }}>
         {question.question}
       </Typography>
-      <Stack spacing={1.25} role="group" aria-label={t('learn.quiz.options')}>
+      <Stack spacing={1.25} role="group" aria-label={t('quiz.common.options')}>
         {question.options.map((option, index) => (
           <QuizOption
             key={index}
@@ -68,7 +68,7 @@ export const QuizQuestionCard: FC<QuizQuestionCardProps> = ({
       </Stack>
       {answer && (
         <Alert severity={answer.isCorrect ? 'success' : 'error'} sx={{ mt: 2 }}>
-          {t(answer.isCorrect ? 'learn.quiz.correct' : 'learn.quiz.incorrect')}
+          {t(answer.isCorrect ? 'quiz.common.correct' : 'quiz.common.incorrect')}
         </Alert>
       )}
       <QuizQuestionButtons

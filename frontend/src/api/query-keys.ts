@@ -28,7 +28,6 @@ export const queryKeys = {
     freeCourses: ['browse', 'free-courses'] as const,
     course: (id: string) => ['browse', 'course', id] as const,
     liveClasses: (id: string) => ['browse', 'live-classes', id] as const,
-    quizTree: (id: string) => ['browse', 'quiz-tree', id] as const,
     enrollment: (id: string) => ['browse', 'enrollment', id] as const,
   },
   profile: {
@@ -68,6 +67,12 @@ export const queryKeys = {
   quiz: {
     sections: (courseId: string) => ['quiz', 'sections', courseId] as const,
     banks: (courseId: string) => ['quiz', 'banks', courseId] as const,
+    /** The public free-preview tree: course page and practice quiz */
+    publicTree: (courseId: string) => ['quiz', 'public-tree', courseId] as const,
+  },
+  /** Public practice quiz (practice-quiz.api.ts) */
+  practiceQuiz: {
+    courses: (filters: Record<string, string>) => ['practice-quiz', 'courses', filters] as const,
   },
   /** Enrolled students of a course (enrollment.api.ts), shared by admin, player and teacher screens */
   enrollments: {
@@ -76,6 +81,53 @@ export const queryKeys = {
   /** Teacher area (teacher.api.ts) */
   teacher: {
     myCourses: ['teacher', 'my-courses'] as const,
+  },
+  /** Group chat channels and messages (group-chat.api.ts) */
+  groupChat: {
+    all: ['group-chat'] as const,
+    channelLists: ['group-chat', 'channels'] as const,
+    channels: (search: string) => ['group-chat', 'channels', search] as const,
+    discoverLists: ['group-chat', 'discover'] as const,
+    discover: (search: string) => ['group-chat', 'discover', search] as const,
+    messages: (channelId: string) => ['group-chat', 'messages', channelId] as const,
+    userSearch: (search: string) => ['group-chat', 'user-search', search] as const,
+  },
+  /** Study schedule: my timers and reminders (schedule.api.ts) */
+  schedule: {
+    all: ['schedule'] as const,
+    list: (filters: Record<string, string>) => ['schedule', 'list', filters] as const,
+  },
+  /** Community Hub (community.api.ts) */
+  community: {
+    all: ['community'] as const,
+    overviews: ['community', 'overview'] as const,
+    overview: (filters: Record<string, string>) => ['community', 'overview', filters] as const,
+    related: (channelId: string) => ['community', 'related', channelId] as const,
+    post: (postId: string) => ['community', 'post', postId] as const,
+    profile: (userId: string) => ['community', 'profile', userId] as const,
+    admin: ['community', 'admin'] as const,
+    settings: ['community', 'admin', 'settings'] as const,
+    adminChannels: ['community', 'admin', 'channels'] as const,
+    badges: ['community', 'admin', 'badges'] as const,
+    pointRules: ['community', 'admin', 'point-rules'] as const,
+  },
+  /** Support chat (chat.api.ts); live updates from the socket are written into these entries */
+  chat: {
+    all: ['chat'] as const,
+    staffConversations: ['chat', 'staff-conversations'] as const,
+    myConversation: ['chat', 'my-conversation'] as const,
+    messages: (conversationId: string) => ['chat', 'messages', conversationId] as const,
+    /** Staff: ids of the students online now (filled from the socket, never fetched) */
+    presence: ['chat', 'presence'] as const,
+  },
+  /** Notifications (notifications.api.ts) */
+  notifications: {
+    all: ['notifications'] as const,
+    mine: ['notifications', 'mine'] as const,
+    minePage: (page: number) => ['notifications', 'mine', page] as const,
+    unreadCount: ['notifications', 'unread-count'] as const,
+    sent: ['notifications', 'sent'] as const,
+    sentPage: (page: number) => ['notifications', 'sent', page] as const,
   },
   /** Super Admin dashboard and performance reports (insights.api.ts) */
   insights: {

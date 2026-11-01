@@ -1,11 +1,9 @@
 'use client';
 
-import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
-import InputAdornment from '@mui/material/InputAdornment';
-import TextField from '@mui/material/TextField';
 import { useEffect, useState } from 'react';
 
+import { SearchField } from '@/components/common/SearchField';
 import { SEARCH_DEBOUNCE_MS } from '@/hooks/useDebouncedValue';
 
 import type { SxProps, Theme } from '@mui/material/styles';
@@ -56,26 +54,14 @@ export const CourseSearchField: FC<CourseSearchFieldProps> = ({
 
   return (
     <Box sx={sx}>
-      <TextField
-        size="small"
-        fullWidth
-        type="search"
+      <SearchField
         value={text}
-        onChange={(event) => {
-          setText(event.target.value);
-          onTextChange?.(event.target.value);
+        onChange={(next) => {
+          setText(next);
+          onTextChange?.(next);
         }}
+        label={label}
         placeholder={placeholder}
-        slotProps={{
-          htmlInput: { 'aria-label': label },
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
-          },
-        }}
         sx={{ '& .MuiInputBase-root': { minHeight: 44 } }}
       />
     </Box>

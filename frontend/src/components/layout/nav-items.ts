@@ -30,9 +30,14 @@ export interface NavItem {
   exact?: boolean;
   /** Shown under a heading after the main items */
   section?: 'analytics';
+  /** Unread badge on the icon (support chat / notifications), as the old sidebars had */
+  badge?: 'chat' | 'notifications';
 }
 
-/** Admin area menu (Super Admin, Admin, Moderator), same items and roles as the old AdminSidebar. */
+/**
+ * Admin area menu (Super Admin, Admin, Moderator): the old AdminSidebar's items and roles, plus Group Chat
+ * (the old sidebar had no link to /admin/group-chat; added so the page can be reached).
+ */
 export const ADMIN_NAV: readonly NavItem[] = [
   { labelKey: 'nav.home', href: '/', icon: Home, exact: true },
   {
@@ -45,8 +50,14 @@ export const ADMIN_NAV: readonly NavItem[] = [
   { labelKey: 'nav.courses', href: '/admin/courses', icon: School },
   { labelKey: 'nav.courseQa', href: '/admin/course-qa', icon: QuestionAnswer },
   { labelKey: 'nav.schedule', href: '/admin/schedule', icon: EventNote },
-  { labelKey: 'nav.supportChat', href: '/admin/chat', icon: Chat },
-  { labelKey: 'nav.notifications', href: '/admin/notifications', icon: Notifications },
+  { labelKey: 'nav.supportChat', href: '/admin/chat', icon: Chat, badge: 'chat' },
+  { labelKey: 'nav.groupChat', href: '/admin/group-chat', icon: Groups },
+  {
+    labelKey: 'nav.notifications',
+    href: '/admin/notifications',
+    icon: Notifications,
+    badge: 'notifications',
+  },
   {
     labelKey: 'nav.homepageShowcase',
     href: '/admin/homepage-showcase',
@@ -78,10 +89,15 @@ export const STUDENT_NAV: readonly NavItem[] = [
   { labelKey: 'nav.profile', href: '/student/profile', icon: Person },
   { labelKey: 'nav.myCourses', href: '/student/courses', icon: Book },
   { labelKey: 'nav.pricing', href: '/pricing', icon: CardMembership },
-  { labelKey: 'nav.supportChat', href: '/student/chat', icon: Chat },
+  { labelKey: 'nav.supportChat', href: '/student/chat', icon: Chat, badge: 'chat' },
   { labelKey: 'nav.groupChat', href: '/student/group-chat', icon: Groups },
   { labelKey: 'nav.schedule', href: '/student/schedule', icon: EventNote },
-  { labelKey: 'nav.notifications', href: '/student/notifications', icon: Notifications },
+  {
+    labelKey: 'nav.notifications',
+    href: '/student/notifications',
+    icon: Notifications,
+    badge: 'notifications',
+  },
 ];
 
 /** Teacher area menu, same items as the old TeacherLayout. */
@@ -90,8 +106,13 @@ export const TEACHER_NAV: readonly NavItem[] = [
   { labelKey: 'nav.assignedCourses', href: '/teacher/courses', icon: School },
   { labelKey: 'nav.profile', href: '/teacher/profile', icon: Person, exact: true },
   { labelKey: 'nav.schedule', href: '/teacher/schedule', icon: EventNote },
-  { labelKey: 'nav.supportChat', href: '/teacher/chat', icon: Chat },
-  { labelKey: 'nav.notifications', href: '/teacher/notifications', icon: Notifications },
+  { labelKey: 'nav.supportChat', href: '/teacher/chat', icon: Chat, badge: 'chat' },
+  {
+    labelKey: 'nav.notifications',
+    href: '/teacher/notifications',
+    icon: Notifications,
+    badge: 'notifications',
+  },
 ];
 
 /** True when the menu item belongs to the page being shown. */

@@ -4,9 +4,6 @@ import type { AdminCourse } from '@/schemas/admin-courses.schema';
 import type { TeacherForm } from '@/schemas/people.schema';
 import type { AdminTeacher } from '@/schemas/public.schema';
 
-/** Same limit as the backend's image upload (5 MB). */
-export const TEACHER_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
-export const TEACHER_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const;
 /** Teacher accounts offered in the "link to account" list (the backend's page size limit). */
 export const TEACHER_ACCOUNTS_LIMIT = 100;
 export const BIO_PREVIEW_LENGTH = 130;

@@ -154,50 +154,7 @@
     "backToBanks": "কুইজ ব্যাংকে ফিরে যান",
     "courseProgress": "কোর্সের কুইজ অগ্রগতি",
     "bankProgress": "কুইজ ব্যাংকের অগ্রগতি",
-    "stats": {
-      "total": "মোট",
-      "answered": "উত্তর দেওয়া",
-      "correct": "সঠিক",
-      "incorrect": "ভুল",
-      "remaining": "এখনো উত্তর দেওয়া হয়নি",
-      "accuracy": "{{percent}}% নির্ভুলতা"
-    },
-    "subsection": {
-      "all": "সব",
-      "incorrect": "ভুল",
-      "correct": "সঠিক"
-    },
-    "subsectionTitle": {
-      "all": "সব প্রশ্ন",
-      "incorrect": "ভুল উত্তরের প্রশ্ন",
-      "correct": "সঠিক উত্তরের প্রশ্ন"
-    },
-    "progress": {
-      "all": "{{done}}/{{total}} উত্তর দেওয়া",
-      "incorrect": "{{done}}/{{total}} ভুল",
-      "correct": "{{done}}/{{total}} সঠিক"
-    },
-    "wrongCorrect": "ভুল {{wrong}} / সঠিক {{correct}}",
-    "emptySubsection": {
-      "all": "এই কুইজ ব্যাংকে এখনো কোনো প্রশ্ন নেই।",
-      "incorrect": "এখনো কোনো ভুল উত্তর নেই — অনুশীলন চালিয়ে যান!",
-      "correct": "এখনো কোনো সঠিক উত্তর নেই — চালিয়ে যান!"
-    },
     "questionCount_one": "{{count}}টি প্রশ্ন",
-    "questionCount_other": "{{count}}টি প্রশ্ন",
-    "questionOf": "প্রশ্ন {{number}} / {{total}}",
-    "selectAll": "প্রযোজ্য সবগুলো বেছে নিন",
-    "options": "উত্তরের অপশন",
-    "check": "উত্তর যাচাই করুন",
-    "skip": "বাদ দিন",
-    "correct": "✓ সঠিক!",
-    "incorrect": "✗ ভুল — সঠিক উত্তর উপরে চিহ্নিত করা হয়েছে।",
-    "goToQuestion": "প্রশ্ন {{number}} এ যান",
-    "reset": "রিসেট",
-    "resetTitle": "অনুশীলন রিসেট",
-    "resetMessage": "এই কুইজ ব্যাংকের আপনার সব উত্তর মুছে ফেলবেন?",
-    "resetDone": "অনুশীলন রিসেট হয়েছে",
-    "resetBank": "এই কুইজ ব্যাংকের অগ্রগতি রিসেট করুন",
-    "resetBankNamed": "{{title}} এর অগ্রগতি রিসেট করুন"
+    "questionCount_other": "{{count}}টি প্রশ্ন"
   }
 }

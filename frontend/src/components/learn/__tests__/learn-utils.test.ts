@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { findActiveLecture } from '../learn.utils';
 import { countByFilter, filterQuestions } from '../qa/qa.utils';
-import { courseQuestions, statsOf, subsectionQuestions, toAnswerMap } from '../quiz/quiz.utils';
+import {
+  courseQuestions,
+  statsOf,
+  subsectionQuestions,
+  toAnswerMap,
+} from '@/components/common/quiz/quiz.utils';
 
 import { makeBank, makeCourse, makeQuestion } from './fixtures';
 

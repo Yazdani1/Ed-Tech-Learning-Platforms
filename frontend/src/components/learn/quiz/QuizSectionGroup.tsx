@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 import { QuizBankCard } from './QuizBankCard';
 
-import type { AnswerMap } from './quiz.utils';
+import type { AnswerMap } from '@/components/common/quiz/quiz.utils';
 import type { QuizPractice } from './useQuizPractice';
 import type { FC } from 'react';
 import type { QuizBank, QuizSection } from '@/schemas/quiz.schema';

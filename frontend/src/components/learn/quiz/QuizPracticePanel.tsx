@@ -4,11 +4,16 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import { statsOf, subsectionQuestions, type AnswerMap, type Subsection } from './quiz.utils';
-import { QuizPager } from './QuizPager';
+import {
+  statsOf,
+  subsectionQuestions,
+  type AnswerMap,
+  type Subsection,
+} from '@/components/common/quiz/quiz.utils';
+import { QuizPager } from '@/components/common/quiz/QuizPager';
 import { QuizPanelHeader } from './QuizPanelHeader';
 import { QuizQuestionCard } from './QuizQuestionCard';
-import { QuizStatsBar } from './QuizStatsBar';
+import { QuizStatsBar } from '@/components/common/quiz/QuizStatsBar';
 
 import type { QuizPractice } from './useQuizPractice';
 import type { FC } from 'react';
@@ -68,7 +73,7 @@ export const QuizPracticePanel: FC<QuizPracticePanelProps> = ({
         </>
       ) : (
         <Typography color="text.secondary" align="center" sx={{ py: 6 }}>
-          {t(`learn.quiz.emptySubsection.${subsection}`)}
+          {t(`quiz.common.emptySubsection.${subsection}`)}
         </Typography>
       )}
     </Box>

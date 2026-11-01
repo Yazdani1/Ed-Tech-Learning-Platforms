@@ -1,10 +1,8 @@
 'use client';
 
-import SearchIcon from '@mui/icons-material/Search';
-import InputAdornment from '@mui/material/InputAdornment';
-import TextField from '@mui/material/TextField';
 import { useEffect, useRef, useState } from 'react';
 
+import { SearchField } from '@/components/common/SearchField';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 import type { FC } from 'react';
@@ -45,25 +43,12 @@ export const PeopleSearchField: FC<PeopleSearchFieldProps> = ({
   }, [debounced, onSearch]);
 
   return (
-    <TextField
+    <SearchField
+      showLabel
       label={label}
       placeholder={placeholder}
       value={text}
-      onChange={(event) => {
-        setText(event.target.value);
-      }}
-      size="small"
-      fullWidth
-      type="search"
-      slotProps={{
-        input: {
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
-        },
-      }}
+      onChange={setText}
     />
   );
 };

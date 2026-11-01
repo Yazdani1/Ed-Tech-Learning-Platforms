@@ -35,10 +35,5 @@ export const heroPostFormSchema = z.object({
 });
 export type HeroPostForm = z.infer<typeof heroPostFormSchema>;
 
-/** The image types and size the backend accepts (it checks the file content too). */
-export const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'] as const;
-const BYTES_PER_MB = 1024 * 1024;
-export const MAX_IMAGE_MB = 5;
-export const MAX_IMAGE_BYTES = MAX_IMAGE_MB * BYTES_PER_MB;
 /** The upload route takes at most 10 files at once. */
 export const MAX_HERO_FILES = 10;

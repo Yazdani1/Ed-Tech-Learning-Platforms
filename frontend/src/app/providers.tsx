@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import { createQueryClient } from '@/api/query-client';
 import { LanguageSync } from '@/components/i18n/LanguageSync';
 import { ConfirmProvider } from '@/context/ConfirmContext';
+import { SocketProvider } from '@/context/SocketContext';
 import { theme } from '@/theme/theme';
 // Starts i18next (English and Bangla) before any component renders
 import '@/i18n/i18n';
@@ -24,7 +25,9 @@ export const Providers: FC<ProvidersProps> = ({ children }) => {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <LanguageSync />
-        <ConfirmProvider>{children}</ConfirmProvider>
+        <SocketProvider>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </SocketProvider>
         <Toaster position="top-right" />
       </ThemeProvider>
     </QueryClientProvider>

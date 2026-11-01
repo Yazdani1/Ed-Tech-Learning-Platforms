@@ -8,7 +8,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import { COVER_MAX_MB, COVER_TYPES } from '@/schemas/course-editor.schema';
+import { IMAGE_ACCEPT, IMAGE_MAX_MB } from '@/utils/image-files';
 
 import { CoverPreview } from './CoverPreview';
 
@@ -44,7 +44,7 @@ export const MediaTab: FC<MediaTabProps> = ({ cover, savedCover, onPick, autoUpl
       </Typography>
       <CoverPreview picked={cover.preview} saved={savedCover} />
       <Typography variant="body2" color="text.secondary">
-        {t(autoUploads ? 'catalog.media.hintAuto' : 'catalog.media.hintNew', { max: COVER_MAX_MB })}
+        {t(autoUploads ? 'catalog.media.hintAuto' : 'catalog.media.hintNew', { max: IMAGE_MAX_MB })}
       </Typography>
       {cover.error && <Alert severity="error">{cover.error}</Alert>}
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -55,7 +55,7 @@ export const MediaTab: FC<MediaTabProps> = ({ cover, savedCover, onPick, autoUpl
           sx={{ minHeight: 44 }}
         >
           {t('catalog.media.upload')}
-          <input hidden type="file" accept={COVER_TYPES.join(',')} onChange={handleChange} />
+          <input hidden type="file" accept={IMAGE_ACCEPT} onChange={handleChange} />
         </Button>
         {cover.file && !autoUploads && (
           <Button

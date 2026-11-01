@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useResetQuizAttempt, useSubmitQuizAnswer } from '@/api/learn-quiz.api';
 import { useConfirm } from '@/hooks/useConfirm';
 
-import type { Subsection } from './quiz.utils';
+import type { Subsection } from '@/components/common/quiz/quiz.utils';
 
 export interface QuizSelection {
   bankId: string;
@@ -45,15 +45,15 @@ export const useQuizPractice = (courseId: string): QuizPractice => {
 
   const reset = async (bankId: string): Promise<void> => {
     const confirmed = await confirm({
-      title: t('learn.quiz.resetTitle'),
-      message: t('learn.quiz.resetMessage'),
-      confirmLabel: t('learn.quiz.reset'),
+      title: t('quiz.common.resetTitle'),
+      message: t('quiz.common.resetMessage'),
+      confirmLabel: t('quiz.common.reset'),
       destructive: true,
     });
     if (!confirmed) return;
     await resetAttempt.mutateAsync(bankId).then(
       () => {
-        toast.success(t('learn.quiz.resetDone'));
+        toast.success(t('quiz.common.resetDone'));
         if (selection?.bankId === bankId) setPage(0);
       },
       (error: unknown) => toast.error(error instanceof Error ? error.message : String(error)),

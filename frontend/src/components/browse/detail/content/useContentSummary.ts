@@ -3,7 +3,8 @@
 import { useTranslation } from 'react-i18next';
 
 import type { ContentView } from './ContentViewButtons';
-import type { CourseSection, LiveClassWeek, PublicQuizSection } from '@/schemas/browse.schema';
+import type { CourseSection, LiveClassWeek } from '@/schemas/browse.schema';
+import type { PublicQuizSection } from '@/schemas/practice-quiz.schema';
 
 /** "3 sections - 12 lectures" style line for the shown content list. */
 export const useContentSummary = (

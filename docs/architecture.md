@@ -77,14 +77,19 @@ several screens share has ONE request and ONE query key, in one module: categori
 student's enrolments and subscription (`catalog.api`); a course by id and its live classes (`browse.api`,
 used by the course page, the course player and the course editor); teacher profiles (`public.api`); the staff
 course list (`admin-courses.api`, also used by the Teachers page); a course's enrolled students
-(`enrollment.api`); quiz sections and banks (`quiz.api`); the teacher's own courses (`teacher.api`, also the
-profile's course count). So a change made on one screen refreshes every screen that shows it. Course lists
+(`enrollment.api`); quiz sections and banks, and the public free-preview quiz tree (`quiz.api`, the tree used
+by the course page and the practice quiz); a student's quiz attempts (`learn-quiz.api`, player and practice
+quiz); the teacher's own courses (`teacher.api`, also the profile's course count). Mutations that refresh
+cache entries share one helper (`api/invalidating-mutation.ts`). Live features (support chat, notifications,
+group chat) share ONE Socket.io connection (`context/SocketContext.tsx`, `SocketProvider`) whose token comes
+from the app's own `/api/socket-token` route for every handshake. So a change made on one screen refreshes every screen that shows it. Course lists
 are refreshed together by `api/course-cache.ts`. "A --> B" means A uses B.
 
 ```mermaid
 flowchart LR
     PublicSite[Public site: home, teachers, pricing] -- "logo, hero posts, discount, courses, teachers" --> PublicApi[public.api]
-    Browse[Course browse + details] -- "courses, course, live classes, quiz preview, enrolment check" --> BrowseApi[browse.api]
+    Browse[Course browse + details] -- "courses, course, live classes, enrolment check" --> BrowseApi[browse.api]
+    Browse -- "quiz preview (public tree)" --> QuizApi[quiz.api]
     Student[Student area: dashboard, My Courses] -- "enrolments, unenrol" --> CatalogApi[catalog.api]
     Profile[Profile] -- "me, update, teacher course count" --> ProfileApi[profile.api]
     Setup[Course setup] -- "create, edit, delete" --> SetupApi[setup.api]
@@ -94,7 +99,7 @@ flowchart LR
     Profile -- "plans, enrolments, cancel plan" --> CatalogApi
     Setup -- "the lists" --> CatalogApi
     PublicApi --> BeShowcase[Hero posts + logo] & BeCourses[Courses] & BeTeachers[Teachers]
-    BrowseApi --> BeCourses & BeEnrol[Enrollments] & BeCurr[Study curricula] & BeQuiz[Quiz banks]
+    BrowseApi --> BeCourses & BeEnrol[Enrollments] & BeCurr[Study curricula]
     CatalogApi --> BeSetup[Categories + course types] & BePlans[Subscription plans] & BeEnrol & BeSubs[Subscriptions]
     ProfileApi --> BeAuth[Authentication] & BeTeachers
     SetupApi --> BeSetup
@@ -104,7 +109,7 @@ flowchart LR
     AdminCourses -- "teachers" --> PublicApi
     Editor[Course editor] -- "create, save, curriculum, quiz management" --> EditorApi[course-editor.api]
     Editor -- "the course, live classes" --> BrowseApi
-    Editor -- "quiz sections + banks" --> QuizApi[quiz.api]
+    Editor -- "quiz sections + banks" --> QuizApi
     Editor -- "add, edit, delete weeks" --> LiveApi[live-class.api]
     Player[Course player] -- "the course, live classes" --> BrowseApi
     Player -- "announcements, materials, counts" --> LearnApi[learn.api]
@@ -133,6 +138,24 @@ flowchart LR
     PeopleApi --> BeUsers[Users] & BeTeachers & BeSubs & BePlans & BeQa
     TeacherApi --> BeTeachers
     InsightsApi --> BeDash[Dashboard + performance]
+    ChatUi[Support chat: inbox, page, floating button] -- "conversations, messages" --> ChatApi[chat.api]
+    NotifUi[Notifications + unread badges] -- "inbox, send, edit, read" --> NotifApi[notifications.api]
+    GroupUi[Group chat] -- "channels, members, messages, files" --> GroupApi[group-chat.api]
+    ChatUi & NotifUi & GroupUi -- "live events, send, typing" --> SocketP[SocketProvider: one Socket.io connection]
+    SocketP -- "token for each handshake" --> TokenRoute["/api/socket-token route (reads the cookie)"]
+    Player -- "students' floating support chat" --> ChatUi
+    Hub[Community Hub: posts, discussions, profiles, admin] -- "posts, replies, reactions, settings" --> CommunityApi[community.api]
+    Practice[Practice quiz] -- "courses, guest answer check" --> PracticeApi[practice-quiz.api]
+    Practice -- "public tree, banks" --> QuizApi
+    Practice -- "attempts, answer, reset" --> LearnQuizApi
+    Schedule[Study Schedule] -- "timers, reminders, history" --> ScheduleApi[schedule.api]
+    ChatApi --> BeChat[Support chat]
+    NotifApi --> BeNotif[Notifications]
+    GroupApi --> BeGroup[Group chat]
+    SocketP --> BeSocket[Socket.io]
+    CommunityApi --> BeCommunity[Community hub]
+    PracticeApi --> BeQuiz
+    ScheduleApi --> BeSchedule[Study schedules]
 ```
 
 ## Key flows
@@ -240,6 +263,42 @@ sequenceDiagram
         P-->>S: Correct / wrong, explanation
     end
 ```
+
+### Support chat message
+
+A student writes in the Support Chat page or the floating chat button; staff answer in the Support Inbox.
+Messages travel over the app's one Socket.io connection (`SocketProvider`); the lists are first read over
+REST and then kept live by the socket events, which the app writes into its query cache (every payload is
+checked with a Zod schema). The staff room includes teachers, so the live conversation update carries no
+student email; the admins' list keeps the email it already loaded.
+
+```mermaid
+sequenceDiagram
+    actor S as Student
+    participant A as Next.js app (SocketProvider)
+    participant T as /api/socket-token (Next.js route)
+    participant B as Socket.io (backend)
+    participant M as MongoDB
+    actor F as Staff
+    A->>T: GET (httpOnly cookie)
+    T-->>A: { token } (kept in memory)
+    A->>B: connect (auth.token)
+    B->>B: verify JWT, join rooms user:<id> (+ staff)
+    A->>A: refetch chat, notifications, group chat lists
+    S->>A: types, presses Enter
+    A->>B: chat:typing, then chat:send { content }
+    B->>M: save message, update conversation (unread)
+    B-->>A: chat:message (room conv:<id>)
+    B-->>F: chat:message + chat:conversationUpdated (staff room, no email)
+    F->>B: chat:markRead, chat:send { conversationId, content }
+    B-->>A: chat:message: the reply appears; unread badge +1 when the chat is closed
+```
+
+**Reconnecting.** socket.io-client retries a lost connection by itself, but not after the server closed it
+(for example after a password change) or refused the handshake. Then `SocketProvider` tries again after 1 s,
+2 s, 4 s ... (at most 30 s) while the user is signed in; every try fetches a fresh token. After every
+(re)connection the app reloads the chat, notification and group chat data, because events sent while it was
+offline are not replayed. Signing out closes the connection and stops the retries.
 
 ### Changing a password
 

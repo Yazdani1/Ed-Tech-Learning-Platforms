@@ -230,4 +230,21 @@ describe('Socket.io support chat', () => {
     expect(await error).toBe('Message is too long');
     expect(await ChatMessage.countDocuments()).toBe(before);
   });
+
+  it("SECURITY: the staff room's conversation update carries no student email (teachers are in that room)", async () => {
+    const student = await createUser('Student');
+    const teacher = await createUser('Teacher');
+    const teacherSocket = await connectReady(teacher);
+    const studentSocket = await connectReady(student);
+    const update = nextEvent<{ student?: { name?: string; email?: string } }>(
+      teacherSocket,
+      'chat:conversationUpdated',
+    );
+
+    studentSocket.emit('chat:send', { content: 'Hello support' });
+    const payload = await update;
+
+    expect(payload.student?.name).toBe(student.name);
+    expect(payload.student?.email).toBeUndefined();
+  });
 });

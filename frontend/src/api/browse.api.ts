@@ -8,15 +8,16 @@ import {
   courseSchema,
   enrollmentCheckSchema,
   liveClassWeekSchema,
-  publicQuizTreeSchema,
   type BrowseResult,
   type Course,
   type EnrollmentCheck,
   type LiveClassWeek,
-  type PublicQuizSection,
 } from '@/schemas/browse.schema';
 import { http, isApiError, type ApiError } from '@/services/http.service';
 
+import type { PublicQuizSection } from '@/schemas/practice-quiz.schema';
+
+import { getPublicQuizTree } from './quiz.api';
 import { queryKeys } from './query-keys';
 
 // Categories, course types, plans, the student's enrolments and subscription, enrol/unenrol: catalog.api.ts.
@@ -44,14 +45,6 @@ export const getLiveClasses = (courseId: string): Promise<LiveClassWeek[]> =>
     `/api/study-curricula/course/${encodeURIComponent(courseId)}`,
     z.array(liveClassWeekSchema),
   );
-
-export const getPublicQuizSections = async (courseId: string): Promise<PublicQuizSection[]> =>
-  (
-    await http.get(
-      `/api/quiz-bank/public/course/${encodeURIComponent(courseId)}`,
-      publicQuizTreeSchema,
-    )
-  ).sections;
 
 export const checkEnrollment = (courseId: string): Promise<EnrollmentCheck> =>
   http.get(`/api/enrollments/${encodeURIComponent(courseId)}/check`, enrollmentCheckSchema);
@@ -98,8 +91,9 @@ export const usePublicQuizSections = (
   courseId: string,
 ): UseQueryResult<PublicQuizSection[], ApiError> =>
   useQuery({
-    queryKey: queryKeys.browse.quizTree(courseId),
-    queryFn: () => getPublicQuizSections(courseId),
+    queryKey: queryKeys.quiz.publicTree(courseId),
+    queryFn: () => getPublicQuizTree(courseId),
+    select: (tree) => tree.sections,
   });
 
 export const useEnrollmentCheck = (

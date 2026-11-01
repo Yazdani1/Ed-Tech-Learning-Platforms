@@ -8,12 +8,13 @@ const isCI = Boolean(process.env.CI);
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
-  // The E2E stack runs `next dev`, which compiles each page on its first visit
-  timeout: 90_000,
-  expect: { timeout: 30_000 },
+  // The E2E stack runs `next dev` (compiles each page on its first visit); multi-user flows take 1 to 1.5 min under load
+  timeout: 150_000,
+  expect: { timeout: 45_000 },
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  workers: isCI ? 2 : '50%',
+  // The single `next dev` server is the bottleneck: more workers only make every page slower
+  workers: isCI ? 2 : 4,
   reporter: [['list'], ['html', { open: 'never' }]],
   // Compiles every route once before the tests (next dev compiles on first visit)
   globalSetup: './e2e/global-setup.ts',

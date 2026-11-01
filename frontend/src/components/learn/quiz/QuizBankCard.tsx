@@ -7,11 +7,11 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import { statsOf, SUBSECTIONS } from './quiz.utils';
-import { QuizResetButton } from './QuizResetButton';
-import { SubsectionButton } from './SubsectionButton';
+import { statsOf, SUBSECTIONS } from '@/components/common/quiz/quiz.utils';
+import { QuizResetButton } from '@/components/common/quiz/QuizResetButton';
+import { SubsectionButton } from '@/components/common/quiz/SubsectionButton';
 
-import type { AnswerMap } from './quiz.utils';
+import type { AnswerMap } from '@/components/common/quiz/quiz.utils';
 import type { QuizPractice } from './useQuizPractice';
 import type { FC } from 'react';
 import type { QuizBank } from '@/schemas/quiz.schema';

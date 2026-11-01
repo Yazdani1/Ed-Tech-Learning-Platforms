@@ -7,13 +7,17 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import { TopBarAlerts } from '@/components/notifications/TopBarAlerts';
+
 import type { FC } from 'react';
 
 interface TopBarProps {
   onOpenMenu: () => void;
 }
 
-/** Phones and tablets: app name and the button that opens the menu drawer. */
+/**
+ * Phones and tablets: app name, the button that opens the menu drawer, and the chat/notification badges.
+ */
 export const TopBar: FC<TopBarProps> = ({ onOpenMenu }) => {
   const { t } = useTranslation();
   return (
@@ -35,6 +39,7 @@ export const TopBar: FC<TopBarProps> = ({ onOpenMenu }) => {
         <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }} noWrap>
           {t('common.appName')}
         </Typography>
+        <TopBarAlerts />
       </Toolbar>
     </AppBar>
   );

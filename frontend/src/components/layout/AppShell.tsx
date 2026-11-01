@@ -5,6 +5,8 @@ import Drawer from '@mui/material/Drawer';
 import { usePathname } from 'next/navigation';
 import { useState, type FC, type ReactNode } from 'react';
 
+import { ShellMessaging } from '@/components/chat/ShellMessaging';
+
 import { SidebarContent } from './SidebarContent';
 import { TopBar } from './TopBar';
 
@@ -22,7 +24,8 @@ interface AppShellProps {
 
 /**
  * Signed-in area frame (admin, student, teacher). Desktop: a permanent sidebar that can collapse to icons.
- * Phones/tablets: a top bar whose menu button opens the same sidebar as a drawer.
+ * Phones/tablets: a top bar whose menu button opens the same sidebar as a drawer. Also mounts the live chat
+ * and notification updates (and the students' chat button) once per shell.
  */
 export const AppShell: FC<AppShellProps> = ({ navItems, children }) => {
   const pathname = usePathname();
@@ -82,6 +85,7 @@ export const AppShell: FC<AppShellProps> = ({ navItems, children }) => {
           {children}
         </Box>
       </Box>
+      <ShellMessaging />
     </Box>
   );
 };

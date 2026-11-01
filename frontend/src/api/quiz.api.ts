@@ -9,6 +9,7 @@ import {
   type QuizBank,
   type QuizSection,
 } from '@/schemas/quiz.schema';
+import { practiceTreeSchema, type PracticeTree } from '@/schemas/practice-quiz.schema';
 import { http, type ApiError } from '@/services/http.service';
 
 import { queryKeys } from './query-keys';
@@ -25,14 +26,26 @@ export const getQuizSections = (courseId: string): Promise<QuizSection[]> =>
 export const getQuizBanks = (courseId: string): Promise<QuizBank[]> =>
   http.get(`/api/quiz-bank/course/${enc(courseId)}`, z.array(quizBankSchema));
 
+/**
+ * GET /api/quiz-bank/public/course/:courseId: the free-preview sections and banks of a course (no answers).
+ * One request and key for the course page (sections only, via select) and the practice quiz page.
+ */
+export const getPublicQuizTree = (courseId: string): Promise<PracticeTree> =>
+  http.get(`/api/quiz-bank/public/course/${enc(courseId)}`, practiceTreeSchema);
+
 export const useQuizSections = (courseId: string): UseQueryResult<QuizSection[], ApiError> =>
   useQuery({
     queryKey: queryKeys.quiz.sections(courseId),
     queryFn: () => getQuizSections(courseId),
   });
 
-export const useQuizBanks = (courseId: string): UseQueryResult<QuizBank[], ApiError> =>
+/** The course's banks as the viewer may read them (answered questions carry their correct options). */
+export const useQuizBanks = (
+  courseId: string,
+  enabled = true,
+): UseQueryResult<QuizBank[], ApiError> =>
   useQuery({
     queryKey: queryKeys.quiz.banks(courseId),
     queryFn: () => getQuizBanks(courseId),
+    enabled,
   });

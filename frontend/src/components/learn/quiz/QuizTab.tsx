@@ -6,10 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { useMyQuizAttempts } from '@/api/learn-quiz.api';
 import { QueryState } from '@/components/common/QueryState';
 
-import { courseQuestions, statsOf, toAnswerMap } from './quiz.utils';
+import { courseQuestions, statsOf, toAnswerMap } from '@/components/common/quiz/quiz.utils';
 import { QuizBankList } from './QuizBankList';
 import { QuizPracticeArea } from './QuizPracticeArea';
-import { QuizStatsBar } from './QuizStatsBar';
+import { QuizStatsBar } from '@/components/common/quiz/QuizStatsBar';
 import { useQuizPractice } from './useQuizPractice';
 
 import type { FC } from 'react';

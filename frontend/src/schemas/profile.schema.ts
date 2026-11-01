@@ -4,9 +4,6 @@ import { PASSWORD_MIN_LENGTH, userSchema } from './auth.schema';
 
 /** Same limits as auth.controller updateMe (bcrypt only reads the first 72 bytes). */
 export const PASSWORD_MAX_LENGTH = 72;
-/** Same as the backend's `upload` middleware (images up to 5 MB). */
-export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
-export const AVATAR_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
 
 /** User.activeSubscription (a nested object: missing or partly empty when there is no plan). */
 export const activeSubscriptionSchema = z.object({

@@ -16,40 +16,49 @@ flowchart LR
 
 ## Screens
 
-| Route                                                    | Screen                                                                                                                                  | Who can use it                                                      |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `/auth/login`                                            | Sign in                                                                                                                                 | Visitors who are not signed in                                      |
-| `/auth/register`                                         | Create account                                                                                                                          | Visitors who are not signed in                                      |
-| `/admin/*`, `/student/*`, `/teacher/*`                   | Signed-in shell (menu, user, sign out)                                                                                                  | The area's roles                                                    |
-| `/`                                                      | Home                                                                                                                                    | Everyone                                                            |
-| `/teachers`                                              | Our Instructors                                                                                                                         | Everyone                                                            |
-| `/pricing`                                               | Choose Your Plan (subscription plans)                                                                                                   | Everyone; only Students can subscribe                               |
-| `/courses`                                               | Course catalog (search, filters, pages)                                                                                                 | Everyone                                                            |
-| `/free-courses`                                          | Free courses by course type                                                                                                             | Everyone                                                            |
-| `/courses/[id]`                                          | Course page (details, previews, enrolment)                                                                                              | Everyone; actions depend on the role                                |
-| `/student/dashboard`                                     | Student dashboard                                                                                                                       | Students                                                            |
-| `/student/courses`                                       | My Courses                                                                                                                              | Students                                                            |
-| `/admin/profile`, `/student/profile`, `/teacher/profile` | My Profile                                                                                                                              | Everyone signed in (each in their own area)                         |
-| `/admin/categories`                                      | Course setup: categories                                                                                                                | Super Admin, Admin                                                  |
-| `/admin/course-types`                                    | Course setup: course types                                                                                                              | Super Admin, Admin                                                  |
-| `/admin/homepage-showcase`                               | Homepage showcase (logo + slider)                                                                                                       | Super Admin, Admin                                                  |
-| `/admin/courses`                                         | Courses (staff list, filters, bulk edit)                                                                                                | Super Admin, Admin; Moderator (published courses, no manager tools) |
-| `/admin/courses/[id]`                                    | Course details (staff view of the course page)                                                                                          | Super Admin, Admin, Moderator                                       |
-| `/admin/enrollments/[courseId]`                          | Course enrolments (students, revenue, CSV export)                                                                                       | Super Admin, Admin; Moderator (students + CSV only)                 |
-| `/admin/courses/create`                                  | Create a new course (details, cover, learning content) as a Draft                                                                       | Super Admin, Admin                                                  |
-| `/admin/courses/[id]/edit`                               | Edit a course: details, cover, learning content, curriculum, live classes, quiz banks; publish                                          | Super Admin, Admin                                                  |
-| `/student/courses/[courseId]/learn`                      | The course player: video lectures, live classes, announcements, study materials, Q&A and quiz practice (full screen, no sidebar)        | Student (enrolled, or with an active plan that covers the course)   |
-| `/teacher/courses/[courseId]/learn`                      | The same player inside the teacher area; the teacher can also post announcements, study materials and live classes and see the students | Teacher of the course                                               |
-| `/admin/courses/[id]/learn`                              | The same player inside the admin area; staff manage the course content and can download the student list                                | Super Admin, Admin, Moderator                                       |
-| `/admin/users`                                           | Find, create, edit, re-role and (Super Admin) delete user accounts                                                                      | Super Admin, Admin                                                  |
-| `/admin/teachers`                                        | Manage public teacher profiles and link them to Teacher login accounts                                                                  | Super Admin, Admin                                                  |
-| `/admin/subscriptions`                                   | Configure subscription plans; list, assign and cancel member subscriptions                                                              | Super Admin, Admin                                                  |
-| `/admin/course-qa`                                       | See unresolved course questions of every course; open each in the course player to answer and resolve it                                | Super Admin, Admin, Moderator                                       |
-| `/teacher/courses`                                       | The courses the teacher is assigned to, their enrolled students and the way into each course                                            | Teacher                                                             |
-| `/admin/dashboard`                                       | Snapshot of the whole platform: totals, revenue, charts, top courses, newest enrolments                                                 | Super Admin                                                         |
-| `/admin/performance`                                     | Revenue and enrolment report for all courses or one course over 7 days, 30 days or lifetime                                             | Super Admin                                                         |
-| any unknown address                                      | Page not found                                                                                                                          | Everyone                                                            |
-| any page that crashes                                    | Something went wrong                                                                                                                    | Everyone                                                            |
+| Route                                                                      | Screen                                                                                                                                  | Who can use it                                                            |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `/auth/login`                                                              | Sign in                                                                                                                                 | Visitors who are not signed in                                            |
+| `/auth/register`                                                           | Create account                                                                                                                          | Visitors who are not signed in                                            |
+| `/admin/*`, `/student/*`, `/teacher/*`                                     | The area's roles                                                                                                                        | Signed-in shell (menu, user, sign out)                                    |
+| `/`                                                                        | Home                                                                                                                                    | Everyone                                                                  |
+| `/teachers`                                                                | Our Instructors                                                                                                                         | Everyone                                                                  |
+| `/pricing`                                                                 | Choose Your Plan (subscription plans)                                                                                                   | Everyone; only Students can subscribe                                     |
+| `/courses`                                                                 | Course catalog (search, filters, pages)                                                                                                 | Everyone                                                                  |
+| `/free-courses`                                                            | Free courses by course type                                                                                                             | Everyone                                                                  |
+| `/courses/[id]`                                                            | Course page (details, previews, enrolment)                                                                                              | Everyone; actions depend on the role                                      |
+| `/student/dashboard`                                                       | Student dashboard                                                                                                                       | Students                                                                  |
+| `/student/courses`                                                         | My Courses                                                                                                                              | Students                                                                  |
+| `/admin/profile`, `/student/profile`, `/teacher/profile`                   | My Profile                                                                                                                              | Everyone signed in (each in their own area)                               |
+| `/admin/categories`                                                        | Course setup: categories                                                                                                                | Super Admin, Admin                                                        |
+| `/admin/course-types`                                                      | Course setup: course types                                                                                                              | Super Admin, Admin                                                        |
+| `/admin/homepage-showcase`                                                 | Homepage showcase (logo + slider)                                                                                                       | Super Admin, Admin                                                        |
+| `/admin/courses`                                                           | Courses (staff list, filters, bulk edit)                                                                                                | Super Admin, Admin; Moderator (published courses, no manager tools)       |
+| `/admin/courses/[id]`                                                      | Course details (staff view of the course page)                                                                                          | Super Admin, Admin, Moderator                                             |
+| `/admin/enrollments/[courseId]`                                            | Course enrolments (students, revenue, CSV export)                                                                                       | Super Admin, Admin; Moderator (students + CSV only)                       |
+| `/admin/courses/create`                                                    | Create a new course (details, cover, learning content) as a Draft                                                                       | Super Admin, Admin                                                        |
+| `/admin/courses/[id]/edit`                                                 | Edit a course: details, cover, learning content, curriculum, live classes, quiz banks; publish                                          | Super Admin, Admin                                                        |
+| `/student/courses/[courseId]/learn`                                        | The course player: video lectures, live classes, announcements, study materials, Q&A and quiz practice (full screen, no sidebar)        | Student (enrolled, or with an active plan that covers the course)         |
+| `/teacher/courses/[courseId]/learn`                                        | The same player inside the teacher area; the teacher can also post announcements, study materials and live classes and see the students | Teacher of the course                                                     |
+| `/admin/courses/[id]/learn`                                                | The same player inside the admin area; staff manage the course content and can download the student list                                | Super Admin, Admin, Moderator                                             |
+| `/admin/users`                                                             | Find, create, edit, re-role and (Super Admin) delete user accounts                                                                      | Super Admin, Admin                                                        |
+| `/admin/teachers`                                                          | Manage public teacher profiles and link them to Teacher login accounts                                                                  | Super Admin, Admin                                                        |
+| `/admin/subscriptions`                                                     | Configure subscription plans; list, assign and cancel member subscriptions                                                              | Super Admin, Admin                                                        |
+| `/admin/course-qa`                                                         | See unresolved course questions of every course; open each in the course player to answer and resolve it                                | Super Admin, Admin, Moderator                                             |
+| `/teacher/courses`                                                         | The courses the teacher is assigned to, their enrolled students and the way into each course                                            | Teacher                                                                   |
+| `/admin/dashboard`                                                         | Snapshot of the whole platform: totals, revenue, charts, top courses, newest enrolments                                                 | Super Admin                                                               |
+| `/admin/performance`                                                       | Revenue and enrolment report for all courses or one course over 7 days, 30 days or lifetime                                             | Super Admin                                                               |
+| `/student/chat`                                                            | Support Chat: the student's own conversation with the support team (live)                                                               | Students                                                                  |
+| `/admin/chat`, `/teacher/chat`                                             | Support Inbox: every student conversation, unread counts, online status, live replies                                                   | Super Admin, Admin, Moderator (`/admin`); Teacher (`/teacher`, no emails) |
+| `/admin/notifications`, `/student/notifications`, `/teacher/notifications` | Notifications: my notifications (paged, mark read); Super Admin/Admin also send, edit, delete                                           | Everyone signed in (each in their own area); sending: Super Admin, Admin  |
+| `/admin/group-chat`, `/student/group-chat`                                 | Group Chat (channels, messages, files)                                                                                                  | Super Admin, Admin, Moderator (every channel); Students (their channels)  |
+| `/community-hub`                                                           | Community Hub (channels, discussions, widgets; Community Settings dialog for admins)                                                    | Everyone (guests see a limited preview); settings: Super Admin, Admin     |
+| `/community-hub/[postId]`                                                  | Community discussion (answers, nested replies, reactions)                                                                               | Everyone (taking part needs sign-in)                                      |
+| `/community-hub/users/[userId]`                                            | Community profile                                                                                                                       | Everyone (private profiles: owner, Admin, Super Admin only)               |
+| `/practice-quiz`                                                           | Practise the free-preview quiz banks of any public course                                                                               | Everyone (guests check answers; signed-in users also save them)           |
+| `/admin/schedule`, `/student/schedule`, `/teacher/schedule`                | Study Schedule (timers, reminders, history)                                                                                             | Every signed-in user, in their own area (only their own items)            |
+| any unknown address                                                        | Page not found                                                                                                                          | Everyone                                                                  |
+| any page that crashes                                                      | Something went wrong                                                                                                                    | Everyone                                                                  |
 
 ## Screen details
 
@@ -123,6 +132,8 @@ sign-out button.
    the names); course create/edit and course player pages start collapsed.
 3. **Logout** signs out and opens `/auth/login`. If the server cannot be reached, the user stays signed in and
    sees "Could not sign out".
+4. Support Chat and Notifications carry a red unread count; screen readers hear it in the item's name (e.g.
+   "Notifications (3 unread)"), and the collapsed menu's tooltip shows it too.
 
 **On mobile:** a top bar with a menu button replaces the sidebar; the menu slides in as a drawer and closes
 after choosing a page.
@@ -130,10 +141,12 @@ after choosing a page.
 **API endpoints used:** `GET /api/auth/me`, `POST /api/auth/logout`.
 
 **Code:** `frontend/src/app/{admin,student/(shell),teacher}/layout.tsx`, `frontend/src/components/layout/`
-(`AppShell`, `SidebarContent`, `nav-items.ts`), `frontend/src/components/permissions/RequireRole.tsx`,
-`frontend/src/proxy.ts`.
+(`AppShell`, `SidebarContent`, `SidebarNavItem`, `nav-items.ts`; `AppShell` also mounts `ShellMessaging`, the
+live chat and notification updates), `frontend/src/components/permissions/RequireRole.tsx`,
+`frontend/src/proxy.ts`, `frontend/src/context/SocketContext.tsx` (the one Socket.io connection).
 
-**Tests:** `components/layout/__tests__/SidebarContent.test.tsx`,
+**Tests:** `components/layout/__tests__/SidebarContent.test.tsx` (role menus, unread counts in the names),
+`context/__tests__/SocketContext.test.tsx` (connect, sign-out, reconnect),
 `components/permissions/__tests__/RequireRole.test.tsx`, `src/__tests__/proxy.test.ts`; Playwright
 `frontend/e2e/shell.spec.ts` and the access rules in `auth.spec.ts`.
 
@@ -881,13 +894,17 @@ Forms open full screen; the student list becomes cards. Buttons are at least 44 
 components `frontend/src/components/learn/` (`LearnPage`, `LearnPlayer`, `LearnNav`, `video/`, `overview/`,
 `live/`, `announcements/`, `materials/`, `students/`, `qa/`, `quiz/`, `common/`), shared `components/live-class/`,
 `components/enrollments/`, `components/common/rich-text/` (TipTap, loaded by `next/dynamic`),
-`components/common/PostedByLine`; data `frontend/src/api/learn.api.ts`, `learn-qa.api.ts`, `learn-quiz.api.ts`,
+`components/common/PostedByLine`, `components/common/quiz/` (question option, pager, subsection buttons,
+progress bar, reset button, `quiz.utils.ts`; shared with the practice quiz); students' floating support chat
+(`components/chat/ShellMessaging`, mounted by `LearnPage` in the student player only); data
+`frontend/src/api/learn.api.ts`, `learn-qa.api.ts`, `learn-quiz.api.ts`,
 `quiz.api.ts`, `live-class.api.ts`, `enrollment.api.ts`, the course and live classes from `browse.api.ts`;
 shapes `frontend/src/schemas/learn.schema.ts`, `quiz.schema.ts`, `enrollment.schema.ts`; texts
 `src/i18n/locales/{en,bn}/learn.json`.
 
 **Tests:** `frontend/src/components/learn/__tests__/` (`LearnPlayer.test.tsx`: lecture player, tabs in the URL,
-role-based Students tab, 403 / 404 / 500 states; `AnnouncementsTab.test.tsx`: list, sanitising, empty/error,
+role-based Students tab, 403 / 404 / 500 states; `LearnPage.test.tsx`: support chat button for students,
+not for staff; `AnnouncementsTab.test.tsx`: list, sanitising, empty/error,
 teacher posts, author deletes, study-material link rules; `QaSection.test.tsx`: filters, resolve rights,
 upvote, question detail via URL; `QuizTab.test.tsx`: answers hidden until checked, 409 message, reset, empty;
 `PlayerTabs.test.tsx`: Live Class read-only for students and author-only for teachers, add a class, empty and
@@ -1165,6 +1182,466 @@ ChartTypeToggle, PerformanceChartPanel, PerformanceChart, MetricTimeChart, Cours
 CourseSelectHeader, CourseSelectOption, usePerformanceParams.ts), `frontend/src/api/insights.api.ts`.
 
 **Tests:** `components/insights/__tests__/PerformancePage.test.tsx`; Playwright `frontend/e2e/insights.spec.ts`.
+
+### Support Chat (student)
+
+**Route:** `/student/chat` · **Menu:** Support Chat
+
+**Who can use it:** students. Each student has exactly one support conversation (the server creates it on first use).
+
+**What it is for:** a student asks the support team (admins, moderators, teachers) for help and gets answers in real time.
+
+**How to use it:**
+
+1. Open **Support Chat** from the menu. The header says "Support Chat — Our team is here to help you".
+2. With no messages yet, "Welcome to Support Chat! 👋" is shown.
+3. Type in **Type your message...** and press **Enter** (or the send button). **Shift+Enter** starts a new line. A message can have up to 2000 characters.
+4. While you type, staff see "<your name> is typing". When a staff member types, "<name> is typing" appears under the messages.
+5. Staff replies appear at once; opening the page (and every reply read on it) marks the conversation read, so the unread badge goes back to zero.
+6. **Search messages...** filters the messages by text, sender name or role ("No messages match your search." when nothing fits).
+7. If the server refuses a message, a toast says "Message is too long" or "Failed to send message".
+
+**On mobile:** the chat fills the screen under the top bar; only the message area scrolls; the send button is 44 px.
+
+**API endpoints used:** `GET /api/chat/conversations` (the student's conversation), `GET /api/chat/conversations/:id/messages`; Socket.io `chat:send`, `chat:typing`, `chat:markRead` (sent) and `chat:message`, `chat:typing`, `chat:error` (received).
+
+**Code:** `frontend/src/app/student/(shell)/chat/page.tsx`, `frontend/src/components/chat/StudentChatPage.tsx`, `StudentChatPanel.tsx`, `MessageList.tsx`, `ChatComposer.tsx`, `useConversationLive.ts`, `useChatComposer.ts`; data `frontend/src/api/chat.api.ts`, `frontend/src/schemas/chat.schema.ts`.
+
+**Tests:** `components/chat/__tests__/StudentChatPage.test.tsx`; Playwright `frontend/e2e/chat.spec.ts`.
+
+### Floating support chat (student)
+
+**Route:** every page of the student area except `/student/chat` and `/student/group-chat` (where it would cover the message box), and the student course player · **Menu:** none (round chat button in the bottom right corner)
+
+**Who can use it:** students.
+
+**What it is for:** reach support from any student page without leaving it.
+
+**How to use it:**
+
+1. The round chat button shows a red badge with the number of unread staff replies.
+2. Press it: the chat window opens (the same conversation, search and message box as the Support Chat page), the keyboard focus moves into it and the replies are marked read.
+3. Press the close (X) button or **Escape** to go back to the round button (the focus returns to it).
+4. In the course player the page keeps free space at the bottom, so its last buttons can always be scrolled clear of the round button. Staff never see the button there.
+
+**On mobile:** the chat window covers the whole screen; the close button is in its header.
+
+**API endpoints used:** as Support Chat (student).
+
+**Code:** `frontend/src/components/chat/ChatWidget.tsx`, `useWidgetFocus.ts` (focus and Escape) (shown by `ShellMessaging.tsx`, mounted once per area by `components/layout/AppShell.tsx` and by `components/learn/LearnPage.tsx` in the student course player).
+
+**Tests:** `components/chat/__tests__/ChatWidget.test.tsx` (unread count, open/close, focus and Escape, hidden on the chat pages and for staff), `components/learn/__tests__/LearnPage.test.tsx`; Playwright `frontend/e2e/chat.spec.ts`.
+
+### Support Inbox (staff)
+
+**Route:** `/admin/chat` (Super Admin, Admin, Moderator) and `/teacher/chat` (Teacher) · **Menu:** Support Chat
+
+**Who can use it:** all staff. Teachers answer like the others but never see student email addresses.
+
+**What it is for:** staff read and answer every student's support conversation.
+
+**How to use it:**
+
+1. The left list ("Support Inbox") shows every conversation, most recent first: the student's name and picture, a green (online) or grey (offline) dot, "Active now" / "Offline", the unread count, the time (today) or date of the last message, and the last message.
+2. **Search students...** filters by name, email or last message.
+3. Choose a conversation: the right side shows the student (name, online status and, not for teachers, email), the messages and the reply box ("Reply to <name>..."). Opening it marks it read for all staff.
+4. Type and press **Enter** to reply; the student sees it at once. "<name> is typing" shows while the student types.
+5. New student messages move their conversation to the top of the list with a new unread count, live. (Live updates carry no email, because teachers receive them too; the email already loaded stays, so admins can still search by it.)
+6. If the connection drops (also when the server closes it after a password change), the app reconnects by itself and reloads the conversations, messages and counts.
+
+**On mobile:** one pane at a time: the list first; choosing a conversation opens it full width with a back arrow ("Back to conversations").
+
+**API endpoints used:** `GET /api/chat/conversations` (all conversations), `GET /api/chat/conversations/:id/messages`; Socket.io `chat:send` (with `conversationId`), `chat:typing`, `chat:markRead` (sent) and `chat:message`, `chat:conversationUpdated`, `chat:typing`, `chat:presence`, `chat:presenceSnapshot`, `chat:error` (received).
+
+**Code:** `frontend/src/app/admin/chat/page.tsx`, `frontend/src/app/teacher/chat/page.tsx`, `frontend/src/components/chat/StaffChatPage.tsx`, `ConversationList.tsx`, `ConversationListItem.tsx`, `StaffConversationPanel.tsx`, `StaffChatHeader.tsx`, `useChatLiveSync.ts`.
+
+**Tests:** `components/chat/__tests__/StaffChatPage.test.tsx`; Playwright `frontend/e2e/chat.spec.ts`.
+
+### Notifications
+
+**Route:** `/admin/notifications`, `/student/notifications`, `/teacher/notifications` (`?tab=send|all|sent&page=N`) · **Menu:** Notifications
+
+**Who can use it:** everyone signed in reads their own notifications. Super Admin and Admin also send, edit and delete them (Moderators only read).
+
+**What it is for:** the admin team sends announcements to whole roles; everyone reads them here.
+
+**How to use it:**
+
+1. **All Notifications** lists your notifications, newest first, 10 per page. Each shows its title, priority (Low, Normal, High, Urgent, with a coloured left border), "Unread" when you have not opened it, and the date.
+2. Press a notification to open it: the message (rich text) and "Sent by <name>". Opening an unread one marks it read.
+3. **Mark all read** marks everything read (it is off when nothing is unread).
+4. Super Admin / Admin see three tabs. **Send Notification**: enter a title (max 140 characters), the message (rich text), the priority and the roles to send to (Student is ticked at first), then press **Send Notification**; a toast says how many users received it.
+5. **Sent Notifications** lists every notification the admin team sent with its roles. The "⋮" menu has **Edit** (title, message, priority, roles; recipients follow the new roles) and **Delete** (after a confirmation; recipients no longer see it).
+6. New, edited and deleted notifications reach the inbox and the unread badge live.
+
+**On mobile:** one column; the tabs scroll sideways; dialogs are full screen; buttons are 44 px.
+
+**API endpoints used:** `GET /api/notifications?page&limit`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/:id/read`, `PATCH /api/notifications/read-all`; Super Admin/Admin: `POST /api/notifications`, `GET /api/notifications/sent/all?page&limit`, `PUT /api/notifications/:id`, `DELETE /api/notifications/:id`; Socket.io `notification:new`, `notification:updated`, `notification:deleted` (received).
+
+**Code:** `frontend/src/app/{admin,teacher}/notifications/page.tsx`, `frontend/src/app/student/(shell)/notifications/page.tsx`, `frontend/src/components/notifications/` (`NotificationsScreen.tsx`, `InboxPanel.tsx`, `SentPanel.tsx`, `SendNotificationPanel.tsx`, `EditNotificationModal.tsx`, `NotificationCard.tsx`, `useNotificationLiveSync.ts`); data `frontend/src/api/notifications.api.ts`, `frontend/src/schemas/notifications.schema.ts`.
+
+**Tests:** `components/notifications/__tests__/NotificationsInbox.test.tsx`, `NotificationsAdmin.test.tsx`; Playwright `frontend/e2e/notifications.spec.ts`.
+
+### Unread badges (top bar)
+
+**Route:** the top bar of every signed-in area (phones and tablets) · **Menu:** the chat and bell buttons at the right of the top bar
+
+**Who can use it:** everyone signed in.
+
+**What it is for:** see at a glance how many support chat messages and notifications are unread.
+
+**How to use it:** the chat button opens the area's Support Chat page, the bell opens Notifications; each shows a red count while something is unread (read as e.g. "Notifications (3 unread)" by screen readers). Counts update live over the socket.
+
+**On mobile:** this is where the badges are; on desktop (no top bar) the sidebar items Support Chat and Notifications show the same counts (and say them in their accessible names).
+
+**API endpoints used:** `GET /api/notifications/unread-count`, `GET /api/chat/conversations`.
+
+**Code:** `frontend/src/components/notifications/TopBarAlerts.tsx`, `NavUnreadBadge.tsx`, `useNavUnreadCount.ts`, `frontend/src/components/chat/useChatUnreadCount.ts`, `frontend/src/components/layout/TopBar.tsx`, `SidebarNavItem.tsx`, `nav-items.ts` (`badge`).
+
+**Tests:** `components/notifications/__tests__/TopBarAlerts.test.tsx`, `components/layout/__tests__/SidebarContent.test.tsx`.
+
+### Group Chat
+
+**Route:** `/admin/group-chat`, `/student/group-chat` · **Menu:** Create Channel (the old menu name). The
+old admin sidebar had no link to the page; the admin menu now has the item so staff can reach it.
+
+**Who can use it:** Super Admin, Admin and Moderator (under `/admin`) see and manage **every** channel, also
+blocked and archived ones. Students (under `/student`) see the channels they belong to, plus open channels
+to discover. Teachers are ordinary members on the server side, but the teacher area has no group-chat page
+(the old client had none either).
+
+**What it is for:** group conversations in channels: public channels anyone can join, private channels
+that need the channel admin's approval, with text messages and file attachments, live.
+
+**How to use it:**
+
+1. The left column has a search box (name or description), **Create Channel**, **My Channels** (type icon,
+   name, member count and a red badge with my unread messages) and **Discover Channels** (open channels I
+   am not in yet). On a computer the first of my channels opens by default.
+2. **Create Channel** opens a dialog: **Channel name** (required), **Description**, **Channel type**
+   (Public / Private). **Create** shows "Channel created" and opens the new channel; I am its admin.
+3. Picking a Discover channel shows its public card only (name, description, type, member count): **Join
+   this channel** (public: "Joined channel", the messages open), or **Request to join** (private: the button
+   becomes "Join request sent" with **Cancel request**). Members and other people's requests are never shown
+   to non-members.
+4. In a channel: the header shows the name and member count (tap it for the details dialog), the type and
+   **Blocked** when blocked. Channel admins and staff see **Add Members** and, when there are pending
+   requests, **Requests (n)**.
+5. **Details** dialog: tabs **Description**, **Members (n)** (name, platform role, channel role; managers
+   can remove ordinary members after a confirmation, "Member removed") and, for managers, **Requests (n)**
+   with **Accept** ("Join request approved").
+6. **Add Members**: type at least 2 letters of a name; tap people to select them (members are greyed
+   "Already a member"); **Add Selected (n)**. Emails are shown only to staff (the backend sends them only
+   to staff).
+7. The ⋮ menu: **Edit** and **Delete** (archives the channel, after a confirmation) for the channel's
+   creator and staff; **Leave** for other members (after a confirmation); **Block channel / Unblock
+   channel** for Super Admin, Admin and Moderator.
+8. Messages: a search box filters the loaded messages (text, sender, role). Each message shows the sender's
+   avatar, name and role badge (or "You"), the time in my time zone, the text and the attachments (images
+   inline, other files as buttons that open in a new tab). New messages and "<name> is typing" arrive live;
+   opening a channel marks it read (the unread badge goes away).
+9. Writing: type in **Message** (Enter sends, Shift+Enter adds a line). **+** opens Upload image / Upload
+   PDF / Upload files/documents. Up to 10 files of up to 10 MB each (checked before sending); each picked
+   file shows a preview with a remove button. Allowed: images, PDF, Office/ZIP, audio/video and plain
+   text; the server checks the real file content and its message ("This file type is not allowed") is
+   shown as a toast, the text and files stay so nothing is lost.
+
+**On mobile:** one side at a time: the channel list first; picking a channel shows it full width with a
+back arrow (**Back to channels**). The header buttons wrap to a second line; dialogs are full screen;
+touch targets are 44 px.
+
+**API endpoints used:** `GET /api/group-chat/channels`, `GET /api/group-chat/channels/discover`,
+`POST /api/group-chat/channels`, `PATCH /api/group-chat/channels/:channelId`,
+`POST|DELETE /api/group-chat/channels/:channelId/join`,
+`POST /api/group-chat/channels/:channelId/approve/:userId`,
+`POST /api/group-chat/channels/:channelId/members`,
+`DELETE /api/group-chat/channels/:channelId/members/:userId`,
+`POST /api/group-chat/channels/:channelId/leave`, `PATCH /api/group-chat/channels/:channelId/archive`,
+`PATCH /api/group-chat/channels/:channelId/block`, `GET|POST /api/group-chat/channels/:channelId/messages`
+(POST is multipart: `content`, `files`), `PATCH /api/group-chat/channels/:channelId/read`,
+`GET /api/group-chat/users/search`. Socket.io (the app's one shared connection): emits
+`groupChat:joinRoom` (when a channel opens, so channels joined after connecting are live too) and
+`groupChat:typing`; listens to `groupChat:message`, `groupChat:channelUpdated` and `groupChat:typing`
+(every payload is checked with a Zod schema).
+
+**Code:** `frontend/src/app/admin/group-chat/page.tsx`, `frontend/src/app/student/(shell)/group-chat/page.tsx`,
+`frontend/src/components/group-chat/` (`GroupChatPage`, `useGroupChatSelection`, `ChannelSidebar`,
+`ChannelSidebarHeader`, `ChannelSection`, `ChannelListItem`, `ChannelPanel`, `ChannelHeader`,
+`ChannelTitleButton`, `ChannelJoinPreview`, `JoinButtons`, `ChannelConversation`, `MessageList`,
+`MessageBubble`, `MessageMeta`, `MessageAttachment`, `GroupTypingIndicator`, `MessageComposer`,
+`useMessageComposer`, `AttachMenu`, `SelectedFilePreview`, `ChannelDialogs`, `ChannelFormModal`,
+`useChannelForm`, `AddMembersModal` (with the shared `components/common/SearchField`), `UserSearchList`, `ChannelDetailsModal`,
+`ChannelMembersTab`, `ChannelRequestsTab`, `useChannelMenu`, `useChannelCommands`, `useChannelMembership`,
+`group-chat-utils.ts`), `frontend/src/hooks/useGroupChatSocket.ts`, `frontend/src/hooks/useGroupChatFiles.ts`,
+`frontend/src/hooks/useTypingEmitter.ts` ("is typing", also stopped when the box closes; shared with support chat),
+`components/common/UserAvatar.tsx` and `utils/user-display.ts` (avatars, role colours),
+`frontend/src/api/group-chat.api.ts` (requests, hooks and the cache updates for live events),
+`frontend/src/schemas/group-chat.schema.ts`.
+
+**Tests:** `components/group-chat/__tests__/GroupChatPage.test.tsx` (15 tests: list + unread, empty, error,
+mark read + room join, join public, request/cancel private, multipart send, backend file-type error, 10 MB
+check, live message + typing, leave, staff block/edit/delete, approve request, create channel, add members);
+Playwright `frontend/e2e/group-chat.spec.ts` (desktop + mobile: a student creates a channel and sends a
+message; an Admin finds a private channel and blocks it).
+
+### Community Hub
+
+**Route:** `/community-hub` · **Menu:** public navbar "Community Hub"
+
+**Who can use it:** everyone. Visitors who are not signed in see a limited preview (the first 10 discussions,
+no paging) and cannot post or react. Signed-in users post, react and open their profile. Super Admin and Admin
+also get **Community Settings** and the archive filter. Super Admin, Admin and Moderator can pin and edit or
+delete any discussion; the author can edit or delete their own.
+
+**What it is for:** the public discussion area: questions and answers grouped in channels, with reactions,
+points and badges.
+
+**How to use it:**
+
+1. The header shows the title, description and background picture chosen by admins. Type in the search box and
+   press **Search**; the count "Search results (n)" appears. Clearing the box (or **✕**) shows everything again.
+2. The bar under the header shows the total members, discussion questions and answers.
+3. Pick a channel in the **Channels** list (or **All Channels**). The heading shows the channel and its number
+   of discussions.
+4. **Show filters** opens the filter panel: channel, From/To dates and (Super Admin, Admin) **Archive on/off**
+   for archived discussions. **Clear filters** or **Hide filters** removes them. Channel, dates, search and
+   archive are kept in the address bar, so reloads and shared links keep them.
+5. **New Discussion** opens "Start a discussion": choose a channel, enter a title, write the description in the
+   rich text editor and optionally add up to 8 pictures (PNG, JPEG, GIF, WEBP, at most 5 MB each; other files
+   are refused with a message). **Publish Discussion** saves it.
+6. Each card shows the author (click the name for a profile preview with counts, badges and **View Profile**),
+   role, points, earned badges, date and channel, the title, the start of the text, picture thumbnails, the
+   reaction button (Like, or remove your reaction), **Choose a reaction** (Like, Love, Wow, Sad, Angry,
+   Helpful), the answer count and the most used reactions (opens the list of who reacted). Pinned discussions
+   come first with a "Pinned discussion" strip. Clicking the card or its title opens the discussion.
+7. The "⋮" menu of a card: **Edit** (dialog with channel, title, description and new pictures, which replace the
+   old ones), **Pin/Unpin** (staff) and **Delete** (after a confirmation; the discussion is archived).
+8. Scrolling to the end loads more discussions (or press **Load more discussions**).
+9. The right column shows Most Answered Questions, Top Contributors, Badges and Online Members.
+10. **Community Settings** (Super Admin, Admin) opens a dialog with four sections: **Header** (title,
+    description, background picture), **Channels** (create, edit, archive; name, rich text description,
+    picture), **Badges** (create, edit, archive; name, picture, required points as a whole number of 0 or more)
+    and **Points Settings** (points for an accepted answer, a new post, a reply and a received reaction).
+    Archiving asks for confirmation; archived channels and badges are shown faded.
+
+**On mobile:** the three columns stack (channels, discussions, widgets); the search box and buttons stack in one
+column; dialogs open full screen; all buttons are at least 44 px.
+
+**API endpoints used:** `GET /api/community` (with channel, dateFrom, dateTo, search, archived, limit, skip),
+`POST /api/community/posts`, `PUT /api/community/posts/:postId`, `PATCH /api/community/posts/:postId/reactions`,
+`PATCH /api/community/posts/:postId/pin`, `PATCH /api/community/posts/:postId/archive`,
+`GET /api/community/users/:userId` (profile preview); settings: `GET/PUT /api/community/settings`,
+`GET /api/community/admin/channels`, `POST /api/community/channels`, `PUT /api/community/channels/:id`,
+`PATCH /api/community/channels/:id/archive`, `GET/POST /api/community/badges`, `PUT /api/community/badges/:id`,
+`PATCH /api/community/badges/:id/archive`, `GET/PUT /api/community/point-rules`.
+
+**Code:** `frontend/src/app/(public)/community-hub/page.tsx`, `frontend/src/components/community/hub/`
+(CommunityHubPage), `post/`, `sidebar/`, `admin/` (CommunityAdminModal), `common/`;
+`frontend/src/api/community.api.ts`, `frontend/src/schemas/community.schema.ts`.
+
+**Tests:** `components/community/__tests__/CommunityHubPage.test.tsx`, `CommunityAdminModal.test.tsx`;
+Playwright `frontend/e2e/community.spec.ts`.
+
+### Community discussion
+
+**Route:** `/community-hub/[postId]` · **Menu:** none (opened from the hub)
+
+**Who can use it:** everyone can read. Signed-in users answer, reply to answers and react. Only the person who
+started the discussion can accept answers. The author or staff (Super Admin, Admin, Moderator) can delete an
+answer or reply.
+
+**What it is for:** reading one discussion with all its answers and taking part.
+
+**How to use it:**
+
+1. **Back to Community Hub** returns to the list.
+2. The discussion shows its author line, date and channel, the title, the full text (sanitised before it is
+   shown), a picture gallery (previous/next, "2 / 5") and the reaction bar. Its "⋮" menu has Edit, Pin/Unpin and
+   Delete as on the hub; after Delete the hub opens.
+3. **Reply** opens the answer form (rich text and up to 8 pictures); **Publish Reply** adds it. Visitors see
+   **Sign in to reply**, which returns here after signing in.
+4. Answers are listed with the accepted ones first. The discussion's creator sees **Accept / Accepted** on each
+   answer; an accepted answer has a green "Accepted answer" label.
+5. Each answer has reactions, **Replies (n)** (shows or hides its nested replies) and **Reply** (a short rich
+   text reply to that answer). The "⋮" menu of an answer or nested reply offers **Delete** (with confirmation).
+6. **Load more answers** loads the next 10.
+7. The side column lists the latest and the most answered discussions of the same channel.
+8. A discussion that does not exist (or was archived) shows "Discussion not found".
+
+**On mobile:** the side column moves below the answers; nested replies are indented less; forms are one column.
+
+**API endpoints used:** `GET /api/community/posts/:postId`, `GET /api/community/posts/:postId/replies`,
+`POST /api/community/posts/:postId/replies`, `PATCH /api/community/replies/:replyId/reactions`,
+`PATCH /api/community/replies/:replyId/accepted`, `PATCH /api/community/replies/:replyId/archive`,
+`POST /api/community/replies/:replyId/replies`, `PATCH /api/community/answer-replies/:childReplyId/archive`,
+`GET /api/community?channel=` (side column), plus the post endpoints of the hub (react, pin, edit, delete).
+
+**Code:** `frontend/src/app/(public)/community-hub/[postId]/page.tsx`,
+`frontend/src/components/community/detail/` (DiscussionDetailPage).
+
+**Tests:** `components/community/__tests__/DiscussionDetailPage.test.tsx`; Playwright `frontend/e2e/community.spec.ts`.
+
+### Community profile
+
+**Route:** `/community-hub/users/[userId]` · **Menu:** "My Profile" on the hub, "View Profile" in the profile
+preview
+
+**Who can use it:** everyone. A private profile shows only the avatar, name and "This profile is private." to
+others; the owner, Admin and Super Admin still see everything.
+
+**What it is for:** a member's community activity.
+
+**How to use it:**
+
+1. The banner shows the avatar, name, role, points and "Member since".
+2. Four counters: discussions asked, answers/replies, reactions received and given.
+3. **Discussions** and **Answers and Replies** link to the discussions; **Badges** lists the earned badges.
+4. On your own profile, the **Private profile** switch hides your details from other members (saved on your
+   account; also available in the profile editor).
+
+**On mobile:** counters in one column, lists above the badges.
+
+**API endpoints used:** `GET /api/community/users/:userId`, `PUT /api/auth/me` (`isCommunityProfilePrivate`).
+
+**Code:** `frontend/src/app/(public)/community-hub/users/[userId]/page.tsx`,
+`frontend/src/components/community/profile/` (CommunityProfilePage).
+
+**Tests:** `components/community/__tests__/CommunityProfilePage.test.tsx`; Playwright `frontend/e2e/community.spec.ts`.
+
+### Practice quiz (`/practice-quiz`)
+
+**Route:** `/practice-quiz` (optional `?courseId=<id>&bankId=<id>`) · **Menu:** public navbar "Practice Quiz"; the quiz
+bank rows of a course page link here with both parameters.
+
+**Who can use it:** everyone. Guests get every answer checked but nothing is saved. Signed-in users (any role)
+save their answers in their attempt for that bank, see them again after a reload and can reset them.
+
+**What it is for:** trying the free-preview quiz banks of published public courses before (or after) enrolling.
+
+**How to use it:**
+
+1. The left list ("Browse Free Quizzes") shows every course that has a free-preview quiz section or bank, with
+   cover, title, subtitle, price and "Sub" when a subscription includes it. **Filter** opens search, category,
+   pricing (Free Only / Paid Only) and course type; **Clear All** removes every filter.
+2. The first course opens by itself (or the course of the link). The bar above the quiz shows the course,
+   "Total Quiz" (free + locked banks, with "n locked"), the price and **Unlock Course** (locked banks exist) or
+   **View Course**; both open the course page.
+3. The right list shows the course's free sections and banks. Each bank has **All**, **Wrong** and **Correct**
+   with counts and progress; a folded bank shows a small green/red progress line. The first bank (or the bank of
+   the link) is selected. A link to a bank that is not free preview shows a note and opens the first free bank.
+4. The middle shows the course and bank progress (total, answered, correct, incorrect, not answered yet,
+   accuracy), the bank title and one question at a time. Tick one or more options and press **Check Answer**
+   (or **Skip**). The result shows: correct options green, a wrong pick red, explanations under the options,
+   "✓ Correct!" or "✗ Incorrect". **Next** goes on; the numbered pager jumps to any question (answered ones are
+   green or red).
+5. Guests see "Sign in to save your progress..." with a **Sign in** button (returns here after sign-in).
+6. Signed-in users: each question can be answered once per attempt. To retry, press the reset button (bank header
+   or bank in the right list) and confirm; "Practice reset" confirms it. Guests can reset too (clears the page's
+   memory only).
+
+**On mobile:** below 1200 px wide the two lists are not shown beside the quiz: two buttons, **Courses** and
+**Quiz banks**, open them as side drawers that close after a choice. The course bar wraps, the progress blocks
+stack, buttons and options are at least 44 px high. On wide screens both lists are sidebars that stay in view
+while scrolling and fold to a thin strip with their round arrow button.
+
+**API endpoints used:** `GET /api/quiz-bank/public/courses` (filters `search`, `categories`, `courseTypes`,
+`pricing`), `GET /api/quiz-bank/public/course/:courseId`, `GET /api/categories`, `GET /api/course-types`,
+`GET /api/auth/me`; guests: `POST /api/quiz-bank/public/:id/questions/:qId/check`; signed in:
+`GET /api/quiz-bank/course/:courseId` (reveals correct options and explanations of answered questions),
+`GET /api/quiz-bank/course/:courseId/my-attempts`, `POST /api/quiz-bank/:id/attempt/answer` (409 when already
+answered: the message is shown), `DELETE /api/quiz-bank/:id/attempt`.
+
+**Code:** `frontend/src/app/(public)/practice-quiz/page.tsx`, `frontend/src/components/practice-quiz/`
+(PracticeQuizView, usePracticePage / usePracticeSelection / usePracticeAnswers / usePracticeActions, courses/,
+tree/, panel/, layout/), `frontend/src/api/practice-quiz.api.ts`, `frontend/src/schemas/practice-quiz.schema.ts`.
+The question option, pager, subsection buttons, progress bar and reset button are shared with the course player
+(`components/common/quiz/`, texts `quiz.common.*`); attempts, banks, answering and resetting reuse the player's
+`useMyQuizAttempts` / `useQuizBanks` (`api/learn-quiz.api.ts`, `api/quiz.api.ts`). The public tree is ONE request
+and key (`getPublicQuizTree`, `queryKeys.quiz.publicTree`) shared with the course page, which only reads its sections.
+
+**Tests:** `components/practice-quiz/__tests__/PracticeQuizView.test.tsx` (12: guest check right/wrong, Wrong
+list, deep link, missing bank fallback, course choice in URL, pricing filter, empty, error, signed-in save +
+revealed explanation, saved answer + reset, 409, failed bank list for a signed-in user); Playwright `frontend/e2e/practice-quiz.spec.ts` (guest deep link
+and check; student save, reload, reset).
+
+### Study Schedule
+
+**Route:** `/admin/schedule`, `/student/schedule`, `/teacher/schedule` · **Menu:** Schedule
+
+**Who can use it:** every signed-in user, in their own area (Super Admin, Admin and Moderator under
+`/admin`). Everyone sees and changes only their own timers and reminders (the server checks the owner).
+
+**What it is for:** timing study sessions, setting reminders that ring when a session should start, and
+looking back at completed sessions.
+
+**How to use it:** the page has three tabs: **Study Timer**, **Reminders** and **History**.
+
+1. **Study Timer**
+   - **New Study Timer**: type a **Title** (required) and an optional description, then set the length on
+     the clock dial: tap **HH**, **MM** or **SS** above the dial and then tap the dial (hours use two rings:
+     1–12 outside, 0 and 13–23 inside; after a tap the dial moves on to the next unit). With the keyboard,
+     focus the dial and use the arrow keys. The default is 25 minutes. **Start Timer** creates the timer and
+     it starts counting at once ("Timer started"). A length of 0 shows "Duration must be greater than 0.".
+   - **Active Timers** lists running and paused timers ("2 timers · 50m 0s total"). Each card shows the
+     status (RUNNING / PAUSED), a large digital clock with the time left, and a progress bar.
+   - **Pause** saves how long the timer has run; **Resume** (or **Start** when it never ran) carries on;
+     **Reset** goes back to the full time and waits for **Start**; **Stop** cancels the timer ("Timer
+     stopped") and it leaves the list (cancelled timers are not in the history).
+   - When the time reaches 0 the timer is saved as completed, an alarm sound plays, a toast says "Timer
+     completed: <title>" and (if allowed) a system notification appears. It then moves to the history. A
+     timer that ran out while the page was closed is completed quietly the next time the page opens.
+   - The time left is always worked out from saved timestamps (the time it last started plus the seconds it
+     had before), never by counting ticks, so it stays right after a reload, in a background tab or on
+     another device.
+2. **Reminders**
+   - **New Reminder**: **Title** (required), optional description, **Start Date & Time** (required, must be in
+     the future) and optional **End Date & Time** (must be after the start). Dates are typed and shown in the
+     viewer's own time zone and sent to the server in UTC. **Set Reminder** saves it ("Reminder set"); the
+     first time the browser may ask whether the site can show notifications.
+   - **Your Reminders** lists upcoming and active reminders. An upcoming one shows **UPCOMING** and a
+     "Starts in 00:12:30" countdown; start and end are shown under the title.
+   - When a reminder's start time arrives while the schedule page is open (any tab), it becomes **ACTIVE**:
+     an alarm sound plays, an alert at the top says "Study session started: <title>" (it stays until it is
+     closed) and, if allowed, a system notification appears. The card then shows a **Study time** stopwatch
+     counting from that moment, and the header shows how many are active and the total studied.
+   - **Complete Session** ends it ("Session completed") and moves it to the history.
+   - The **⋮** menu: **Edit reminder** opens a dialog with the same fields (clearing the end removes it;
+     moving the start into the future makes it upcoming again so it rings at the new time); **Delete** asks
+     first, then "Reminder deleted".
+3. **History**
+   - Two tabs filter by type: **Timers (n)** and **Reminders (n)**. A badge shows the total (time of the
+     completed timers, or time studied in reminders from the alarm to completion).
+   - Each row shows the title, the time as `HH:MM:SS`, the description and the dates (timers: completed on;
+     reminders: started / ended). **⋮ → Delete from history** asks first, then "Removed from history".
+   - With nothing completed yet: "No completed sessions yet. Your history will appear here."
+
+Alarms and notifications only work while the page is open in the browser (there is no push service); the
+sound is made with the browser's Web Audio and the notification with the browser's Notification API.
+
+**On mobile:** the form card comes first and the list under it (one column); the tabs scroll sideways if
+needed; the clock dial shrinks to the screen width; buttons are at least 44 px high; the edit dialog is full
+screen.
+
+**API endpoints used:** `GET /api/study-schedules` (with `type` and `status` filters),
+`POST /api/study-schedules/timer`, `POST /api/study-schedules/reminder`, `PUT /api/study-schedules/:id`
+(pause/resume/reset/stop/complete a timer with `status` and `elapsedSeconds`; fire a reminder with
+`status: active` + `firedAt`; complete with `completedAt`; edit title, description and dates),
+`DELETE /api/study-schedules/:id`.
+
+**Code:** `frontend/src/app/{admin,student/(shell),teacher}/schedule/page.tsx`,
+`frontend/src/components/schedule/` (`SchedulePage`, timers: `TimerSection`, `TimerForm`,
+`TimerDurationField`, `DurationClockPicker`, `DurationUnitButtons`, `DurationDialFace`, `DialNumbers`,
+`duration-dial.ts`, `TimerCard`, `TimerActions`, `useTimerCard`; reminders: `ReminderSection`, `ReminderForm`,
+`ReminderFields`, `ReminderEditModal`, `ReminderCard`, `ReminderCountdown`, `ReminderDates`,
+`ReminderStudyPanel`, `useReminderActions`, `useReminderAlarms`, `ReminderAlarmAlert`; history:
+`HistorySection`, `HistoryTypeTabs`, `HistoryList`, `HistoryItem`, `HistoryItemDates`, `TotalBadge`; shared:
+`DigitalClock`, `ClockUnitLabels`, `ScheduleCardHeading`, `FormCardTitle`, `FormSubmitButton`, `useNow`,
+`useDurationText`, `schedule.utils.ts`, `schedule.theme.ts`, `alarm.ts`), `frontend/src/api/schedule.api.ts`,
+`frontend/src/schemas/schedule.schema.ts`.
+
+**Tests:** `components/schedule/__tests__/schedule.utils.test.ts` (clock maths and form rules),
+`TimerSection.test.tsx`, `ReminderSection.test.tsx`, `HistorySection.test.tsx`; Playwright
+`frontend/e2e/schedule.spec.ts` (desktop + mobile).
 
 ### Something went wrong
 

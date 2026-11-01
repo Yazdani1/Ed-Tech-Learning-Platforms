@@ -1,1 +1,112 @@
-{}
+{
+  "common": {
+    "stats": {
+      "total": "Total",
+      "answered": "Answered",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "remaining": "Not Answered Yet",
+      "accuracy": "{{percent}}% accuracy"
+    },
+    "subsection": {
+      "all": "All",
+      "incorrect": "Wrong",
+      "correct": "Correct"
+    },
+    "subsectionTitle": {
+      "all": "All Questions",
+      "incorrect": "Incorrect Questions",
+      "correct": "Correct Questions"
+    },
+    "progress": {
+      "all": "{{done}}/{{total}} answered",
+      "incorrect": "{{done}}/{{total}} wrong",
+      "correct": "{{done}}/{{total}} correct"
+    },
+    "wrongCorrect": "Wrong {{wrong}} / Correct {{correct}}",
+    "emptySubsection": {
+      "all": "No questions in this quiz bank yet.",
+      "incorrect": "No incorrect answers yet — keep practising!",
+      "correct": "No correct answers yet — keep going!"
+    },
+    "questionOf": "Q {{number}} of {{total}}",
+    "selectAll": "Select all that apply",
+    "options": "Answer options",
+    "check": "Check Answer",
+    "skip": "Skip",
+    "correct": "✓ Correct!",
+    "incorrect": "✗ Incorrect — correct answer(s) are highlighted above.",
+    "goToQuestion": "Go to question {{number}}",
+    "reset": "Reset",
+    "resetTitle": "Reset Practice",
+    "resetMessage": "Clear all your answers for this quiz bank?",
+    "resetDone": "Practice reset",
+    "resetBank": "Reset progress for this quiz bank",
+    "resetBankNamed": "Reset progress for {{title}}"
+  },
+  "practice": {
+    "courses": {
+      "title": "Browse Free Quizzes",
+      "loading": "Loading courses...",
+      "count_one": "{{count}} course",
+      "count_other": "{{count}} courses",
+      "activeFilters_one": "{{count}} active filter",
+      "activeFilters_other": "{{count}} active filters",
+      "noFilters": "No active filters",
+      "filter": "Filter",
+      "clearAll": "Clear All",
+      "search": "Search courses...",
+      "searchLabel": "Search courses",
+      "category": "Category",
+      "allCategories": "All Categories",
+      "pricing": "Pricing",
+      "allPricing": "All Pricing",
+      "freeOnly": "Free Only",
+      "paidOnly": "Paid Only",
+      "courseType": "Course type",
+      "allCourseTypes": "All Course Types",
+      "empty": "No free preview quizzes available yet.",
+      "list": "Courses with free quizzes",
+      "subscription": "Sub",
+      "subscriptionTitle": "Included in subscription"
+    },
+    "tree": {
+      "title": "Sections",
+      "label": "Quiz banks",
+      "selectCourse": "Select a course",
+      "bankCount_one": "{{count}} quiz bank",
+      "bankCount_other": "{{count}} quiz banks",
+      "pickCourse": "Select a course from the left to see its free preview quizzes.",
+      "empty": "No free preview quizzes in this course.",
+      "free": "Free"
+    },
+    "bar": {
+      "totalQuiz": "Total Quiz",
+      "locked_one": "{{count}} locked",
+      "locked_other": "{{count}} locked",
+      "price": "Price",
+      "unlock": "Unlock Course",
+      "view": "View Course"
+    },
+    "panel": {
+      "pickCourse": "Select a course and quiz to start practising",
+      "pickBank": "Select a quiz from the panel to start",
+      "signInHint": "Sign in to save your progress and track wrong / correct answers.",
+      "signIn": "Sign in",
+      "bankMissing": "That quiz is not part of the free preview. Showing the first free quiz instead.",
+      "savedError": "Your saved answers could not be loaded: {{message}}",
+      "course": "Course",
+      "bank": "Quiz Bank"
+    },
+    "mobile": {
+      "courses": "Courses",
+      "banks": "Quiz banks"
+    },
+    "sidebar": {
+      "expandCourses": "Expand course list sidebar",
+      "collapseCourses": "Collapse course list sidebar",
+      "expandBanks": "Expand quiz bank sidebar",
+      "collapseBanks": "Collapse quiz bank sidebar"
+    }
+  }
+}

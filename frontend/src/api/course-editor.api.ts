@@ -241,7 +241,7 @@ const useQuizMutation = <V>(
       Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.quiz.sections(courseId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.quiz.banks(courseId) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.browse.quizTree(courseId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.quiz.publicTree(courseId) }),
         // A removed question or bank also changes the student's stored attempts
         queryClient.invalidateQueries({ queryKey: queryKeys.learn.quizAttempts(courseId) }),
       ]),
