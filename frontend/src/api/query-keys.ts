@@ -18,7 +18,8 @@ export const queryKeys = {
     heroPosts: ['public', 'hero-posts'] as const,
     activeDiscount: ['public', 'active-discount'] as const,
     teachers: ['public', 'teachers'] as const,
-    homeCourses: (page: number) => ['public', 'home-courses', page] as const,
+    homeCourses: (filters: Record<string, string | number>) =>
+      ['public', 'home-courses', filters] as const,
     planCourses: (plan: string, filters: Record<string, string>) =>
       ['public', 'plan-courses', plan, filters] as const,
   },

@@ -37,7 +37,7 @@ export const CourseBrowseView = () => {
   const panel = <CourseFilterPanel filters={filters} counts={query.data?.filterCounts} />;
 
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 3, md: 4 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 } }}>
       <CatalogHeader
         isLoading={query.isPending}
         total={total}

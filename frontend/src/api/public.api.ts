@@ -12,6 +12,7 @@ import {
   type ActiveDiscount,
   type CoursePage,
   type HeroPost,
+  type HomeCourseFilters,
   type PlanCourseFilters,
   type SiteLogo,
   type AdminTeacher,
@@ -20,8 +21,8 @@ import { http, type ApiError } from '@/services/http.service';
 
 import { queryKeys } from './query-keys';
 
-/** Courses per page in the home page's "Popular Courses" grid (same as the old client). */
-export const HOME_COURSES_PAGE_SIZE = 8;
+/** Courses per page in a home page course section; the pagination shows only when there are more. */
+export const HOME_COURSES_PAGE_SIZE = 30;
 /** The "included courses" dialog on /pricing loads up to the backend's maximum page size. */
 const PLAN_COURSES_LIMIT = 100;
 /** Site chrome (logo, banner) rarely changes: keep it for five minutes. */
@@ -44,9 +45,13 @@ export const getActiveDiscount = (): Promise<ActiveDiscount> =>
 export const getTeachers = (): Promise<AdminTeacher[]> =>
   http.get('/api/teachers', z.array(adminTeacherSchema));
 
-export const getHomeCourses = (page: number): Promise<CoursePage> =>
+export const getHomeCourses = ({
+  pricing,
+  category,
+  page,
+}: HomeCourseFilters): Promise<CoursePage> =>
   http.getEnvelope('/api/courses/browse', coursePageSchema, {
-    params: { page, limit: HOME_COURSES_PAGE_SIZE },
+    params: { pricing, categories: category || undefined, page, limit: HOME_COURSES_PAGE_SIZE },
   });
 
 export const getPlanCourses = (plan: string, filters: PlanCourseFilters): Promise<CoursePage> =>
@@ -83,10 +88,10 @@ export const useActiveDiscount = (): UseQueryResult<ActiveDiscount, ApiError> =>
 export const useTeachers = (): UseQueryResult<AdminTeacher[], ApiError> =>
   useQuery({ queryKey: queryKeys.public.teachers, queryFn: getTeachers });
 
-export const useHomeCourses = (page: number): UseQueryResult<CoursePage, ApiError> =>
+export const useHomeCourses = (filters: HomeCourseFilters): UseQueryResult<CoursePage, ApiError> =>
   useQuery({
-    queryKey: queryKeys.public.homeCourses(page),
-    queryFn: () => getHomeCourses(page),
+    queryKey: queryKeys.public.homeCourses({ ...filters }),
+    queryFn: () => getHomeCourses(filters),
     placeholderData: keepPreviousData,
   });
 

@@ -358,7 +358,7 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		})
 		.sort({ createdAt: -1 });
 
-	const [courseTypeCounts, categoryCounts, pricingCounts, subscriptionPlanCounts] = await Promise.all([
+	const [courseTypeCounts, categoryCounts, pricingCounts, subscriptionPlanCounts, categoryPricingCounts] = await Promise.all([
 		Course.aggregate<{ _id: Types.ObjectId; count: number }>([
 			{ $match: baseFilter },
 			{ $match: { courseType: { $exists: true, $ne: null } } },
@@ -378,13 +378,26 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 			{ $unwind: '$allowedSubscriptionPlans' },
 			{ $group: { _id: '$allowedSubscriptionPlans', count: { $sum: 1 } } },
 		]),
+		Course.aggregate<{ _id: { category: Types.ObjectId; pricing: string }; count: number }>([
+			{ $match: baseFilter },
+			{ $match: { category: { $exists: true, $ne: null } } },
+			{ $group: { _id: { category: '$category', pricing: '$pricing' }, count: { $sum: 1 } } },
+		]),
 	]);
+
+	// Per pricing ("Free" / "Paid"): course count per category (the home page's Free and Paid sections)
+	const categoriesByPricing: Record<string, Record<string, number>> = {};
+	for (const item of categoryPricingCounts) {
+		const counts = (categoriesByPricing[item._id.pricing] ??= {});
+		counts[String(item._id.category)] = item.count;
+	}
 
 	const filterCounts = {
 		courseTypes: Object.fromEntries(courseTypeCounts.map((item) => [String(item._id), item.count])),
 		categories: Object.fromEntries(categoryCounts.map((item) => [String(item._id), item.count])),
 		pricing: Object.fromEntries(pricingCounts.map((item) => [item._id, item.count])),
 		subscriptionPlans: Object.fromEntries(subscriptionPlanCounts.map((item) => [item._id, item.count])),
+		categoriesByPricing,
 	};
 
 	const shouldPaginate = Boolean(page || limit);

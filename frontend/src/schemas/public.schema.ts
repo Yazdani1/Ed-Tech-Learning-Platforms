@@ -73,6 +73,8 @@ export const courseCardSchema = z.object({
   discountEndsAt: z.string().nullish(),
   category: namedRefSchema.nullish(),
   courseType: namedRefSchema.nullish(),
+  /** First class day (shown on the home page cards) */
+  startDate: z.string().nullish(),
   /** A deleted teacher comes back as null: dropped here, so cards only list real names */
   teachers: z
     .array(namedRefSchema.nullable())
@@ -85,6 +87,12 @@ export type CourseCardData = z.infer<typeof courseCardSchema>;
 export const coursePageSchema = z.object({
   data: z.array(courseCardSchema),
   total: z.number().optional(),
+  /** Public course count per category, per pricing: { Paid: { [categoryId]: n }, Free: { ... } } */
+  filterCounts: z
+    .object({
+      categoriesByPricing: z.record(z.string(), z.record(z.string(), z.number())).catch({}),
+    })
+    .optional(),
   pagination: z
     .object({
       page: z.number(),
@@ -95,6 +103,16 @@ export const coursePageSchema = z.object({
     .optional(),
 });
 export type CoursePage = z.infer<typeof coursePageSchema>;
+
+export type CoursePricing = CourseCardData['pricing'];
+
+/** Filters of a home page course section (Paid "Live Courses" or "Upcoming Free Live Courses"). */
+export interface HomeCourseFilters {
+  pricing: CoursePricing;
+  /** Category id, or '' for every category */
+  category: string;
+  page: number;
+}
 
 /** Filters of the "included courses" dialog on /pricing. */
 export interface PlanCourseFilters {

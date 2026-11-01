@@ -575,7 +575,10 @@ and open course pages.
    attempts, Q&A questions with their answers, and the course.
 5. `GET /api/courses/browse` only ever returns Published + Public courses; supports `search`, `courseTypes`,
    `categories`, `pricing`, `subscriptionPlans`, `page`, `limit` (max 100, default 8, only when page or limit is
-   sent) and returns `filterCounts`. The search text is matched literally. Lecture video addresses are only
+   sent) and returns `filterCounts` (`courseTypes`, `categories`, `pricing`, `subscriptionPlans`, and
+   `categoriesByPricing`: `{ "Paid": { "<categoryId>": 3 }, "Free": { ... } }`, the course count per category
+   for each pricing, used by the home page's Live Courses and Free courses boxes). The counts always cover every
+   Published + Public course, whatever filters the request sends. The search text is matched literally. Lecture video addresses are only
    sent for free preview lectures.
 6. `GET /api/courses` (sign-in optional): Super Admin, Admin and Moderator get every course with per-course
    enrolment statistics (total, this month, last month, lifetime earned); everyone else (guests, students,

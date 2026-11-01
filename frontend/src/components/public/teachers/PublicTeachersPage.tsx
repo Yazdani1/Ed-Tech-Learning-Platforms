@@ -18,7 +18,7 @@ export const PublicTeachersPage = () => {
   const teachers = data ?? [];
 
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 5, md: 7 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 5, md: 7 } }}>
       <Box sx={{ mb: 4, maxWidth: 680 }}>
         <Typography
           variant="h3"

@@ -208,8 +208,9 @@ frontend_src_components_profile-->frontend_src_utils
 frontend_src_components_profile-->frontend_src_components_auth
 frontend_src_components_profile-->frontend_src_types
 frontend_src_components_public-->frontend_src_api
-frontend_src_components_public-->frontend_src_hooks
+frontend_src_components_public-->frontend_src_i18n
 frontend_src_components_public-->frontend_src_utils
+frontend_src_components_public-->frontend_src_hooks
 frontend_src_components_public-->frontend_src_components_common
 frontend_src_components_public-->frontend_src_schemas
 frontend_src_components_public-->frontend_src_components_course_card

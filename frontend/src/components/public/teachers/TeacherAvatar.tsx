@@ -3,7 +3,7 @@
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 
-import { TEACHER_GRADIENT } from '../home/gradients';
+import { TEACHER_GRADIENT } from './gradients';
 import { isCloudinaryUrl } from '@/utils/urls';
 
 import type { TeacherProfile } from '@/schemas/public.schema';

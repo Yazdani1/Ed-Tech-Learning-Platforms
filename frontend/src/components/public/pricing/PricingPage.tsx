@@ -45,7 +45,7 @@ export const PricingPage = () => {
   return (
     <>
       <PricingHero subscription={subscription} />
-      <Container maxWidth="xl" sx={{ py: { xs: 5, md: 8 } }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 5, md: 8 } }}>
         <QueryState
           isLoading={plansQuery.isPending}
           error={plansQuery.error}

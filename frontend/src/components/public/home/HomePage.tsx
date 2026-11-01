@@ -1,19 +1,13 @@
-import Divider from '@mui/material/Divider';
+import Box from '@mui/material/Box';
 
-import { CourseTypePaths } from './CourseTypePaths';
-import { HomeCategoryGrid } from './HomeCategoryGrid';
-import { HomeCourses } from './HomeCourses';
+import { HomeCourseSection } from './HomeCourseSection';
 import { HomeHeroSlider } from './HomeHeroSlider';
-import { TeacherMarqueeSection } from './TeacherMarqueeSection';
 
-/** The public home page (/), in the same order as the old client. */
+/** The public home page (/): the showcase slider, then the paid live courses and the free ones. */
 export const HomePage = () => (
-  <>
+  <Box sx={{ pb: { xs: 6, md: 10 } }}>
     <HomeHeroSlider />
-    <HomeCategoryGrid />
-    <Divider sx={{ mx: { xs: 2, md: 'auto' }, maxWidth: 'lg', width: { md: '100%' }, mt: 2 }} />
-    <HomeCourses />
-    <CourseTypePaths />
-    <TeacherMarqueeSection />
-  </>
+    <HomeCourseSection pricing="Paid" textKey="paid" />
+    <HomeCourseSection pricing="Free" textKey="free" />
+  </Box>
 );

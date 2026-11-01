@@ -42,6 +42,20 @@ describe('PublicLayout', () => {
     expect(screen.getByRole('contentinfo')).toHaveTextContent('MedhaBee E-Learning Platform');
   });
 
+  it('switches the site between English and Bangla from the navbar and remembers the choice', async () => {
+    renderLayout();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Switch to Bangla' }));
+    const nav = screen.getByRole('navigation', { name: 'সাইট মেনু' });
+    expect(within(nav).getByRole('link', { name: 'সব কোর্স' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('i18nextLng')).toBe('bn');
+
+    await user.click(screen.getByRole('button', { name: 'ইংরেজিতে দেখুন' }));
+    expect(screen.getByRole('link', { name: 'All Courses' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('i18nextLng')).toBe('en');
+  });
+
   it('offers Sign In and Sign Up to visitors', async () => {
     renderLayout();
 

@@ -11,7 +11,7 @@ const FALLBACK_CARDS = 8;
 export const CourseBrowsePage = () => (
   <Suspense
     fallback={
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
         <CourseGridSkeleton count={FALLBACK_CARDS} size={{ xs: 12, sm: 6, lg: 4, xl: 3 }} />
       </Container>
     }

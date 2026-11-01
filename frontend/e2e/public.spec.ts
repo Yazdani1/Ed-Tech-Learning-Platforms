@@ -1,4 +1,10 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type APIResponse,
+  type Page,
+} from '@playwright/test';
 
 import { ACCOUNTS, E2E_PASSWORD, expectNoHorizontalScroll, isPhone, uniqueEmail } from './helpers';
 
@@ -9,6 +15,13 @@ const adminApi = async (request: APIRequestContext): Promise<APIRequestContext> 
   });
   expect(response.ok()).toBe(true);
   return request;
+};
+
+/** The `_id` of the created item in a { success, data } response. */
+const idOf = async (response: APIResponse): Promise<string> => {
+  expect(response.ok()).toBe(true);
+  const body = (await response.json()) as { data: { _id: string } };
+  return body.data._id;
 };
 
 const uniqueName = (prefix: string, project: string): string =>
@@ -26,32 +39,62 @@ const openPublicLink = async (page: Page, name: string): Promise<void> => {
 };
 
 test.describe('Public site', () => {
-  test('a visitor explores the home page and opens a category', async ({
+  test('a visitor filters the free courses by category and opens a course from its card', async ({
     page,
     request,
   }, testInfo) => {
     const api = await adminApi(request);
-    const name = uniqueName('E2E Public Category', testInfo.project.name);
-    const created = await api.post('/api/categories', { data: { name } });
-    expect(created.ok()).toBe(true);
+    const name = uniqueName('E2E Home Category', testInfo.project.name);
+    const category = await idOf(await api.post('/api/categories', { data: { name } }));
+    const courseType = await idOf(
+      await api.post('/api/course-types', { data: { name: `${name} type` } }),
+    );
+    const title = `${name} course`;
+    const courseId = await idOf(
+      await api.post('/api/courses', {
+        data: { title, category, courseType, visibility: 'Public', pricing: 'Free' },
+      }),
+    );
+    const published = await api.patch(`/api/courses/${courseId}/status`, {
+      data: { status: 'Published' },
+    });
+    expect(published.ok()).toBe(true);
 
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Explore by Category' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Popular Courses' })).toBeVisible();
-    // Phones keep Sign In / Sign Up in the menu drawer; wider screens show them in the navbar
-    if (isPhone(page)) {
-      await page.getByRole('button', { name: 'Open site menu' }).click();
-      await expect(
-        page.getByRole('link', { name: 'Sign In' }).filter({ visible: true }),
-      ).toBeVisible();
-      await page.getByRole('button', { name: 'Close site menu' }).click();
-    } else {
-      await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible();
-    }
+    await expect(page.getByRole('heading', { name: 'Live Courses', exact: true })).toBeVisible();
+    const free = page.locator('section', {
+      has: page.getByRole('heading', { name: 'Upcoming Free Live Courses' }),
+    });
+    await expect(free).toBeVisible();
+    await expect(page.getByText('Learn what matches your ambition')).toHaveCount(0);
     await expectNoHorizontalScroll(page);
 
-    await page.getByRole('link', { name: new RegExp(name) }).click();
-    await expect(page).toHaveURL(/\/courses\?categories=[a-f0-9]{24}$/);
+    const categoryCard = free.getByRole('button', { name: new RegExp(name) });
+    // Phones: the category row scrolls sideways inside the box
+    await categoryCard.scrollIntoViewIfNeeded();
+    await expect(categoryCard).toContainText('1 course');
+    await categoryCard.click();
+    await expect(categoryCard).toHaveAttribute('aria-pressed', 'true');
+    await free.getByRole('link', { name: `See details of ${title}` }).click();
+    await expect(page).toHaveURL(new RegExp(`/courses/${courseId}$`));
+  });
+
+  test('a visitor switches the site to Bangla and back from the navbar', async ({ page }) => {
+    await page.goto('/');
+    // The slider only renders once the client has loaded its data, so the page is hydrated
+    const carousel = page.locator('[aria-roledescription="carousel"]');
+    await expect(carousel).toBeVisible();
+    await page.getByRole('button', { name: 'Switch to Bangla' }).click();
+    await expect(page.getByRole('heading', { name: 'লাইভ কোর্স', exact: true })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'bn');
+
+    // The choice survives a reload
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'bn');
+    await expect(carousel).toBeVisible();
+    await page.getByRole('button', { name: 'ইংরেজিতে দেখুন' }).click();
+    await expect(page.getByRole('heading', { name: 'Live Courses', exact: true })).toBeVisible();
+    await expectNoHorizontalScroll(page);
   });
 
   test('a visitor finds a teacher on /teachers through the menu', async ({

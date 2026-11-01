@@ -43,7 +43,7 @@ export const DiscountBanner = () => {
       aria-label={t('public.banner.title')}
       sx={{ background: BANNER_GRADIENT, color: 'common.white' }}
     >
-      <Container maxWidth="xl" sx={ROW_SX}>
+      <Container maxWidth="lg" sx={ROW_SX}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
           <Chip
             label={t('public.banner.upTo', { percent: discount.discountPercent })}

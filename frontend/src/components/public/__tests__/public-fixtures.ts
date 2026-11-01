@@ -70,12 +70,25 @@ export const makeSubscription = (overrides: Partial<Subscription> = {}): Subscri
     ...overrides,
   });
 
+/** Page size of GET /api/courses/browse in the fixtures (the home page asks for 30). */
+const FIXTURE_PAGE_SIZE = 30;
+
 /** The browse envelope with paging, as GET /api/courses/browse?page&limit sends it. */
-export const browsePage = (courses: CourseCardData[], page = 1, total = courses.length) =>
+export const browsePage = (
+  courses: CourseCardData[],
+  page = 1,
+  total = courses.length,
+  categoriesByPricing: Record<string, Record<string, number>> = {},
+) =>
   ok(courses, {
     total,
-    filterCounts: {},
-    pagination: { page, limit: 8, total, totalPages: Math.max(Math.ceil(total / 8), 1) },
+    filterCounts: { categoriesByPricing },
+    pagination: {
+      page,
+      limit: FIXTURE_PAGE_SIZE,
+      total,
+      totalPages: Math.max(Math.ceil(total / FIXTURE_PAGE_SIZE), 1),
+    },
   });
 
 /** Every public read the layout and home page make, answering with empty data unless overridden. */

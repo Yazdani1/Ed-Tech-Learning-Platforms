@@ -15,7 +15,9 @@
     "signIn": "Sign In",
     "signUp": "Sign Up",
     "openMenu": "Open site menu",
-    "closeMenu": "Close site menu"
+    "closeMenu": "Close site menu",
+    "otherLanguage": "বাংলা",
+    "switchLanguage": "Switch to Bangla"
   },
   "banner": {
     "upTo": "Up to {{percent}}% off",
@@ -43,34 +45,35 @@
     "pause": "Pause slideshow",
     "play": "Play slideshow"
   },
-  "categories": {
-    "title": "Explore by Category",
-    "subtitle": "Pick a subject and jump straight into matching courses.",
-    "viewAll": "View all courses",
-    "browse": "Browse category courses"
+  "home": {
+    "categoriesLabel": "Filter {{section}} by category",
+    "allCategories": "All",
+    "courseCount_one": "{{count}} course",
+    "courseCount_other": "{{count}} courses",
+    "paid": {
+      "title": "Live Courses",
+      "subtitle": "Join live classes with our expert teachers",
+      "empty": "No live courses yet."
+    },
+    "free": {
+      "title": "Upcoming Free Live Courses",
+      "subtitle": "Start learning for free in our upcoming live classes",
+      "empty": "No free courses yet."
+    }
   },
   "courses": {
-    "title": "Popular Courses",
-    "subtitle": "Hand-picked courses by our expert teachers",
-    "empty": "No published courses yet.",
     "free": "Free",
     "percentOff": "{{percent}}% off",
     "price": "৳{{amount}}",
     "course": "Course",
     "continue": "Continue Learning",
-    "viewAll": "Browse all courses"
-  },
-  "paths": {
-    "title": "Learn what matches your ambition",
-    "subtitle": "These learning paths come directly from the course types available on the platform, so students see real options they can explore.",
-    "path": "Path {{number}}",
-    "fallback": "Explore courses, teachers, and learning materials in this track.",
-    "explore": "Explore courses"
+    "seeDetails": "See Details",
+    "seeDetailsOf": "See details of {{title}}",
+    "starts": "Starts {{date}}",
+    "startTba": "Start date to be announced"
   },
   "instructors": {
     "title": "Our Instructors",
-    "tagline": "You will find yourself among us",
-    "body": "Dive into a dynamic community where world-class instructors and ambitious learners seamlessly merge.",
     "pageSubtitle": "Learn from experienced teachers who bring practical insight, structured lessons, and real subject expertise.",
     "empty": "No teachers found.",
     "more": "+{{count}}",

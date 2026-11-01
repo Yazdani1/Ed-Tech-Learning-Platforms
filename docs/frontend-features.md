@@ -172,19 +172,26 @@ later practice quiz and community hub) · **Menu:** the public navbar
 4. Visitors see **Sign In** and **Sign Up**. A signed-in user sees **Dashboard** (their role's home page: Super
    Admin `/admin/dashboard`, Admin and Moderator `/admin/courses`, Teacher `/teacher/courses`, Student
    `/student/dashboard`) and their initial in a round avatar (name on hover).
-5. **Footer:** app name, links to Courses, Free Courses, Teachers, Pricing, and the copyright line.
+5. **Language switch** (left of the sign-in buttons, translate icon): shows the other language ("বাংলা" or
+   "English") and switches the whole site between English and Bangla at once. The choice is remembered in
+   this browser (same key as before, `i18nextLng`) and used again on the next visit.
+6. **Footer:** app name, links to Courses, Free Courses, Teachers, Pricing, and the copyright line.
+
+The banner, navbar, home page, catalog, pricing, teachers and footer all use the same container width
+(at most 1200 px, centred) instead of the full screen width.
 
 **On mobile:** below 1200 px the links move into a menu drawer opened with the menu button ("Open site menu")
 on the right; the drawer also holds Dashboard or Sign In / Sign Up. On phones narrower than 600 px the navbar
-shows only the logo icon, the search box, the avatar (when signed in) and the menu button. The banner wraps
+shows only the logo icon, the search box, the language switch (icon only), the avatar (when signed in) and the
+menu button. The banner wraps
 onto several lines. Every button is at least 44 px high.
 
 **API endpoints used:** `GET /api/auth/me`, `GET /api/home-hero-posts/logo/public`,
 `GET /api/courses/discounts/active`.
 
 **Code:** `frontend/src/app/(public)/layout.tsx`, `frontend/src/components/public/PublicLayout.tsx`,
-`frontend/src/components/public/layout/` (`PublicNavbar`, `NavSearch`, `NavAuthActions`, `NavDrawer`,
-`SiteLogo`, `DiscountBanner`, `DiscountCountdown`, `PublicFooter`), `frontend/src/api/public.api.ts`,
+`frontend/src/components/public/layout/` (`PublicNavbar`, `PublicNavLinks`, `NavSearch`, `LanguageSwitcher`,
+`NavAuthActions`, `NavDrawer`, `SiteLogo`, `DiscountBanner`, `DiscountCountdown`, `PublicFooter`), `frontend/src/api/public.api.ts`,
 `frontend/src/schemas/public.schema.ts`.
 
 **Tests:** `components/public/__tests__/PublicLayout.test.tsx`; Playwright `frontend/e2e/public.spec.ts`
@@ -196,40 +203,46 @@ onto several lines. Every button is at least 44 px high.
 
 **Who can use it:** everyone.
 
-**What it is for:** the landing page: showcase images, subjects, popular courses, the learning formats, the
-learning paths and the teachers.
+**What it is for:** the landing page: showcase images, then the paid live courses and the free ones, each
+with its own category cards.
 
 **How to use it:**
 
-1. **Showcase slider:** the public images admins put on the Homepage Showcase page, one after another every
-   5 seconds. Arrows and dots switch images by hand. The slider holds still while the mouse is over it or a
-   control in it has keyboard focus; the pause/play button stops it for good. For people who turn off
-   animations (prefers-reduced-motion) it starts paused. Without images a blue banner is shown.
-2. **Explore by Category:** one tile per category. A tile opens the catalog filtered by that category
-   (`/courses?categories=<id>`). "View all courses" opens `/courses`.
-3. **Popular Courses:** the newest public courses, 8 per page, with page buttons underneath. Each card shows the
-   cover, course type, title, teachers, price (struck-through list price and "N% off" while a discount runs,
-   or "Free") and category, and opens the course page. A signed-in Student also sees **Continue Learning** on
-   courses they are enrolled in (opens the course player). Filters and search are on `/courses`.
-4. **Learn what matches your ambition:** one card per course type ("Path 1", "Path 2", …) that opens the
-   catalog filtered by it (`/courses?courseTypes=<id>`).
-5. **Our Instructors:** two rows of teacher cards scrolling in opposite directions (they pause on hover and stand
-   still for people who turn off animations), with a link to `/teachers`.
+1. **Showcase slider** (container width, rounded corners): the public images admins put on the Homepage
+   Showcase page, one after another every 5 seconds. Arrows and dots switch images by hand. The slider holds
+   still while the mouse is over it or a control in it has keyboard focus; the pause/play button stops it for
+   good. For people who turn off animations (prefers-reduced-motion) it starts paused. Without images a blue
+   banner is shown.
+2. **Live Courses** (one box): the title in the centre, then small category cards (name and number of courses),
+   then the course cards. Only **paid** courses are shown here. The first card, **All**, shows every paid
+   course; picking a category shows only its paid courses (the picked card is highlighted). Only categories
+   that have paid courses get a card.
+3. **Upcoming Free Live Courses** (a second box, same layout): the same, for **free** courses only.
+4. **Course cards** (both boxes): cover, course type, title, start day ("Starts Dec 5, 2026", in the viewer's
+   time zone and language, or "Start date to be announced"), price (struck-through list price and "N% off"
+   while a discount runs, or "Free") and a **See Details** button. The whole card also opens the course page.
+   Teachers and category are not shown on the card. On mouse hover the card lifts, gets a shadow, the cover
+   zooms in slightly and the title turns blue. A signed-in Student also sees **Continue Learning** on courses
+   they are enrolled in (opens the course player).
+5. **Paging:** each box shows up to 30 courses. Page buttons appear under a box only when it has more than 30
+   courses. Filters and search are on `/courses`.
 
-**On mobile:** one card per row (two on tablets); the slider is 320 px high; the teacher rows still scroll sideways inside their band without making the page
-scroll sideways.
+**On mobile:** one course card per row (two on tablets, four on desktop); the category cards stay on one row
+that scrolls sideways inside the box (the page itself never scrolls sideways); the slider is 220 px high on
+phones.
 
-**API endpoints used:** `GET /api/home-hero-posts/public`, `GET /api/categories`, `GET /api/course-types`,
-`GET /api/courses/browse?page&limit=8`, `GET /api/teachers`, `GET /api/enrollments` (signed-in Students only).
+**API endpoints used:** `GET /api/home-hero-posts/public`, `GET /api/categories`,
+`GET /api/courses/browse?pricing=Paid|Free&categories&page&limit=30` (one request per box; the category counts
+come from `filterCounts.categoriesByPricing`), `GET /api/enrollments` (signed-in Students only).
 
 **Code:** `frontend/src/app/(public)/page.tsx`, `frontend/src/components/public/home/` (`HomePage`,
-`HomeHeroSlider`, `HeroSliderControls`, `HomeCategoryGrid`, `CategoryCard`, `HomeCourses`,
-`CourseTypePaths`, `CourseTypeCard`, `TeacherMarqueeSection`, `TeacherMarqueeRow`, `TeacherMarqueeCard`),
-`frontend/src/components/public/common/` (`CourseGrid`, `CourseCard`, helpers), the shared card parts in
-`frontend/src/components/course-card/`, `frontend/src/api/catalog.api.ts` (categories, course types, enrolments).
+`HomeHeroSlider`, `HeroSlide`, `HeroSliderControls`, `HomeCourseSection`, `HomeSectionTitle`,
+`HomeCategoryFilter`, `CategoryFilterCard`), `frontend/src/components/public/common/` (`CourseGrid`,
+`CourseCard`, `CourseStartDay`, helpers), `frontend/src/components/course-card/` (`CourseCover`, `CoursePrice`),
+`frontend/src/api/public.api.ts` (`useHomeCourses`), `frontend/src/api/catalog.api.ts` (categories, enrolments).
 
 **Tests:** `components/public/__tests__/HomePage.test.tsx`, `public-utils.test.ts`; Playwright
-`frontend/e2e/public.spec.ts`.
+`frontend/e2e/public.spec.ts` (desktop + mobile: category filter + See Details; language switch).
 
 ### Our Instructors
 

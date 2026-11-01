@@ -50,6 +50,23 @@ describe('GET /api/courses/browse (public catalog)', () => {
     expect(res.body.filterCounts.pricing.Free).toBeGreaterThanOrEqual(2);
   });
 
+  it('counts the public courses of each category per pricing (Free / Paid)', async () => {
+    const category = await createCategory();
+    await createCourse({ category: category._id, pricing: 'Paid', price: 500 });
+    await createCourse({ category: category._id, pricing: 'Paid', price: 700 });
+    await createCourse({ category: category._id, pricing: 'Free' });
+    await createCourse({ category: category._id, pricing: 'Paid', price: 900, status: 'Draft' });
+    await createCourse({ category: category._id, pricing: 'Free', visibility: 'Private' });
+
+    // Counts ignore the request's own filters, like the other filter counts
+    const res = await request(app).get('/api/courses/browse?pricing=Paid&page=1&limit=1');
+
+    expect(res.status).toBe(200);
+    const { categoriesByPricing } = res.body.filterCounts;
+    expect(categoriesByPricing.Paid[String(category._id)]).toBe(2);
+    expect(categoriesByPricing.Free[String(category._id)]).toBe(1);
+  });
+
   it('cannot be tricked into showing drafts or private courses through the query', async () => {
     const draft = await createCourse({ status: 'Draft' });
     const res = await request(app).get('/api/courses/browse?status=Draft&visibility=Private');
