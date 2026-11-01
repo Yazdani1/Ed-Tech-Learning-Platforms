@@ -1,6 +1,6 @@
 // Frontend architecture rules, checked by `npm run arch:check` (part of `npm run lint`) and in CI.
 // The same tool draws docs/dependency-graph.md (`npm run docs:generate`).
-// The backend and legacy-frontend/ are not checked here.
+// The backend is not checked here.
 const SEVERITY = 'error';
 
 /** @type {import('dependency-cruiser').IConfiguration} */

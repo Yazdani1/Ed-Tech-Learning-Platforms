@@ -13,7 +13,6 @@ backend/*
 !backend/vitest.config.mts
 
 # Old React + Vite client: never reformatted (deleted at the end of Stage A)
-legacy-frontend/
 next-env.d.ts
 
 # Kept exactly as they are

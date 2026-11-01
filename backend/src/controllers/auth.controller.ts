@@ -48,7 +48,6 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   res.status(201).json({
     success: true,
     message: 'Registered successfully',
-    token,
     data: { _id: user._id, name: user.name, email: user.email, role: user.role },
   });
 });
@@ -76,7 +75,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: 'Logged in successfully',
-    token,
     data: { _id: user._id, name: user.name, email: user.email, role: user.role, avatar: user.avatar },
   });
 });

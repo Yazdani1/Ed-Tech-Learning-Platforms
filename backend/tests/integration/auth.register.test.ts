@@ -24,6 +24,8 @@ describe('POST /api/auth/register', () => {
     });
     expect(JSON.stringify(res.body)).not.toContain('Secret-pass-1');
     expect(res.body.data.password).toBeUndefined();
+    // SECURITY: the token only travels in the httpOnly cookie
+    expect(res.body.token).toBeUndefined();
     const cookie = String(res.headers['set-cookie']);
     expect(cookie).toMatch(/^token=/);
     expect(cookie).toContain('HttpOnly');

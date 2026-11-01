@@ -21,6 +21,8 @@ describe('POST /api/auth/login', () => {
       data: { _id: String(user._id), name: user.name, email: user.email, role: 'Teacher' },
     });
     expect(res.body.data.password).toBeUndefined();
+    // SECURITY: the token only travels in the httpOnly cookie, never in a body JavaScript can read
+    expect(res.body.token).toBeUndefined();
     const cookie = String(res.headers['set-cookie']);
     expect(cookie).toMatch(/^token=[^;]+/);
     expect(cookie).toContain('HttpOnly');

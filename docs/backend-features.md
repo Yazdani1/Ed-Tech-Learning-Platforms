@@ -243,7 +243,7 @@ middleware).
 1. Register or log in: the server checks the fields, hashes the password (bcrypt, cost 12) or compares it,
    and signs a JWT (`JWT_EXPIRE`, default 7 days).
 2. The JWT is set as the httpOnly `token` cookie (production: `secure`, `sameSite=lax`; locally
-   `sameSite=strict`) and, for the old client only, also returned as `token` in the body.
+   `sameSite=strict`). The token is never put in the response body (JavaScript cannot read it).
 3. Every protected request: `protect` reads the cookie (or a Bearer header), verifies the JWT, loads the user
    and rejects tokens issued before the user's last password change.
 4. Logout clears the cookie.
@@ -286,7 +286,6 @@ Content-Type: application/json
 {
   "success": true,
   "message": "Logged in successfully",
-  "token": "<jwt, old client only>",
   "data": {
     "_id": "6720f0c2a1b2c3d4e5f60718",
     "name": "Asha",
@@ -332,10 +331,11 @@ change; 429 too many failed logins.
   (the Next.js app calls the API on its own origin).
 - Register accepted any password length; now at least 6, as in the profile form.
 - Mongoose "invalid id" errors echoed the raw input; now `Invalid <field>` only.
+- Login and register also returned the JWT in the JSON body (for the old React client, now retired); the
+  token now lives only in the httpOnly cookie.
 
 **Known limits:** logout only clears the cookie (a copied token stays valid until it expires or the password
-changes); register says when an email is already registered; the token is still returned in the body for the
-old client (removed when legacy-frontend/ is deleted).
+changes); register says when an email is already registered.
 
 **Tests:** `backend/tests/integration/auth.register.test.ts`, `auth.login.test.ts`, `auth.me.test.ts`
 (cookie + Bearer, 401 cases incl. malformed/expired/foreign-secret tokens, injection, lockout, password

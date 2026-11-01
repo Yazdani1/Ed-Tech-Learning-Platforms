@@ -16,7 +16,6 @@ Source of truth: the user's instructions (in conversation) and this file.
   stay as they are** (see .claude/rules/backend.md). Deployed on Render (render.yaml).
 - frontend/ Next.js (App Router) + TypeScript + MUI v9 + TanStack Query + i18next (mobile responsive).
   Deployed on Vercel (deploy hook in .github/workflows/deploy.yml).
-- legacy-frontend/ the old React 19 + Vite client while pages are migrated (Stage A only; deleted at the end).
 - docker/ dev + test compose files and Dockerfiles. Root compose.yml includes docker/compose.dev.yml.
 - docs/ architecture, backend-features, frontend-features (by hand), database + dependency graph (generated).
 
@@ -130,47 +129,42 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
 
 ## Current status
 
-- Stage A (conversion), following EdTech-Claude-Code-Setup-Guide.md.
-- Done: Phase 0 (audit + decisions), Phase 1 (AI workspace: this file, .claude/ settings, hook, rules,
-  agents, skills, reports folder, memory), Phase 2 (root tooling: root package.json, Prettier, husky +
-  lint-staged, dependency-cruiser; backend Vitest + Supertest setup in backend/vitest.config.mts and
-  backend/tests/setup.ts), Phase 3 (Docker: compose.yml, docker/compose.dev.yml, docker/compose.test.yml,
-  docker/backend.Dockerfile with dev + prod stages, scripts/dev.mjs, scripts/docker-test.mjs), Phase 4
-  (old client moved to legacy-frontend/; Next.js 16 skeleton in frontend/: providers, http.service + Zod-checked
-  responses, TanStack Query, MUI theme, i18n en/bn, /auth/login + /auth/register, Admin/Student/Teacher shells
-  with role-filtered menus, RequireRole/Can, proxy.ts sign-in redirect + per-request nonce CSP).
-- Frontend hosting is Vercel, so there is no frontend Dockerfile; `docker:build` builds the backend prod image.
-  A production `next build` needs BACKEND_INTERNAL_URL and NEXT_PUBLIC_SOCKET_URL (it fails without them).
-- Pages not migrated yet (wave 3: chat, group chat, notifications, community hub, practice quiz, schedule) 404.
-- Accepted for Stage A: browser-tab titles (metadata) are English only (language is picked in the browser).
-- Phase 5 done: CI (.github/workflows/ci.yml: checks incl. docs, audits and gitleaks; backend + frontend
-  lint/build; Docker test jobs; Node from .nvmrc), frontend Vitest + RTL + MSW (src/test/), Playwright
-  (desktop + Pixel 7, e2e/ with global-setup warm-up), E2E accounts seeded by backend/tests/e2e/seed.ts
-  (one per role, test database only). Backend `npm audit fix` (lockfile only): 0 vulnerabilities.
-- Phase 6 done: docs/architecture.md, backend-features.md, frontend-features.md,
-  generated database.md + dependency-graph.md (scripts/docs/), `npm run docs:check` in CI and `check`.
-- Phase 7 done: integration tests for every backend endpoint (49 files, 1201 tests incl. Socket.io), every
-  endpoint documented in docs/backend-features.md (177 routes), architecture.md feature map + flows. Shared
-  test helpers: backend/tests/factories, backend/tests/helpers/cloudinary.ts. Agent reviews in baseline mode;
-  every Critical/High/Major fixed in the existing style (new small utils: courseAccess, escapeRegex, fileType,
-  loginThrottle). Reports: .claude/reports/2026-10-29-phase7-* and 2026-10-30-phase7-* (git-ignored).
-- Backend rules added in Phase 7 (the frontend must follow them): course content (videos of non-preview
-  lectures, materials, live-class links, quizzes, announcements, Q&A) only for staff, the course's teachers and
-  enrolled students (subscription enrolments only while the plan covers the course); quiz answers are removed
-  from unanswered questions, a question can be answered once per attempt (409; reset to retry), guests check
-  free-preview answers with POST /api/quiz-bank/public/:id/questions/:qId/check; changing the email needs the
-  current password; passwords 6-72 chars; only a Super Admin manages Admin/Super Admin accounts; at least one
-  Super Admin remains; a course with enrolments cannot be deleted (unpublish instead); uploads are checked by
-  content (images: PNG/JPEG/GIF/WEBP); 10 wrong passwords lock an email for 15 minutes (429).
+- **Stage A (conversion) is complete** (2026-11-01), done with EdTech-Claude-Code-Setup-Guide.md, Phases 0-9.
+  The old React client (legacy-frontend/) was migrated page by page and then deleted (it is in git history,
+  before the Phase 9 commit). New work is Stage B: "Build <feature> using the module-workflow skill".
+- Backend: every endpoint has integration tests (49 files, ~1200 tests incl. Socket.io) and a section in
+  docs/backend-features.md. Shared test helpers: backend/tests/factories, backend/tests/helpers/cloudinary.ts.
+  Phase 7 fixes added small utils (courseAccess, escapeRegex, fileType, loginThrottle); everything else keeps
+  the original structure. Login/register no longer return the token in the body (cookie only).
+- Backend rules the frontend relies on: course content (non-preview lecture videos, materials, live-class
+  links, quizzes, announcements, Q&A) only for staff, the course's teachers and enrolled students (subscription
+  enrolments only while the plan covers the course); quiz answers hidden until answered, one answer per
+  question per attempt (409; reset to retry), guests check free-preview answers with
+  POST /api/quiz-bank/public/:id/questions/:qId/check; changing the email needs the current password;
+  passwords 6-72 chars; only a Super Admin manages Admin/Super Admin accounts and one Super Admin always
+  remains; a course with enrolments cannot be deleted (unpublish instead); uploads are checked by content
+  (images PNG/JPEG/GIF/WEBP); 10 wrong passwords lock an email for 15 minutes (429).
+- Frontend (Next.js 16): every page of the old client, same URLs, en + bn, mobile first. Shared building
+  blocks in frontend/src/components/common (AppModal, ResponsiveDataView, SafeHtml, rich-text, quiz, SearchField,
+  UserAvatar, FilterSelect, ...), course-card/, live-class/, enrollments/, course-fields/; api modules per
+  feature with one query key per endpoint (catalog, enrollment, quiz, live-class, course-cache, ...); hooks
+  useModal / useConfirm / useUrlListParams / useDebouncedValue / useSocket; utils dateTime / price / urls /
+  sanitizeHtml / html-text / image-files / user-display; per-feature locales src/i18n/locales/<lang>/<ns>.json.
+- Socket.io: SocketProvider (context/SocketContext.tsx) keeps one connection per signed-in user; its token
+  comes from the same-origin route app/api/socket-token (reads the httpOnly cookie on the server; memory only);
+  it reconnects with backoff after a server-side disconnect (e.g. a password change).
+- Tests: ~495 frontend component tests (Vitest + RTL + MSW), 138 Playwright tests (desktop + Pixel 7) against
+  `next dev` in Docker (4 workers, 150 s test timeout; run e2e with nothing else heavy on the machine),
+  ~1200 backend tests. Docker test image uses Node 22 (same as .nvmrc and CI).
+- Pre-commit: lint-staged formats/lints staged files; typecheck, arch:check and docs:generate run once per commit
+  (.husky/pre-commit).
+- Frontend hosting is Vercel (no frontend Dockerfile; `docker:build` builds the backend prod image). A production
+  `next build` needs BACKEND_INTERNAL_URL and NEXT_PUBLIC_SOCKET_URL; the backend refuses to start in production
+  without JWT_SECRET. Seed scripts need SEED_ADMIN_PASSWORD / SEED_STUDENT_PASSWORD.
+- Accepted: browser-tab titles (metadata) are English only; the Next.js dev badge is off (devIndicators false).
 - Open decisions for the user: per-IP rate limiting (needs express-rate-limit + the real proxy hop count;
-  today the login lock is per email); the deploy workflow deploys every branch without waiting for CI; seed
-  scripts now need SEED_ADMIN_PASSWORD / SEED_STUDENT_PASSWORD.
-- Existing lint warnings (not errors): backend 4 (legacy-frontend/ is no longer linted).
-- Phase 8 in progress: wave 1 (public site, catalog, course page, student area, profile, course setup,
-  showcase) and wave 2 (admin courses + bulk edit + enrolments, course editor, course player, users,
-  teachers, subscriptions, course Q&A, teacher courses, dashboard, performance) migrated. Shared blocks:
-  frontend/src/components/common (AppModal, ResponsiveDataView, SafeHtml, ...), course-card/, api/catalog.api,
-  hooks useModal/useConfirm/useUrlListParams, utils/dateTime|price|urls|sanitizeHtml, per-feature locales
-  src/i18n/locales/<lang>/<feature>.json. Next: wave 3 (chat + group chat + notifications with the socket
-  token route, community hub, practice quiz, study schedule), then Phase 9.
-- Known follow-up (Stage B): payment gateway; until then subscribing activates the plan without payment.
+  today the login lock is per email); deploy.yml deploys every branch on push without waiting for CI.
+- Existing lint warnings (not errors): backend 4.
+- Known follow-up (Stage B): payment gateway; until then subscribing activates the plan and paid courses can be
+  enrolled in without payment.
+- Reports of every phase: .claude/reports/ (git-ignored).

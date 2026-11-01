@@ -33,7 +33,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
   }
 };
 
-/** Sets the httpOnly session cookie. The token in the response body is never read (userSchema drops it). */
+/** Sets the httpOnly session cookie (the backend never puts the token in the body). */
 export const login = (body: LoginRequest): Promise<User> =>
   http.post(`${AUTH}/login`, body, userSchema);
 
