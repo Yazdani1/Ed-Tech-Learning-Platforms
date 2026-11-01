@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 // Every flow runs on a desktop and a mobile project (CLAUDE.md testing rules).
 // In Docker (npm run test:e2e), BASE_URL points at the frontend-e2e container of the test stack.
-const baseURL = process.env.BASE_URL ?? 'http://localhost:3000';
+const baseURL = process.env.BASE_URL ?? 'http://localhost:3456';
 const isCI = Boolean(process.env.CI);
 
 export default defineConfig({

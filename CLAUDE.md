@@ -22,8 +22,8 @@ Source of truth: the user's instructions (in conversation) and this file.
 ## Commands (from the root)
 
 - npm run dev: mongo + backend in Docker, Next.js on the host. Stop: Ctrl+C, then `npm run dev:down`.
-  Ports (env overrides): frontend 3000 (FRONTEND_PORT), backend 5000 (BACKEND_PORT), Docker MongoDB on host
-  port 27018 (MONGO_PORT; a local mongod already uses 27017). The dev database `edtech` starts empty.
+  Ports (env overrides): frontend 3456 (FRONTEND_PORT; 3000 is used by another project here), backend 5000
+  (BACKEND_PORT), Docker MongoDB on host port 27018 (MONGO_PORT; a local mongod already uses 27017). The dev database `edtech` starts empty.
   backend/.env is optional; MONGO_URI, PORT and CLIENT_URL are overridden to use the local stack.
 - npm run test:backend: Vitest + Supertest against the mongo-test container
 - npm run test:frontend: Vitest + React Testing Library + MSW

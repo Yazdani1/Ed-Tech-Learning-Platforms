@@ -53,7 +53,7 @@ const ROUTES = [
 const WARM_UP_TIMEOUT_MS = 180_000;
 
 const globalSetup = async (): Promise<void> => {
-  const baseURL = process.env.BASE_URL ?? 'http://localhost:3000';
+  const baseURL = process.env.BASE_URL ?? 'http://localhost:3456';
   for (const route of ROUTES) {
     // A cookie makes proxy.ts let the signed-in areas render (their page code is what needs compiling)
     await fetch(`${baseURL}${route}`, {

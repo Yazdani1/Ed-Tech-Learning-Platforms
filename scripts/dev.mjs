@@ -23,7 +23,7 @@ const BACKEND_WAIT_MS = 5 * 60_000;
 const POLL_MS = 1000;
 const HEALTH_TIMEOUT_MS = 2000;
 
-const FRONTEND_PORT = Number(process.env.FRONTEND_PORT ?? '3000');
+const FRONTEND_PORT = Number(process.env.FRONTEND_PORT ?? '3456');
 const BACKEND_PORT = Number(process.env.BACKEND_PORT ?? '5000');
 const BACKEND_URL = `http://localhost:${BACKEND_PORT}`;
 
