@@ -60,20 +60,6 @@
     "continue": "Continue Learning",
     "viewAll": "Browse all courses"
   },
-  "ecosystem": {
-    "chip": "Complete learning ecosystem",
-    "title": "A platform built for courses, classes, quizzes, and real outcomes",
-    "body": "MedhaBee brings live learning, recorded lessons, seminars, language programs, portfolio building, and community discussion into one connected student experience.",
-    "live": "Live",
-    "recorded": "Recorded",
-    "seminar": "Seminar",
-    "language": "Language",
-    "quiz": "Quiz",
-    "portfolio": "Portfolio",
-    "learn": "Learn",
-    "practice": "Practice",
-    "showcase": "Showcase"
-  },
   "paths": {
     "title": "Learn what matches your ambition",
     "subtitle": "These learning paths come directly from the course types available on the platform, so students see real options they can explore.",

@@ -12,9 +12,6 @@ import { HomePage } from '../home/HomePage';
 
 import { browsePage, makeCategory, makeCourse, makeTeacher } from './public-fixtures';
 
-// jsdom has no WebGL: the decorative 3D scene is left out of these tests
-vi.mock('../home/ThreeLearningScene', () => ({ default: () => null }));
-
 const course = makeCourse();
 
 describe('HomePage', () => {

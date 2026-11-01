@@ -211,22 +211,19 @@ learning paths and the teachers.
    cover, course type, title, teachers, price (struck-through list price and "N% off" while a discount runs,
    or "Free") and category, and opens the course page. A signed-in Student also sees **Continue Learning** on
    courses they are enrolled in (opens the course player). Filters and search are on `/courses`.
-4. **Complete learning ecosystem:** a dark band with the learning formats and an animated 3D scene.
-5. **Learn what matches your ambition:** one card per course type ("Path 1", "Path 2", …) that opens the
+4. **Learn what matches your ambition:** one card per course type ("Path 1", "Path 2", …) that opens the
    catalog filtered by it (`/courses?courseTypes=<id>`).
-6. **Our Instructors:** two rows of teacher cards scrolling in opposite directions (they pause on hover and stand
+5. **Our Instructors:** two rows of teacher cards scrolling in opposite directions (they pause on hover and stand
    still for people who turn off animations), with a link to `/teachers`.
 
-**On mobile:** one card per row (two on tablets); the slider is 320 px high; the 3D scene is 300 px high and
-its three labels stack; the teacher rows still scroll sideways inside their band without making the page
+**On mobile:** one card per row (two on tablets); the slider is 320 px high; the teacher rows still scroll sideways inside their band without making the page
 scroll sideways.
 
 **API endpoints used:** `GET /api/home-hero-posts/public`, `GET /api/categories`, `GET /api/course-types`,
 `GET /api/courses/browse?page&limit=8`, `GET /api/teachers`, `GET /api/enrollments` (signed-in Students only).
 
 **Code:** `frontend/src/app/(public)/page.tsx`, `frontend/src/components/public/home/` (`HomePage`,
-`HomeHeroSlider`, `HeroSliderControls`, `HomeCategoryGrid`, `CategoryCard`, `HomeCourses`, `EcosystemBand`,
-`EcosystemVisual`, `ThreeLearningScene` + `three-scene.ts` loaded with `next/dynamic` (browser only),
+`HomeHeroSlider`, `HeroSliderControls`, `HomeCategoryGrid`, `CategoryCard`, `HomeCourses`,
 `CourseTypePaths`, `CourseTypeCard`, `TeacherMarqueeSection`, `TeacherMarqueeRow`, `TeacherMarqueeCard`),
 `frontend/src/components/public/common/` (`CourseGrid`, `CourseCard`, helpers), the shared card parts in
 `frontend/src/components/course-card/`, `frontend/src/api/catalog.api.ts` (categories, course types, enrolments).

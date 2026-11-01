@@ -34,7 +34,8 @@ Source of truth: the user's instructions (in conversation) and this file.
   before every commit.
 - "It needs Docker" is never a reason to skip a test: check `docker info`, start Docker Desktop, run it.
 - Per app (also used by CI): `npm --prefix backend run build|lint|lint:fix`,
-  `npm --prefix backend run seed:discount-courses|seed:subscriptions`.
+  `npm --prefix backend run seed:discount-courses|seed:subscriptions`. Demo data for local testing (20 courses,
+  adds only what is missing, refuses production): `docker exec edtech-learning-platform-backend-1 npm run seed:demo-courses`.
 - Port conflict (`EADDRINUSE :5000`) from a backend left running on the host:
   `Stop-Process -Id (Get-NetTCPConnection -LocalPort 5000 -State Listen).OwningProcess -Force`
 
