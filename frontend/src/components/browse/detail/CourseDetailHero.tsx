@@ -8,6 +8,8 @@ import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
+import { CourseTypeBadge } from '../card/CourseTypeBadge';
+
 import { HeroChips } from './HeroChips';
 
 import type { Course } from '@/schemas/browse.schema';
@@ -27,10 +29,9 @@ const TITLE_SX = {
   wordBreak: 'break-word',
 } as const;
 
-/** Dark banner: breadcrumb, title, subtitle, chips, teachers. */
+/** Dark banner: breadcrumb, course type, title, subtitle, chips. */
 export const CourseDetailHero: FC<CourseDetailHeroProps> = ({ course }) => {
   const { t } = useTranslation();
-  const teachers = course.teachers.flatMap((teacher) => (teacher ? [teacher.name] : []));
 
   return (
     <Box sx={{ bgcolor: HERO_BG, color: 'common.white', py: { xs: 4, md: 7 } }}>
@@ -52,6 +53,11 @@ export const CourseDetailHero: FC<CourseDetailHeroProps> = ({ course }) => {
               {course.category && <Box sx={{ color: ACCENT }}>{course.category.name}</Box>}
               {course.courseType && <Box sx={{ color: ACCENT }}>{course.courseType.name}</Box>}
             </Breadcrumbs>
+            {course.courseType && (
+              <Box sx={{ mb: 1.5 }}>
+                <CourseTypeBadge name={course.courseType.name} />
+              </Box>
+            )}
             <Typography component="h1" variant="h4" sx={TITLE_SX}>
               {course.title}
             </Typography>
@@ -61,16 +67,6 @@ export const CourseDetailHero: FC<CourseDetailHeroProps> = ({ course }) => {
               </Typography>
             )}
             <HeroChips course={course} />
-            {teachers.length > 0 && (
-              <Typography variant="body2">
-                <Box component="span" sx={{ opacity: 0.75, mr: 1 }}>
-                  {t('browse.detail.createdBy')}
-                </Box>
-                <Box component="span" sx={{ color: ACCENT, fontWeight: 500 }}>
-                  {teachers.join(', ')}
-                </Box>
-              </Typography>
-            )}
           </Grid>
         </Grid>
       </Container>

@@ -5,19 +5,20 @@ import Tabs from '@mui/material/Tabs';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
-import type { SetupKind } from '@/schemas/setup.schema';
+import type { SetupTab } from '@/schemas/setup.schema';
 import type { FC } from 'react';
 
 interface SetupTabsProps {
-  kind: SetupKind;
+  kind: SetupTab;
 }
 
-const TABS: { kind: SetupKind; href: string }[] = [
+const TABS: { kind: SetupTab; href: string }[] = [
   { kind: 'category', href: '/admin/categories' },
   { kind: 'courseType', href: '/admin/course-types' },
+  { kind: 'tool', href: '/admin/tools' },
 ];
 
-/** Links between the two course setup lists (each has its own address). */
+/** Links between the course setup lists: categories, course types, tools (each has its own address). */
 export const SetupTabs: FC<SetupTabsProps> = ({ kind }) => {
   const { t } = useTranslation();
   return (
@@ -25,7 +26,7 @@ export const SetupTabs: FC<SetupTabsProps> = ({ kind }) => {
       value={kind}
       aria-label={t('showcase.setup.tabsLabel')}
       variant="fullWidth"
-      sx={{ mb: 2.5, borderBottom: 1, borderColor: 'divider', maxWidth: { sm: 480 } }}
+      sx={{ mb: 2.5, borderBottom: 1, borderColor: 'divider', maxWidth: { sm: 600 } }}
     >
       {TABS.map((tab) => (
         <Tab

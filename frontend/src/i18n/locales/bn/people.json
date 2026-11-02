@@ -31,7 +31,7 @@
     "availableSummary_one": "{{total}} জনের মধ্যে {{count}} জন ব্যবহারকারী আছেন",
     "availableSummary_other": "{{total}} জনের মধ্যে {{count}} জন ব্যবহারকারী আছেন",
     "totalChip": "মোট {{count}}",
-    "searchPlaceholder": "নাম বা ইমেইল খুঁজুন...",
+    "searchPlaceholder": "নাম, ইমেইল বা শিক্ষার্থী নম্বর খুঁজুন...",
     "role": "ভূমিকা",
     "allRoles": "সব ভূমিকা",
     "subscriptionPlan": "সাবস্ক্রিপশন প্ল্যান",
@@ -97,7 +97,9 @@
     "subscriptionStart": "সাবস্ক্রিপশন শুরু",
     "subscriptionEnd": "সাবস্ক্রিপশন শেষ",
     "createdAt": "তৈরির সময়",
-    "updatedAt": "হালনাগাদের সময়"
+    "updatedAt": "হালনাগাদের সময়",
+    "studentNumber": "শিক্ষার্থী নম্বর",
+    "studentNumberShort": "নং {{number}}"
   },
   "teachers": {
     "title": "শিক্ষকগণ",

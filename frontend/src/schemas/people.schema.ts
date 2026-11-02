@@ -37,6 +37,8 @@ export const managedUserSchema = z.object({
   name: z.string(),
   email: z.string(),
   role: userRoleSchema,
+  /** Students only: "123-456-789" */
+  studentNumber: z.string().nullish(),
   avatar: z.string().nullish(),
   createdAt: z.string().nullish(),
   updatedAt: z.string().nullish(),

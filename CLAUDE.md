@@ -168,11 +168,22 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
 - Frontend hosting is Vercel (no frontend Dockerfile; `docker:build` builds the backend prod image). A production
   `next build` needs BACKEND_INTERNAL_URL and NEXT_PUBLIC_SOCKET_URL; the backend refuses to start in production
   without JWT_SECRET. Seed scripts need SEED_ADMIN_PASSWORD / SEED_STUDENT_PASSWORD.
-- Accepted: browser-tab titles (metadata) are English only; the Next.js dev badge is off (devIndicators false).
+- Accepted: browser-tab titles (metadata) are English only; the Next.js dev badge is off (devIndicators false);
+  the home slider has no pause/play button (user's decision 2026-11-01; it holds on hover/focus and does not
+  autoplay with prefers-reduced-motion; WCAG 2.2.2 trade-off); hidden public pages answer "Page not found" from
+  the client (HTTP 200; a content setting, not access control); section pictures uploaded but never saved stay
+  in Cloudinary (admin-only; a cleanup job could be added later).
 - Open decisions for the user: per-IP rate limiting (needs express-rate-limit + the real proxy hop count;
   today the login lock is per email); every branch deploys on push (now only after CI passed: ci.yml calls
   deploy.yml; a manual "Run workflow" on Deploy skips CI).
 - Existing lint warnings (not errors): backend 4.
 - Known follow-up (Stage B): payment gateway; until then subscribing activates the plan and paid courses can be
   enrolled in without payment.
+- Stage B batch 1 (2026-11-01): Live course types (`CourseType.isLive`, home Live section via
+  `browse?liveOnly=true`); slider captions + right-side drawer editor (`components/common/SideDrawer`, one image
+  per upload); student numbers (`User.studentNumber`, 123-456-789, backfilled at start-up); `/api/site-settings`
+  (Super Admin Site Pages: hidden public pages answer "not found" via `PageVisibilityGate`; Company Contact);
+  `/api/tools` (Course Setup > Tools); course page sections (`PATCH /api/courses/:id/extras`, pictures via
+  `POST /api/courses/:id/images`): tools, what you get, projects, audience, success stories, FAQ; course page
+  "Curriculum" tabs and sticky buy bar. Promo codes are NOT built (the bar shows the running discount).
 - Reports of every phase: .claude/reports/ (git-ignored).

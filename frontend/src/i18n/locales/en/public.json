@@ -41,9 +41,7 @@
     "label": "Featured",
     "previous": "Previous header image",
     "next": "Next header image",
-    "show": "Show header image {{number}}",
-    "pause": "Pause slideshow",
-    "play": "Play slideshow"
+    "show": "Show header image {{number}}"
   },
   "home": {
     "categoriesLabel": "Filter {{section}} by category",

@@ -12,8 +12,8 @@ import { toKb } from './image-files';
 import type { FC } from 'react';
 
 interface HeroFilePickerProps {
-  /** Edit: one replacement image; create: one or more images */
-  multiple: boolean;
+  /** Edit: a replacement image; create: the new image (one at a time) */
+  isEdit: boolean;
   files: File[];
   /** Translated problem with the picked files, if any */
   error: string | null;
@@ -23,12 +23,12 @@ interface HeroFilePickerProps {
 const DROP_ZONE_MIN_HEIGHT = 132;
 
 /** The big dashed "choose banner images" button, the size hint and the picked files. */
-export const HeroFilePicker: FC<HeroFilePickerProps> = ({ multiple, files, error, onFiles }) => {
+export const HeroFilePicker: FC<HeroFilePickerProps> = ({ isEdit, files, error, onFiles }) => {
   const { t } = useTranslation();
   return (
     <>
       <ImageFileButton
-        multiple={multiple}
+        multiple={false}
         onFiles={onFiles}
         sx={{
           minHeight: DROP_ZONE_MIN_HEIGHT,
@@ -41,7 +41,7 @@ export const HeroFilePicker: FC<HeroFilePickerProps> = ({ multiple, files, error
         }}
       >
         <AddPhotoAlternateIcon sx={{ fontSize: 40 }} aria-hidden />
-        {multiple ? t('showcase.form.chooseMany') : t('showcase.form.chooseReplacement')}
+        {isEdit ? t('showcase.form.chooseReplacement') : t('showcase.form.chooseOne')}
       </ImageFileButton>
       <Typography variant="caption" color="text.secondary">
         {t('showcase.form.sizeHint')}

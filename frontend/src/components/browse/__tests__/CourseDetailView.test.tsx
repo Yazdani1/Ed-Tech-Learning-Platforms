@@ -86,6 +86,25 @@ describe('CourseDetailView (/courses/[id])', () => {
     );
     expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute('href', '/auth/login');
     expect(screen.queryByRole('link', { name: 'Edit Course' })).not.toBeInTheDocument();
+    // The banner shows no status and no "Created by" line
+    expect(screen.queryByText('Published')).not.toBeInTheDocument();
+    expect(screen.queryByText('Created by')).not.toBeInTheDocument();
+  });
+
+  it('shows only the curriculum buttons of the lists that have content', async () => {
+    server.use(
+      ...courseHandlers(),
+      http.get(`*/api/study-curricula/course/${course._id}`, () => ok([])),
+      http.get(`*/api/quiz-bank/public/course/${course._id}`, () => ok({ course, sections: [] })),
+    );
+    renderPage();
+
+    expect(await screen.findByRole('button', { name: 'Recorded Lectures' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.queryByRole('button', { name: 'Live Class' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Quizzes' })).not.toBeInTheDocument();
   });
 
   it('says "Course not found" for a missing, draft or private course', async () => {
@@ -129,7 +148,9 @@ describe('CourseDetailView (/courses/[id])', () => {
     server.use(...courseHandlers());
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: /Getting started/ }));
+    // Live classes are listed first; the recorded lectures are one button away
+    await userEvent.click(await screen.findByRole('button', { name: 'Recorded Lectures' }));
+    await userEvent.click(screen.getByRole('button', { name: /Getting started/ }));
     expect(screen.getByText('Locked lesson')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /Welcome/ }));
     const dialog = await screen.findByRole('dialog');
@@ -140,11 +161,15 @@ describe('CourseDetailView (/courses/[id])', () => {
     );
   });
 
-  it('switches to the live classes (sanitised) and the free quizzes', async () => {
+  it('opens the curriculum on the live classes (sanitised), then the free quizzes', async () => {
     server.use(...courseHandlers());
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Live Class' }));
+    expect(await screen.findByRole('heading', { name: 'Curriculum' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Live Class' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     await userEvent.click(screen.getByRole('button', { name: /Week one plan/ }));
     expect(await screen.findByText('Kick-off')).toBeInTheDocument();
     expect(document.querySelector('script')).toBeNull();

@@ -115,6 +115,23 @@ describe('ProfilePage', () => {
     expect(screen.queryByText('You do not have an active subscription.')).not.toBeInTheDocument();
   });
 
+  it('shows a student their student number, and nobody else without one', async () => {
+    server.use(
+      profileReturns(makeProfile('Student', { studentNumber: '123-456-789' })),
+      enrollmentsReturn([]),
+      planConfigsReturn('Premium', 12, []),
+    );
+    const first = renderPage();
+    expect(await screen.findByText('Student number')).toBeInTheDocument();
+    expect(screen.getByText('123-456-789')).toBeInTheDocument();
+    first.unmount();
+
+    server.use(profileReturns(makeProfile('Admin')));
+    renderPage();
+    await screen.findByText('Management access');
+    expect(screen.queryByText('Student number')).not.toBeInTheDocument();
+  });
+
   it('asks nothing role-specific for an admin', async () => {
     server.use(
       profileReturns(makeProfile('Admin')),

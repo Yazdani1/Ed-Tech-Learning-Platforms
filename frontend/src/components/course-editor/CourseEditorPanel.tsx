@@ -7,6 +7,12 @@ import { CurriculumBuilder } from './curriculum/CurriculumBuilder';
 import { BasicInfoTab } from './details/BasicInfoTab';
 import { LearningContentTab } from './details/LearningContentTab';
 import { MediaTab } from './details/MediaTab';
+import { AudienceTab } from './extras/AudienceTab';
+import { BenefitsTab } from './extras/BenefitsTab';
+import { FaqTab } from './extras/FaqTab';
+import { ProjectsTab } from './extras/ProjectsTab';
+import { SuccessStoriesTab } from './extras/SuccessStoriesTab';
+import { ToolsTab } from './extras/ToolsTab';
 import { SAVED_COURSE_TABS, type EditorTab } from './editor-tabs';
 import { LiveClassTab } from './live-class/LiveClassTab';
 import { QuizBankTab } from './quiz-bank/QuizBankTab';
@@ -45,6 +51,18 @@ export const CourseEditorPanel: FC<CourseEditorPanelProps> = ({ tab, course, det
       );
     case 'content':
       return <LearningContentTab control={details.form.control} />;
+    case 'tools':
+      return course ? <ToolsTab course={course} /> : null;
+    case 'benefits':
+      return course ? <BenefitsTab course={course} /> : null;
+    case 'projects':
+      return course ? <ProjectsTab course={course} /> : null;
+    case 'audience':
+      return course ? <AudienceTab course={course} /> : null;
+    case 'successStories':
+      return course ? <SuccessStoriesTab course={course} /> : null;
+    case 'faq':
+      return course ? <FaqTab course={course} /> : null;
     case 'curriculum':
       return course ? <CurriculumBuilder course={course} /> : null;
     case 'liveClass':

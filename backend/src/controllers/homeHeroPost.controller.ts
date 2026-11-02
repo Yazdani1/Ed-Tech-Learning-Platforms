@@ -14,6 +14,18 @@ const parsePublishAt = (value: unknown): Date | undefined => {
 	return date;
 };
 
+const HERO_TITLE_MAX = 120;
+const HERO_DESCRIPTION_MAX = 300;
+
+/** Optional caption text (multipart form value): trimmed, '' clears it, too long or not text is a 400. */
+const parseCaption = (value: unknown, label: string, max: number): string | undefined => {
+	if (value === undefined) return undefined;
+	if (typeof value !== 'string') throw new AppError(`${label} must be text`, 400);
+	const text = value.trim();
+	if (text.length > max) throw new AppError(`${label} must be at most ${max} characters`, 400);
+	return text;
+};
+
 const applyDueHeroSchedules = async () => {
 	const now = new Date();
 	const duePosts = await HomeHeroPost.find({
@@ -55,7 +67,7 @@ export const getPublicHomeHeroPosts = asyncHandler(async (_req: Request, res: Re
 		],
 	})
 		.sort({ order: 1, createdAt: -1 })
-		.select('imageUrl imageWidth imageHeight order')
+		.select('imageUrl imageWidth imageHeight title description order')
 		.lean();
 
 	res.status(200).json({ success: true, data: posts });
@@ -131,6 +143,8 @@ export const createHomeHeroPosts = asyncHandler(async (req: Request, res: Respon
 
 	const visibility = parseVisibility(req.body.visibility);
 	const publishAt = parsePublishAt(req.body.publishAt);
+	const title = parseCaption(req.body.title, 'Title', HERO_TITLE_MAX) || undefined;
+	const description = parseCaption(req.body.description, 'Description', HERO_DESCRIPTION_MAX) || undefined;
 	const hasFutureSchedule = Boolean(publishAt && publishAt.getTime() > Date.now());
 	const maxOrder = await HomeHeroPost.findOne().sort({ order: -1 }).select('order').lean();
 	let nextOrder = Number(req.body.order ?? (maxOrder?.order ?? -1) + 1);
@@ -143,6 +157,8 @@ export const createHomeHeroPosts = asyncHandler(async (req: Request, res: Respon
 			imagePublicId: uploaded.publicId,
 			imageWidth: uploaded.width,
 			imageHeight: uploaded.height,
+			title,
+			description,
 			visibility: hasFutureSchedule ? 'Private' : visibility,
 			scheduledVisibility: hasFutureSchedule ? visibility : undefined,
 			publishAt,
@@ -159,6 +175,11 @@ export const createHomeHeroPosts = asyncHandler(async (req: Request, res: Respon
 export const updateHomeHeroPost = asyncHandler(async (req: Request, res: Response) => {
 	const post = await HomeHeroPost.findById(req.params.id);
 	if (!post) throw new AppError('Hero post not found', 404);
+
+	const title = parseCaption(req.body.title, 'Title', HERO_TITLE_MAX);
+	const description = parseCaption(req.body.description, 'Description', HERO_DESCRIPTION_MAX);
+	if (title !== undefined) post.title = title || undefined;
+	if (description !== undefined) post.description = description || undefined;
 
 	const file = req.file;
 	if (file) {

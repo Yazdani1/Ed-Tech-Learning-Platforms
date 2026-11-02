@@ -23,6 +23,9 @@ import { isStaff, isCourseTeacher, canAccessCourseContent } from '../utils/cours
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 import type { CourseStatus, SubscriptionPlan } from '../types/index';
 
+// Lists (catalog, home, staff list) leave out the course page sections; only GET /api/courses/:id sends them
+const COURSE_PAGE_SECTIONS_EXCLUDED = '-toolsSection -benefitsSection -projects -audience -successStories -faqs';
+
 const normalizeCoursePrices = (pricing: string, listPrice?: number, discountPrice?: number) => {
 	if (pricing !== 'Paid') {
 		return { listPrice: 0, discountPrice: 0, price: 0 };
@@ -141,8 +144,9 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 	}
 
 	const courses = await Course.find(filter)
+		.select(COURSE_PAGE_SECTIONS_EXCLUDED)
 		.populate('category', 'name slug')
-		.populate('courseType', 'name slug description')
+		.populate('courseType', 'name slug description isLive')
 		.populate('teachers', 'name profileImage')
 		.sort({ createdAt: -1 });
 
@@ -306,7 +310,9 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 
 export const browseCourses = asyncHandler(async (req: Request, res: Response) => {
 	await expireExpiredCourseDiscounts();
-	const { search, courseTypes, categories, subscriptionPlans, pricing, page, limit } = req.query as Record<string, string>;
+	const { search, courseTypes, categories, subscriptionPlans, pricing, liveOnly, page, limit } = req.query as Record<string, string>;
+	// Course types flagged "live" (the home page's Live Courses section)
+	const liveTypeIds = (await CourseType.find({ isLive: true }).select('_id').lean()).map((type) => type._id);
 
 	// Security: hard-coded — public users only ever see Published + Public courses
 	const baseFilter = {
@@ -323,6 +329,13 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 	if (courseTypes) {
 		const ids = courseTypes.split(',').map((s) => s.trim()).filter((s) => Types.ObjectId.isValid(s)).map((s) => new Types.ObjectId(s));
 		if (ids.length > 0) filter.courseType = { $in: ids };
+	}
+
+	// liveOnly=true: only courses of a live course type (none when no type is flagged)
+	if (liveOnly === 'true') {
+		const chosen = (filter.courseType as { $in: Types.ObjectId[] } | undefined)?.$in;
+		const live = chosen ? liveTypeIds.filter((id) => chosen.some((c) => c.equals(id))) : liveTypeIds;
+		filter.courseType = { $in: live };
 	}
 
 	if (categories) {
@@ -344,8 +357,9 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 	}
 
 	const query = Course.find(filter)
+		.select(COURSE_PAGE_SECTIONS_EXCLUDED)
 		.populate('category', 'name slug')
-		.populate('courseType', 'name slug description')
+		.populate('courseType', 'name slug description isLive')
 		.populate('teachers', 'name profileImage')
 		.populate({
 			path: 'sections',
@@ -358,7 +372,7 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		})
 		.sort({ createdAt: -1 });
 
-	const [courseTypeCounts, categoryCounts, pricingCounts, subscriptionPlanCounts, categoryPricingCounts] = await Promise.all([
+	const [courseTypeCounts, categoryCounts, pricingCounts, subscriptionPlanCounts, categoryPricingCounts, liveCategoryCounts] = await Promise.all([
 		Course.aggregate<{ _id: Types.ObjectId; count: number }>([
 			{ $match: baseFilter },
 			{ $match: { courseType: { $exists: true, $ne: null } } },
@@ -383,6 +397,11 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 			{ $match: { category: { $exists: true, $ne: null } } },
 			{ $group: { _id: { category: '$category', pricing: '$pricing' }, count: { $sum: 1 } } },
 		]),
+		Course.aggregate<{ _id: Types.ObjectId; count: number }>([
+			{ $match: { ...baseFilter, courseType: { $in: liveTypeIds } } },
+			{ $match: { category: { $exists: true, $ne: null } } },
+			{ $group: { _id: '$category', count: { $sum: 1 } } },
+		]),
 	]);
 
 	// Per pricing ("Free" / "Paid"): course count per category (the home page's Free and Paid sections)
@@ -398,6 +417,8 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		pricing: Object.fromEntries(pricingCounts.map((item) => [item._id, item.count])),
 		subscriptionPlans: Object.fromEntries(subscriptionPlanCounts.map((item) => [item._id, item.count])),
 		categoriesByPricing,
+		// Course count per category among the live courses (the home page's Live Courses section)
+		liveCategories: Object.fromEntries(liveCategoryCounts.map((item) => [String(item._id), item.count])),
 	};
 
 	const shouldPaginate = Boolean(page || limit);
@@ -442,8 +463,9 @@ export const getCourseById = asyncHandler(
 			: 'name bio profileImage expertise socialLinks';
 		const course = await Course.findById(req.params.id)
 			.populate('category', 'name slug')
-			.populate('courseType', 'name slug description')
+			.populate('courseType', 'name slug description isLive')
 			.populate('teachers', teacherFields)
+			.populate('toolsSection.tools', 'name logoUrl')
 			.populate({ path: 'sections', populate: { path: 'lectures' } });
 
 		if (!course) throw new AppError('Course not found', 404);

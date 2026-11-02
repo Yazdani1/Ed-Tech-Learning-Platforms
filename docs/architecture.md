@@ -68,6 +68,12 @@ flowchart LR
     Notifications -- "live push" --> Socket
     Community[Community hub] -- "points, badges" --> Auth
     Showcase[Hero posts + logo] -- "images" --> CLD[(Cloudinary)]
+    Courses -- "live course types (home Live section)" --> Setup
+    Courses -- "page sections: tools" --> Tools[Tools]
+    Courses -- "section pictures" --> CLD
+    Tools -- "logos" --> CLD
+    SiteSettings[Site settings: hidden pages, company contact] -- "who may change" --> Auth
+    Admin -- "student numbers" --> Auth
     Group -- "attachments" --> CLD
     Docker[Docker dev / CI] -- "is the API up?" --> Health[Health check]
 ```
@@ -156,6 +162,14 @@ flowchart LR
     CommunityApi --> BeCommunity[Community hub]
     PracticeApi --> BeQuiz
     ScheduleApi --> BeSchedule[Study schedules]
+    PublicSite & Browse -- "hidden pages, Call Now phone" --> SiteApi[site-settings.api]
+    SitePages[Site Pages + Company Contact] -- "pages, contact" --> SiteApi
+    Setup -- "tools" --> ToolsApi[tools.api]
+    Editor -- "tool picker" --> ToolsApi
+    Editor -- "page sections, pictures" --> ExtrasApi[course-extras.api]
+    SiteApi --> BeSite[Site settings]
+    ToolsApi --> BeTools[Tools]
+    ExtrasApi --> BeCourses
 ```
 
 ## Key flows

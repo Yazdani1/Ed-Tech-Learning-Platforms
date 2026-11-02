@@ -7,11 +7,11 @@ import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import type { SetupKind } from '@/schemas/setup.schema';
+import type { SetupTab } from '@/schemas/setup.schema';
 import type { FC } from 'react';
 
 interface SetupManagerHeaderProps {
-  kind: SetupKind;
+  kind: SetupTab;
   /** Shown as a chip once the list has loaded */
   count: number | undefined;
   onAdd: () => void;

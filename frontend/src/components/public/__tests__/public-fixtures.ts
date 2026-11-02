@@ -79,10 +79,11 @@ export const browsePage = (
   page = 1,
   total = courses.length,
   categoriesByPricing: Record<string, Record<string, number>> = {},
+  liveCategories: Record<string, number> = {},
 ) =>
   ok(courses, {
     total,
-    filterCounts: { categoriesByPricing },
+    filterCounts: { categoriesByPricing, liveCategories },
     pagination: {
       page,
       limit: FIXTURE_PAGE_SIZE,

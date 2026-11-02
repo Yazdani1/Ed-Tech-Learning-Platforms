@@ -32,6 +32,7 @@ erDiagram
   CourseType ||--o{ Course : "courseType"
   Teacher }o--o{ Course : "teachers"
   Section }o--o{ Course : "sections"
+  Tool }o--o{ Course : "toolsSection.tools"
   User ||--o{ Course : "createdBy"
   User ||--o{ Enrollment : "student"
   Course ||--o{ Enrollment : "course"
@@ -56,6 +57,7 @@ erDiagram
   Course ||--o{ Section : "course"
   Lecture }o--o{ Section : "lectures"
   User ||--o{ SiteLogo : "updatedBy"
+  User ||--o{ SiteSetting : "updatedBy"
   Course ||--o{ StudyCurriculum : "course"
   User ||--o{ StudyCurriculum : "postedBy"
   Course ||--o{ StudyMaterial : "course"
@@ -65,6 +67,7 @@ erDiagram
   User ||--o{ Subscription : "assignedBy"
   User ||--o{ SubscriptionPlanConfig : "createdBy"
   User ||--o{ Teacher : "userId"
+  User ||--o{ Tool : "createdBy"
   Course }o--o{ User : "purchasedCourses"
   Announcement {
     ObjectId course FK "required"
@@ -231,6 +234,16 @@ erDiagram
     Array whatYouWillGet
     Array requirements
     Array sections FK
+    String toolsSection_title
+    String toolsSection_description
+    Array toolsSection_tools FK
+    String benefitsSection_title
+    String benefitsSection_description
+    Array benefitsSection_items
+    Array projects
+    Array audience
+    Array successStories
+    Array faqs
     ObjectId createdBy FK "required"
     ObjectId _id PK
     Date createdAt
@@ -240,6 +253,7 @@ erDiagram
     String name "required"
     String slug "required, unique"
     String description
+    Boolean isLive
     ObjectId _id PK
     Date createdAt
     Date updatedAt
@@ -289,6 +303,8 @@ erDiagram
     String imagePublicId "required"
     Number imageWidth
     Number imageHeight
+    String title
+    String description
     String visibility
     String scheduledVisibility
     Date publishAt
@@ -386,6 +402,18 @@ erDiagram
     Date createdAt
     Date updatedAt
   }
+  SiteSetting {
+    String key "required, unique"
+    Array hiddenPages
+    String contact_phone
+    String contact_whatsapp
+    String contact_email
+    String contact_address
+    ObjectId updatedBy FK
+    ObjectId _id PK
+    Date createdAt
+    Date updatedAt
+  }
   StudyCurriculum {
     ObjectId course FK "required"
     String title "required"
@@ -466,12 +494,22 @@ erDiagram
     Date createdAt
     Date updatedAt
   }
+  Tool {
+    String name "required"
+    String logoUrl "required"
+    String logoPublicId "required"
+    ObjectId createdBy FK "required"
+    ObjectId _id PK
+    Date createdAt
+    Date updatedAt
+  }
   User {
     String name "required"
     String email "required, unique"
     String password "required"
     Date passwordChangedAt
     String role
+    String studentNumber "unique"
     String avatar
     String avatarPublicId
     Number communityPoints

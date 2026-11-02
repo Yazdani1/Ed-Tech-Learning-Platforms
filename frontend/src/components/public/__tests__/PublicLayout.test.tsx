@@ -42,6 +42,25 @@ describe('PublicLayout', () => {
     expect(screen.getByRole('contentinfo')).toHaveTextContent('MedhaBee E-Learning Platform');
   });
 
+  it('leaves out the links of pages a Super Admin hid, in the navbar and the footer', async () => {
+    server.use(
+      http.get('*/api/site-settings/public', () =>
+        ok({
+          hiddenPages: ['pricing', 'teachers'],
+          contact: { phone: '', whatsapp: '', email: '', address: '' },
+        }),
+      ),
+    );
+    renderLayout();
+
+    await waitFor(() => {
+      expect(screen.queryByRole('link', { name: 'Pricing' })).not.toBeInTheDocument();
+    });
+    expect(screen.queryByRole('link', { name: 'Teachers' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'All Courses' }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'Practice Quiz' })).toBeInTheDocument();
+  });
+
   it('switches the site between English and Bangla from the navbar and remembers the choice', async () => {
     renderLayout();
     const user = userEvent.setup();

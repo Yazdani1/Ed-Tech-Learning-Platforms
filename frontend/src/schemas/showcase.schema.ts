@@ -13,6 +13,8 @@ export const heroPostSchema = z.object({
   scheduledVisibility: heroVisibilitySchema.nullish(),
   publishAt: z.string().nullish(),
   order: z.number(),
+  title: z.string().nullish(),
+  description: z.string().nullish(),
   createdAt: z.string(),
 });
 export type HeroPost = z.infer<typeof heroPostSchema>;
@@ -28,12 +30,14 @@ export const siteLogoSchema = z.object({
 export type SiteLogo = z.infer<typeof siteLogoSchema>;
 
 /** Upload/edit form fields (the image files are picked separately). publishAt is a datetime-local value. */
+export const HERO_TITLE_MAX = 120;
+export const HERO_DESCRIPTION_MAX = 300;
+
 export const heroPostFormSchema = z.object({
+  title: z.string().trim().max(HERO_TITLE_MAX, 'showcase.form.titleTooLong'),
+  description: z.string().trim().max(HERO_DESCRIPTION_MAX, 'showcase.form.descriptionTooLong'),
   visibility: heroVisibilitySchema,
   publishAt: z.string(),
   order: z.string().trim().regex(/^\d*$/, 'showcase.form.orderInvalid'),
 });
 export type HeroPostForm = z.infer<typeof heroPostFormSchema>;
-
-/** The upload route takes at most 10 files at once. */
-export const MAX_HERO_FILES = 10;

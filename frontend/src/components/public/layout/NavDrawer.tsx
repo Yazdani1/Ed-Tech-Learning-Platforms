@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ROLE_HOME } from '@/utils/roles';
 
 import { PUBLIC_NAV_LINKS } from '../common/public-links';
+import { useVisibleLinks } from '../common/useVisibleLinks';
 
 import type { FC } from 'react';
 
@@ -31,6 +32,7 @@ const DRAWER_WIDTH = 280;
 /** Phones and tablets: every public link plus the dashboard or sign-in buttons. */
 export const NavDrawer: FC<NavDrawerProps> = ({ open, onClose }) => {
   const { t } = useTranslation();
+  const links = useVisibleLinks(PUBLIC_NAV_LINKS);
   const pathname = usePathname();
   const { user } = useAuth();
 
@@ -48,7 +50,7 @@ export const NavDrawer: FC<NavDrawerProps> = ({ open, onClose }) => {
         </Box>
         <Box component="nav" aria-label={t('public.nav.label')}>
           <List>
-            {PUBLIC_NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <ListItemButton
                 key={link.href}
                 component={Link}

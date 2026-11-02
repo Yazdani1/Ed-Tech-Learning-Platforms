@@ -3,6 +3,12 @@ export const EDITOR_TABS = [
   'basic',
   'media',
   'content',
+  'tools',
+  'benefits',
+  'projects',
+  'audience',
+  'successStories',
+  'faq',
   'curriculum',
   'liveClass',
   'quizBank',
@@ -10,7 +16,17 @@ export const EDITOR_TABS = [
 export type EditorTab = (typeof EDITOR_TABS)[number];
 
 /** Tabs that need a saved course (they work on its id). */
-export const SAVED_COURSE_TABS: readonly EditorTab[] = ['curriculum', 'liveClass', 'quizBank'];
+export const SAVED_COURSE_TABS: readonly EditorTab[] = [
+  'tools',
+  'benefits',
+  'projects',
+  'audience',
+  'successStories',
+  'faq',
+  'curriculum',
+  'liveClass',
+  'quizBank',
+];
 
 export const tabId = (tab: EditorTab): string => `course-editor-tab-${tab}`;
 export const panelId = (tab: EditorTab): string => `course-editor-panel-${tab}`;

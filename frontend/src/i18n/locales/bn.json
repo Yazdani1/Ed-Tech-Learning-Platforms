@@ -70,7 +70,9 @@
     "analytics": "অ্যানালিটিক্স",
     "pricing": "মূল্য",
     "assignedCourses": "নির্ধারিত কোর্স",
-    "mainMenu": "প্রধান মেনু"
+    "mainMenu": "প্রধান মেনু",
+    "sitePages": "সাইট পেজ",
+    "companyContact": "কোম্পানির যোগাযোগ"
   },
   "auth": {
     "login": "লগইন",

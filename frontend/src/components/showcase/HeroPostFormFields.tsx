@@ -13,12 +13,29 @@ interface HeroPostFormFieldsProps {
   form: UseFormReturn<HeroPostForm>;
 }
 
-/** Visibility, schedule date and position of a slider image. */
+/** Title, description, visibility, schedule date and position of a slider image. */
 export const HeroPostFormFields: FC<HeroPostFormFieldsProps> = ({ form }) => {
   const { t } = useTranslation();
-  const orderError = form.formState.errors.order?.message;
+  const { errors } = form.formState;
+  const orderError = errors.order?.message;
   return (
     <>
+      <TextField
+        {...form.register('title')}
+        fullWidth
+        label={t('showcase.form.title')}
+        error={Boolean(errors.title)}
+        helperText={errors.title?.message ? t(errors.title.message) : undefined}
+      />
+      <TextField
+        {...form.register('description')}
+        fullWidth
+        multiline
+        minRows={3}
+        label={t('showcase.form.description')}
+        error={Boolean(errors.description)}
+        helperText={errors.description?.message ? t(errors.description.message) : undefined}
+      />
       <Controller
         control={form.control}
         name="visibility"

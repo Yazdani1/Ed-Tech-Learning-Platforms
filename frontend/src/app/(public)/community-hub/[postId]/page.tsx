@@ -1,4 +1,5 @@
 import { DiscussionDetailPage } from '@/components/community/detail/DiscussionDetailPage';
+import { PageVisibilityGate } from '@/components/public/common/PageVisibilityGate';
 
 import type { Metadata } from 'next';
 
@@ -10,7 +11,11 @@ interface DiscussionRouteProps {
 
 const DiscussionRoute = async ({ params }: DiscussionRouteProps) => {
   const { postId } = await params;
-  return <DiscussionDetailPage postId={postId} />;
+  return (
+    <PageVisibilityGate pageKey="community-hub">
+      <DiscussionDetailPage postId={postId} />
+    </PageVisibilityGate>
+  );
 };
 
 export default DiscussionRoute;

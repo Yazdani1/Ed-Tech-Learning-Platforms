@@ -106,6 +106,26 @@ describe('UsersPage', () => {
     expect(within(dialog).getByText('No active subscription')).toBeInTheDocument();
   });
 
+  it('shows the student number under a student name and in the details; staff have none', async () => {
+    const numbered = makeManagedUser('0104', 'Numbered Student', 'Student', {
+      studentNumber: '123-456-789',
+    });
+    server.use(usersHandler([numbered, OTHER_ADMIN]));
+    renderPage('Super Admin');
+
+    expect(await screen.findByText('No. 123-456-789')).toBeInTheDocument();
+    expect(screen.getAllByText(/^No. /)).toHaveLength(1);
+    expect(
+      screen.getByPlaceholderText('Search name, email or student number...'),
+    ).toBeInTheDocument();
+
+    await openMenu('Numbered Student');
+    await user().click(await screen.findByRole('menuitem', { name: 'View Details' }));
+    const dialog = await screen.findByRole('dialog', { name: 'User Details' });
+    expect(within(dialog).getByText('Student number')).toBeInTheDocument();
+    expect(within(dialog).getByText('123-456-789')).toBeInTheDocument();
+  });
+
   it('creates a user after checking the password length', async () => {
     let body: unknown;
     server.use(

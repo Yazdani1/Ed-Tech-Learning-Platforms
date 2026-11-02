@@ -28,7 +28,12 @@ const makePost = (id: string, overrides: Partial<HeroPost> = {}): HeroPost =>
     ...overrides,
   });
 
-const FIRST = makePost('001', { visibility: 'Public', order: 0 });
+const FIRST = makePost('001', {
+  visibility: 'Public',
+  order: 0,
+  title: 'Welcome banner',
+  description: 'Shown on the slide',
+});
 const SECOND = makePost('002', {
   order: 1,
   scheduledVisibility: 'Public',
@@ -153,13 +158,13 @@ describe('HomepageShowcasePage', () => {
     expect(screen.getByRole('button', { name: 'Save Logo' })).toBeDisabled();
   });
 
-  it('uploads several slider images with visibility and position', async () => {
+  it('uploads ONE slider image with title and description from the right-side drawer', async () => {
     let sent: FormData | null = null;
     renderPage();
     server.use(
       http.post('*/api/home-hero-posts', async ({ request }) => {
         sent = await request.formData();
-        return ok([makePost('003'), makePost('004')]);
+        return ok([makePost('003')]);
       }),
     );
     const user = userEvent.setup();
@@ -167,14 +172,19 @@ describe('HomepageShowcasePage', () => {
     await user.click(await screen.findByRole('button', { name: 'Upload Images' }));
     const dialog = await screen.findByRole('dialog', { name: 'Upload Header Images' });
     expect(within(dialog).getByRole('button', { name: 'Upload' })).toBeDisabled();
-    await user.upload(fileInput(dialog), [png('a.png'), png('b.png')]);
+    expect(fileInput(dialog)).not.toHaveAttribute('multiple');
+    await user.upload(fileInput(dialog), png('a.png'));
+    await user.type(within(dialog).getByLabelText('Title'), 'Autumn admissions');
+    await user.type(within(dialog).getByLabelText('Description'), 'Join before 30 November');
     await user.click(within(dialog).getByRole('combobox', { name: 'Visibility' }));
     await user.click(await screen.findByRole('option', { name: 'Public' }));
     await user.click(within(dialog).getByRole('button', { name: 'Upload' }));
 
     expect(await screen.findByText('Images uploaded')).toBeInTheDocument();
     const body = sent as FormData | null;
-    expect(body?.getAll('images')).toHaveLength(2);
+    expect(body?.getAll('images')).toHaveLength(1);
+    expect(body?.get('title')).toBe('Autumn admissions');
+    expect(body?.get('description')).toBe('Join before 30 November');
     expect(body?.get('visibility')).toBe('Public');
     expect(body?.get('order')).toBe('2');
     expect(body?.has('publishAt')).toBe(false);
@@ -212,6 +222,8 @@ describe('HomepageShowcasePage', () => {
       'Public',
     );
     expect(within(dialog).getByLabelText('Position')).toHaveValue(0);
+    expect(within(dialog).getByLabelText('Title')).toHaveValue('Welcome banner');
+    expect(within(dialog).getByLabelText('Description')).toHaveValue('Shown on the slide');
     await user.click(within(dialog).getByRole('button', { name: 'Update' }));
 
     expect(await screen.findByText('Image updated')).toBeInTheDocument();
@@ -219,6 +231,7 @@ describe('HomepageShowcasePage', () => {
     const body = sent as FormData | null;
     expect(body?.get('visibility')).toBe('Public');
     expect(body?.get('publishAt')).toBe('');
+    expect(body?.get('title')).toBe('Welcome banner');
     expect(body?.has('image')).toBe(false);
   });
 

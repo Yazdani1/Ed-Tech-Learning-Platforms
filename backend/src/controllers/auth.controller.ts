@@ -7,6 +7,7 @@ import { generateToken, sendTokenCookie, clearTokenCookie } from '../utils/jwt';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 import { disconnectUserSockets } from '../socket/index';
 import { clearFailedLogins, isLoginLocked, recordFailedLogin } from '../utils/loginThrottle';
+import { ensureStudentNumber } from '../utils/studentNumber';
 
 const MIN_PASSWORD_LENGTH = 6;
 // bcrypt only uses the first 72 bytes; longer input is refused instead of silently cut.
@@ -86,6 +87,7 @@ export const logout = asyncHandler(async (_req: Request, res: Response) => {
 
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findById(req.user._id);
+  if (user && user.role === 'Student' && !user.studentNumber) user.studentNumber = await ensureStudentNumber(user._id);
   res.status(200).json({ success: true, data: user });
 });
 

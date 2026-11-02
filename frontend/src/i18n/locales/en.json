@@ -70,7 +70,9 @@
     "analytics": "Analytics",
     "pricing": "Pricing",
     "assignedCourses": "Assigned courses",
-    "mainMenu": "Main menu"
+    "mainMenu": "Main menu",
+    "sitePages": "Site Pages",
+    "companyContact": "Company Contact"
   },
   "auth": {
     "login": "Login",

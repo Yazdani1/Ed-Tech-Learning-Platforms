@@ -53,6 +53,12 @@ export const HeroPostDetailsModal: FC<HeroPostDetailsModalProps> = ({ open, post
             />
           </Box>
           <Grid container spacing={1.5} sx={{ pt: 2 }}>
+            <DetailItem label={t('showcase.form.title')} wide>
+              {post.title?.trim() ? post.title : t('showcase.details.unavailable')}
+            </DetailItem>
+            <DetailItem label={t('showcase.form.description')} wide>
+              {post.description?.trim() ? post.description : t('showcase.details.unavailable')}
+            </DetailItem>
             <DetailItem label={t('showcase.details.visibility')}>
               {text.visibility(post)}
             </DetailItem>

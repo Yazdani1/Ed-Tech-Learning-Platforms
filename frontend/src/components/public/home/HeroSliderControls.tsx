@@ -2,20 +2,19 @@
 
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import { useTranslation } from 'react-i18next';
 
 import type { FC } from 'react';
 
+/** Class name of the slider box: its hover / keyboard focus reveals the arrows */
+export const HERO_SLIDER_CLASS = 'hero-slider';
+
 interface HeroSliderControlsProps {
   count: number;
   active: number;
   onSelect: (index: number) => void;
-  playing: boolean;
-  onTogglePlaying: () => void;
 }
 
 const ARROW_SX = {
@@ -28,17 +27,11 @@ const ARROW_SX = {
   color: 'common.white',
   border: '2px solid rgba(255,255,255,0.8)',
   '&:hover': { bgcolor: '#0369a1' },
-} as const;
-
-const PLAY_SX = {
-  position: 'absolute',
-  right: { xs: 8, md: 16 },
-  bottom: 8,
-  width: 44,
-  height: 44,
-  color: 'common.white',
-  bgcolor: 'rgba(15,23,42,0.45)',
-  '&:hover': { bgcolor: 'rgba(15,23,42,0.65)' },
+  // Hidden until the pointer is over the slider (or a key focuses an arrow); always shown on touch screens
+  opacity: 0,
+  transition: 'opacity 0.2s ease',
+  [`.${HERO_SLIDER_CLASS}:hover &, .${HERO_SLIDER_CLASS}:focus-within &`]: { opacity: 1 },
+  '@media (hover: none)': { opacity: 1 },
 } as const;
 
 const DOTS_SX = {
@@ -71,14 +64,8 @@ const dotSx = (isActive: boolean) =>
     },
   }) as const;
 
-/** Previous / next arrows, one dot per image and pause / play. */
-export const HeroSliderControls: FC<HeroSliderControlsProps> = ({
-  count,
-  active,
-  onSelect,
-  playing,
-  onTogglePlaying,
-}) => {
+/** Previous / next arrows (shown on hover) and one dot per image. */
+export const HeroSliderControls: FC<HeroSliderControlsProps> = ({ count, active, onSelect }) => {
   const { t } = useTranslation();
   return (
     <>
@@ -115,13 +102,6 @@ export const HeroSliderControls: FC<HeroSliderControlsProps> = ({
           />
         ))}
       </Box>
-      <IconButton
-        aria-label={playing ? t('public.hero.pause') : t('public.hero.play')}
-        onClick={onTogglePlaying}
-        sx={PLAY_SX}
-      >
-        {playing ? <PauseIcon /> : <PlayArrowIcon />}
-      </IconButton>
     </>
   );
 };

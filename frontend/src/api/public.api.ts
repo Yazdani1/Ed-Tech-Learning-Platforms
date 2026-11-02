@@ -45,13 +45,19 @@ export const getActiveDiscount = (): Promise<ActiveDiscount> =>
 export const getTeachers = (): Promise<AdminTeacher[]> =>
   http.get('/api/teachers', z.array(adminTeacherSchema));
 
+/** One home section's page: the live courses (liveOnly) or the free ones. */
 export const getHomeCourses = ({
-  pricing,
+  section,
   category,
   page,
 }: HomeCourseFilters): Promise<CoursePage> =>
   http.getEnvelope('/api/courses/browse', coursePageSchema, {
-    params: { pricing, categories: category || undefined, page, limit: HOME_COURSES_PAGE_SIZE },
+    params: {
+      ...(section === 'live' ? { liveOnly: 'true' } : { pricing: 'Free' }),
+      categories: category || undefined,
+      page,
+      limit: HOME_COURSES_PAGE_SIZE,
+    },
   });
 
 export const getPlanCourses = (plan: string, filters: PlanCourseFilters): Promise<CoursePage> =>

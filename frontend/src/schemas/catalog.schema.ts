@@ -12,6 +12,8 @@ export const taxonomySchema = z.object({
   name: z.string(),
   slug: z.string().default(''),
   description: z.string().nullish(),
+  /** Course types only: courses of this type are "live" (the home page's Live Courses section) */
+  isLive: z.boolean().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });

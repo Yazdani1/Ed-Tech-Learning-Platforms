@@ -19,6 +19,8 @@ import {
   type SetupKind,
 } from '@/schemas/setup.schema';
 
+import { LiveTypeSwitch } from './LiveTypeSwitch';
+
 import type { FC } from 'react';
 
 interface SetupItemFormModalProps {
@@ -31,27 +33,35 @@ interface SetupItemFormModalProps {
 
 const DESCRIPTION_ROWS = 3;
 
-/** Add or edit a category / course type (name required, description optional). */
+/** The form values for an item (empty for a new one). */
+const itemValues = (item: SetupItem | undefined): SetupItemRequest => ({
+  name: item?.name ?? '',
+  description: item?.description ?? '',
+  isLive: item?.isLive ?? false,
+});
+
+/** Add or edit a category / course type (name required, description optional; course types: the live flag). */
 export const SetupItemFormModal: FC<SetupItemFormModalProps> = ({ kind, open, item, onClose }) => {
   const { t } = useTranslation();
   const fieldError = useFieldError();
   const save = useSaveSetupItem(kind);
   const form = useForm<SetupItemRequest>({
     resolver: zodResolver(setupItemRequestSchema),
-    defaultValues: { name: '', description: '' },
+    defaultValues: itemValues(undefined),
   });
   const { reset } = form;
   const { reset: resetMutation } = save;
 
   useEffect(() => {
     if (!open) return;
-    reset({ name: item?.name ?? '', description: item?.description ?? '' });
+    reset(itemValues(item));
     resetMutation();
   }, [open, item, reset, resetMutation]);
 
   const onSave = form.handleSubmit((body) => {
     save.mutate(
-      { id: item?._id, body },
+      // Only course types have the "live" flag
+      { id: item?._id, body: kind === 'courseType' ? body : { ...body, isLive: undefined } },
       {
         onSuccess: () => {
           toast.success(t(`showcase.setup.${kind}.${item ? 'updated' : 'created'}`));
@@ -88,6 +98,7 @@ export const SetupItemFormModal: FC<SetupItemFormModalProps> = ({ kind, open, it
           rows={DESCRIPTION_ROWS}
           {...fieldError(form.formState.errors.description)}
         />
+        {kind === 'courseType' && <LiveTypeSwitch control={form.control} />}
       </Stack>
     </AppModal>
   );

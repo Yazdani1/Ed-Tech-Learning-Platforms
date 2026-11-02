@@ -31,6 +31,9 @@ export const HeroPostRow: FC<HeroPostRowProps> = ({ dragHandle, ...menu }) => {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.5, flex: 1, minWidth: 0 }}>
         {dragHandle}
         <Box sx={{ flex: 1, minWidth: 0 }}>
+          {post.title && (
+            <Typography sx={{ fontWeight: 800, overflowWrap: 'anywhere' }}>{post.title}</Typography>
+          )}
           <Typography variant="body2" sx={{ fontWeight: 800 }}>
             {text.dimensions(post, 'showcase.posts.noDimensions')}
           </Typography>

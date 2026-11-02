@@ -18,7 +18,7 @@ import { SiteLogo } from './SiteLogo';
 
 const TOOLBAR_HEIGHT = 68;
 
-/** Top bar of every public page (container width): logo, search, links, language switch, dashboard or sign-in. */
+/** Top bar of every public page (full width): logo, search, links, language switch, dashboard or sign-in. */
 export const PublicNavbar = () => {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -29,7 +29,8 @@ export const PublicNavbar = () => {
       elevation={0}
       sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}
     >
-      <Container maxWidth="lg">
+      {/* Full width: the logo sits in the left corner, the links and actions in the right one */}
+      <Container maxWidth={false} sx={{ px: { xs: 2, md: 4 } }}>
         <Toolbar disableGutters sx={{ gap: { xs: 1, sm: 2 }, minHeight: TOOLBAR_HEIGHT }}>
           <SiteLogo />
           <Suspense fallback={<Box sx={{ flex: 1 }} />}>

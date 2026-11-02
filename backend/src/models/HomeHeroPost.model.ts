@@ -7,6 +7,9 @@ export interface IHomeHeroPost extends Document {
 	imagePublicId: string;
 	imageWidth?: number;
 	imageHeight?: number;
+	/** Optional caption shown on the slide */
+	title?: string;
+	description?: string;
 	visibility: HomeHeroPostVisibility;
 	scheduledVisibility?: HomeHeroPostVisibility;
 	publishAt?: Date;
@@ -22,6 +25,8 @@ const homeHeroPostSchema = new Schema<IHomeHeroPost>(
 		imagePublicId: { type: String, required: true },
 		imageWidth: Number,
 		imageHeight: Number,
+		title: { type: String, trim: true, maxlength: 120 },
+		description: { type: String, trim: true, maxlength: 300 },
 		visibility: { type: String, enum: ['Public', 'Private'], default: 'Private', index: true },
 		scheduledVisibility: { type: String, enum: ['Public', 'Private'], index: true },
 		publishAt: { type: Date, index: true },

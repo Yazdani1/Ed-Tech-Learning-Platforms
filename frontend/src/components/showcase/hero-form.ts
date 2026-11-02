@@ -7,11 +7,19 @@ export const heroFormValues = (post: HeroPost | undefined, postCount: number): H
   post
     ? {
         // A pending change shows the visibility it will switch to, as the old page did
+        title: post.title ?? '',
+        description: post.description ?? '',
         visibility: post.scheduledVisibility ?? post.visibility,
         publishAt: toDateTimeInput(post.publishAt),
         order: String(post.order),
       }
-    : { visibility: 'Private', publishAt: '', order: String(postCount) };
+    : {
+        title: '',
+        description: '',
+        visibility: 'Private',
+        publishAt: '',
+        order: String(postCount),
+      };
 
 /**
  * The multipart body of POST /api/home-hero-posts (`images`) or PUT /api/home-hero-posts/:id (`image`).
@@ -19,6 +27,9 @@ export const heroFormValues = (post: HeroPost | undefined, postCount: number): H
  */
 export const heroFormData = (values: HeroPostForm, files: File[], isEdit: boolean): FormData => {
   const data = new FormData();
+  // Sent empty on edit too, so a cleared caption is removed
+  data.append('title', values.title);
+  data.append('description', values.description);
   data.append('visibility', values.visibility);
   if (values.order !== '') data.append('order', values.order);
   const publishAt = fromLocalInput(values.publishAt);

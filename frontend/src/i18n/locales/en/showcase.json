@@ -1,7 +1,7 @@
 {
   "setup": {
     "title": "Course Setup",
-    "subtitle": "Manage course categories and course types from one place.",
+    "subtitle": "Manage course categories, course types and tools from one place.",
     "tabsLabel": "Course setup sections",
     "name": "Name",
     "slug": "Slug",
@@ -32,6 +32,23 @@
       "created": "Course type created",
       "updated": "Course type updated",
       "deleted": "Course type deleted"
+    },
+    "isLive": "Live course type (its courses appear in the home page Live Courses section)",
+    "liveChip": "Live",
+    "tool": {
+      "plural": "Tools",
+      "description": "Tools and technologies taught in courses, each with its logo.",
+      "add": "Add Tool",
+      "edit": "Edit Tool",
+      "created": "Tool added",
+      "updated": "Tool updated",
+      "deleted": "Tool deleted",
+      "empty": "No tools yet. Add the first one.",
+      "name": "Tool name",
+      "namePlaceholder": "e.g. Node.js",
+      "chooseLogo": "Choose logo",
+      "changeLogo": "Change logo",
+      "nameTooLong": "Tool name can be at most 60 characters."
     }
   },
   "title": "Homepage Header Showcase",
@@ -95,7 +112,6 @@
     "editTitle": "Edit Header Image",
     "upload": "Upload",
     "update": "Update",
-    "chooseMany": "Choose one or more banner images",
     "chooseReplacement": "Choose replacement banner image",
     "sizeHint": "Recommended full header image size: 2048px wide x 460px high. Use compressed JPG/WebP images for faster homepage loading.",
     "fileInfo": "{{name}} ({{size}} KB)",
@@ -104,11 +120,37 @@
     "publishAtHint": "Public images with a future schedule appear automatically after this date and time.",
     "order": "Position",
     "orderHint": "Lower numbers appear first in the homepage slider.",
-    "orderInvalid": "Enter a whole number (0 or more)"
+    "orderInvalid": "Enter a whole number (0 or more)",
+    "chooseOne": "Choose a banner image",
+    "title": "Title",
+    "description": "Description",
+    "titleTooLong": "Title can be at most 120 characters.",
+    "descriptionTooLong": "Description can be at most 300 characters."
   },
   "file": {
     "badType": "{{name}} is not a PNG, JPEG, GIF or WEBP image",
     "tooLarge": "{{name}} is larger than {{max}} MB",
     "tooMany": "Choose at most {{max}} images at once"
+  },
+  "pages": {
+    "title": "Site Pages",
+    "subtitle": "Show or hide public pages. A hidden page disappears from the navbar and its address shows \"Page not found\"; nothing is deleted.",
+    "listLabel": "Public pages",
+    "toggle": "Show {{page}}",
+    "active": "Active",
+    "inactive": "Hidden",
+    "shown": "{{page}} is visible again",
+    "hidden": "{{page}} is hidden"
+  },
+  "contact": {
+    "title": "Company Contact",
+    "subtitle": "Contact details shown on the site (the phone number appears as \"Call Now\" on course pages).",
+    "phone": "Phone number",
+    "whatsapp": "WhatsApp number",
+    "email": "Email",
+    "address": "Address",
+    "saved": "Company contact saved",
+    "phoneInvalid": "Enter a valid phone number (digits, spaces, dashes, optional +).",
+    "addressTooLong": "Address can be at most 300 characters."
   }
 }

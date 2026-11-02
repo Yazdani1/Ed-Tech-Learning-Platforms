@@ -21,6 +21,7 @@ import {
 	deleteLecture,
 	reorderLectures,
 } from '../controllers/curriculum.controller';
+import { updateCourseExtras, uploadCourseExtrasImage } from '../controllers/courseExtras.controller';
 import { protect, optionalProtect, authorize } from '../middleware/auth.middleware';
 import { upload } from '../middleware/upload.middleware';
 
@@ -55,6 +56,10 @@ router.patch(
 	updateCourseStatus,
 );
 router.delete('/:id', protect, authorize(...adminRoles), deleteCourse);
+
+// Course page sections (tools, what you get, projects, audience, success stories, FAQ)
+router.post('/:id/images', protect, authorize(...adminRoles), upload.single('image'), uploadCourseExtrasImage);
+router.patch('/:id/extras', protect, authorize(...adminRoles), updateCourseExtras);
 
 // Curriculum – Sections
 router.put(

@@ -23,6 +23,8 @@ import homeHeroPostRouter from './homeHeroPost.routes';
 import communityRouter from './community.routes';
 import groupChatRouter from './groupChat.routes';
 import studyScheduleRouter from './studySchedule.routes';
+import siteSettingRouter from './siteSetting.routes';
+import toolRouter from './tool.routes';
 
 const router = Router();
 
@@ -50,5 +52,7 @@ router.use('/home-hero-posts', homeHeroPostRouter);
 router.use('/community', communityRouter);
 router.use('/group-chat', groupChatRouter);
 router.use('/study-schedules', studyScheduleRouter);
+router.use('/site-settings', siteSettingRouter);
+router.use('/tools', toolRouter);
 
 export default router;

@@ -36,10 +36,9 @@ export const NavSearch = () => {
       component="form"
       role="search"
       onSubmit={handleSubmit}
-      sx={{ flex: 1, minWidth: 0, maxWidth: 520, mx: 'auto' }}
+      sx={{ flex: 1, minWidth: 0, maxWidth: 720, mx: 'auto' }}
     >
       <TextField
-        size="small"
         fullWidth
         type="search"
         placeholder={t('public.nav.searchPlaceholder')}
@@ -57,7 +56,10 @@ export const NavSearch = () => {
             ),
           },
         }}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 5, bgcolor: 'grey.50', minHeight: 44 } }}
+        sx={{
+          '& .MuiOutlinedInput-root': { borderRadius: 6, bgcolor: 'grey.50', minHeight: 48 },
+          '& .MuiOutlinedInput-input': { py: 1.25 },
+        }}
       />
     </Box>
   );

@@ -9,13 +9,8 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
 import { useUpdateHeroPost, useUploadHeroPosts } from '@/api/showcase.api';
-import { AppModal } from '@/components/common/AppModal';
-import {
-  MAX_HERO_FILES,
-  heroPostFormSchema,
-  type HeroPost,
-  type HeroPostForm,
-} from '@/schemas/showcase.schema';
+import { SideDrawer } from '@/components/common/SideDrawer';
+import { heroPostFormSchema, type HeroPost, type HeroPostForm } from '@/schemas/showcase.schema';
 
 import { heroFormData, heroFormValues } from './hero-form';
 import { HeroFilePicker } from './HeroFilePicker';
@@ -24,7 +19,7 @@ import { useImageFiles } from './useImageFiles';
 
 import type { FC } from 'react';
 
-interface HeroPostFormModalProps {
+interface HeroPostFormDrawerProps {
   open: boolean;
   /** The post being edited; undefined to upload new images */
   post: HeroPost | undefined;
@@ -32,8 +27,11 @@ interface HeroPostFormModalProps {
   onClose: () => void;
 }
 
-/** Upload one or more slider images, or edit one (replacement image, visibility, schedule, position). */
-export const HeroPostFormModal: FC<HeroPostFormModalProps> = ({
+/**
+ * Right-side panel: upload ONE slider image with its own title and description, or edit one (replacement
+ * image, title, description, visibility, schedule, position).
+ */
+export const HeroPostFormDrawer: FC<HeroPostFormDrawerProps> = ({
   open,
   post,
   postCount,
@@ -44,7 +42,7 @@ export const HeroPostFormModal: FC<HeroPostFormModalProps> = ({
   const update = useUpdateHeroPost();
   const isEdit = post !== undefined;
   const mutation = isEdit ? update : upload;
-  const picked = useImageFiles(isEdit ? 1 : MAX_HERO_FILES);
+  const picked = useImageFiles(1);
   const form = useForm<HeroPostForm>({
     resolver: zodResolver(heroPostFormSchema),
     defaultValues: heroFormValues(undefined, 0),
@@ -74,7 +72,7 @@ export const HeroPostFormModal: FC<HeroPostFormModalProps> = ({
   });
 
   return (
-    <AppModal
+    <SideDrawer
       open={open}
       onClose={handleClose}
       title={t(isEdit ? 'showcase.form.editTitle' : 'showcase.form.createTitle')}
@@ -86,13 +84,13 @@ export const HeroPostFormModal: FC<HeroPostFormModalProps> = ({
       <Stack spacing={2} sx={{ pt: 1 }}>
         {mutation.error && <Alert severity="error">{mutation.error.message}</Alert>}
         <HeroFilePicker
-          multiple={!isEdit}
+          isEdit={isEdit}
           files={picked.files}
           error={picked.error}
           onFiles={picked.pick}
         />
         <HeroPostFormFields form={form} />
       </Stack>
-    </AppModal>
+    </SideDrawer>
   );
 };

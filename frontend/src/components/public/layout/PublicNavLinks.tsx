@@ -7,10 +7,12 @@ import { usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
 import { PUBLIC_NAV_LINKS } from '../common/public-links';
+import { useVisibleLinks } from '../common/useVisibleLinks';
 
 /** The public links inline in the navbar (wide screens; phones and tablets use NavDrawer). */
 export const PublicNavLinks = () => {
   const { t } = useTranslation();
+  const links = useVisibleLinks(PUBLIC_NAV_LINKS);
   const pathname = usePathname();
   return (
     <Box
@@ -18,7 +20,7 @@ export const PublicNavLinks = () => {
       aria-label={t('public.nav.label')}
       sx={{ display: { xs: 'none', lg: 'flex' }, gap: 0.5, flexShrink: 0 }}
     >
-      {PUBLIC_NAV_LINKS.map((link) => (
+      {links.map((link) => (
         <Button
           key={link.href}
           component={Link}

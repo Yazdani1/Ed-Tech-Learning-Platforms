@@ -32,7 +32,10 @@ flowchart LR
 | `/admin/profile`, `/student/profile`, `/teacher/profile`                   | My Profile                                                                                                                              | Everyone signed in (each in their own area)                               |
 | `/admin/categories`                                                        | Course setup: categories                                                                                                                | Super Admin, Admin                                                        |
 | `/admin/course-types`                                                      | Course setup: course types                                                                                                              | Super Admin, Admin                                                        |
+| `/admin/tools`                                                             | Course setup: tools (logo cards)                                                                                                        | Super Admin, Admin                                                        |
 | `/admin/homepage-showcase`                                                 | Homepage showcase (logo + slider)                                                                                                       | Super Admin, Admin                                                        |
+| `/admin/site-pages`                                                        | Site Pages: show or hide public pages                                                                                                   | Super Admin                                                               |
+| `/admin/company-contact`                                                   | Company Contact: phone, WhatsApp, email, address                                                                                        | Super Admin, Admin                                                        |
 | `/admin/courses`                                                           | Courses (staff list, filters, bulk edit)                                                                                                | Super Admin, Admin; Moderator (published courses, no manager tools)       |
 | `/admin/courses/[id]`                                                      | Course details (staff view of the course page)                                                                                          | Super Admin, Admin, Moderator                                             |
 | `/admin/enrollments/[courseId]`                                            | Course enrolments (students, revenue, CSV export)                                                                                       | Super Admin, Admin; Moderator (students + CSV only)                       |
@@ -166,9 +169,13 @@ later practice quiz and community hub) · **Menu:** the public navbar
    hides itself when the time is up. "View discounted courses" opens `/courses`.
 2. **Navbar** (sticks to the top): the site logo uploaded by admins on the Homepage Showcase page (or the
    MedhaBee name when there is none) links home. The search box opens the catalog with the text
-   (`/courses?search=...`) and shows the catalog's current search when you are on `/courses`.
+   (`/courses?search=...`) and shows the catalog's current search when you are on `/courses`. The navbar uses
+   the full screen width: the logo sits in the left corner, the links and buttons in the right one, and the
+   search box (up to 720 px wide, 48 px high) fills the space between them.
 3. Links: All Courses, Free Courses, Pricing, Teachers, Practice Quiz, Community Hub. The current page is
-   highlighted.
+   highlighted. A page a Super Admin switched off on the Site Pages screen has no link (navbar, menu drawer and
+   footer), and its address shows "Page not found" (`PageVisibilityGate`; the community hub's discussion and
+   profile pages too).
 4. Visitors see **Sign In** and **Sign Up**. A signed-in user sees **Dashboard** (their role's home page: Super
    Admin `/admin/dashboard`, Admin and Moderator `/admin/courses`, Teacher `/teacher/courses`, Student
    `/student/dashboard`) and their initial in a round avatar (name on hover).
@@ -177,8 +184,8 @@ later practice quiz and community hub) · **Menu:** the public navbar
    this browser (same key as before, `i18nextLng`) and used again on the next visit.
 6. **Footer:** app name, links to Courses, Free Courses, Teachers, Pricing, and the copyright line.
 
-The banner, navbar, home page, catalog, pricing, teachers and footer all use the same container width
-(at most 1200 px, centred) instead of the full screen width.
+The banner, home page, catalog, pricing, teachers and footer use the same container width (at most 1200 px,
+centred); only the navbar is full width.
 
 **On mobile:** below 1200 px the links move into a menu drawer opened with the menu button ("Open site menu")
 on the right; the drawer also holds Dashboard or Sign In / Sign Up. On phones narrower than 600 px the navbar
@@ -203,20 +210,23 @@ onto several lines. Every button is at least 44 px high.
 
 **Who can use it:** everyone.
 
-**What it is for:** the landing page: showcase images, then the paid live courses and the free ones, each
-with its own category cards.
+**What it is for:** the landing page: showcase images, then the live courses and the free ones, each with its
+own category cards.
 
 **How to use it:**
 
 1. **Showcase slider** (container width, rounded corners): the public images admins put on the Homepage
-   Showcase page, one after another every 5 seconds. Arrows and dots switch images by hand. The slider holds
-   still while the mouse is over it or a control in it has keyboard focus; the pause/play button stops it for
-   good. For people who turn off animations (prefers-reduced-motion) it starts paused. Without images a blue
-   banner is shown.
+   Showcase page, one after another every 5 seconds. Dots switch images by hand; the previous / next arrows
+   appear only while the mouse is over the slider (always shown on touch screens, and when a key focuses
+   them). The slider holds still while the mouse is over it or a control in it has keyboard focus. There is no
+   pause/play button; for people who turn off animations (prefers-reduced-motion) it does not move by itself.
+   Without images a blue banner is shown. An image with a title and/or description (set on the Homepage
+   Showcase page) shows them at the bottom of the image on a dark gradient.
 2. **Live Courses** (one box): the title in the centre, then small category cards (name and number of courses),
-   then the course cards. Only **paid** courses are shown here. The first card, **All**, shows every paid
-   course; picking a category shows only its paid courses (the picked card is highlighted). Only categories
-   that have paid courses get a card.
+   then the course cards. Only courses whose **course type is flagged "Live"** (Course Setup > Course Types)
+   are shown here. The first card, **All**, shows every live course; picking a category shows only its live
+   courses (the picked card is highlighted). Only categories that have live courses get a card. With no live
+   course type, the box says "No live courses yet."
 3. **Upcoming Free Live Courses** (a second box, same layout): the same, for **free** courses only.
 4. **Course cards** (both boxes): cover, course type, title, start day ("Starts Dec 5, 2026", in the viewer's
    time zone and language, or "Start date to be announced"), price (struck-through list price and "N% off"
@@ -362,17 +372,30 @@ screen with the filters stacked above the courses.
   found." except for staff and the course's teachers (the backend decides).
 - **What it is for:** everything about one course and how to get it.
 - **Step by step:**
-  1. The dark banner shows the breadcrumb, title, subtitle, status, price (with discount), course type,
-     "Subscription" and the teachers.
-  2. Below: course type and start / end dates, "What you'll learn", "This course includes", **Course content**,
+  1. The dark banner shows the breadcrumb, the course type (gradient badge above the title), title, subtitle,
+     price (with discount) and "Subscription". It shows no status and no teacher names.
+  2. Below: course type and start / end dates, "What you'll learn", "This course includes", **Tools you will
+     use** (logo cards, with the section title and description from the editor), **What you get** (cards with a
+     logo, title and description), **Curriculum**, **Projects**, **Who this course is for** (one card per
+     item),
      requirements, "About this course" (rich text, sanitised) and "Your Instructors".
-  3. **Course content** has up to three lists, switched with buttons: **Recorded Lectures** (sections with
-     lecture count and length; "Expand all sections"), **Live Class** (weekly plan with each class's day and
-     time, as the teacher wrote them) and **Quizzes** (free-preview quiz banks, each opening
-     `/practice-quiz?courseId=…&bankId=…`).
-  4. A lecture marked "Free Preview" with a YouTube video opens the preview player (with the list of every
+  3. **Curriculum** (centred heading) has up to three lists, switched with centred buttons in this order:
+     **Live Class** (weekly plan, two week cards per row from tablet width, each class's day and time as the
+     teacher wrote them), **Recorded Lectures** (sections with lecture count and length; "Expand all
+     sections") and **Quizzes** (free-preview quiz banks, each opening `/practice-quiz?courseId=…&bankId=…`).
+     A button is shown only when its list has at least one item; the first one is open at the start.
+  4. **Projects:** a card per project (first screenshot, title, short description); **View project** opens a
+     panel from the right with the full description, **Live demo** (new tab), the intro video (a YouTube link
+     plays in the panel, other links open in a new tab as **Watch intro video**) and every screenshot. After the
+     instructors come **Success stories** (photo, title, story, company logo and name) and **Frequently asked
+     questions** (click a question to open its answer). Each section is hidden while it is empty.
+  5. **Buy bar** (fixed to the bottom of the screen) for visitors and students who have not enrolled: "Call
+     Now:" with the phone number from the Company Contact page (a `tel:` link; hidden when no number is set),
+     the price, the struck-through list price and "N% discount applied" while a discount runs, and **Enroll
+     Now**, which scrolls to the enrolment card. Staff, teachers and enrolled students do not see it.
+  6. A lecture marked "Free Preview" with a YouTube video opens the preview player (with the list of every
      other free preview). Locked lectures have no video address for viewers without access.
-  5. The card on the right (top on phones) depends on the viewer:
+  7. The card on the right (top on phones) depends on the viewer:
      - **Visitor:** price, "Enroll Free" / "Get Started" (to sign-up) and "Sign In".
      - **Student, not enrolled:** "Enroll Now – Free" / "Buy Now". When the course is part of subscription
        plans there are two choices: **Subscribe and save** (cheapest plan price; "Enroll with Subscription"
@@ -382,11 +405,12 @@ screen with the filters stacked above the courses.
        "Leave this course" (asks for confirmation).
      - **Super Admin / Admin:** "Edit Course" and "Student View"; **Moderator:** "Student View" only.
      - **Teacher:** the price only.
-  6. If the course has a "Course introduction" lecture (or any free preview) on YouTube, the card's picture plays it.
+  8. If the course has a "Course introduction" lecture (or any free preview) on YouTube, the card's picture plays it.
 - **Mobile behaviour:** single column; the enrolment card comes right after the banner; the preview player
   opens full screen with the preview list under the video.
-- **API endpoints used:** `GET /api/courses/:id`, `GET /api/study-curricula/course/:id` (public fields for
-  guests), `GET /api/quiz-bank/public/course/:id`, `GET /api/subscription-plans`; Students:
+- **API endpoints used:** `GET /api/courses/:id` (also the course page sections, tools populated),
+  `GET /api/study-curricula/course/:id` (public fields for guests), `GET /api/quiz-bank/public/course/:id`,
+  `GET /api/subscription-plans`, `GET /api/site-settings/public` (the "Call Now" number); Students:
   `GET /api/enrollments/:courseId/check`, `GET /api/subscriptions/my`, `POST /api/enrollments/:courseId`
   (body `{ enrollmentType: 'paid' }` when buying a paid course directly), `DELETE /api/enrollments/:courseId`.
 - **Security:** YouTube is the only embedded site (CSP `frame-src https://www.youtube.com
@@ -394,10 +418,13 @@ https://www.youtube-nocookie.com`, thumbnails `img-src https://i.ytimg.com`); vi
   11-character id only, through the privacy-enhanced domain. Cover and teacher pictures are shown only from
   Cloudinary. Rich text goes through `SafeHtml`.
 - **Code:** `frontend/src/app/(public)/courses/[id]/page.tsx`, `frontend/src/components/browse/detail/*`
-  (`content/` = course content lists, `enrollment/` = the enrolment card), `frontend/src/utils/csp.ts`.
+  (`content/` = curriculum lists, `extras/` = tools, what you get, projects (+ `ProjectDetailsDrawer`),
+  audience, success stories, FAQ, `enrollment/` = the enrolment card and `CourseBuyBar`),
+  `frontend/src/utils/csp.ts`.
 - **Tests:** `frontend/src/components/browse/__tests__/CourseDetailView.test.tsx`,
+  `frontend/src/components/browse/__tests__/CourseDetailExtras.test.tsx` (sections, project drawer, buy bar),
   `frontend/src/components/browse/__tests__/course-utils.test.ts`, `frontend/src/utils/__tests__/csp.test.ts`,
-  `e2e/browse.spec.ts`.
+  `e2e/browse.spec.ts`, `e2e/site-extras.spec.ts`.
 
 ### Student dashboard
 
@@ -479,7 +506,8 @@ and (students only) email.
 **How to use it:**
 
 1. The banner shows the role, avatar (or the first letter in the role's colour), name and what the role is
-   for; below are email, role, joined and last-updated dates.
+   for; below are the **Student number** (students only, e.g. `482-917-305`, unique and never changing),
+   email, role, joined and last-updated dates.
 2. Summary cards: **Enrolled courses** (students) or **Assigned courses** (teachers), **Purchased courses**,
    **Subscription** (plan and expiry) and **Profile status** (Complete with an avatar, otherwise Basic).
 3. Students also see the **Subscription** card: the running plan with start/expiry dates, the number of
@@ -516,10 +544,10 @@ the same request as Assigned courses),
 **Tests:** `components/profile/__tests__/ProfilePage.test.tsx`, `EditProfileModal.test.tsx`; Playwright
 `frontend/e2e/profile.spec.ts` (desktop + mobile).
 
-### Course setup (categories and course types)
+### Course setup (categories, course types and tools)
 
-**Route:** `/admin/categories` (Categories tab) and `/admin/course-types` (Course Types tab) · **Menu:**
-"Course Setup" (opens the Categories tab)
+**Route:** `/admin/categories` (Categories tab), `/admin/course-types` (Course Types tab) and `/admin/tools`
+(Tools tab) · **Menu:** "Course Setup" (opens the Categories tab)
 
 **Who can use it:** Super Admin and Admin. A Moderator (or any other role) who opens the address is sent to
 their own home page; the backend refuses their requests too (403).
@@ -539,23 +567,90 @@ and course types (live course, recorded course, seminar, ...). The public catalo
    "<name>"? This cannot be undone." first).
 5. An item that courses still use cannot be deleted: the server's message is shown as a toast, for example
    "Category is used by 3 course(s)".
+6. **Course Types** have a **Live course type** switch in the form; a live type shows a red "Live" chip in the
+   list, and its courses fill the home page's Live Courses section.
+7. **Tools:** a grid of cards (logo with the tool name under it; 2 per row on phones, 5 on desktops). **Add
+   Tool** opens a form with the name (e.g. Node.js, at most 60 characters) and **Choose logo** (PNG, JPEG,
+   GIF or WEBP up to 5 MB, previewed at once; required for a new tool). The card menu (⋮) has **Edit**
+   (rename, **Change logo**) and **Delete** (asks first; the tool is also removed from every course that
+   lists it).
 
 **On mobile:** the tabs fill the width; each item is a card (name, slug, description, ⋮ menu) instead of a
 table row; the form opens full screen.
 
 **API endpoints used:** `GET/POST /api/categories`, `PUT/DELETE /api/categories/:id`,
-`GET/POST /api/course-types`, `PUT/DELETE /api/course-types/:id`.
+`GET/POST /api/course-types`, `PUT/DELETE /api/course-types/:id`, `GET/POST /api/tools`,
+`PUT/DELETE /api/tools/:id`.
 
 **Code:** `frontend/src/app/admin/categories/page.tsx`, `frontend/src/app/admin/course-types/page.tsx`,
 `frontend/src/components/setup/` (`CourseSetupPage`, `SetupTabs`, `SetupManager`, `SetupManagerHeader`,
-`SetupItemFormModal`, `SetupRowMenu`, `useSetupColumns`), `frontend/src/api/setup.api.ts` (the list is the
+`SetupItemFormModal`, `LiveTypeSwitch`, `SetupRowMenu`, `useSetupColumns`, `tools/` (`ToolsManager`,
+`ToolCard`, `ToolLogo`, `ToolFormModal`)), `frontend/src/app/admin/tools/page.tsx`, `frontend/src/api/tools.api.ts`,
+`frontend/src/schemas/tools.schema.ts`, `frontend/src/api/setup.api.ts` (the list is the
 shared read in `frontend/src/api/catalog.api.ts`, so a save also refreshes the public pages),
 `frontend/src/schemas/setup.schema.ts`.
 
-**Tests:** `components/setup/__tests__/CourseSetupPage.test.tsx` (list, empty, error, create, validation,
+**Tests:** `components/setup/tools/__tests__/ToolsManager.test.tsx`, `components/setup/__tests__/CourseSetupPage.test.tsx` (live switch and chip; list, empty, error, create, validation,
 duplicate error, edit, delete, in-use delete refused, course types tab, Moderator sent away); Playwright
 `frontend/e2e/setup.spec.ts` (desktop + mobile: add/edit/delete a category, add a course type from the tab,
 Moderator blocked).
+
+### Site Pages (Super Admin)
+
+**Route:** `/admin/site-pages` · **Menu:** "Site Pages"
+
+**Who can use it:** Super Admin only (others are sent to their home page; the backend answers 403).
+
+**What it is for:** showing or hiding public pages from time to time without removing them.
+
+**How to use it:**
+
+1. The list has one row per public navbar page (All Courses, Free Courses, Pricing, Teachers, Practice Quiz,
+   Community Hub) with its address and state (Active / Hidden).
+2. Turn a switch off: the change is saved at once ("<page> is hidden"). The page's link disappears from the
+   navbar, the menu drawer and the footer, and its address (for Community Hub also the discussion and profile
+   pages) shows "Page not found".
+3. Turn it on again to bring the page back ("<page> is visible again"). Nothing is deleted while a page is
+   hidden.
+
+**On mobile:** one row per page, the switch on the right (44 px target).
+
+**API endpoints used:** `GET /api/site-settings/public`, `PUT /api/site-settings/pages`.
+
+**Code:** `frontend/src/app/admin/site-pages/page.tsx`, `frontend/src/components/site-settings/`
+(`SitePagesPage`, `SitePageRow`), `frontend/src/components/public/common/` (`PageVisibilityGate`,
+`useVisibleLinks`, `public-links.ts`), `frontend/src/api/site-settings.api.ts`,
+`frontend/src/schemas/site-settings.schema.ts`.
+
+**Tests:** `components/site-settings/__tests__/SitePagesPage.test.tsx`,
+`components/site-settings/__tests__/CompanyContactPage.test.tsx`,
+`components/public/common/__tests__/PageVisibilityGate.test.tsx`; Playwright `frontend/e2e/site-extras.spec.ts`.
+
+### Company Contact
+
+**Route:** `/admin/company-contact` · **Menu:** "Company Contact"
+
+**Who can use it:** Super Admin and Admin.
+
+**What it is for:** the company's phone, WhatsApp, email and address. The phone number is the "Call Now"
+number of the buy bar on course pages.
+
+**How to use it:**
+
+1. Fill in any of **Phone number**, **WhatsApp number** (digits, spaces, dashes, optional + at the start),
+   **Email** and **Address** (at most 300 characters). Empty fields clear the saved value.
+2. **Save** stores them ("Company contact saved"); a wrong value shows its message under the field.
+
+**On mobile:** one column, full-width fields.
+
+**API endpoints used:** `GET /api/site-settings/public`, `PUT /api/site-settings/contact`.
+
+**Code:** `frontend/src/app/admin/company-contact/page.tsx`, `frontend/src/components/site-settings/`
+(`CompanyContactPage`, `CompanyContactForm`), `frontend/src/api/site-settings.api.ts`.
+
+**Tests:** `components/site-settings/__tests__/SitePagesPage.test.tsx`,
+`components/site-settings/__tests__/CompanyContactPage.test.tsx`,
+`components/public/common/__tests__/PageVisibilityGate.test.tsx`; Playwright `frontend/e2e/site-extras.spec.ts`.
 
 ### Homepage showcase
 
@@ -576,15 +671,17 @@ show or hide, schedule, reorder and delete.
    visibility (Public / Private), a "Scheduled to ..." chip when a change is pending, its size in pixels and
    when it publishes ("Publishes immediately when public", "Publishes <date>" or "Changes to Public
    <date>", in your own time zone).
-3. **Upload Images** opens a form: choose one or more images (up to 10, each PNG/JPEG/GIF/WEBP up to 5 MB),
-   visibility, an optional publish date and time (a future date keeps the image as it is until then, then
-   applies the chosen visibility), and a position (lower numbers come first; it starts after the last image).
-   **Upload** is enabled once at least one valid image is chosen.
+3. **Upload Images** opens a wide panel from the right (full width on phones): choose **one** image
+   (PNG/JPEG/GIF/WEBP up to 5 MB; one at a time, so each image gets its own text), its **Title** (at most 120
+   characters) and **Description** (at most 300; both optional and shown on the slide), visibility, an
+   optional publish date and time (a future date keeps the image as it is until then, then applies the chosen
+   visibility), and a position (lower numbers come first; it starts after the last image). **Upload** is
+   enabled once a valid image is chosen.
 4. Change the order by dragging an image by its handle (⋮⋮), or with **Move Up** / **Move Down** in its menu.
    The new order shows at once and is saved; if saving fails, the old order comes back and an error toast is
    shown. Keyboard: focus the handle, press space, move with the arrow keys, press space again.
 5. The image menu (⋮) also has **View Details** (large preview with visibility, size, position and schedule;
-   clicking the thumbnail does the same), **Edit** (replace the image, change visibility, date or position;
+   clicking the thumbnail does the same), **Edit** (the same right-side panel: replace the image, change title, description, visibility, date or position;
    clearing the date applies the visibility now), **Make Public** / **Make Private** (applies at once and
    cancels a pending schedule) and **Delete** (asks first).
 6. Server errors (for example "Only image files are allowed" for a file whose content is not a real image)
@@ -599,7 +696,7 @@ banner on top and the handle, details and menu below; dialogs open full screen.
 **Code:** `frontend/src/app/admin/homepage-showcase/page.tsx`, `frontend/src/components/showcase/`
 (`HomepageShowcasePage`, `SiteLogoPanel`, `LogoPreview`, `LogoPicker`, `HeroPostsPanel`,
 `HeroPostSortableList` (drag and drop, loaded with `next/dynamic`), `HeroPostRow`, `HeroPostThumbnail`,
-`HeroPostMenu`, `HeroPostFormModal`, `HeroPostFormFields`, `HeroFilePicker`, `HeroPostDetailsModal`,
+`HeroPostMenu`, `HeroPostFormDrawer` (uses `components/common/SideDrawer`), `HeroPostFormFields`, `HeroFilePicker`, `HeroPostDetailsModal`,
 `useHeroPostActions`, `useHeroText`, `useImageFiles`, `hero-form.ts`, `hero-schedule.ts`, `image-files.ts`,
 `common/`), `frontend/src/api/showcase.api.ts`, `frontend/src/schemas/showcase.schema.ts`.
 
@@ -759,8 +856,9 @@ the outline (sections and lectures), weekly live classes and the quiz banks, the
 
 **How to use it:**
 
-1. The page has a menu with six tabs: **Basic Info**, **Media**, **Learning Content**, **Curriculum**,
-   **Live Class**, **Quiz Bank**. The header shows the title, the Draft / Published chip (with "Published on
+1. The page has a menu with twelve tabs: **Basic Info**, **Media**, **Learning Content**, **Tools**, **What You
+   Get**, **Projects**, **Who This Course Is For**, **Success Stories**, **FAQ**, **Curriculum**, **Live
+   Class**, **Quiz Bank**. The header shows the title, the Draft / Published chip (with "Published on
    ..."), **Preview** (draft) or **View Live** (published; opens `/courses/<id>` in a new tab), **Save Draft**
    and **Publish**.
 2. **Basic Info:** title, subtitle, category and course type (a new course starts with the first of each),
@@ -791,13 +889,29 @@ the outline (sections and lectures), weekly live classes and the quiz banks, the
    more classes (title, date, time, description; **Add Class** / **Remove Class**). Each week card shows its
    classes with date and time, a "⋮" menu (Edit, Delete with confirmation) and **Add Class** (opens the week
    with an empty class at the end).
-9. **Quiz Bank:** quiz sections with their banks on the left. **+** adds a section; each section has a
-   **Free** switch (free preview), a "⋮" menu (Rename, Delete: also deletes its banks) and **Add Quiz Bank**
-   (title, description). Each bank has its own Free switch and "⋮" menu (Edit, Delete: also deletes student
-   attempts). Click a bank to open it on the right: **Edit Bank**, **Add Question** (question, 4 options with
-   optional explanations, tick every correct option: at least one) and its questions with the correct answers
-   in green; each question can be edited or deleted. Students taking quizzes is a different screen (course
-   player).
+9. **Course page sections** (each needs a saved course; each tab has its own **Save section** or saves each
+   item at once; "Section saved" confirms it):
+   - **Tools:** section title and description, then **Choose tools**: a panel from the right with every tool
+     (Course Setup > Tools) as a card; click to select one, several or all, then **Use N tools**. The chosen
+     tools are listed as logo cards with a remove (x) button. **Save section** saves.
+   - **What You Get:** section title and description, then items: logo (**Choose logo**, uploaded at once),
+     title (required) and description; **Add item**, remove with the bin icon. **Save section** saves.
+   - **Projects:** the list of projects; **Add project** (or ⋮ > Edit) opens a wide panel from the right:
+     title, description, screenshots (**Add screenshots**, several at once, up to 10, remove with x), live
+     demo link and intro video link (both optional, `http(s)`). **Save** stores the whole list; ⋮ > Delete
+     asks first.
+   - **Who This Course Is For:** one input: type an item and press Enter (or +); edit or remove items;
+     **Save section**.
+   - **Success Stories:** **Add success story** opens a dialog: profile picture, title, description, company
+     name and company logo. Edit and Delete in the ⋮ menu.
+   - **FAQ:** **Add question** opens a dialog with the question and the answer. Edit and Delete in the ⋮ menu.
+10. **Quiz Bank:** quiz sections with their banks on the left. **+** adds a section; each section has a
+    **Free** switch (free preview), a "⋮" menu (Rename, Delete: also deletes its banks) and **Add Quiz Bank**
+    (title, description). Each bank has its own Free switch and "⋮" menu (Edit, Delete: also deletes student
+    attempts). Click a bank to open it on the right: **Edit Bank**, **Add Question** (question, 4 options with
+    optional explanations, tick every correct option: at least one) and its questions with the correct answers
+    in green; each question can be edited or deleted. Students taking quizzes is a different screen (course
+    player).
 
 **On mobile:** the tab menu becomes a scrollable tab bar above the content; forms are one column; dialogs are
 full screen; all buttons are at least 44 px. In the Quiz Bank tab the list and the open bank take turns, with
@@ -809,14 +923,17 @@ full screen; all buttons are at least 44 px. In the Quiz Bank tab the list and t
 `PUT|DELETE /api/courses/:courseId/sections/:sectionId`, `PUT /api/courses/:courseId/sections/reorder`,
 `POST /api/courses/:courseId/sections/:sectionId/lectures`,
 `PUT|DELETE /api/courses/:courseId/sections/:sectionId/lectures/:lectureId`,
-`PUT /api/courses/:courseId/sections/:sectionId/lectures/reorder`, `GET|POST /api/study-curricula/course/:courseId`,
+`PUT /api/courses/:courseId/sections/:sectionId/lectures/reorder`, `PATCH /api/courses/:id/extras`,
+`POST /api/courses/:id/images`, `GET /api/tools`, `GET|POST /api/study-curricula/course/:courseId`,
 `PUT|DELETE /api/study-curricula/:id`, `GET /api/quiz-sections/course/:courseId`, `POST /api/quiz-sections`,
 `PUT|DELETE /api/quiz-sections/:id`, `GET /api/quiz-bank/course/:courseId`, `POST /api/quiz-bank`,
 `PUT|DELETE /api/quiz-bank/:id`, `POST /api/quiz-bank/:id/questions`, `PUT|DELETE /api/quiz-bank/:id/questions/:qId`.
 
 **Code:** `frontend/src/app/admin/courses/create/page.tsx`, `frontend/src/app/admin/courses/[id]/edit/page.tsx`,
-`frontend/src/components/course-editor/` (`CourseEditorPage`, `details/`, `curriculum/`, `live-class/` (tab and
-header), `quiz-bank/`), shared `components/live-class/` (week cards and form, also in the course player),
+`frontend/src/components/course-editor/` (`CourseEditorPage`, `details/`, `extras/` (the six course page
+section tabs, `ToolPickerDrawer`, `ProjectFormDrawer`, `SuccessStoryFormModal`, `FaqFormModal`), `curriculum/`,
+`live-class/` (tab and header), `quiz-bank/`), `frontend/src/api/course-extras.api.ts`,
+`frontend/src/schemas/course-extras.schema.ts`, shared `components/live-class/` (week cards and form, also in the course player),
 `components/common/rich-text/` (the one TipTap editor, loaded by `next/dynamic`), `components/course-fields/`;
 data `frontend/src/api/course-editor.api.ts`, the course from `browse.api.ts` (`useCourse`), `quiz.api.ts`,
 `live-class.api.ts`; shapes `frontend/src/schemas/course-editor.schema.ts`, `browse.schema.ts`, `quiz.schema.ts`.
@@ -824,6 +941,7 @@ data `frontend/src/api/course-editor.api.ts`, the course from `browse.api.ts` (`
 **Tests:** `components/course-editor/__tests__/CourseEditorPage.test.tsx` (create, a failed step after creating
 opens the edit page with a warning and no second course, price checks, edit and publish, not found, error,
 Moderator kept out),
+`components/course-editor/__tests__/CourseEditorExtras.test.tsx` (the six course page section tabs),
 `components/course-editor/curriculum/__tests__/CurriculumBuilder.test.tsx`,
 `components/course-editor/live-class/__tests__/LiveClassTab.test.tsx`,
 `components/course-editor/quiz-bank/__tests__/QuizBankTab.test.tsx`; Playwright `frontend/e2e/course-editor.spec.ts`.
@@ -934,7 +1052,8 @@ delete. A Super Admin also sees how much each user has enrolled and spent.
 
 **How to use it:**
 
-1. The list shows 10 users per page, newest first: name, email, role badge and join date. The filter box at
+1. The list shows 10 users per page, newest first: name (students also show "No. 123-456-789", their student
+   number, under it), email, role badge and join date. The search also finds a student by student number. The filter box at
    the top says how many users match (for example "3 of 42 users match your filters") and shows the total.
 2. **Show filters** opens the filters: search (name or email; the list updates when you stop typing) and
    role. A Super Admin also gets subscription plan, subscription status (active / expired / inactive),

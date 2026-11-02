@@ -5,7 +5,13 @@
     "content": "Learning Content",
     "curriculum": "Curriculum",
     "liveClass": "Live Class",
-    "quizBank": "Quiz Bank"
+    "quizBank": "Quiz Bank",
+    "tools": "Tools",
+    "benefits": "What You Get",
+    "projects": "Projects",
+    "audience": "Who This Course Is For",
+    "successStories": "Success Stories",
+    "faq": "FAQ"
   },
   "editor": {
     "back": "Back to Courses",
@@ -212,5 +218,77 @@
     "endBeforeStart": "The end date cannot be before the start date",
     "url": "Enter a full web address (https://...)",
     "oneClass": "Add at least one class"
+  },
+  "extras": {
+    "saved": "Section saved",
+    "saveSection": "Save section",
+    "actionsFor": "Actions for {{name}}",
+    "sectionTitle": "Section title",
+    "sectionDescription": "Section description",
+    "chooseLogo": "Choose logo",
+    "itemTitle": "Title of item {{number}}",
+    "itemDescription": "Description",
+    "itemTitleRequired": "Every item needs a title.",
+    "tooLong": "This text is too long.",
+    "badUrl": "Enter a link that starts with http:// or https://",
+    "tools": {
+      "hint": "Choose the tools students use in this course; they show on the course page as logo cards.",
+      "selected_one": "{{count}} tool selected",
+      "selected_other": "{{count}} tools selected",
+      "choose": "Choose tools",
+      "none": "No tools chosen yet.",
+      "remove": "Remove {{name}}",
+      "pickTitle": "Choose tools",
+      "pickHint": "Select one, several or all tools. Add new tools in Course Setup > Tools.",
+      "pickDone_one": "Use {{count}} tool",
+      "pickDone_other": "Use {{count}} tools",
+      "noTools": "No tools yet. Add them in Course Setup > Tools."
+    },
+    "benefits": {
+      "hint": "A title and description, then cards with a logo, a title and a description.",
+      "add": "Add item",
+      "remove": "Remove item {{number}}"
+    },
+    "audience": {
+      "hint": "Type an item and press Enter to add it; add as many as you need.",
+      "label": "Who this course is for",
+      "tooMany": "At most {{max}} items of up to {{length}} characters each."
+    },
+    "projects": {
+      "hint": "The projects students build in this course, with screenshots, a live demo link and an intro video.",
+      "add": "Add project",
+      "edit": "Edit project",
+      "empty": "No projects yet.",
+      "title": "Project title",
+      "description": "Description",
+      "liveDemoUrl": "Live demo link (optional)",
+      "videoUrl": "Intro video link (optional)",
+      "videoHint": "A YouTube link plays on the page; other links open in a new tab.",
+      "screenshots": "Screenshots ({{count}}/{{max}})",
+      "addImages": "Add screenshots",
+      "removeImage": "Remove screenshot {{number}}",
+      "tooManyImages": "A project can have at most {{max}} screenshots."
+    },
+    "stories": {
+      "hint": "Stories of former students: profile picture, title, story, company name and logo.",
+      "add": "Add success story",
+      "edit": "Edit success story",
+      "empty": "No success stories yet.",
+      "photo": "Profile picture",
+      "title": "Title",
+      "titlePlaceholder": "e.g. Rahim Uddin, Software Engineer",
+      "description": "Description",
+      "companyName": "Company name",
+      "companyLogo": "Company logo"
+    },
+    "faq": {
+      "hint": "Questions students often ask about this course, with their answers.",
+      "add": "Add question",
+      "edit": "Edit question",
+      "empty": "No questions yet.",
+      "question": "Question",
+      "answer": "Answer"
+    },
+    "uploadFailed": "The picture could not be uploaded. Please try again."
   }
 }

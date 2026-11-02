@@ -16,6 +16,8 @@ export type ActiveSubscription = z.infer<typeof activeSubscriptionSchema>;
 
 /** GET/PUT /api/auth/me with the profile fields (the shared userSchema keeps only what the shell needs). */
 export const profileSchema = userSchema.extend({
+  /** Students only: their unique number, "123-456-789" */
+  studentNumber: z.string().nullish(),
   avatar: z
     .string()
     .nullish()

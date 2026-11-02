@@ -53,11 +53,8 @@
     "backHome": "Back to Home",
     "home": "Home",
     "breadcrumb": "Breadcrumb",
-    "statusPublished": "Published",
-    "statusDraft": "Draft",
     "discountChip": "{{price}} ({{percent}}% off)",
     "subscriptionChip": "Subscription",
-    "createdBy": "Created by",
     "courseType": "Course Type",
     "startDate": "Start Date",
     "endDate": "End Date",
@@ -75,8 +72,8 @@
     "instructors": "Your Instructors"
   },
   "content": {
-    "title": "Course content",
-    "views": "Course content view",
+    "title": "Curriculum",
+    "views": "Curriculum view",
     "expandSections": "Expand all sections",
     "collapseSections": "Collapse all sections",
     "expandWeeks": "Expand all weeks",
@@ -157,5 +154,26 @@
     "enrollFreeGuest": "Enroll Free",
     "getStarted": "Get Started",
     "signIn": "Sign In"
+  },
+  "extras": {
+    "toolsTitle": "Tools you will use",
+    "benefitsTitle": "What you get",
+    "projectsTitle": "Projects",
+    "audienceTitle": "Who this course is for",
+    "storiesTitle": "Success stories",
+    "faqTitle": "Frequently asked questions",
+    "viewProject": "View project",
+    "viewProjectNamed": "View project: {{name}}",
+    "liveDemo": "Live demo",
+    "watchVideo": "Watch intro video",
+    "introVideo": "Intro video",
+    "screenshots": "Screenshots",
+    "screenshotAlt": "{{name}} screenshot {{number}}"
+  },
+  "buyBar": {
+    "label": "Enrol in this course",
+    "callNow": "Call Now:",
+    "discountApplied": "{{percent}}% discount applied",
+    "enroll": "Enroll Now"
   }
 }

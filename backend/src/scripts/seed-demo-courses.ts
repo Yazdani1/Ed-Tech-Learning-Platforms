@@ -23,7 +23,7 @@ const CATEGORIES = [
 
 const COURSE_TYPES = [
   { name: 'Recorded Course', slug: 'demo-recorded-course' },
-  { name: 'Live Course', slug: 'demo-live-course' },
+  { name: 'Live Course', slug: 'demo-live-course', isLive: true },
   { name: 'Bootcamp', slug: 'demo-bootcamp' },
 ];
 
@@ -65,17 +65,19 @@ const LECTURE_SECONDS = 600;
 // Public, embeddable YouTube video used for the free preview lectures
 const PREVIEW_VIDEO = 'https://www.youtube.com/watch?v=rfscVS0vtbw';
 
-const slugToId = async (
-  model: typeof Category | typeof CourseType,
-  items: { name: string; slug: string }[],
+const slugToId = async <Item extends { slug: string }>(
+  upsert: (item: Item) => Promise<{ _id: unknown }>,
+  items: Item[],
 ): Promise<Types.ObjectId[]> => {
   const ids: Types.ObjectId[] = [];
   for (const item of items) {
-    const doc = await model.findOneAndUpdate({ slug: item.slug }, { $setOnInsert: item }, { upsert: true, returnDocument: 'after' });
+    const doc = await upsert(item);
     ids.push(doc._id as Types.ObjectId);
   }
   return ids;
 };
+
+const upsertOptions = { upsert: true, returnDocument: 'after' } as const;
 
 const ensureTeachers = async (): Promise<Types.ObjectId[]> => {
   const ids: Types.ObjectId[] = [];
@@ -115,8 +117,14 @@ async function seedDemoCourses(): Promise<void> {
   const admin = await User.findOne({ role: 'Super Admin' });
   if (!admin) throw new Error('Create the Super Admin first (seed-admin.ts with SEED_ADMIN_PASSWORD)');
 
-  const categoryIds = await slugToId(Category, CATEGORIES);
-  const courseTypeIds = await slugToId(CourseType, COURSE_TYPES);
+  const categoryIds = await slugToId(
+    (item) => Category.findOneAndUpdate({ slug: item.slug }, { $setOnInsert: item }, upsertOptions).orFail(),
+    CATEGORIES,
+  );
+  const courseTypeIds = await slugToId(
+    (item) => CourseType.findOneAndUpdate({ slug: item.slug }, { $setOnInsert: item }, upsertOptions).orFail(),
+    COURSE_TYPES,
+  );
   const teacherIds = await ensureTeachers();
 
   let created = 0;

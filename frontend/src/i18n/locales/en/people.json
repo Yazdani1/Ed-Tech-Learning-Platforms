@@ -31,7 +31,7 @@
     "availableSummary_one": "{{count}} of {{total}} users available",
     "availableSummary_other": "{{count}} of {{total}} users available",
     "totalChip": "{{count}} total",
-    "searchPlaceholder": "Search name or email...",
+    "searchPlaceholder": "Search name, email or student number...",
     "role": "Role",
     "allRoles": "All roles",
     "subscriptionPlan": "Subscription Plan",
@@ -97,7 +97,9 @@
     "subscriptionStart": "Subscription Start",
     "subscriptionEnd": "Subscription End",
     "createdAt": "Created At",
-    "updatedAt": "Updated At"
+    "updatedAt": "Updated At",
+    "studentNumber": "Student number",
+    "studentNumberShort": "No. {{number}}"
   },
   "teachers": {
     "title": "Teachers",

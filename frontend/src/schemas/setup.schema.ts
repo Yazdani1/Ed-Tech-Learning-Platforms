@@ -4,6 +4,8 @@ import { taxonomySchema, type Taxonomy, type TaxonomyKind } from './catalog.sche
 
 /** Which list the course setup screen manages: categories or course types (same shape, same rules). */
 export type SetupKind = TaxonomyKind;
+/** The Course Setup tabs: the two lists plus Tools (logo cards) */
+export type SetupTab = SetupKind | 'tool';
 
 /** A category or course type (GET/POST/PUT /api/categories and /api/course-types): the shared shape. */
 export const setupItemSchema = taxonomySchema;
@@ -22,5 +24,7 @@ export const setupItemRequestSchema = z.object({
     .max(SETUP_NAME_MAX, 'showcase.setup.nameTooLong')
     .regex(/[\p{L}\p{N}]/u, 'showcase.setup.nameNeedsLetters'),
   description: z.string().trim().max(SETUP_DESCRIPTION_MAX, 'showcase.setup.descriptionTooLong'),
+  /** Course types only (categories ignore it) */
+  isLive: z.boolean().optional(),
 });
 export type SetupItemRequest = z.infer<typeof setupItemRequestSchema>;

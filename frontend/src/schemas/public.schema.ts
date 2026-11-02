@@ -10,6 +10,8 @@ export const heroPostSchema = z.object({
   imageUrl: z.string(),
   imageWidth: z.number().nullish(),
   imageHeight: z.number().nullish(),
+  title: z.string().nullish(),
+  description: z.string().nullish(),
   order: z.number().optional(),
 });
 export type HeroPost = z.infer<typeof heroPostSchema>;
@@ -87,10 +89,12 @@ export type CourseCardData = z.infer<typeof courseCardSchema>;
 export const coursePageSchema = z.object({
   data: z.array(courseCardSchema),
   total: z.number().optional(),
-  /** Public course count per category, per pricing: { Paid: { [categoryId]: n }, Free: { ... } } */
+  /** Public course count per category, per pricing ({ Paid: {...}, Free: {...} }) and among live courses */
   filterCounts: z
     .object({
       categoriesByPricing: z.record(z.string(), z.record(z.string(), z.number())).catch({}),
+      /** Course count per category among the live courses */
+      liveCategories: z.record(z.string(), z.number()).catch({}),
     })
     .optional(),
   pagination: z
@@ -106,9 +110,12 @@ export type CoursePage = z.infer<typeof coursePageSchema>;
 
 export type CoursePricing = CourseCardData['pricing'];
 
-/** Filters of a home page course section (Paid "Live Courses" or "Upcoming Free Live Courses"). */
+/** The two course boxes of the home page: live courses (live course types) and free courses. */
+export type HomeSection = 'live' | 'free';
+
+/** Filters of a home page course section ("Live Courses" or "Upcoming Free Live Courses"). */
 export interface HomeCourseFilters {
-  pricing: CoursePricing;
+  section: HomeSection;
   /** Category id, or '' for every category */
   category: string;
   page: number;

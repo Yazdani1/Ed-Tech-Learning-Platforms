@@ -15,11 +15,12 @@ import { CourseGrid } from '../common/CourseGrid';
 import { HomeCategoryFilter } from './HomeCategoryFilter';
 import { HomeSectionTitle } from './HomeSectionTitle';
 
-import type { CoursePricing } from '@/schemas/public.schema';
+import type { HomeSection } from '@/schemas/public.schema';
 import type { FC } from 'react';
 
 interface HomeCourseSectionProps {
-  pricing: CoursePricing;
+  /** live: courses of a live course type; free: free courses */
+  section: HomeSection;
   /** i18n key group under public.home (title, subtitle, empty) */
   textKey: 'paid' | 'free';
 }
@@ -28,13 +29,13 @@ const NO_COUNTS: Record<string, number> = {};
 /** One row of card-shaped skeletons while the first page loads */
 const SKELETON_CARDS = 4;
 
-/** One home page box: centred title, the category cards, then the course cards of one pricing (30 per page). */
-export const HomeCourseSection: FC<HomeCourseSectionProps> = ({ pricing, textKey }) => {
+/** One home page box: centred title, the category cards, then its course cards (30 per page). */
+export const HomeCourseSection: FC<HomeCourseSectionProps> = ({ section, textKey }) => {
   const { t } = useTranslation();
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
   const { data, isPending, isPlaceholderData, error, refetch } = useHomeCourses({
-    pricing,
+    section,
     category,
     page,
   });
@@ -42,6 +43,10 @@ export const HomeCourseSection: FC<HomeCourseSectionProps> = ({ pricing, textKey
   const pagination = data?.pagination;
   const sectionId = `home-${textKey}-courses`;
   const title = t(`public.home.${textKey}.title`);
+  const counts =
+    section === 'live'
+      ? data?.filterCounts?.liveCategories
+      : data?.filterCounts?.categoriesByPricing.Free;
 
   const changePage = (next: number): void => {
     setPage(next);
@@ -54,7 +59,7 @@ export const HomeCourseSection: FC<HomeCourseSectionProps> = ({ pricing, textKey
         <HomeSectionTitle title={title} subtitle={t(`public.home.${textKey}.subtitle`)} />
         <HomeCategoryFilter
           section={title}
-          counts={data?.filterCounts?.categoriesByPricing[pricing] ?? NO_COUNTS}
+          counts={counts ?? NO_COUNTS}
           selected={category}
           onSelect={(next) => {
             setCategory(next);

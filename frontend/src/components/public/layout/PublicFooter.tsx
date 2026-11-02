@@ -11,10 +11,12 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
 import { FOOTER_LINKS } from '../common/public-links';
+import { useVisibleLinks } from '../common/useVisibleLinks';
 
 /** Dark footer of every public page: app name, main links and the copyright line. */
 export const PublicFooter = () => {
   const { t } = useTranslation();
+  const links = useVisibleLinks(FOOTER_LINKS);
   return (
     <Box component="footer" sx={{ bgcolor: 'grey.900', color: 'grey.400', py: 5 }}>
       <Container maxWidth="lg">
@@ -39,7 +41,7 @@ export const PublicFooter = () => {
             aria-label={t('public.footer.label')}
             sx={{ display: 'flex', flexWrap: 'wrap', columnGap: 3 }}
           >
-            {FOOTER_LINKS.map((link) => (
+            {links.map((link) => (
               <MuiLink
                 key={link.href}
                 component={Link}

@@ -19,6 +19,9 @@ const newUserBody = (role?: UserRole) => {
   };
 };
 
+/** Older than the 1 s clock-skew window plus the token's whole-second rounding */
+const TOKEN_AGE_MS = 2100;
+
 describe('POST /api/users', () => {
   it.each(['Super Admin', 'Admin'] as const)(
     'a %s creates a user with a role; no password in the reply',
@@ -151,6 +154,8 @@ describe('PUT /api/users/:id', () => {
     const admin = await createUser('Admin');
     const target = await createUser('Student');
     const targetCookie = authCookie(target);
+    // Tokens carry whole seconds and a reset allows 1 s of clock skew: let the old token age past that window
+    await new Promise((resolve) => setTimeout(resolve, TOKEN_AGE_MS));
 
     await request(app)
       .put(`/api/users/${String(target._id)}`)

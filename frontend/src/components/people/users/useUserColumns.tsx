@@ -23,9 +23,16 @@ export const useUserColumns = (
       key: 'name',
       header: t('people.users.name'),
       render: (user) => (
-        <Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
-          {user.name}
-        </Typography>
+        <>
+          <Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
+            {user.name}
+          </Typography>
+          {user.studentNumber && (
+            <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+              {t('people.users.studentNumberShort', { number: user.studentNumber })}
+            </Typography>
+          )}
+        </>
       ),
     },
     {

@@ -4,6 +4,7 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 
+import { Tool } from '../../src/models/Tool.model';
 import { User } from '../../src/models/User.model';
 
 import type { UserRole } from '../../src/types/index';
@@ -11,6 +12,12 @@ import type { UserRole } from '../../src/types/index';
 /** Must match frontend/e2e/helpers.ts. */
 export const E2E_PASSWORD = 'E2e-test-password-1';
 const BCRYPT_ROUNDS = 12;
+/** One tool for the course page / course editor e2e flows (no real Cloudinary account in e2e, so no upload). */
+const SEED_TOOL = {
+  name: 'E2E Seed Tool',
+  logoUrl: 'https://res.cloudinary.com/test-cloud/image/upload/e2e-seed-tool.png',
+  logoPublicId: 'e2e-seed-tool',
+};
 
 const ACCOUNTS: { name: string; email: string; role: UserRole }[] = [
   { name: 'E2E Super Admin', email: 'e2e.superadmin@example.com', role: 'Super Admin' },
@@ -36,6 +43,12 @@ async function seed(): Promise<void> {
       { upsert: true },
     );
   }
+  const owner = await User.findOne({ email: ACCOUNTS[0]?.email }).select('_id');
+  await Tool.updateOne(
+    { name: SEED_TOOL.name },
+    { $set: { ...SEED_TOOL, createdBy: owner?._id } },
+    { upsert: true },
+  );
   await mongoose.disconnect();
   process.stdout.write(`E2E seed: ${ACCOUNTS.length} accounts ready\n`);
 }

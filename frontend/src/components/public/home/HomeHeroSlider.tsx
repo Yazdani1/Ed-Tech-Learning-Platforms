@@ -10,7 +10,7 @@ import { useHeroPosts } from '@/api/public.api';
 import { isCloudinaryUrl } from '@/utils/urls';
 
 import { HeroSlide } from './HeroSlide';
-import { HeroSliderControls } from './HeroSliderControls';
+import { HERO_SLIDER_CLASS, HeroSliderControls } from './HeroSliderControls';
 import { useHeroAutoplay } from './useHeroAutoplay';
 
 const VISUALLY_HIDDEN = {
@@ -27,12 +27,12 @@ const HERO_RADIUS = 2;
 const FALLBACK_BACKGROUND =
   'radial-gradient(circle at 14% 42%, rgba(255,255,255,0.18), transparent 45%), linear-gradient(135deg, #0b1f4d 0%, #1b6dc8 56%, #08a5dd 100%)';
 
-/** Container-width slider of the homepage showcase images (changes every 5 s; holds on hover/focus or when paused). */
+/** Container-width slider of the homepage showcase images (changes every 5 s; holds on hover/focus; arrows appear on hover). */
 export const HomeHeroSlider = () => {
   const { t } = useTranslation();
   const { data, isPending } = useHeroPosts();
   const posts = (data ?? []).filter((post) => isCloudinaryUrl(post.imageUrl));
-  const { current, select, playing, togglePlaying, holdHandlers } = useHeroAutoplay(posts.length);
+  const { current, select, holdHandlers } = useHeroAutoplay(posts.length);
 
   return (
     <Container maxWidth="lg" sx={{ pt: { xs: 2, md: 3 } }}>
@@ -43,6 +43,7 @@ export const HomeHeroSlider = () => {
           component="section"
           aria-roledescription="carousel"
           aria-label={t('public.hero.label')}
+          className={HERO_SLIDER_CLASS}
           {...holdHandlers}
           sx={{
             position: 'relative',
@@ -60,18 +61,14 @@ export const HomeHeroSlider = () => {
             <HeroSlide
               key={post._id}
               imageUrl={post.imageUrl}
+              title={post.title}
+              description={post.description}
               active={index === current}
               priority={index === 0}
             />
           ))}
           {posts.length > 1 && (
-            <HeroSliderControls
-              count={posts.length}
-              active={current}
-              onSelect={select}
-              playing={playing}
-              onTogglePlaying={togglePlaying}
-            />
+            <HeroSliderControls count={posts.length} active={current} onSelect={select} />
           )}
         </Box>
       )}

@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fail, makeUser, ok, signedInAs } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
@@ -25,18 +25,18 @@ const freeCourse = makeCourse({
   listPrice: 0,
   discountPrice: 0,
 });
-const COUNTS = {
-  Paid: { [PROGRAMMING._id]: 1 },
-  Free: { [PROGRAMMING._id]: 1, [DESIGN._id]: 2 },
-};
+/** Category counts of the Live section (filterCounts.liveCategories) and of the Free section */
+const LIVE_COUNTS = { [PROGRAMMING._id]: 1 };
+const FREE_COUNTS = { Free: { [PROGRAMMING._id]: 1, [DESIGN._id]: 2 } };
 
-/** Answers browse requests by their pricing filter, recording every query string. */
+/** Answers browse requests by section (liveOnly or pricing=Free), recording every query string. */
 const browseHandler = (requests: URLSearchParams[] = []) =>
   http.get('*/api/courses/browse', ({ request }) => {
     const params = new URL(request.url).searchParams;
     requests.push(params);
-    const course = params.get('pricing') === 'Free' ? freeCourse : paidCourse;
-    return browsePage([course], 1, 1, COUNTS);
+    return params.get('pricing') === 'Free'
+      ? browsePage([freeCourse], 1, 1, FREE_COUNTS)
+      : browsePage([paidCourse], 1, 1, {}, LIVE_COUNTS);
   });
 
 const section = async (name: string): Promise<HTMLElement> => {
@@ -55,7 +55,7 @@ describe('HomePage', () => {
     );
   });
 
-  it('shows a Live Courses section with only paid courses and a free section with only free ones', async () => {
+  it('shows a Live Courses section (live course types) and a free section with only free ones', async () => {
     const requests: URLSearchParams[] = [];
     server.use(browseHandler(requests));
     renderWithProviders(<HomePage />);
@@ -70,7 +70,12 @@ describe('HomePage', () => {
     expect(await within(free).findByText('Free HTML Live')).toBeInTheDocument();
     expect(within(free).queryByText('TypeScript Basics')).not.toBeInTheDocument();
 
-    expect(requests.map((params) => params.get('pricing')).sort()).toEqual(['Free', 'Paid']);
+    const live = requests.filter((params) => params.get('liveOnly') === 'true');
+    const freeRequests = requests.filter((params) => params.get('pricing') === 'Free');
+    expect(live).toHaveLength(1);
+    expect(live[0]?.get('pricing')).toBeNull();
+    expect(freeRequests).toHaveLength(1);
+    expect(freeRequests[0]?.get('liveOnly')).toBeNull();
     expect(requests.every((params) => params.get('limit') === '30')).toBe(true);
   });
 
@@ -140,8 +145,8 @@ describe('HomePage', () => {
         requests.push(params);
         const page = Number(params.get('page'));
         return params.get('pricing') === 'Free'
-          ? browsePage([freeCourse], page, MANY_COURSES, COUNTS)
-          : browsePage([paidCourse], 1, 1, COUNTS);
+          ? browsePage([freeCourse], page, MANY_COURSES, FREE_COUNTS)
+          : browsePage([paidCourse], 1, 1, {}, LIVE_COUNTS);
       }),
     );
     // jsdom has no scrolling
@@ -282,40 +287,49 @@ describe('HomePage', () => {
       { _id: 'p2', imageUrl: 'https://res.cloudinary.com/demo/two.jpg', order: 1 },
     ];
 
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    it('can be paused and played again', async () => {
+    it('has no pause / play button; a dot shows its image', async () => {
       server.use(http.get('*/api/home-hero-posts/public', () => ok(posts)));
       renderWithProviders(<HomePage />);
       const user = userEvent.setup();
 
-      await user.click(await screen.findByRole('button', { name: 'Pause slideshow' }));
-      await user.click(screen.getByRole('button', { name: 'Play slideshow' }));
-      expect(screen.getByRole('button', { name: 'Pause slideshow' })).toBeInTheDocument();
-      await user.click(screen.getByRole('button', { name: 'Show header image 2' }));
+      await user.click(await screen.findByRole('button', { name: 'Show header image 2' }));
       expect(screen.getByRole('button', { name: 'Show header image 2' })).toHaveAttribute(
         'aria-current',
         'true',
       );
+      expect(screen.queryByRole('button', { name: /slideshow/i })).not.toBeInTheDocument();
     });
 
-    it('starts paused for people who prefer reduced motion', async () => {
-      vi.stubGlobal('matchMedia', (query: string): MediaQueryList => ({
-        matches: query.includes('prefers-reduced-motion: reduce'),
-        media: query,
-        onchange: null,
-        addEventListener: () => undefined,
-        removeEventListener: () => undefined,
-        addListener: () => undefined,
-        removeListener: () => undefined,
-        dispatchEvent: () => false,
-      }));
-      server.use(http.get('*/api/home-hero-posts/public', () => ok(posts)));
+    it('shows the title and description of a slide that has them, and no caption box otherwise', async () => {
+      server.use(
+        http.get('*/api/home-hero-posts/public', () =>
+          ok([
+            { ...posts[0], title: 'Autumn admissions', description: 'Join before 30 November' },
+            posts[1],
+          ]),
+        ),
+      );
       renderWithProviders(<HomePage />);
 
-      expect(await screen.findByRole('button', { name: 'Play slideshow' })).toBeInTheDocument();
+      expect(await screen.findByText('Autumn admissions')).toBeInTheDocument();
+      expect(screen.getByText('Join before 30 November')).toBeInTheDocument();
+      // Only the one captioned slide has text; the plain slide adds none
+      expect(screen.getAllByText(/Autumn|Join before/)).toHaveLength(2);
+    });
+
+    it('has previous / next arrows for several images and none for a single image', async () => {
+      server.use(http.get('*/api/home-hero-posts/public', () => ok(posts)));
+      const first = renderWithProviders(<HomePage />);
+      expect(
+        await screen.findByRole('button', { name: 'Previous header image' }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Next header image' })).toBeInTheDocument();
+      first.unmount();
+
+      server.use(http.get('*/api/home-hero-posts/public', () => ok([posts[0]])));
+      renderWithProviders(<HomePage />);
+      await screen.findByRole('heading', { name: 'Live Courses' });
+      expect(screen.queryByRole('button', { name: 'Next header image' })).not.toBeInTheDocument();
     });
   });
 });

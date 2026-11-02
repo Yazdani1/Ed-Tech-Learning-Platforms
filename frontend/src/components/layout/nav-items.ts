@@ -4,6 +4,7 @@ import CardMembership from '@mui/icons-material/CardMembership';
 import Category from '@mui/icons-material/Category';
 import Chat from '@mui/icons-material/Chat';
 import Collections from '@mui/icons-material/Collections';
+import ContactPhone from '@mui/icons-material/ContactPhone';
 import Dashboard from '@mui/icons-material/Dashboard';
 import EventNote from '@mui/icons-material/EventNote';
 import Groups from '@mui/icons-material/Groups';
@@ -13,6 +14,7 @@ import People from '@mui/icons-material/People';
 import Person from '@mui/icons-material/Person';
 import QuestionAnswer from '@mui/icons-material/QuestionAnswer';
 import School from '@mui/icons-material/School';
+import ToggleOn from '@mui/icons-material/ToggleOn';
 
 import { MANAGER_ROLES, SUPER_ADMIN_ROLES } from '@/utils/roles';
 
@@ -62,6 +64,18 @@ export const ADMIN_NAV: readonly NavItem[] = [
     labelKey: 'nav.homepageShowcase',
     href: '/admin/homepage-showcase',
     icon: Collections,
+    roles: MANAGER_ROLES,
+  },
+  {
+    labelKey: 'nav.sitePages',
+    href: '/admin/site-pages',
+    icon: ToggleOn,
+    roles: SUPER_ADMIN_ROLES,
+  },
+  {
+    labelKey: 'nav.companyContact',
+    href: '/admin/company-contact',
+    icon: ContactPhone,
     roles: MANAGER_ROLES,
   },
   { labelKey: 'nav.teachers', href: '/admin/teachers', icon: Person, roles: MANAGER_ROLES },

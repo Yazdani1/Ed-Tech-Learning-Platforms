@@ -2,6 +2,7 @@
 
 import BadgeOutlined from '@mui/icons-material/BadgeOutlined';
 import CalendarToday from '@mui/icons-material/CalendarToday';
+import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOutlined';
 import EmailOutlined from '@mui/icons-material/EmailOutlined';
 import SecurityOutlined from '@mui/icons-material/SecurityOutlined';
 import Grid from '@mui/material/Grid';
@@ -22,7 +23,7 @@ interface ProfileFactsProps {
   profile: Profile;
 }
 
-/** Email, role, joined and last-updated dates, and who may edit the account. */
+/** Student number (students), email, role, joined and last-updated dates, and who may edit the account. */
 export const ProfileFacts: FC<ProfileFactsProps> = ({ profile }) => {
   const { t } = useTranslation();
   const notAvailable = t('profile.notAvailable');
@@ -30,6 +31,15 @@ export const ProfileFacts: FC<ProfileFactsProps> = ({ profile }) => {
     <Grid container spacing={3}>
       <Grid size={{ xs: 12, md: 8 }}>
         <Grid container spacing={2.5}>
+          {profile.studentNumber && (
+            <Grid size={FACT_SIZE}>
+              <ProfileInfoItem
+                icon={<ConfirmationNumberOutlined />}
+                label={t('profile.studentNumber')}
+                value={profile.studentNumber}
+              />
+            </Grid>
+          )}
           <Grid size={FACT_SIZE}>
             <ProfileInfoItem
               icon={<EmailOutlined />}

@@ -12,11 +12,14 @@ import type { FC, ReactNode } from 'react';
 export type ContentView = 'recorded' | 'live' | 'quizzes';
 
 interface ContentViewButtonsProps {
+  /** The lists that have content (only these get a button) */
+  views: readonly ContentView[];
   view: ContentView;
   onChange: (view: ContentView) => void;
 }
 
-export const CONTENT_VIEWS: readonly ContentView[] = ['recorded', 'live', 'quizzes'];
+/** Button order: live classes first, then recorded lectures, then quizzes */
+export const CONTENT_VIEWS: readonly ContentView[] = ['live', 'recorded', 'quizzes'];
 
 const ICONS: Record<ContentView, ReactNode> = {
   recorded: <OndemandVideoIcon fontSize="small" />,
@@ -24,17 +27,17 @@ const ICONS: Record<ContentView, ReactNode> = {
   quizzes: <QuizOutlinedIcon fontSize="small" />,
 };
 
-/** "Recorded Lectures / Live Class / Quizzes" switch (pressed button = shown list). */
-export const ContentViewButtons: FC<ContentViewButtonsProps> = ({ view, onChange }) => {
+/** "Live Class / Recorded Lectures / Quizzes" switch (pressed button = shown list). */
+export const ContentViewButtons: FC<ContentViewButtonsProps> = ({ views, view, onChange }) => {
   const { t } = useTranslation();
   return (
     <Stack
       direction="row"
       role="group"
       aria-label={t('browse.content.views')}
-      sx={{ gap: 1, mb: 2, flexWrap: 'wrap' }}
+      sx={{ gap: 1, mb: 2, flexWrap: 'wrap', justifyContent: 'center' }}
     >
-      {CONTENT_VIEWS.map((item) => (
+      {views.map((item) => (
         <Button
           key={item}
           size="small"

@@ -33,6 +33,11 @@ export const fail = (status: number, message: string): Response =>
 /** Default API behaviour: nobody signed in. Tests add their own handlers with server.use(...). */
 export const handlers = [
   http.get('*/api/auth/me', () => fail(401, 'Not authorized, please login')),
+  // Nothing hidden and no company contact, unless a test says otherwise
+  http.get('*/api/site-settings/public', () =>
+    ok({ hiddenPages: [], contact: { phone: '', whatsapp: '', email: '', address: '' } }),
+  ),
+  http.get('*/api/tools', () => ok([])),
 ];
 
 /** The "me" endpoint answering with this user (signed in). */

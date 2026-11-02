@@ -35,8 +35,8 @@ Plain-language reference for every backend endpoint. Screens that use them: [fro
 | PUT    | `/api/categories/:id`                                            | Super Admin, Admin                                                                       | Rename / describe a category                                                                                                              |
 | DELETE | `/api/categories/:id`                                            | Super Admin, Admin                                                                       | Delete a category                                                                                                                         |
 | GET    | `/api/course-types`                                              | Public                                                                                   | List all course types (sorted by name)                                                                                                    |
-| POST   | `/api/course-types`                                              | Super Admin, Admin                                                                       | Create a course type                                                                                                                      |
-| PUT    | `/api/course-types/:id`                                          | Super Admin, Admin                                                                       | Update a course type                                                                                                                      |
+| POST   | `/api/course-types`                                              | Super Admin, Admin                                                                       | Create a course type (optional `isLive`)                                                                                                  |
+| PUT    | `/api/course-types/:id`                                          | Super Admin, Admin                                                                       | Update a course type (name, description, `isLive`)                                                                                        |
 | DELETE | `/api/course-types/:id`                                          | Super Admin, Admin                                                                       | Delete a course type                                                                                                                      |
 | GET    | `/api/teachers`                                                  | Public                                                                                   | List teacher profiles (sorted by name)                                                                                                    |
 | GET    | `/api/teachers/my-courses`                                       | Teacher                                                                                  | Courses the signed-in teacher teaches                                                                                                     |
@@ -45,7 +45,7 @@ Plain-language reference for every backend endpoint. Screens that use them: [fro
 | PUT    | `/api/teachers/:id`                                              | Super Admin, Admin                                                                       | Update a teacher profile                                                                                                                  |
 | DELETE | `/api/teachers/:id`                                              | Super Admin, Admin                                                                       | Delete a teacher profile and its photo                                                                                                    |
 | GET    | `/api/courses`                                                   | Public (staff see more)                                                                  | Course list; staff: every course + enrolment statistics                                                                                   |
-| GET    | `/api/courses/browse`                                            | Public                                                                                   | Public catalog: Published + Public courses, filters, counts, paging                                                                       |
+| GET    | `/api/courses/browse`                                            | Public                                                                                   | Public catalog: Published + Public courses, filters (`liveOnly=true`: live course types), counts, paging                                  |
 | GET    | `/api/courses/discounts/active`                                  | Public                                                                                   | Summary of running discounts                                                                                                              |
 | GET    | `/api/courses/:id`                                               | Public                                                                                   | One course with category, type, teachers, sections and lectures                                                                           |
 | POST   | `/api/courses`                                                   | Super Admin, Admin                                                                       | Create a Draft course (optional cover image)                                                                                              |
@@ -142,9 +142,9 @@ Plain-language reference for every backend endpoint. Screens that use them: [fro
 | GET    | /api/home-hero-posts/logo                                        | Super Admin, Admin                                                                       | Site logo with who updated it                                                                                                             |
 | PUT    | /api/home-hero-posts/logo                                        | Super Admin, Admin                                                                       | Upload or replace the site logo (field `logo`)                                                                                            |
 | GET    | /api/home-hero-posts                                             | Super Admin, Admin                                                                       | All hero posts (Public and Private)                                                                                                       |
-| POST   | /api/home-hero-posts                                             | Super Admin, Admin                                                                       | Upload one or more hero images (fields `images` / `image`)                                                                                |
+| POST   | /api/home-hero-posts                                             | Super Admin, Admin                                                                       | Upload hero images (fields `images` / `image`) with optional `title` and `description`                                                    |
 | PATCH  | /api/home-hero-posts/reorder                                     | Super Admin, Admin                                                                       | Set the order from a list of ids                                                                                                          |
-| PUT    | /api/home-hero-posts/:id                                         | Super Admin, Admin                                                                       | Change image, visibility, schedule or order                                                                                               |
+| PUT    | /api/home-hero-posts/:id                                         | Super Admin, Admin                                                                       | Change image, title, description, visibility, schedule or order                                                                           |
 | DELETE | /api/home-hero-posts/:id                                         | Super Admin, Admin                                                                       | Delete a hero post and its image                                                                                                          |
 | GET    | /api/study-schedules                                             | Signed in                                                                                | My timers and reminders (filters `type`, `status`)                                                                                        |
 | POST   | /api/study-schedules/timer                                       | Signed in                                                                                | Create a study timer                                                                                                                      |
@@ -195,6 +195,15 @@ Plain-language reference for every backend endpoint. Screens that use them: [fro
 | GET    | /api/group-chat/channels/:channelId/messages                     | Signed in (members; staff any)                                                           | The last 200 messages, oldest first.                                                                                                      |
 | POST   | /api/group-chat/channels/:channelId/messages                     | Signed in (members; staff any)                                                           | Send text and/or up to 10 files.                                                                                                          |
 | PATCH  | /api/group-chat/channels/:channelId/read                         | Signed in (members; staff any)                                                           | Reset your unread counter.                                                                                                                |
+| POST   | `/api/courses/:id/images`                                        | Super Admin, Admin                                                                       | Upload one picture (field `image`) for a course page section; returns `{ url, publicId }`                                                 |
+| PATCH  | `/api/courses/:id/extras`                                        | Super Admin, Admin                                                                       | Replace course page sections: tools, what you get, projects, audience, success stories, FAQ                                               |
+| GET    | `/api/tools`                                                     | Public                                                                                   | All tools (name + logo), sorted by name                                                                                                   |
+| POST   | `/api/tools`                                                     | Super Admin, Admin                                                                       | Create a tool (multipart `name` + `logo`)                                                                                                 |
+| PUT    | `/api/tools/:id`                                                 | Super Admin, Admin                                                                       | Rename a tool and/or replace its logo                                                                                                     |
+| DELETE | `/api/tools/:id`                                                 | Super Admin, Admin                                                                       | Delete a tool (also removed from every course that lists it)                                                                              |
+| GET    | `/api/site-settings/public`                                      | Public                                                                                   | Hidden public pages and the company contact                                                                                               |
+| PUT    | `/api/site-settings/pages`                                       | Super Admin                                                                              | Set which public pages are hidden (`hiddenPages`)                                                                                         |
+| PUT    | `/api/site-settings/contact`                                     | Super Admin, Admin                                                                       | Set the company phone, WhatsApp, email and address                                                                                        |
 
 ## Features
 
@@ -346,6 +355,13 @@ change revocation, avatar upload/removal with Cloudinary stubbed).
 **What it does:** lets Super Admins and Admins create, list, edit, re-role and (Super Admin only) delete
 accounts.
 
+**Student number:** every Student has a unique `studentNumber`: 9 random digits shown in groups of three
+(`482-917-305`, first digit never 0). It is set when the student is first saved (register, admin create), when
+a user's role is changed to Student (`PUT /api/users/:id`, `PUT /api/users/:id/role`; a number kept from before
+stays), and for older students on `GET /api/auth/me` and once at server start (`assignMissingStudentNumbers`).
+A unique sparse index guards against duplicates; other roles have no number. It never changes, is returned with
+the user (`/api/auth/me`, user list and details) and the user list search also matches it.
+
 **How it works:**
 
 1. An Admin or Super Admin calls the endpoint; `authorize` checks the role.
@@ -439,6 +455,9 @@ can read them (the public catalog filters use them).
    other symbols removed) and refuses a slug that already exists.
 3. On rename the slug is rebuilt from the new name. Delete removes the document, but only when no course uses
    it (otherwise 400 `Category is used by N course(s)` / `Course type is used by N course(s)`).
+4. A course type can be flagged **live** (`isLive: true`, default false; anything but true/false is 400
+   `isLive must be true or false`). The home page's Live Courses section shows the courses of the live types
+   (`GET /api/courses/browse?liveOnly=true`).
 
 **Endpoints:** see the first eight rows above.
 
@@ -557,6 +576,12 @@ loaded by update/delete to remove the old photo), expertise[], socialLinks, user
 
 **What it does:** Admins create, edit, publish, discount and delete courses. Visitors browse the public catalog
 and open course pages.
+
+**Live courses (`liveOnly`):** `GET /api/courses/browse?liveOnly=true` keeps only courses whose course type is
+flagged `isLive` (none when no type is flagged; combined with `courseTypes` it keeps only the live ones of those).
+`filterCounts.liveCategories` gives the course count per category among the live courses, and the populated
+`courseType` now includes `isLive`. `GET /api/courses/:id` also returns the course page sections (see "Course
+page sections") with the tools populated (`name`, `logoUrl`).
 
 **How it works:**
 
@@ -1372,6 +1397,9 @@ admin routes), 404.
    Cloudinary). `DELETE /:id` removes the post and its image.
 5. `PUT /logo` creates the single site logo the first time (201) and replaces it afterwards (200, old image
    deleted).
+6. Each post can have an optional `title` (at most 120 characters) and `description` (at most 300), sent as
+   multipart fields on `POST` and `PUT /:id`; they are trimmed, `''` on `PUT` clears them, and longer or
+   non-text values give 400. `GET /public` returns them (the slider shows them on the image).
 
 **Endpoints:** see the table rows above.
 
@@ -1398,7 +1426,7 @@ createdBy), SiteLogo (one document used).
 - A new post without `order` now gets the highest existing order + 1 (0 when there are no posts), instead of
   reusing the highest value.
 
-**Tests:** `homeHeroPost.public.test.ts`, `homeHeroPost.admin.test.ts`, `siteLogo.admin.test.ts` (Cloudinary is
+**Tests:** `homeHeroPost.public.test.ts`, `homeHeroPost.admin.test.ts`, `homeHeroPost.captions.test.ts`, `siteLogo.admin.test.ts` (Cloudinary is
 stubbed with `tests/helpers/cloudinary.ts`).
 
 ---
@@ -1623,6 +1651,157 @@ flowchart TD
 - Invalid regular expressions or a repeated `search` parameter no longer answer 500; non-text `name`/`description`/`content` answer 400 (no "[object Object]" messages).
 
 **Tests:** `backend/tests/integration/groupChat.channels.test.ts`, `groupChat.members.test.ts`, `groupChat.messages.test.ts`, `socket.test.ts` (real Socket.io server and clients: auth incl. revoked tokens, bad payloads, private channel events, live room removal, long support messages), with factories in `backend/tests/factories/community.ts`.
+
+---
+
+### Course page sections (tools, what you get, projects, audience, success stories, FAQ)
+
+**What it does:** admins fill the extra blocks of a course page: the tools taught, "What you get" cards, the
+projects students build, who the course is for, success stories and frequently asked questions.
+
+**How it works:**
+
+1. A picture for a section ("What you get" logos, project screenshots, story photos and company logos) is
+   uploaded first with `POST /api/courses/:id/images` (multipart `image`, images only, 5 MB, checked by content).
+   It goes to Cloudinary folder `medhabee/course-extras` and the answer is `{ url, publicId }`.
+2. The editor then sends `PATCH /api/courses/:id/extras` with one or more sections; each section sent replaces
+   the stored one as a whole. Unknown top-level fields, unknown fields inside an item and `$`-keys give 400.
+3. Images inside a section must be ones uploaded in step 1 (`publicId` starts with `medhabee/course-extras/`,
+   `url` starts with `https://res.cloudinary.com/` and contains the `publicId`). Pictures that a save removes
+   from every section are deleted from Cloudinary.
+4. Tool ids must exist in the Tools collection. The answer is the saved sections, tools populated.
+
+```mermaid
+sequenceDiagram
+  participant E as Course editor
+  participant A as API
+  participant C as Cloudinary
+  E->>A: POST /api/courses/:id/images (image)
+  A->>C: upload (medhabee/course-extras)
+  A-->>E: { url, publicId }
+  E->>A: PATCH /api/courses/:id/extras { projects: [...] }
+  A->>A: validate, check tools, save
+  A->>C: delete pictures no longer used
+  A-->>E: saved sections
+```
+
+**Sections:**
+
+| Field             | Shape                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| `toolsSection`    | `{ title?, description?, tools: toolId[] }` (at most 30 tools; duplicates removed)              |
+| `benefitsSection` | `{ title?, description?, items: [{ title, description?, icon? }] }` (at most 30 items)          |
+| `projects`        | `[{ title, description?, images: image[] (at most 10), liveDemoUrl?, videoUrl? }]` (at most 30) |
+| `audience`        | `string[]` (at most 30 items, 200 characters each)                                              |
+| `successStories`  | `[{ title, description?, companyName?, photo?, companyLogo? }]` (at most 30)                    |
+| `faqs`            | `[{ question, answer }]` (at most 50)                                                           |
+
+Titles are at most 150 characters, descriptions and answers 2000, questions 300; links must be `http(s)`.
+
+**Example:** `PATCH /api/courses/<id>/extras` with `{ "faqs": [{ "question": "Is there a certificate?", "answer": "Yes." }] }`
+
+```json
+{
+  "success": true,
+  "message": "Course sections updated",
+  "data": {
+    "_id": "<id>",
+    "toolsSection": { "tools": [] },
+    "projects": [],
+    "audience": [],
+    "successStories": [],
+    "faqs": [{ "_id": "<faqId>", "question": "Is there a certificate?", "answer": "Yes." }]
+  }
+}
+```
+
+**Business rules:** Super Admin and Admin only; a missing title (item, project, story) or question/answer is
+400; a `null` screenshot is 400; list caps as above; a deleted tool is removed from every course's tools.
+
+**Data model:** Course fields `toolsSection`, `benefitsSection`, `projects`, `audience`, `successStories`, `faqs`
+(images stored as `{ url, publicId }`; `toolsSection.tools` is indexed).
+
+**Errors:** 400 (validation, unknown field, nothing to update, unknown tool, not an uploaded image), 401, 403,
+404 `Course not found` (also for a malformed id).
+
+**Tests:** `backend/tests/integration/course.extras.test.ts`.
+
+---
+
+### Tools
+
+**What it does:** a list of tools and technologies (name + logo, e.g. Node.js) that courses can show in their
+Tools section.
+
+**How it works:**
+
+1. Anyone reads `GET /api/tools` (sorted by name; the Cloudinary id is never sent).
+2. An admin creates a tool with multipart `name` (required, at most 60 characters, unique ignoring case) and
+   `logo` (required image, Cloudinary folder `medhabee/tools`).
+3. `PUT /:id` can rename it and/or replace the logo (the old logo is deleted from Cloudinary).
+4. `DELETE /:id` removes the tool, pulls it from every course's `toolsSection.tools`, and deletes the logo.
+
+**Example:** `GET /api/tools`
+
+```json
+{
+  "success": true,
+  "data": [
+    { "_id": "<id>", "name": "Node.js", "logoUrl": "https://res.cloudinary.com/.../node.png" }
+  ],
+  "total": 1
+}
+```
+
+**Business rules:** Super Admin and Admin for changes; duplicate names (any case) are 400; regex characters in
+a name are matched literally.
+
+**Data model:** Tool (name, logoUrl, logoPublicId hidden, createdBy; index on name).
+
+**Errors:** 400 name missing / too long / taken, logo missing / not an image; 401; 403; 404 `Tool not found`
+(also for a malformed id).
+
+**Tests:** `backend/tests/integration/tool.crud.test.ts`.
+
+---
+
+### Site settings (page visibility and company contact)
+
+**What it does:** one settings document for the whole site: which public pages are hidden, and the company's
+contact details (the phone number is the "Call Now" number on course pages).
+
+**How it works:**
+
+1. `GET /api/site-settings/public` (everyone) returns `{ hiddenPages, contact: { phone, whatsapp, email,
+address } }` (empty values before anything is saved).
+2. `PUT /pages` (Super Admin) takes `{ hiddenPages: [...] }`; only `courses`, `free-courses`, `pricing`,
+   `teachers`, `practice-quiz`, `community-hub` are allowed; duplicates are removed. The frontend hides those
+   links and answers "Page not found" on their routes; the pages' code and data stay.
+3. `PUT /contact` (Super Admin, Admin) takes any of `phone`, `whatsapp` (digits, spaces, dashes, optional +,
+   6-20 characters), `email` (valid email) and `address` (at most 300); `''` clears a value.
+
+**Example:** `PUT /api/site-settings/contact` with `{ "phone": "+8801968897412" }`
+
+```json
+{
+  "success": true,
+  "message": "Company contact updated",
+  "data": {
+    "hiddenPages": [],
+    "contact": { "phone": "+8801968897412", "whatsapp": "", "email": "", "address": "" }
+  }
+}
+```
+
+**Business rules:** the document is created on the first save (upsert); saving pages keeps the contact and the
+other way round.
+
+**Data model:** SiteSetting (key `site` unique, hiddenPages, contact, updatedBy).
+
+**Errors:** 400 (`hiddenPages must be a list`, `Unknown page in hiddenPages`, invalid contact field, `Nothing to
+update`), 401, 403.
+
+**Tests:** `backend/tests/integration/siteSetting.manage.test.ts`.
 
 <!--
 TEMPLATE: one section per feature (module), in a stable order.

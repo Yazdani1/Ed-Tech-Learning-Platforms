@@ -16,7 +16,7 @@ import { useModal } from '@/hooks/useModal';
 import { ShowcasePanel } from './common/ShowcasePanel';
 import { sortPosts } from './hero-schedule';
 import { HeroPostDetailsModal } from './HeroPostDetailsModal';
-import { HeroPostFormModal } from './HeroPostFormModal';
+import { HeroPostFormDrawer } from './HeroPostFormDrawer';
 import { useHeroPostActions } from './useHeroPostActions';
 
 import type { HeroPost } from '@/schemas/showcase.schema';
@@ -74,7 +74,7 @@ export const HeroPostsPanel = () => {
           />
         </QueryState>
       </Box>
-      <HeroPostFormModal
+      <HeroPostFormDrawer
         open={formModal.open}
         post={formModal.data}
         postCount={posts.length}

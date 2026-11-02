@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { courseExtrasFields } from './course-extras.schema';
 import { postedBySchema } from './learn.schema';
 
 // Public catalog shapes: what GET /api/courses/browse, GET /api/courses/:id and the other public reads really
@@ -85,6 +86,8 @@ export const courseSchema = z.object({
   whatYouWillGet: z.array(z.string()).default([]),
   requirements: z.array(z.string()).default([]),
   sections: z.array(courseSectionSchema.nullable()).default([]),
+  // Course page sections: tools, what you get, projects, audience, success stories, FAQ
+  ...courseExtrasFields,
 });
 export type Course = z.infer<typeof courseSchema>;
 

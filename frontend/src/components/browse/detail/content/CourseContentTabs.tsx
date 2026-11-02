@@ -33,7 +33,7 @@ const HEADER_SX = {
   gap: 1,
 } as const;
 
-/** "Course content":recorded lectures, live-class weeks and free quizzes, switched by buttons. */
+/** "Curriculum": live-class weeks, recorded lectures and free quizzes, one button per list that has content. */
 export const CourseContentTabs: FC<CourseContentTabsProps> = ({
   courseId,
   sections,
@@ -53,14 +53,18 @@ export const CourseContentTabs: FC<CourseContentTabsProps> = ({
     weeks.map((w) => w._id),
   );
   const summary = useContentSummary(tabs.view, sections, weeks, quizSections);
-  if (!available.recorded && !available.live) return null;
+  if (tabs.views.length === 0) return null;
   const unit = tabs.view === 'recorded' ? 'Sections' : 'Weeks';
 
   return (
     <Box component="section" sx={{ mb: 4 }}>
+      <Typography component="h2" variant="h5" sx={{ fontWeight: 800, textAlign: 'center', mb: 2 }}>
+        {t('browse.content.title')}
+      </Typography>
+      <ContentViewButtons views={tabs.views} view={tabs.view} onChange={tabs.setView} />
       <Box sx={HEADER_SX}>
-        <Typography component="h2" variant="h6" sx={{ fontWeight: 700 }}>
-          {t('browse.content.title')}
+        <Typography variant="body2" color="text.secondary">
+          {summary}
         </Typography>
         {tabs.view !== 'quizzes' && (
           <Button size="small" onClick={tabs.toggleAll} sx={{ fontWeight: 600, minHeight: 44 }}>
@@ -68,10 +72,6 @@ export const CourseContentTabs: FC<CourseContentTabsProps> = ({
           </Button>
         )}
       </Box>
-      {tabs.showSwitch && <ContentViewButtons view={tabs.view} onChange={tabs.setView} />}
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {summary}
-      </Typography>
       {tabs.view === 'recorded' && (
         <RecordedLectureList
           sections={sections}

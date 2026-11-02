@@ -1,6 +1,6 @@
 'use client';
 
-import Stack from '@mui/material/Stack';
+import Box from '@mui/material/Box';
 
 import { LiveClassWeekCard } from './LiveClassWeekCard';
 
@@ -13,9 +13,16 @@ interface LiveClassListProps {
   onToggle: (weekId: string, open: boolean) => void;
 }
 
-/** The live-class plan: one card per week. */
+const GRID_SX = {
+  display: 'grid',
+  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+  gap: 2.5,
+  alignItems: 'start',
+} as const;
+
+/** The live-class plan: one card per week, two per row from tablet width. */
 export const LiveClassList: FC<LiveClassListProps> = ({ weeks, expanded, onToggle }) => (
-  <Stack spacing={2.5}>
+  <Box sx={GRID_SX}>
     {weeks.map((week, index) => (
       <LiveClassWeekCard
         key={week._id}
@@ -27,5 +34,5 @@ export const LiveClassList: FC<LiveClassListProps> = ({ weeks, expanded, onToggl
         }}
       />
     ))}
-  </Stack>
+  </Box>
 );

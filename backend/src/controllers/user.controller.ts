@@ -10,6 +10,7 @@ import type { UserRole } from '../types/index';
 import { escapeRegex } from '../utils/escapeRegex';
 import { generateToken, sendTokenCookie } from '../utils/jwt';
 import { disconnectUserSockets } from '../socket/index';
+import { ensureStudentNumber } from '../utils/studentNumber';
 
 // Only a Super Admin may create, promote to, or change Admin and Super Admin accounts (no privilege
 // escalation, no admin taking over another admin's account).
@@ -82,10 +83,13 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
   const validRoles: UserRole[] = ['Super Admin', 'Admin', 'Moderator', 'Teacher', 'Student'];
   const userFilter: Record<string, unknown> = {};
   if (typeof search === 'string' && search.trim()) {
-    const pattern = escapeRegex(search.trim());
+    // "123456789" also finds the student number "123-456-789"
+    const text = /^\d{9}$/.test(search.trim()) ? search.trim().replace(/^(\d{3})(\d{3})(\d{3})$/, '$1-$2-$3') : search.trim();
+    const pattern = escapeRegex(text);
     userFilter.$or = [
       { name: { $regex: pattern, $options: 'i' } },
       { email: { $regex: pattern, $options: 'i' } },
+      { studentNumber: { $regex: pattern } },
     ];
   }
   if (role && validRoles.includes(role as UserRole)) {
@@ -446,6 +450,7 @@ export const updateUserRole = asyncHandler(async (req: Request, res: Response) =
 
   const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-password');
   if (!user) throw new AppError('User not found', 404);
+  if (user.role === 'Student' && !user.studentNumber) user.studentNumber = await ensureStudentNumber(user._id);
   if (target.role !== role) disconnectUserSockets(String(user._id));
 
   res.status(200).json({ success: true, message: 'Role updated', data: user });
@@ -506,6 +511,8 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
     runValidators: true,
   }).select('-password');
   if (!user) throw new AppError('User not found', 404);
+  // A user made a Student gets a student number (kept if they had one before)
+  if (user.role === 'Student' && !user.studentNumber) user.studentNumber = await ensureStudentNumber(user._id);
   if (updates.password || (updates.role && updates.role !== target.role)) disconnectUserSockets(String(user._id));
   // An admin who resets their own password stays signed in on this device
   if (updates.password && String(user._id) === String(req.user._id)) sendTokenCookie(generateToken(String(user._id)), res);

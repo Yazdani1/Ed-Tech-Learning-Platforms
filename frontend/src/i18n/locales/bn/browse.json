@@ -53,11 +53,8 @@
     "backHome": "হোমে ফিরে যান",
     "home": "হোম",
     "breadcrumb": "পথনির্দেশ",
-    "statusPublished": "প্রকাশিত",
-    "statusDraft": "খসড়া",
     "discountChip": "{{price}} ({{percent}}% ছাড়)",
     "subscriptionChip": "সাবস্ক্রিপশন",
-    "createdBy": "তৈরি করেছেন",
     "courseType": "কোর্সের ধরন",
     "startDate": "শুরুর তারিখ",
     "endDate": "শেষের তারিখ",
@@ -75,8 +72,8 @@
     "instructors": "আপনার প্রশিক্ষকগণ"
   },
   "content": {
-    "title": "কোর্সের বিষয়বস্তু",
-    "views": "কোর্সের বিষয়বস্তুর ধরন",
+    "title": "কারিকুলাম",
+    "views": "কারিকুলামের ধরন",
     "expandSections": "সব সেকশন খুলুন",
     "collapseSections": "সব সেকশন বন্ধ করুন",
     "expandWeeks": "সব সপ্তাহ খুলুন",
@@ -157,5 +154,26 @@
     "enrollFreeGuest": "ফ্রিতে ভর্তি হন",
     "getStarted": "শুরু করুন",
     "signIn": "সাইন ইন"
+  },
+  "extras": {
+    "toolsTitle": "যে টুলস ব্যবহার করবেন",
+    "benefitsTitle": "আপনি যা পাবেন",
+    "projectsTitle": "প্রজেক্ট",
+    "audienceTitle": "কোর্সটি কাদের জন্য",
+    "storiesTitle": "সাফল্যের গল্প",
+    "faqTitle": "সাধারণ জিজ্ঞাসা",
+    "viewProject": "প্রজেক্ট দেখুন",
+    "viewProjectNamed": "প্রজেক্ট দেখুন: {{name}}",
+    "liveDemo": "লাইভ ডেমো",
+    "watchVideo": "পরিচিতি ভিডিও দেখুন",
+    "introVideo": "পরিচিতি ভিডিও",
+    "screenshots": "স্ক্রিনশট",
+    "screenshotAlt": "{{name}} স্ক্রিনশট {{number}}"
+  },
+  "buyBar": {
+    "label": "এই কোর্সে ভর্তি হন",
+    "callNow": "কল করুন:",
+    "discountApplied": "{{percent}}% ছাড় প্রযোজ্য",
+    "enroll": "ব্যাচে ভর্তি হোন"
   }
 }

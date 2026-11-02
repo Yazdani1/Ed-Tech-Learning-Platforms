@@ -112,6 +112,7 @@ test.describe('Course catalog', () => {
     const course = await createCourse(baseURL ?? '', `preview ${testInfo.project.name}`);
     await page.goto(`/courses/${course.id}`);
 
+    await expect(page.getByRole('heading', { name: 'Curriculum' })).toBeVisible();
     await page.getByRole('button', { name: /Getting started/ }).click();
     await expect(page.getByText('Locked lesson')).toBeVisible();
     await page.getByRole('button', { name: /Welcome preview/ }).click();

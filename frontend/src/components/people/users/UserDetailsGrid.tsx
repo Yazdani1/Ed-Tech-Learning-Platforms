@@ -32,6 +32,7 @@ export const UserDetailsGrid: FC<UserDetailsGridProps> = ({ user }) => {
 
   const items: [string, React.ReactNode][] = [
     ['userId', user._id],
+    ...(user.studentNumber ? [['studentNumber', user.studentNumber] as [string, string]] : []),
     ['email', user.email],
     ['totalEnrolled', enrolments.total],
     ['freeEnrolled', enrolments.free],
