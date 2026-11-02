@@ -28,7 +28,7 @@ interface UserFormModalProps {
   onClose: () => void;
 }
 
-const EMPTY: UserEditForm = { name: '', email: '', password: '', role: 'Student' };
+const EMPTY: UserEditForm = { name: '', email: '', phone: '', password: '', role: 'Student' };
 
 /** Create a user, or edit name, email, role and (optionally) password. */
 export const UserFormModal: FC<UserFormModalProps> = ({ open, user, onClose }) => {
@@ -46,7 +46,17 @@ export const UserFormModal: FC<UserFormModalProps> = ({ open, user, onClose }) =
 
   useEffect(() => {
     if (!open) return;
-    reset(user ? { name: user.name, email: user.email, password: '', role: user.role } : EMPTY);
+    reset(
+      user
+        ? {
+            name: user.name,
+            email: user.email,
+            phone: user.phone ?? '',
+            password: '',
+            role: user.role,
+          }
+        : EMPTY,
+    );
     resetCreate();
     resetUpdate();
   }, [open, user, reset, resetCreate, resetUpdate]);

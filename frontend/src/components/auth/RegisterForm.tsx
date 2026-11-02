@@ -16,6 +16,7 @@ import { AuthSwitchLink } from './AuthSwitchLink';
 import { EmailField } from './EmailField';
 import { NameField } from './NameField';
 import { PasswordField } from './PasswordField';
+import { PhoneField } from './PhoneField';
 
 /** Student sign-up form. On success GuestGate sees the new user and opens the student dashboard. */
 export const RegisterForm = () => {
@@ -23,7 +24,7 @@ export const RegisterForm = () => {
   const fieldError = useFieldError();
   const form = useAuthForm({
     schema: registerRequestSchema,
-    defaultValues: { name: '', email: '', password: '' },
+    defaultValues: { name: '', email: '', phone: '', password: '' },
     mutation: useRegister(),
     successKey: 'auth.registerSuccess',
   });
@@ -53,6 +54,13 @@ export const RegisterForm = () => {
         label={t('auth.email')}
         fullWidth
         {...fieldError(form.errors.email)}
+      />
+      <PhoneField
+        {...form.register('phone')}
+        label={t('auth.phone')}
+        fullWidth
+        helperText={t('auth.phoneHelp')}
+        {...fieldError(form.errors.phone)}
       />
       <PasswordField
         {...form.register('password')}

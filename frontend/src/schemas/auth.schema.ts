@@ -16,6 +16,16 @@ export const userSchema = z.object({
 export type User = z.infer<typeof userSchema>;
 
 // Validation messages are i18n keys; forms translate them.
+
+/** Same rule as the backend (utils/phone.ts): digits, spaces, dashes, an optional leading "+", 6-20 characters. */
+const PHONE_PATTERN = /^(?=.{6,20}$)\+?\d[\d\s-]{4,18}\d$/;
+
+/** An optional contact phone number: empty, or a phone number. */
+export const phoneField = z
+  .string()
+  .trim()
+  .refine((value) => value === '' || PHONE_PATTERN.test(value), 'validation.phone');
+
 const emailField = z
   .string()
   .trim()
@@ -33,6 +43,7 @@ export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export const registerRequestSchema = z.object({
   name: z.string().trim().min(1, 'validation.required'),
   email: emailField,
+  phone: phoneField,
   password: z.string().min(PASSWORD_MIN_LENGTH, 'validation.passwordMin'),
 });
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;

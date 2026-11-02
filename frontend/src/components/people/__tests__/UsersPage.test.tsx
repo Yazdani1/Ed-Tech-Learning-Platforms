@@ -158,6 +158,7 @@ describe('UsersPage', () => {
     expect(body).toEqual({
       name: 'New Person',
       email: 'new@example.com',
+      phone: '',
       password: 'secret123',
       role: 'Teacher',
     });
@@ -180,10 +181,16 @@ describe('UsersPage', () => {
     const name = within(dialog).getByLabelText(/Name/);
     await user().clear(name);
     await user().type(name, 'Asha R');
+    await user().type(within(dialog).getByLabelText('Phone number (optional)'), '01711 000111');
     await user().click(within(dialog).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('User updated')).toBeInTheDocument();
-    expect(body).toEqual({ name: 'Asha R', email: ASHA.email, role: 'Student' });
+    expect(body).toEqual({
+      name: 'Asha R',
+      email: ASHA.email,
+      phone: '01711 000111',
+      role: 'Student',
+    });
   });
 
   it('changes a role and shows the backend refusal', async () => {

@@ -20,18 +20,28 @@ interface PerformanceChartProps {
 }
 
 /**
- * The report chart: the metric over time (line or bar), or the all-time enrolment breakdown (pie).
+ * The report chart: the metric over time (line or bar), or the enrolment breakdown of the range (pie).
  * Default export: loaded with next/dynamic (recharts only in the browser).
  */
 const PerformanceChart: FC<PerformanceChartProps> = ({ data, metric, chart }) => {
   const { t } = useTranslation();
   if (chart !== 'pie') {
-    return <MetricTimeChart data={data.chartData} metric={metric} variant={chart} />;
+    return (
+      <MetricTimeChart
+        data={data.chartData}
+        metric={metric}
+        variant={chart}
+        granularity={data.granularity}
+      />
+    );
   }
   const slices = [
-    { label: t('insights.enrollmentType.free'), value: data.breakdown.free },
-    { label: t('insights.enrollmentType.paid'), value: data.breakdown.paid },
-    { label: t('insights.enrollmentType.subscription'), value: data.breakdown.subscription },
+    { label: t('insights.enrollmentType.free'), value: data.selected.breakdown.free },
+    { label: t('insights.enrollmentType.paid'), value: data.selected.breakdown.paid },
+    {
+      label: t('insights.enrollmentType.subscription'),
+      value: data.selected.breakdown.subscription,
+    },
   ];
   return (
     <Box>

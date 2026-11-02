@@ -64,7 +64,7 @@ export const CourseResults: FC<CourseResultsProps> = ({ query, filters }) => {
         </Typography>
         {hasFilter && (
           <Button onClick={filters.clearAll} sx={{ mt: 2, minHeight: 44 }}>
-            {t('browse.catalog.clearFilters')}
+            {t('browse.catalog.showAll')}
           </Button>
         )}
       </Box>

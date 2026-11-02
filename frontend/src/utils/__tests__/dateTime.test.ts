@@ -6,8 +6,10 @@ import {
   formatDateTime,
   formatPlainDate,
   formatPlainTime,
+  formatBucketLabel,
   formatTime,
   fromLocalInput,
+  isDateInput,
   toDateInput,
   toDateTimeInput,
 } from '../dateTime';
@@ -61,5 +63,21 @@ describe('dateTime', () => {
     expect(formatPlainTime('14:05')).toBe('2:05 PM');
     expect(formatPlainTime('later')).toBe('later');
     expect(formatPlainDate('')).toBe('');
+  });
+});
+
+describe('report helpers', () => {
+  it('formats chart bucket keys as short labels', () => {
+    expect(formatBucketLabel('2026-11-02T09', 'hour', 'en')).toBe('9 AM');
+    expect(formatBucketLabel('2026-11-02', 'day', 'en')).toBe('Nov 2');
+    expect(formatBucketLabel('2026-11', 'month', 'en')).toBe('Nov 2026');
+    expect(formatBucketLabel('nonsense', 'day', 'en')).toBe('nonsense');
+  });
+
+  it('accepts only real yyyy-MM-dd days', () => {
+    expect(isDateInput('2026-02-28')).toBe(true);
+    expect(isDateInput('2026-02-30')).toBe(false);
+    expect(isDateInput('02/28/2026')).toBe(false);
+    expect(isDateInput('')).toBe(false);
   });
 });

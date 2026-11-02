@@ -372,7 +372,7 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		})
 		.sort({ createdAt: -1 });
 
-	const [courseTypeCounts, categoryCounts, pricingCounts, subscriptionPlanCounts, categoryPricingCounts, liveCategoryCounts] = await Promise.all([
+	const [courseTypeCounts, categoryCounts, pricingCounts, subscriptionPlanCounts, categoryPricingCounts, liveCategoryCounts, paidTypeCategoryCounts] = await Promise.all([
 		Course.aggregate<{ _id: Types.ObjectId; count: number }>([
 			{ $match: baseFilter },
 			{ $match: { courseType: { $exists: true, $ne: null } } },
@@ -402,6 +402,11 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 			{ $match: { category: { $exists: true, $ne: null } } },
 			{ $group: { _id: '$category', count: { $sum: 1 } } },
 		]),
+		// Paid courses per course type and category (the catalog's one-section-per-course-type layout)
+		Course.aggregate<{ _id: { courseType: Types.ObjectId; category: Types.ObjectId | null }; count: number }>([
+			{ $match: { ...baseFilter, pricing: 'Paid', courseType: { $exists: true, $ne: null } } },
+			{ $group: { _id: { courseType: '$courseType', category: '$category' }, count: { $sum: 1 } } },
+		]),
 	]);
 
 	// Per pricing ("Free" / "Paid"): course count per category (the home page's Free and Paid sections)
@@ -409,6 +414,14 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 	for (const item of categoryPricingCounts) {
 		const counts = (categoriesByPricing[item._id.pricing] ??= {});
 		counts[String(item._id.category)] = item.count;
+	}
+
+	// Per course type: { total, categories: { categoryId: count } } of its paid courses
+	const paidByCourseType: Record<string, { total: number; categories: Record<string, number> }> = {};
+	for (const item of paidTypeCategoryCounts) {
+		const entry = (paidByCourseType[String(item._id.courseType)] ??= { total: 0, categories: {} });
+		entry.total += item.count;
+		if (item._id.category) entry.categories[String(item._id.category)] = item.count;
 	}
 
 	const filterCounts = {
@@ -419,6 +432,7 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 		categoriesByPricing,
 		// Course count per category among the live courses (the home page's Live Courses section)
 		liveCategories: Object.fromEntries(liveCategoryCounts.map((item) => [String(item._id), item.count])),
+		paidByCourseType,
 	};
 
 	const shouldPaginate = Boolean(page || limit);

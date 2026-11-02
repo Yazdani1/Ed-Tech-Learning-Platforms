@@ -12,18 +12,22 @@ import {
   missingId,
   ROLES,
 } from '../factories';
-import { dayKey, daysAgo } from '../factories/admin-messaging';
+import { daysAgo } from '../factories/admin-messaging';
 
 import type { ICourse } from '../../src/models/Course.model';
 import type { IUser } from '../../src/models/User.model';
 import type { UserRole } from '../../src/types/index';
 
-type Chart = { date: string; revenue: number; enrollments: number };
+type Chart = { date: string; revenue: number; enrollments: number; paidEnrollments: number };
+
+/** yyyy-MM-dd in UTC (the default report zone) */
+const isoDay = (date: Date): string => date.toISOString().slice(0, 10);
 
 const OVERVIEW = '/api/performance/overview';
 const COURSES = '/api/performance/courses';
-const DAYS_7D_BUCKETS = 8;
-const DAYS_30D_BUCKETS = 31;
+const DAYS_7D_BUCKETS = 7;
+const DAYS_30D_BUCKETS = 30;
+const HOURS = 24;
 const MAX_LIFETIME_BUCKETS = 12;
 
 let users: Record<UserRole, IUser>;
@@ -123,6 +127,9 @@ describe('GET /api/performance/overview', () => {
     expect(Object.keys(data).sort()).toEqual([
       'breakdown',
       'chartData',
+      'granularity',
+      'periods',
+      'selected',
       'thisMonthCount',
       'thisMonthRevenue',
       'totalEnrollments',
@@ -162,21 +169,26 @@ describe('GET /api/performance/overview', () => {
   it('30d (default) gives one bucket per day with the right sums', async () => {
     const res = await overview(`?courseId=${courseA._id}`);
     const chart = res.body.data.chartData as Chart[];
-    expect(chart.length).toBeGreaterThanOrEqual(DAYS_30D_BUCKETS - 1);
-    expect(chart.length).toBeLessThanOrEqual(DAYS_30D_BUCKETS + 1);
-    const today = chart.find((row) => row.date === dayKey(new Date()));
-    expect(today).toEqual({ date: dayKey(new Date()), revenue: 180, enrollments: 3 });
-    const threeDays = chart.find((row) => row.date === dayKey(daysAgo(3)));
+    expect(res.body.data.granularity).toBe('day');
+    expect(chart).toHaveLength(DAYS_30D_BUCKETS);
+    const today = chart.find((row) => row.date === isoDay(new Date()));
+    expect(today).toEqual({
+      date: isoDay(new Date()),
+      revenue: 180,
+      enrollments: 3,
+      paidEnrollments: 2,
+    });
+    const threeDays = chart.find((row) => row.date === isoDay(daysAgo(3)));
     expect(threeDays).toMatchObject({ revenue: 0, enrollments: 1 });
     expect(chart.reduce((sum, row) => sum + row.enrollments, 0)).toBe(5);
     expect(chart.reduce((sum, row) => sum + row.revenue, 0)).toBe(230);
   });
 
-  it('7d only contains the last week', async () => {
+  it('7d = today and the 6 days before (7 day buckets)', async () => {
     const res = await overview(`?courseId=${courseA._id}&dateRange=7d`);
     const chart = res.body.data.chartData as Chart[];
-    expect(chart.length).toBeGreaterThanOrEqual(DAYS_7D_BUCKETS - 1);
-    expect(chart.length).toBeLessThanOrEqual(DAYS_7D_BUCKETS + 1);
+    expect(chart).toHaveLength(DAYS_7D_BUCKETS);
+    expect(chart[chart.length - 1].date).toBe(isoDay(new Date()));
     expect(chart.reduce((sum, row) => sum + row.enrollments, 0)).toBe(4);
     // totals are all-time whatever the range
     expect(res.body.data.totalEnrollments).toBe(5);
@@ -196,6 +208,94 @@ describe('GET /api/performance/overview', () => {
     expect(res.body.data.chartData.length).toBeLessThanOrEqual(MAX_LIFETIME_BUCKETS);
   });
 
+  it('today is charted per hour (24 buckets) and "selected" holds the range numbers', async () => {
+    const res = await overview(`?courseId=${courseA._id}&dateRange=today`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.granularity).toBe('hour');
+    expect(res.body.data.chartData).toHaveLength(HOURS);
+    expect(res.body.data.selected).toEqual({
+      revenue: 180,
+      enrollments: 3,
+      paidEnrollments: 2,
+      breakdown: { free: 1, paid: 2, subscription: 0 },
+    });
+  });
+
+  it('periods: today, last 7 days, this month and lifetime for the selection', async () => {
+    const res = await overview(`?courseId=${courseA._id}`);
+    const { periods } = res.body.data;
+    expect(periods.today).toEqual({ revenue: 180, enrollments: 3, paidEnrollments: 2 });
+    expect(periods.week).toEqual({ revenue: 180, enrollments: 4, paidEnrollments: 2 });
+    expect(periods.lifetime).toEqual({ revenue: 230, enrollments: 5, paidEnrollments: 3 });
+  });
+
+  it('several courses at once with courseIds=a,b', async () => {
+    const res = await overview(`?courseIds=${courseA._id},${courseB._id}&dateRange=lifetime`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.totalEnrollments).toBe(6);
+    expect(res.body.data.totalRevenue).toBe(255);
+    const onlyB = await overview(`?courseIds=${courseB._id}`);
+    expect(onlyB.body.data.totalEnrollments).toBe(1);
+  });
+
+  it('400 for a repeated courseIds parameter and for more than 500 ids', async () => {
+    const repeated = await overview(`?courseIds=${courseA._id}&courseIds=${courseB._id}`);
+    expect(repeated.status).toBe(400);
+    const many = Array.from({ length: 501 }, () => missingId()).join(',');
+    const tooMany = await overview(`?courseIds=${many}`);
+    expect(tooMany.status).toBe(400);
+  });
+
+  it('courseIds=all behaves like no filter', async () => {
+    const res = await overview('?courseIds=all&dateRange=lifetime');
+    expect(res.body.data.totalEnrollments).toBe(6);
+  });
+
+  it('400 when one of the courseIds is malformed', async () => {
+    const res = await overview(`?courseIds=${courseA._id},nope`);
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('custom range: inclusive days, per-day buckets, only enrolments inside', async () => {
+    const from = isoDay(daysAgo(25));
+    const to = isoDay(daysAgo(2));
+    const res = await overview(`?courseId=${courseA._id}&dateRange=custom&from=${from}&to=${to}`);
+    expect(res.status).toBe(200);
+    const chart = res.body.data.chartData as Chart[];
+    expect(chart[0].date).toBe(from);
+    expect(chart[chart.length - 1].date).toBe(to);
+    // the 3-days-ago subscription and the 20-days-ago paid 50
+    expect(res.body.data.selected).toMatchObject({ enrollments: 2, revenue: 50 });
+  });
+
+  it('custom range longer than 92 days is charted per month', async () => {
+    const res = await overview(
+      `?dateRange=custom&from=${isoDay(daysAgo(200))}&to=${isoDay(new Date())}`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data.granularity).toBe('month');
+    expect(res.body.data.selected.enrollments).toBe(6);
+  });
+
+  it.each([
+    ['missing dates', '?dateRange=custom'],
+    ['a bad date', '?dateRange=custom&from=2026-02-30&to=2026-03-01'],
+    ['end before start', '?dateRange=custom&from=2026-03-02&to=2026-03-01'],
+    ['too long', '?dateRange=custom&from=2000-01-01&to=2026-01-01'],
+    ['an unknown time zone', '?tz=Mars/Base'],
+  ])('400 for %s', async (_name, query) => {
+    const res = await overview(query);
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('accepts the viewer time zone (?tz=Asia/Dhaka)', async () => {
+    const res = await overview(`?courseId=${courseA._id}&dateRange=7d&tz=Asia/Dhaka`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.chartData).toHaveLength(DAYS_7D_BUCKETS);
+  });
+
   it('400 for an unknown dateRange', async () => {
     const res = await overview('?dateRange=forever');
     expect(res.status).toBe(400);
@@ -203,15 +303,18 @@ describe('GET /api/performance/overview', () => {
 });
 
 describe('GET /api/performance/courses', () => {
-  it('lists every course newest first with the price fields only', async () => {
+  it('lists every course newest first with the price fields and the paid-student count', async () => {
     const res = await request(app).get(COURSES).set('Cookie', admin);
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     const ids = res.body.data.map((course: { _id: string }) => course._id);
     expect(ids).toEqual([String(emptyCourse._id), String(courseB._id), String(courseA._id)]);
     expect(Object.keys(res.body.data[2]).sort()).toEqual(
-      ['_id', 'pricing', 'price', 'status', 'title'].sort(),
+      ['_id', 'paidStudents', 'pricing', 'price', 'status', 'title'].sort(),
     );
     expect(res.body.data[2].price).toBe(100);
+    // course A: three paid enrolments (the free and subscription ones do not count)
+    expect(res.body.data[2].paidStudents).toBe(3);
+    expect(res.body.data[0].paidStudents).toBe(0);
   });
 });

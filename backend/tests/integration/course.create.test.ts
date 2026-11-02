@@ -2,24 +2,19 @@ import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
-import { Announcement } from '../../src/models/Announcement.model';
 import { Course } from '../../src/models/Course.model';
-import { Lecture } from '../../src/models/Lecture.model';
-import { Section } from '../../src/models/Section.model';
-import { StudyCurriculum } from '../../src/models/StudyCurriculum.model';
 import {
   PNG_BYTES,
   authCookie,
   bearer,
   createCategory,
-  createCourse,
   createCourseType,
   createTeacherProfile,
   createUser,
   missingId,
   nextId,
 } from '../factories';
-import { ADMIN_ROLES, NON_ADMIN_ROLES, createLecture, createSection } from '../factories/catalog';
+import { ADMIN_ROLES, NON_ADMIN_ROLES } from '../factories/catalog';
 import { mockCloudinary } from '../helpers/cloudinary';
 
 afterEach(() => {

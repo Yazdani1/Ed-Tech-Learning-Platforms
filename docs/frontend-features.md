@@ -24,7 +24,7 @@ flowchart LR
 | `/`                                                                        | Home                                                                                                                                    | Everyone                                                                  |
 | `/teachers`                                                                | Our Instructors                                                                                                                         | Everyone                                                                  |
 | `/pricing`                                                                 | Choose Your Plan (subscription plans)                                                                                                   | Everyone; only Students can subscribe                                     |
-| `/courses`                                                                 | Course catalog (search, filters, pages)                                                                                                 | Everyone                                                                  |
+| `/courses`                                                                 | Course catalog: one section per course type (paid courses) and a Free section; search results from the navbar                           | Everyone                                                                  |
 | `/free-courses`                                                            | Free courses by course type                                                                                                             | Everyone                                                                  |
 | `/courses/[id]`                                                            | Course page (details, previews, enrolment)                                                                                              | Everyone; actions depend on the role                                      |
 | `/student/dashboard`                                                       | Student dashboard                                                                                                                       | Students                                                                  |
@@ -45,12 +45,13 @@ flowchart LR
 | `/teacher/courses/[courseId]/learn`                                        | The same player inside the teacher area; the teacher can also post announcements, study materials and live classes and see the students | Teacher of the course                                                     |
 | `/admin/courses/[id]/learn`                                                | The same player inside the admin area; staff manage the course content and can download the student list                                | Super Admin, Admin, Moderator                                             |
 | `/admin/users`                                                             | Find, create, edit, re-role and (Super Admin) delete user accounts                                                                      | Super Admin, Admin                                                        |
+| `/admin/students`                                                          | Every student with a course filter; full details (contact, courses bought, money spent)                                                 | Super Admin, Admin                                                        |
 | `/admin/teachers`                                                          | Manage public teacher profiles and link them to Teacher login accounts                                                                  | Super Admin, Admin                                                        |
 | `/admin/subscriptions`                                                     | Configure subscription plans; list, assign and cancel member subscriptions                                                              | Super Admin, Admin                                                        |
 | `/admin/course-qa`                                                         | See unresolved course questions of every course; open each in the course player to answer and resolve it                                | Super Admin, Admin, Moderator                                             |
 | `/teacher/courses`                                                         | The courses the teacher is assigned to, their enrolled students and the way into each course                                            | Teacher                                                                   |
-| `/admin/dashboard`                                                         | Snapshot of the whole platform: totals, revenue, charts, top courses, newest enrolments                                                 | Super Admin                                                               |
-| `/admin/performance`                                                       | Revenue and enrolment report for all courses or one course over 7 days, 30 days or lifetime                                             | Super Admin                                                               |
+| `/admin/dashboard`                                                         | Revenue today / last 7 days / this month / all time, platform counts, revenue and enrolment charts, top 5 courses by revenue            | Super Admin                                                               |
+| `/admin/performance`                                                       | Revenue and enrolments of all or chosen courses: periods, any range incl. custom days, charts                                           | Super Admin                                                               |
 | `/student/chat`                                                            | Support Chat: the student's own conversation with the support team (live)                                                               | Students                                                                  |
 | `/admin/chat`, `/teacher/chat`                                             | Support Inbox: every student conversation, unread counts, online status, live replies                                                   | Super Admin, Admin, Moderator (`/admin`); Teacher (`/teacher`, no emails) |
 | `/admin/notifications`, `/student/notifications`, `/teacher/notifications` | Notifications: my notifications (paged, mark read); Super Admin/Admin also send, edit, delete                                           | Everyone signed in (each in their own area); sending: Super Admin, Admin  |
@@ -104,7 +105,8 @@ flowchart LR
 
 **How to use it:**
 
-1. Enter full name, email and a password of at least 6 characters, then press **Create account**.
+1. Enter full name, email, an optional phone number (digits, spaces, dashes, optional leading +) and a
+   password of at least 6 characters, then press **Create account**.
 2. An email that already has an account shows "Email is already registered".
 3. On success a toast says "Account created successfully" and the student dashboard opens.
 
@@ -242,12 +244,14 @@ that scrolls sideways inside the box (the page itself never scrolls sideways); t
 phones.
 
 **API endpoints used:** `GET /api/home-hero-posts/public`, `GET /api/categories`,
-`GET /api/courses/browse?pricing=Paid|Free&categories&page&limit=30` (one request per box; the category counts
-come from `filterCounts.categoriesByPricing`), `GET /api/enrollments` (signed-in Students only).
+`GET /api/courses/browse?liveOnly=true&categories&page&limit=30` (the Live box; category counts from
+`filterCounts.liveCategories`) and `GET /api/courses/browse?pricing=Free&categories&page&limit=30` (the Free box;
+counts from `filterCounts.categoriesByPricing.Free`), `GET /api/enrollments` (signed-in Students only).
 
 **Code:** `frontend/src/app/(public)/page.tsx`, `frontend/src/components/public/home/` (`HomePage`,
-`HomeHeroSlider`, `HeroSlide`, `HeroSliderControls`, `HomeCourseSection`, `HomeSectionTitle`,
-`HomeCategoryFilter`, `CategoryFilterCard`), `frontend/src/components/public/common/` (`CourseGrid`,
+`HomeHeroSlider`, `HeroSlide`, `HeroSliderControls`, `HomeSectionTitle`, `HomeCategoryFilter`,
+`CategoryFilterCard`), `frontend/src/components/public/common/` (`CourseShowcaseSection` (one course box, shared
+with the catalog), `CourseGrid`,
 `CourseCard`, `CourseStartDay`, helpers), `frontend/src/components/course-card/` (`CourseCover`, `CoursePrice`),
 `frontend/src/api/public.api.ts` (`useHomeCourses`), `frontend/src/api/catalog.api.ts` (categories, enrolments).
 
@@ -326,27 +330,31 @@ screen with the filters stacked above the courses.
 - **Who can use it:** everyone. A signed-in Student also sees "Go to this course" on courses they are enrolled in.
 - **What it is for:** finding a course among all Published + Public courses.
 - **Step by step:**
-  1. The page shows "All Courses" and how many courses match ("12 courses found").
-  2. Type in **Search** (the list updates shortly after you stop typing), tick course types, categories,
-     Free / Paid, or subscription plans. Each option shows how many public courses it has.
-  3. The filters and the page number are kept in the address bar with the backend's own names, so a link can
-     be shared or bookmarked: `?search=react&categories=<id>,<id>&courseTypes=<id>&pricing=Free&subscriptionPlans=Premium&page=2`.
-     The public navbar search and the home page tiles link here the same way.
-  4. "N active" (in the filter panel) or "Clear filters" (when nothing matches) removes every filter.
-  5. Click a card to open the course page. On a computer, hovering a card shows a preview (summary, what you
-     will learn, plans that include it, "View Details").
-  6. 12 courses per page; the page buttons are under the cards.
-- **Mobile behaviour:** one card per row on phones, two on tablets, three or four on desktop. The filter
-  sidebar becomes a **Filters** button (with the number of active filters) that opens a drawer; "Show courses
-  (N)" closes it. No hover preview on touch screens.
-- **API endpoints used:** `GET /api/courses/browse` (filters, `page`, `limit=12`, `filterCounts`),
-  `GET /api/categories`, `GET /api/course-types`, `GET /api/subscription-plans`, and for Students
-  `GET /api/enrollments` (their course ids).
-- **Code:** `frontend/src/app/(public)/courses/page.tsx`, `frontend/src/components/browse/catalog/*`,
-  `frontend/src/components/browse/card/*`, `frontend/src/hooks/useBrowseParams.ts`,
-  `frontend/src/api/browse.api.ts`, `frontend/src/api/catalog.api.ts` (categories, course types, plans,
-  enrolments), `frontend/src/schemas/browse.schema.ts`, `frontend/src/schemas/catalog.schema.ts`, the shared
-  card parts and search box in `frontend/src/components/course-card/`, prices in `frontend/src/utils/price.ts`.
+  1. The page shows "All Courses" with a short intro. There is no filter sidebar.
+  2. One box per **course type** that has published paid courses (in the Course Setup order): the course type
+     name, its description (or the course count), the **category cards** of that type ("All" plus every category
+     with courses; picking one narrows the box) and the paid course cards of that type (30 per page, page buttons
+     only when there are more).
+  3. Then the **Free Courses** box: every free course, with its own category cards (the same layout as the home
+     page's boxes). A free course is shown only here, never in a course type box.
+     A paid course without a course type (the type is optional in the editor, or was deleted) is in no box; it is
+     found through the search.
+  4. With a search or filter in the address (the navbar search, "See all" on `/free-courses`, category or course
+     type links), the page shows the matching courses instead: "N courses found for "react"", the cards
+     (12 per page) and **Show all courses**, which goes back to the boxes. The address keeps the backend's own
+     names: `?search=react&categories=<id>&courseTypes=<id>&pricing=Free&subscriptionPlans=Premium&page=2`.
+  5. Click a card to open the course page. On a computer, hovering a card shows a preview.
+- **Mobile behaviour:** one card per row on phones, two on tablets, three or four on desktop; the category cards
+  scroll sideways on phones. No hover preview on touch screens.
+- **API endpoints used:** `GET /api/course-types`, `GET /api/categories`, `GET /api/courses/browse?page=1&limit=1`
+  (counts only: `filterCounts.paidByCourseType` decides which boxes exist), per box `GET /api/courses/browse`
+  (`courseTypes=<id>&pricing=Paid` or `pricing=Free`, `categories`, `page`, `limit=30`); with a filter
+  `GET /api/courses/browse` (filters, `page`, `limit=12`); for Students `GET /api/enrollments`.
+- **Code:** `frontend/src/app/(public)/courses/page.tsx`, `frontend/src/components/browse/catalog/*`
+  (CourseBrowseView, CatalogHeader, CatalogSections, CourseResults), the shared box
+  `frontend/src/components/public/common/CourseShowcaseSection.tsx` (also used by the home page),
+  `frontend/src/components/browse/card/*`, `frontend/src/hooks/useBrowseParams.ts`, `frontend/src/api/browse.api.ts`,
+  `frontend/src/api/public.api.ts` (`useHomeCourses` by source, `useCatalogCounts`), `frontend/src/schemas/public.schema.ts`.
 - **Tests:** `frontend/src/components/browse/__tests__/CourseBrowseView.test.tsx`, `e2e/browse.spec.ts`.
 
 ### Free courses (`/free-courses`)
@@ -374,11 +382,12 @@ screen with the filters stacked above the courses.
 - **Step by step:**
   1. The dark banner shows the breadcrumb, the course type (gradient badge above the title), title, subtitle,
      price (with discount) and "Subscription". It shows no status and no teacher names.
-  2. Below: course type and start / end dates, "What you'll learn", "This course includes", **Tools you will
-     use** (logo cards, with the section title and description from the editor), **What you get** (cards with a
-     logo, title and description), **Curriculum**, **Projects**, **Who this course is for** (one card per
-     item),
-     requirements, "About this course" (rich text, sanitised) and "Your Instructors".
+  2. Below, beside the enrolment card: course type and start / end dates, "What you'll learn", "This course
+     includes", **Tools you will use** (logo cards, with the section title and description from the editor) and
+     **What you get** (cards with a logo, title and description). Under both, using the **full page width**:
+     **Curriculum**, **Projects** (three per row on wide screens), **Who this course is for**, requirements,
+     "About this course" (rich text, sanitised), "Your Instructors", **Success stories** (three per row on wide
+     screens) and the FAQ.
   3. **Curriculum** (centred heading) has up to three lists, switched with centred buttons in this order:
      **Live Class** (weekly plan, two week cards per row from tablet width, each class's day and time as the
      teacher wrote them), **Recorded Lectures** (sections with lecture count and length; "Expand all
@@ -388,7 +397,8 @@ screen with the filters stacked above the courses.
      panel from the right with the full description, **Live demo** (new tab), the intro video (a YouTube link
      plays in the panel, other links open in a new tab as **Watch intro video**) and every screenshot. After the
      instructors come **Success stories** (photo, title, story, company logo and name) and **Frequently asked
-     questions** (click a question to open its answer). Each section is hidden while it is empty.
+     questions**: a centred heading, one card per question; opening a card shows the answer on a light tinted
+     band (not a separate card). Each section is hidden while it is empty.
   5. **Buy bar** (fixed to the bottom of the screen) for visitors and students who have not enrolled: "Call
      Now:" with the phone number from the Company Contact page (a `tel:` link; hidden when no number is set),
      the price, the struck-through list price and "N% discount applied" while a discount runs, and **Enroll
@@ -420,7 +430,7 @@ https://www.youtube-nocookie.com`, thumbnails `img-src https://i.ytimg.com`); vi
 - **Code:** `frontend/src/app/(public)/courses/[id]/page.tsx`, `frontend/src/components/browse/detail/*`
   (`content/` = curriculum lists, `extras/` = tools, what you get, projects (+ `ProjectDetailsDrawer`),
   audience, success stories, FAQ, `enrollment/` = the enrolment card and `CourseBuyBar`),
-  `frontend/src/utils/csp.ts`.
+  `CourseDetailWideSections` (the full-width part), `frontend/src/utils/csp.ts`.
 - **Tests:** `frontend/src/components/browse/__tests__/CourseDetailView.test.tsx`,
   `frontend/src/components/browse/__tests__/CourseDetailExtras.test.tsx` (sections, project drawer, buy bar),
   `frontend/src/components/browse/__tests__/course-utils.test.ts`, `frontend/src/utils/__tests__/csp.test.ts`,
@@ -500,14 +510,14 @@ and `CourseSearchField` in `frontend/src/components/course-card/`, `frontend/src
 **Who can use it:** every signed-in user, in their own area (Super Admin, Admin, Moderator under `/admin`).
 Only their own account.
 
-**What it is for:** seeing the account, plan and role, and editing name, avatar, community privacy, password
-and (students only) email.
+**What it is for:** seeing the account, plan and role, and editing name, phone number, avatar, community privacy,
+password and (students only) email.
 
 **How to use it:**
 
 1. The banner shows the role, avatar (or the first letter in the role's colour), name and what the role is
    for; below are the **Student number** (students only, e.g. `482-917-305`, unique and never changing),
-   email, role, joined and last-updated dates.
+   email, phone number ("Not available" when none), role, joined and last-updated dates.
 2. Summary cards: **Enrolled courses** (students) or **Assigned courses** (teachers), **Purchased courses**,
    **Subscription** (plan and expiry) and **Profile status** (Complete with an avatar, otherwise Basic).
 3. Students also see the **Subscription** card: the running plan with start/expiry dates, the number of
@@ -517,6 +527,8 @@ and (students only) email.
 4. **Edit Profile** opens a dialog:
    - **Upload Avatar** (JPG, PNG, WEBP or GIF up to 5MB, checked before upload) shows a preview;
      **Remove** removes the picture.
+   - **Phone number** (optional; digits, spaces, dashes, optional leading +): staff see it on the Students page.
+     Emptying the box removes the number.
    - **Name** is required. **Email** can be changed by students only; for other roles it is read-only.
    - **Private community profile** hides the community stats, discussions and answers from others.
    - **Change password**: current password, new password (6-72 characters) and confirmation. Leave empty to
@@ -1060,12 +1072,14 @@ delete. A Super Admin also sees how much each user has enrolled and spent.
    enrolment activity, spending activity and six min/max spend boxes (they apply when you leave the box or
    press Enter). The filters and the page are kept in the address, so a reload or a shared link keeps them.
    **Clear filters** resets them.
-3. **Create User** opens a form: name, email, password (6-72 characters) and role. **Create** saves it.
+3. **Create User** opens a form: name, email, optional phone number, password (6-72 characters) and role.
+   **Create** saves it.
 4. The row menu (⋮):
    - **View Details** (Super Admin): the account with enrolment counts (total, free, paid, subscription),
      spending (total, paid courses, subscriptions, in BDT), subscription plan, status, start and end, and the
      created/updated times.
-   - **Edit**: name, email, role and an optional new password (leave it blank to keep the current one).
+   - **Edit**: name, email, phone number (empty removes it), role and an optional new password (leave it blank to
+     keep the current one).
    - **Change Role**: only the role.
    - **Delete** (Super Admin): after "Delete "<name>"? This cannot be undone.".
 5. An Admin can only give the Moderator, Teacher or Student role, and Admin / Super Admin accounts have no
@@ -1253,27 +1267,32 @@ TeacherCourseCard, TeacherCourseSummary, TeacherCourseFooter, CourseStudentsModa
 
 **Who can use it:** Super Admin only. Admins and Moderators who open it are sent to `/admin/courses`.
 
-**What it is for:** one look at the state of the platform.
+**What it is for:** one look at how much the platform earns and how many students it has.
 
 **How to use it:**
 
-1. Eight number cards: total revenue (and this month), students (and this month's enrolments), courses
-   (published / draft), active subscriptions (and subscription revenue), teachers, categories, open questions,
-   course revenue (and total enrolments). Money is shown in Taka (৳).
-2. Charts: revenue over the last 30 days, paid enrolments over the last 30 days (two separate charts, one
-   scale each), users by role (pie), course status and course pricing (bars). Hover a chart for exact values.
-3. **Top Courses**: the five courses with the most enrolments ("Deleted course" when a course is gone).
-4. **Recent Enrollments**: the six newest enrolments with student, course, type and date/time (your time zone).
+1. Four revenue cards, each on its own colour: **Today**, **Last 7 days** (today and the 6 days before),
+   **This month** and **All time**. Each shows the total, the split "Courses ৳… · Subscriptions ৳…" and the
+   enrolments (and how many were paid). The periods follow your own time zone.
+2. Four count cards: **Students** (and new students this month), **Enrollments** (and this month), **Active
+   Subscriptions** (and the number of teachers) and **Courses** (published / draft). Money is in Taka (৳).
+3. Charts (hover for exact values): **Daily revenue, last 30 days** (course and subscription revenue stacked) next
+   to **Daily enrollments, last 30 days** (same days, its own scale); **Monthly revenue, last 12 months**
+   (stacked); **Revenue by source (all time)** (donut: courses vs subscriptions).
+4. **Top 5 courses by revenue**: rank, cover, title, revenue (with a bar relative to the best course) and the
+   enrolled students (and how many paid). "Deleted course" when a course is gone.
 
-**On mobile:** cards in one column (two on tablets, four on desktop); charts stack in one column; recent
-enrolments are cards instead of a table. The charts load after the numbers (separate download).
+**On mobile:** cards in one column (two on tablets, four on desktop); charts stack in one column. The charts load
+after the numbers (separate download).
 
-**API endpoints used:** `GET /api/dashboard/summary`.
+**API endpoints used:** `GET /api/dashboard/summary?tz=<your time zone>`.
 
 **Code:** `frontend/src/app/admin/dashboard/page.tsx`, `frontend/src/components/insights/dashboard/`
-(SuperAdminDashboard, DashboardStatGrid, DashboardCharts, TimelineChart, CountBarChart, TopCoursesCard,
-TopCourseRow, RecentEnrollmentsCard), shared `components/insights/` (InsightStatCard, ChartCard,
-BreakdownPieChart, insights.utils.ts), `frontend/src/api/insights.api.ts`, `frontend/src/schemas/insights.schema.ts`.
+(SuperAdminDashboard, DashboardRevenueCards, DashboardStatGrid, DashboardCharts, StackedRevenueChart,
+TimelineChart, TopCoursesCard, TopCourseRow), shared `components/insights/` (RevenuePeriodCard, period-icons,
+InsightStatCard, ChartCard, BreakdownPieChart, insights.utils.ts), `components/course-picker/CourseThumb.tsx`,
+`frontend/src/api/insights.api.ts`, `frontend/src/schemas/insights.schema.ts`, `utils/dateTime.ts`
+(`viewerTimeZone`, `formatBucketLabel`).
 
 **Tests:** `components/insights/__tests__/SuperAdminDashboard.test.tsx`, `DashboardCharts.test.tsx`;
 Playwright `frontend/e2e/insights.spec.ts`.
@@ -1284,33 +1303,77 @@ Playwright `frontend/e2e/insights.spec.ts`.
 
 **Who can use it:** Super Admin only. Admins and Moderators who open it are sent to `/admin/courses`.
 
-**What it is for:** how much revenue and how many enrolments all courses, or one course, brought in.
+**What it is for:** how much revenue and how many enrolments all courses, or the chosen ones, brought in.
 
 **How to use it:**
 
-1. The heading reads "Overview" followed by the selected course ("All courses" at first). Press the course
-   name to open the course picker: search by title, choose "All courses" or one course (draft courses carry an
-   "Unpublished" tag).
-2. The numbers: this month's revenue (with the all-time total), this month's enrolments (with the all-time
-   total) and total students split into paid / free / subscription.
-3. Pick the metric (Revenue or Enrollments) and the date range (Last 7 days, Last 30 days, Lifetime). Lifetime
-   shows one point per month, the others one per day.
-4. Switch between line, bar and pie chart. The pie always shows the all-time free / paid / subscription split.
-5. Every choice (course, range, metric, chart) is kept in the address, so a reload or a shared link shows the
-   same report. Unknown values in the address fall back to the defaults and are never sent to the server.
+1. The heading reads "Overview" followed by the selection ("All courses", a course title, or "3 courses"). Press it
+   to open the **course picker** from the left (wide panel): search by title, tick **several courses** (each row:
+   checkbox, cover picture, title and "N paid students"; drafts carry "Unpublished"), or "All courses", then
+   **Apply**. **Clear** removes the ticks; closing the panel keeps the old selection.
+2. Four coloured cards: revenue **Today**, **Last 7 days**, **This month** and **All time** for the selection,
+   each with its enrolments and paid enrolments.
+3. Pick the **Date range** for the chart: Today (one point per hour), Last 7 days, Last 30 days, This month (one
+   per day), All time (one per month) or **Custom range** with a **Start date** and **End date** (date pickers; up
+   to 92 days per day, longer ranges per month). Until both days are chosen the chart asks for them; an end before
+   the start is marked. A line above the chart shows the range's revenue and enrolments.
+4. Pick the **Metric** (Revenue, Enrollments, Paid enrollments) and switch between line, bar and pie chart. The
+   pie shows the free / paid / subscription split of the chosen range.
+5. Every choice (courses, range, days, metric, chart) is kept in the address, so a reload or a shared link shows
+   the same report. Unknown values fall back to the defaults and are never sent to the server.
 
-**On mobile:** the numbers stack in one column; the metric and range pickers share one row; the chart switch
-buttons are 44 px; the course picker opens full screen.
+**On mobile:** the cards stack; the pickers wrap; the chart switch buttons are 44 px; the course picker opens full
+screen.
 
-**API endpoints used:** `GET /api/performance/overview?courseId=<id|all>&dateRange=<7d|30d|lifetime>`,
+**API endpoints used:**
+`GET /api/performance/overview?courseIds=<ids|all>&dateRange=<today|7d|30d|month|lifetime|custom>&from=&to=&tz=`,
 `GET /api/performance/courses`.
 
 **Code:** `frontend/src/app/admin/performance/page.tsx`, `frontend/src/components/insights/performance/`
-(PerformancePage, PerformanceHeader, PerformanceStats, PerformanceStatBlock, PerformanceControls,
-ChartTypeToggle, PerformanceChartPanel, PerformanceChart, MetricTimeChart, CourseSelectDrawer,
-CourseSelectHeader, CourseSelectOption, usePerformanceParams.ts), `frontend/src/api/insights.api.ts`.
+(PerformancePage, PerformanceHeader, PerformancePeriodCards, PerformanceControls, CustomRangeInputs,
+ChartTypeToggle, PerformanceChartPanel, PerformanceChart, MetricTimeChart, usePerformanceParams.ts), the shared
+picker `frontend/src/components/course-picker/` (CoursePickerDrawer, CoursePickerHeader, CoursePickerList,
+CoursePickerOption, CoursePickerFooter, CourseThumb, useCoursePickerDraft, course-picker.utils.ts),
+`frontend/src/api/insights.api.ts`.
 
-**Tests:** `components/insights/__tests__/PerformancePage.test.tsx`; Playwright `frontend/e2e/insights.spec.ts`.
+**Tests:** `components/insights/__tests__/PerformancePage.test.tsx`,
+`components/course-picker/__tests__/CoursePickerDrawer.test.tsx` (closing drops the ticks, Clear, hidden ticks
+kept, loading / error, the button label); Playwright `frontend/e2e/insights.spec.ts`.
+
+### Students (Super Admin, Admin)
+
+**Route:** `/admin/students` · **Menu:** Students
+
+**Who can use it:** Super Admin and Admin. Moderators, Teachers and Students are sent to their own home page.
+
+**What it is for:** seeing every student, who bought which course, how much each spent, and how to reach them.
+
+**How to use it:**
+
+1. The list shows each student: picture, name and email, student number, phone, number of courses, total spent
+   (paid courses + subscriptions) and joined date. Newest first, 20 per page.
+2. **Search students** finds by name, email, student number or phone (after you stop typing).
+3. The course button ("All courses" at first) opens the same **course picker** as the Performance page: tick one
+   or several courses (each with its cover, title and "N students") and **Apply**; the list keeps the students
+   enrolled in any of them.
+4. Click a student to open the **details panel** from the right: contact details (email and phone as links,
+   student number, joined), money spent (total, number of courses and paid courses, on courses, on
+   subscriptions), every course (cover, title, enrolment date, Paid / Free / Subscription and the amount) and
+   every subscription (plan, period, status, amount).
+5. Search, courses and page are kept in the address.
+
+**On mobile:** the list becomes cards; the course button takes the full width; the picker and the details panel
+open full screen.
+
+**API endpoints used:** `GET /api/students?search=&courseIds=&page=&limit=20`, `GET /api/students/courses`,
+`GET /api/students/:id`.
+
+**Code:** `frontend/src/app/admin/students/page.tsx`, `frontend/src/components/people/students/` (StudentsPage,
+StudentsManager, StudentsToolbar, StudentsList, useStudentColumns, useStudentParams, StudentDetailsDrawer,
+StudentDetailsContent, StudentDetailSection, StudentCourseList, StudentSubscriptionList), the shared
+`components/course-picker/`, `frontend/src/api/students.api.ts`, `frontend/src/schemas/students.schema.ts`.
+
+**Tests:** `components/people/__tests__/StudentsPage.test.tsx`; Playwright `frontend/e2e/students.spec.ts`.
 
 ### Support Chat (student)
 

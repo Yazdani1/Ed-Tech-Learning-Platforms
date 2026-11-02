@@ -107,3 +107,30 @@ describe('browse filterCounts.liveCategories', () => {
     expect(res.body.data[0].courseType.isLive).toBe(true);
   });
 });
+
+describe('GET /api/courses/browse: paid courses per course type', () => {
+  it('filterCounts.paidByCourseType counts published paid courses per type and category', async () => {
+    const type = await createCourseType();
+    const catA = await createCategory();
+    const catB = await createCategory();
+    await createCourse({ courseType: type._id, category: catA._id, pricing: 'Paid', price: 10 });
+    await createCourse({ courseType: type._id, category: catA._id, pricing: 'Paid', price: 10 });
+    await createCourse({ courseType: type._id, category: catB._id, pricing: 'Paid', price: 10 });
+    // free and draft courses are not counted
+    await createCourse({ courseType: type._id, category: catA._id, pricing: 'Free' });
+    await createCourse({
+      courseType: type._id,
+      category: catA._id,
+      pricing: 'Paid',
+      status: 'Draft',
+    });
+
+    const res = await request(app).get(`${BROWSE}?limit=1`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.filterCounts.paidByCourseType[String(type._id)]).toEqual({
+      total: 3,
+      categories: { [String(catA._id)]: 2, [String(catB._id)]: 1 },
+    });
+  });
+});

@@ -8,6 +8,7 @@ import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 import { disconnectUserSockets } from '../socket/index';
 import { clearFailedLogins, isLoginLocked, recordFailedLogin } from '../utils/loginThrottle';
 import { ensureStudentNumber } from '../utils/studentNumber';
+import { parsePhone } from '../utils/phone';
 
 const MIN_PASSWORD_LENGTH = 6;
 // bcrypt only uses the first 72 bytes; longer input is refused instead of silently cut.
@@ -28,6 +29,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     email: string;
     password: string;
   };
+  const phone = parsePhone((req.body as { phone?: unknown }).phone);
 
   if (!isFilledString(name) || !isFilledString(email) || !isFilledString(password)) {
     throw new AppError('Name, email and password are required', 400);
@@ -41,7 +43,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   if (existing) throw new AppError('Email is already registered', 400);
 
   const hashed = await bcrypt.hash(password, 12);
-  const user = await User.create({ name: name.trim(), email: normalizedEmail, password: hashed });
+  const user = await User.create({ name: name.trim(), email: normalizedEmail, password: hashed, ...(phone ? { phone } : {}) });
 
   const token = generateToken(String(user._id));
   sendTokenCookie(token, res);
@@ -104,6 +106,7 @@ export const updateMe = asyncHandler(async (req: Request, res: Response) => {
   if (![name, email, currentPassword, newPassword].every(isOptionalString)) {
     throw new AppError('Invalid profile data', 400);
   }
+  const phone = parsePhone((req.body as { phone?: unknown }).phone);
 
   const user = await User.findById(req.user._id).select('+password +avatarPublicId');
   if (!user) throw new AppError('User not found', 404);
@@ -160,6 +163,8 @@ export const updateMe = asyncHandler(async (req: Request, res: Response) => {
     user.avatar = undefined;
     user.avatarPublicId = undefined;
   }
+
+  if (phone !== undefined) user.phone = phone || undefined;
 
   if (isCommunityProfilePrivate !== undefined) {
     user.isCommunityProfilePrivate = isCommunityProfilePrivate === 'true';

@@ -20,6 +20,8 @@ export const queryKeys = {
     siteSettings: ['public', 'site-settings'] as const,
     tools: ['public', 'tools'] as const,
     teachers: ['public', 'teachers'] as const,
+    /** The catalog's section list (counts only) */
+    catalogCounts: ['public', 'catalog-counts'] as const,
     homeCourses: (filters: Record<string, string | number>) =>
       ['public', 'home-courses', filters] as const,
     planCourses: (plan: string, filters: Record<string, string>) =>
@@ -135,9 +137,15 @@ export const queryKeys = {
   /** Super Admin dashboard and performance reports (insights.api.ts) */
   insights: {
     all: ['insights'] as const,
-    dashboard: ['insights', 'dashboard'] as const,
+    dashboard: (timeZone: string) => ['insights', 'dashboard', timeZone] as const,
     performanceCourses: ['insights', 'performance-courses'] as const,
-    performance: (courseId: string, dateRange: string) =>
-      ['insights', 'performance', courseId, dateRange] as const,
+    performance: (filters: Record<string, string>) => ['insights', 'performance', filters] as const,
+  },
+  /** Students page: list, course picker, one student's details (students.api.ts) */
+  students: {
+    all: ['students'] as const,
+    list: (filters: Record<string, string | number>) => ['students', 'list', filters] as const,
+    courses: ['students', 'courses'] as const,
+    detail: (id: string) => ['students', 'detail', id] as const,
   },
 };

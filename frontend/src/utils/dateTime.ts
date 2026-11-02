@@ -57,3 +57,29 @@ export const formatPlainTime = (value: string | null | undefined, locale?: strin
   const iso = DateTime.fromISO(value, { locale });
   return iso.isValid ? iso.toFormat('h:mm a') : value;
 };
+
+/** The viewer's IANA time zone ("Asia/Dhaka"); reports send it so "today" means the viewer's today. */
+export const viewerTimeZone = (): string => Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+/** Today in the viewer's zone as "yyyy-MM-dd" (the max of a report's date inputs). */
+export const todayDateInput = (): string => DateTime.local().toFormat('yyyy-LL-dd');
+
+/** True for a real "yyyy-MM-dd" day. */
+export const isDateInput = (value: string): boolean =>
+  DateTime.fromFormat(value, 'yyyy-LL-dd').isValid;
+
+/**
+ * A report bucket key from the server, already in the viewer's zone, as a short axis label:
+ * "2026-11-02T09" -> "9 AM", "2026-11-02" -> "Nov 2", "2026-11" -> "Nov 2026".
+ */
+export const formatBucketLabel = (
+  key: string,
+  granularity: 'hour' | 'day' | 'month',
+  locale?: string,
+): string => {
+  const formats = { hour: "yyyy-LL-dd'T'HH", day: 'yyyy-LL-dd', month: 'yyyy-LL' } as const;
+  const parsed = DateTime.fromFormat(key, formats[granularity], { locale });
+  if (!parsed.isValid) return key;
+  if (granularity === 'hour') return parsed.toFormat('h a');
+  return parsed.toFormat(granularity === 'day' ? 'LLL d' : 'LLL yyyy');
+};

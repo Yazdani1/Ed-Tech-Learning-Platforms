@@ -11,6 +11,7 @@ import {
   adminTeacherSchema,
   type ActiveDiscount,
   type CoursePage,
+  type CourseSectionSource,
   type HeroPost,
   type HomeCourseFilters,
   type PlanCourseFilters,
@@ -45,20 +46,41 @@ export const getActiveDiscount = (): Promise<ActiveDiscount> =>
 export const getTeachers = (): Promise<AdminTeacher[]> =>
   http.get('/api/teachers', z.array(adminTeacherSchema));
 
-/** One home section's page: the live courses (liveOnly) or the free ones. */
+/** The browse filter of a course section. */
+const sourceParams = (source: CourseSectionSource): Record<string, string> => {
+  if (source.kind === 'live') return { liveOnly: 'true' };
+  if (source.kind === 'free') return { pricing: 'Free' };
+  return { courseTypes: source.courseTypeId, pricing: 'Paid' };
+};
+
+/** Course count per category for a section's category cards (from the browse filterCounts). */
+export const sectionCategoryCounts = (
+  source: CourseSectionSource,
+  counts: CoursePage['filterCounts'],
+): Record<string, number> | undefined => {
+  if (source.kind === 'live') return counts?.liveCategories;
+  if (source.kind === 'free') return counts?.categoriesByPricing.Free;
+  return counts?.paidByCourseType[source.courseTypeId]?.categories;
+};
+
+/** One section's page: the live courses, the free ones, or one course type's paid courses. */
 export const getHomeCourses = ({
-  section,
+  source,
   category,
   page,
 }: HomeCourseFilters): Promise<CoursePage> =>
   http.getEnvelope('/api/courses/browse', coursePageSchema, {
     params: {
-      ...(section === 'live' ? { liveOnly: 'true' } : { pricing: 'Free' }),
+      ...sourceParams(source),
       categories: category || undefined,
       page,
       limit: HOME_COURSES_PAGE_SIZE,
     },
   });
+
+/** Only the counts (which course types have paid courses, free total): the catalog's section list. */
+export const getCatalogCounts = (): Promise<CoursePage> =>
+  http.getEnvelope('/api/courses/browse', coursePageSchema, { params: { page: 1, limit: 1 } });
 
 export const getPlanCourses = (plan: string, filters: PlanCourseFilters): Promise<CoursePage> =>
   http.getEnvelope('/api/courses/browse', coursePageSchema, {
@@ -96,7 +118,11 @@ export const useTeachers = (): UseQueryResult<AdminTeacher[], ApiError> =>
 
 export const useHomeCourses = (filters: HomeCourseFilters): UseQueryResult<CoursePage, ApiError> =>
   useQuery({
-    queryKey: queryKeys.public.homeCourses({ ...filters }),
+    queryKey: queryKeys.public.homeCourses({
+      ...sourceParams(filters.source),
+      category: filters.category,
+      page: filters.page,
+    }),
     queryFn: () => getHomeCourses(filters),
     placeholderData: keepPreviousData,
   });
@@ -111,3 +137,6 @@ export const usePlanCourses = (
     enabled: Boolean(plan),
     placeholderData: keepPreviousData,
   });
+
+export const useCatalogCounts = (): UseQueryResult<CoursePage, ApiError> =>
+  useQuery({ queryKey: queryKeys.public.catalogCounts, queryFn: getCatalogCounts });

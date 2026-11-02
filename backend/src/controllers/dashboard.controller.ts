@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { DateTime } from 'luxon';
 import { Course } from '../models/Course.model';
 import { Enrollment } from '../models/Enrollment.model';
 import { User } from '../models/User.model';
@@ -8,197 +9,171 @@ import { Subscription } from '../models/Subscription.model';
 import { SubscriptionPlanConfig } from '../models/SubscriptionPlanConfig.model';
 import { Question } from '../models/Question.model';
 import { asyncHandler } from '../utils/asyncHandler';
+import { bucketKey, bucketKeys, periodStarts, resolveTimeZone, type Granularity } from '../utils/reportPeriods';
+import { enrollmentRevenue, money, subscriptionRevenue } from '../utils/revenue';
 
-const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
+const TIMELINE_DAYS = 30;
+const TIMELINE_MONTHS = 12;
+const TOP_COURSES = 5;
 
-const dayKey = (date: Date) =>
-	`${date.getMonth() + 1}/${date.getDate()}`;
+/** One sale or enrolment, reduced to what the report needs. */
+interface Entry {
+	date: Date;
+	course: number;
+	subscription: number;
+	/** 1 for an enrolment (any type), 0 for a subscription */
+	enrollments: number;
+	paidEnrollments: number;
+}
 
-const money = (value: number) => Math.round(value * 100) / 100;
+const emptyTotals = () => ({ total: 0, course: 0, subscription: 0, enrollments: 0, paidEnrollments: 0 });
+type PeriodTotals = ReturnType<typeof emptyTotals>;
+
+const addEntry = (totals: PeriodTotals, entry: Entry): void => {
+	totals.course += entry.course;
+	totals.subscription += entry.subscription;
+	totals.total += entry.course + entry.subscription;
+	totals.enrollments += entry.enrollments;
+	totals.paidEnrollments += entry.paidEnrollments;
+};
+
+const rounded = (totals: PeriodTotals): PeriodTotals => ({
+	...totals,
+	total: money(totals.total),
+	course: money(totals.course),
+	subscription: money(totals.subscription),
+});
+
+/** Sums of the entries since `start`. */
+const periodTotals = (entries: Entry[], start: Date): PeriodTotals => {
+	const totals = emptyTotals();
+	entries.filter((entry) => entry.date >= start).forEach((entry) => addEntry(totals, entry));
+	return rounded(totals);
+};
+
+/** One row per day / month from `start` to now (empty buckets included), in the viewer's zone. */
+const timeline = (entries: Entry[], start: Date, zone: string, granularity: Granularity) => {
+	const buckets = new Map(bucketKeys(start, new Date(), zone, granularity).map((key) => [key, emptyTotals()]));
+	entries.forEach((entry) => {
+		const bucket = entry.date >= start ? buckets.get(bucketKey(entry.date, zone, granularity)) : undefined;
+		if (bucket) addEntry(bucket, entry);
+	});
+	return Array.from(buckets.entries()).map(([date, totals]) => {
+		const { total, course, subscription, enrollments, paidEnrollments } = rounded(totals);
+		return { date, enrollments, paidEnrollments, courseRevenue: course, subscriptionRevenue: subscription, totalRevenue: total };
+	});
+};
+
+/** Every enrolment and subscription as one entry with its revenue (the money rules of utils/revenue). */
+const toEntries = (
+	enrollments: { course?: unknown; enrollmentType: string; paidPrice?: number; createdAt: Date }[],
+	subscriptions: { plan: string; pricePaid?: number; createdAt: Date }[],
+	planPrices: Map<string, number>,
+): Entry[] => [
+	...enrollments.map((enrollment) => ({
+		date: new Date(enrollment.createdAt),
+		course: enrollmentRevenue(enrollment),
+		subscription: 0,
+		enrollments: 1,
+		paidEnrollments: enrollment.enrollmentType === 'paid' ? 1 : 0,
+	})),
+	...subscriptions.map((subscription) => ({
+		date: new Date(subscription.createdAt),
+		course: 0,
+		subscription: subscriptionRevenue(subscription, planPrices),
+		enrollments: 0,
+		paidEnrollments: 0,
+	})),
+];
+
+/** The five courses that earned the most (then the most enrolments), with their enrolment counts. */
+const topCourses = async (enrollments: { course?: unknown; enrollmentType: string; paidPrice?: number }[]) => {
+	const stats = new Map<string, { enrollments: number; paidEnrollments: number; revenue: number }>();
+	enrollments.forEach((enrollment) => {
+		const course = enrollment.course as { _id?: unknown } | null | undefined;
+		if (!course?._id) return;
+		const id = String(course._id);
+		const row = stats.get(id) ?? { enrollments: 0, paidEnrollments: 0, revenue: 0 };
+		row.enrollments += 1;
+		if (enrollment.enrollmentType === 'paid') row.paidEnrollments += 1;
+		row.revenue += enrollmentRevenue(enrollment);
+		stats.set(id, row);
+	});
+	const best = Array.from(stats.entries())
+		.sort(([, a], [, b]) => b.revenue - a.revenue || b.enrollments - a.enrollments)
+		.slice(0, TOP_COURSES);
+	const courses = await Course.find({ _id: { $in: best.map(([id]) => id) } })
+		.select('title coverImage pricing price status')
+		.lean();
+	const byId = new Map(courses.map((course) => [String(course._id), course]));
+	return best.map(([id, row]) => ({ course: byId.get(id) ?? null, ...row, revenue: money(row.revenue) }));
+};
 
 export const getDashboardSummary = asyncHandler(
-	async (_req: Request, res: Response) => {
-		const now = new Date();
-		const monthStart = startOfMonth(now);
-		const chartStart = new Date(now);
-		chartStart.setDate(chartStart.getDate() - 29);
-		chartStart.setHours(0, 0, 0, 0);
+	async (req: Request, res: Response) => {
+		const zone = resolveTimeZone(req.query.tz);
+		const starts = periodStarts(zone);
+		const today = DateTime.fromJSDate(starts.today, { zone });
+		const timelineStart = today.minus({ days: TIMELINE_DAYS - 1 }).toJSDate();
+		const monthsStart = today.startOf('month').minus({ months: TIMELINE_MONTHS - 1 }).toJSDate();
 
 		const [
-			totalUsers,
-			totalStudents,
-			totalTeachers,
-			totalCourses,
-			publishedCourses,
-			draftCourses,
-			totalCategories,
-			totalEnrollments,
-			thisMonthEnrollments,
-			activeSubscriptions,
-			openQuestions,
-			roleCounts,
-			courseStatusCounts,
-			coursePricingCounts,
+			counts,
 			planConfigs,
-			paidEnrollments,
+			enrollments,
 			subscriptions,
-			recentEnrollments,
-			recentUsers,
-			topCourseAgg,
 		] = await Promise.all([
-			User.countDocuments(),
-			User.countDocuments({ role: 'Student' }),
-			Teacher.countDocuments(),
-			Course.countDocuments(),
-			Course.countDocuments({ status: 'Published' }),
-			Course.countDocuments({ status: 'Draft' }),
-			Category.countDocuments(),
-			Enrollment.countDocuments(),
-			Enrollment.countDocuments({ createdAt: { $gte: monthStart } }),
-			Subscription.countDocuments({ status: 'Active', endDate: { $gt: now } }),
-			Question.countDocuments({ isResolved: false }),
-			User.aggregate<{ _id: string; count: number }>([
-				{ $group: { _id: '$role', count: { $sum: 1 } } },
-			]),
-			Course.aggregate<{ _id: string; count: number }>([
-				{ $group: { _id: '$status', count: { $sum: 1 } } },
-			]),
-			Course.aggregate<{ _id: string; count: number }>([
-				{ $group: { _id: '$pricing', count: { $sum: 1 } } },
+			Promise.all([
+				User.countDocuments(),
+				User.countDocuments({ role: 'Student' }),
+				User.countDocuments({ role: 'Student', createdAt: { $gte: starts.month } }),
+				Teacher.countDocuments(),
+				Course.countDocuments(),
+				Course.countDocuments({ status: 'Published' }),
+				Category.countDocuments(),
+				Subscription.countDocuments({ status: 'Active', endDate: { $gt: new Date() } }),
+				Question.countDocuments({ isResolved: false }),
 			]),
 			SubscriptionPlanConfig.find().select('plan price').lean(),
-			Enrollment.find({ enrollmentType: 'paid' })
-				.populate('course', 'title price')
-				.populate('student', 'name email')
-				.lean(),
-			Subscription.find()
-				.populate('user', 'name email')
-				.sort({ createdAt: -1 })
-				.lean(),
-			Enrollment.find()
-				.populate('student', 'name email')
-				.populate('course', 'title')
-				.sort({ createdAt: -1 })
-				.limit(6)
-				.lean(),
-			User.find()
-				.select('name email role createdAt')
-				.sort({ createdAt: -1 })
-				.limit(6)
-				.lean(),
-			Enrollment.aggregate<{ _id: string; enrollments: number }>([
-				{ $group: { _id: '$course', enrollments: { $sum: 1 } } },
-				{ $sort: { enrollments: -1 } },
-				{ $limit: 5 },
-			]),
+			Enrollment.find().select('course enrollmentType paidPrice createdAt').populate('course', 'price').lean(),
+			Subscription.find().select('plan pricePaid createdAt').lean(),
 		]);
+		const [users, students, newStudents, teachers, courses, publishedCourses, categories, activeSubscriptions, openQuestions] = counts;
 
-		const planPrices = new Map(planConfigs.map((plan) => [plan.plan, plan.price]));
-
-		const courseRevenue = paidEnrollments.reduce((sum, enrollment) => {
-			const course = enrollment.course as unknown as { price?: number };
-			return sum + (enrollment.paidPrice || course?.price || 0);
-		}, 0);
-
-		const subscriptionRevenue = subscriptions.reduce(
-			(sum, subscription) => sum + (subscription.pricePaid ?? planPrices.get(subscription.plan) ?? 0),
-			0,
-		);
-
-		const thisMonthCourseRevenue = paidEnrollments
-			.filter((enrollment) => new Date(enrollment.createdAt) >= monthStart)
-			.reduce((sum, enrollment) => {
-				const course = enrollment.course as unknown as { price?: number };
-				return sum + (enrollment.paidPrice || course?.price || 0);
-			}, 0);
-
-		const thisMonthSubscriptionRevenue = subscriptions
-			.filter((subscription) => new Date(subscription.createdAt) >= monthStart)
-			.reduce(
-				(sum, subscription) => sum + (subscription.pricePaid ?? planPrices.get(subscription.plan) ?? 0),
-				0,
-			);
-
-		const timeline = new Map<
-			string,
-			{ date: string; enrollments: number; courseRevenue: number; subscriptionRevenue: number; totalRevenue: number }
-		>();
-		for (let d = new Date(chartStart); d <= now; d.setDate(d.getDate() + 1)) {
-			const key = dayKey(d);
-			timeline.set(key, {
-				date: key,
-				enrollments: 0,
-				courseRevenue: 0,
-				subscriptionRevenue: 0,
-				totalRevenue: 0,
-			});
-		}
-
-		paidEnrollments.forEach((enrollment) => {
-			const date = new Date(enrollment.createdAt);
-			if (date < chartStart) return;
-			const bucket = timeline.get(dayKey(date));
-			if (!bucket) return;
-			const course = enrollment.course as unknown as { price?: number };
-			bucket.enrollments += 1;
-			bucket.courseRevenue += enrollment.paidPrice || course?.price || 0;
-		});
-
-		subscriptions.forEach((subscription) => {
-			const date = new Date(subscription.createdAt);
-			if (date < chartStart) return;
-			const bucket = timeline.get(dayKey(date));
-			if (!bucket) return;
-			bucket.subscriptionRevenue += subscription.pricePaid ?? planPrices.get(subscription.plan) ?? 0;
-		});
-
-		const courseIds = topCourseAgg.map((item) => item._id);
-		const topCourses = await Course.find({ _id: { $in: courseIds } })
-			.select('title coverImage pricing price listPrice discountPrice status')
-			.lean();
-		const topCourseMap = new Map(topCourses.map((course) => [String(course._id), course]));
+		const entries = toEntries(enrollments, subscriptions, new Map(planConfigs.map((plan) => [plan.plan, plan.price])));
+		const lifetime = periodTotals(entries, new Date(0));
+		const thisMonth = periodTotals(entries, starts.month);
 
 		res.status(200).json({
 			success: true,
 			data: {
 				totals: {
-					users: totalUsers,
-					students: totalStudents,
-					teachers: totalTeachers,
-					courses: totalCourses,
+					users,
+					students,
+					newStudentsThisMonth: newStudents,
+					teachers,
+					courses,
 					publishedCourses,
-					draftCourses,
-					categories: totalCategories,
-					enrollments: totalEnrollments,
-					thisMonthEnrollments,
+					draftCourses: courses - publishedCourses,
+					categories,
+					enrollments: lifetime.enrollments,
+					thisMonthEnrollments: thisMonth.enrollments,
 					activeSubscriptions,
 					openQuestions,
-					totalRevenue: money(courseRevenue + subscriptionRevenue),
-					thisMonthRevenue: money(thisMonthCourseRevenue + thisMonthSubscriptionRevenue),
-					courseRevenue: money(courseRevenue),
-					subscriptionRevenue: money(subscriptionRevenue),
+					totalRevenue: lifetime.total,
+					thisMonthRevenue: thisMonth.total,
+					courseRevenue: lifetime.course,
+					subscriptionRevenue: lifetime.subscription,
 				},
-				roleCounts: roleCounts.map((item) => ({ label: item._id, value: item.count })),
-				courseStatusCounts: courseStatusCounts.map((item) => ({ label: item._id, value: item.count })),
-				coursePricingCounts: coursePricingCounts.map((item) => ({ label: item._id, value: item.count })),
-				revenueTimeline: Array.from(timeline.values()).map((item) => ({
-					...item,
-					courseRevenue: money(item.courseRevenue),
-					subscriptionRevenue: money(item.subscriptionRevenue),
-					totalRevenue: money(item.courseRevenue + item.subscriptionRevenue),
-				})),
-				topCourses: topCourseAgg.map((item) => ({
-					course: topCourseMap.get(String(item._id)) ?? null,
-					enrollments: item.enrollments,
-				})),
-				recentEnrollments: recentEnrollments.map((enrollment) => ({
-					_id: enrollment._id,
-					student: enrollment.student,
-					course: enrollment.course,
-					enrollmentType: enrollment.enrollmentType,
-					createdAt: enrollment.createdAt,
-				})),
-				recentUsers,
+				revenue: {
+					today: periodTotals(entries, starts.today),
+					week: periodTotals(entries, starts.week),
+					month: thisMonth,
+					lifetime,
+				},
+				revenueTimeline: timeline(entries, timelineStart, zone, 'day'),
+				monthlyRevenue: timeline(entries, monthsStart, zone, 'month'),
+				topCourses: await topCourses(enrollments),
 			},
 		});
 	},

@@ -25,6 +25,7 @@ import groupChatRouter from './groupChat.routes';
 import studyScheduleRouter from './studySchedule.routes';
 import siteSettingRouter from './siteSetting.routes';
 import toolRouter from './tool.routes';
+import studentRouter from './student.routes';
 
 const router = Router();
 
@@ -54,5 +55,6 @@ router.use('/group-chat', groupChatRouter);
 router.use('/study-schedules', studyScheduleRouter);
 router.use('/site-settings', siteSettingRouter);
 router.use('/tools', toolRouter);
+router.use('/students', studentRouter);
 
 export default router;

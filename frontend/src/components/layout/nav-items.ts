@@ -7,6 +7,7 @@ import Collections from '@mui/icons-material/Collections';
 import ContactPhone from '@mui/icons-material/ContactPhone';
 import Dashboard from '@mui/icons-material/Dashboard';
 import EventNote from '@mui/icons-material/EventNote';
+import Face from '@mui/icons-material/Face';
 import Groups from '@mui/icons-material/Groups';
 import Home from '@mui/icons-material/Home';
 import Notifications from '@mui/icons-material/Notifications';
@@ -81,6 +82,7 @@ export const ADMIN_NAV: readonly NavItem[] = [
   { labelKey: 'nav.teachers', href: '/admin/teachers', icon: Person, roles: MANAGER_ROLES },
   { labelKey: 'nav.courseSetup', href: '/admin/categories', icon: Category, roles: MANAGER_ROLES },
   { labelKey: 'nav.userList', href: '/admin/users', icon: People, roles: MANAGER_ROLES },
+  { labelKey: 'nav.students', href: '/admin/students', icon: Face, roles: MANAGER_ROLES },
   {
     labelKey: 'nav.subscriptions',
     href: '/admin/subscriptions',

@@ -16,194 +16,197 @@ Plain-language reference for every backend endpoint. Screens that use them: [fro
 
 ## Endpoints
 
-| Method | Path                                                             | Roles                                                                                    | What it does                                                                                                                              |
-| ------ | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/health`                                                    | Public                                                                                   | Says whether the API is running (used by Docker health checks)                                                                            |
-| POST   | `/api/auth/register`                                             | Public                                                                                   | Create a Student account and sign in                                                                                                      |
-| POST   | `/api/auth/login`                                                | Public                                                                                   | Sign in with email + password (sets the `token` cookie)                                                                                   |
-| POST   | `/api/auth/logout`                                               | Public                                                                                   | Clear the `token` cookie                                                                                                                  |
-| GET    | `/api/auth/me`                                                   | Signed in                                                                                | The signed-in user                                                                                                                        |
-| PUT    | `/api/auth/me`                                                   | Signed in                                                                                | Update own profile, password, avatar, community privacy                                                                                   |
-| POST   | `/api/users`                                                     | Super Admin, Admin                                                                       | Create a user with a role                                                                                                                 |
-| GET    | `/api/users`                                                     | Super Admin, Admin                                                                       | Paged user list (search, role; Super Admin: spending filters)                                                                             |
-| GET    | `/api/users/:id`                                                 | Super Admin, Admin                                                                       | One user                                                                                                                                  |
-| PUT    | `/api/users/:id`                                                 | Super Admin, Admin                                                                       | Update name, email, role, password                                                                                                        |
-| PUT    | `/api/users/:id/role`                                            | Super Admin, Admin                                                                       | Change only the role                                                                                                                      |
-| DELETE | `/api/users/:id`                                                 | Super Admin                                                                              | Delete a user                                                                                                                             |
-| GET    | `/api/categories`                                                | Public                                                                                   | List all categories (sorted by name)                                                                                                      |
-| POST   | `/api/categories`                                                | Super Admin, Admin                                                                       | Create a category (slug built from the name)                                                                                              |
-| PUT    | `/api/categories/:id`                                            | Super Admin, Admin                                                                       | Rename / describe a category                                                                                                              |
-| DELETE | `/api/categories/:id`                                            | Super Admin, Admin                                                                       | Delete a category                                                                                                                         |
-| GET    | `/api/course-types`                                              | Public                                                                                   | List all course types (sorted by name)                                                                                                    |
-| POST   | `/api/course-types`                                              | Super Admin, Admin                                                                       | Create a course type (optional `isLive`)                                                                                                  |
-| PUT    | `/api/course-types/:id`                                          | Super Admin, Admin                                                                       | Update a course type (name, description, `isLive`)                                                                                        |
-| DELETE | `/api/course-types/:id`                                          | Super Admin, Admin                                                                       | Delete a course type                                                                                                                      |
-| GET    | `/api/teachers`                                                  | Public                                                                                   | List teacher profiles (sorted by name)                                                                                                    |
-| GET    | `/api/teachers/my-courses`                                       | Teacher                                                                                  | Courses the signed-in teacher teaches                                                                                                     |
-| GET    | `/api/teachers/:id`                                              | Public                                                                                   | One teacher profile                                                                                                                       |
-| POST   | `/api/teachers`                                                  | Super Admin, Admin                                                                       | Create a teacher profile (optional photo, optional login link)                                                                            |
-| PUT    | `/api/teachers/:id`                                              | Super Admin, Admin                                                                       | Update a teacher profile                                                                                                                  |
-| DELETE | `/api/teachers/:id`                                              | Super Admin, Admin                                                                       | Delete a teacher profile and its photo                                                                                                    |
-| GET    | `/api/courses`                                                   | Public (staff see more)                                                                  | Course list; staff: every course + enrolment statistics                                                                                   |
-| GET    | `/api/courses/browse`                                            | Public                                                                                   | Public catalog: Published + Public courses, filters (`liveOnly=true`: live course types), counts, paging                                  |
-| GET    | `/api/courses/discounts/active`                                  | Public                                                                                   | Summary of running discounts                                                                                                              |
-| GET    | `/api/courses/:id`                                               | Public                                                                                   | One course with category, type, teachers, sections and lectures                                                                           |
-| POST   | `/api/courses`                                                   | Super Admin, Admin                                                                       | Create a Draft course (optional cover image)                                                                                              |
-| PUT    | `/api/courses/:id`                                               | Super Admin, Admin                                                                       | Update a course                                                                                                                           |
-| PATCH  | `/api/courses/:id/status`                                        | Super Admin, Admin                                                                       | Publish or unpublish                                                                                                                      |
-| DELETE | `/api/courses/:id`                                               | Super Admin, Admin                                                                       | Delete a course and everything that belongs to it                                                                                         |
-| PATCH  | `/api/courses/bulk`                                              | Super Admin, Admin                                                                       | Update many courses and/or post one announcement to them                                                                                  |
-| PATCH  | `/api/courses/bulk/discount`                                     | Super Admin, Admin                                                                       | Apply a percentage discount with an end date to many courses                                                                              |
-| POST   | `/api/courses/:courseId/sections`                                | Super Admin, Admin                                                                       | Add a section                                                                                                                             |
-| PUT    | `/api/courses/:courseId/sections/:sectionId`                     | Super Admin, Admin                                                                       | Rename a section                                                                                                                          |
-| DELETE | `/api/courses/:courseId/sections/:sectionId`                     | Super Admin, Admin                                                                       | Delete a section and its lectures                                                                                                         |
-| PUT    | `/api/courses/:courseId/sections/reorder`                        | Super Admin, Admin                                                                       | Reorder sections                                                                                                                          |
-| POST   | `/api/courses/:courseId/sections/:sectionId/lectures`            | Super Admin, Admin                                                                       | Add a lecture                                                                                                                             |
-| PUT    | `/api/courses/:courseId/sections/:sectionId/lectures/:lectureId` | Super Admin, Admin                                                                       | Update a lecture                                                                                                                          |
-| DELETE | `/api/courses/:courseId/sections/:sectionId/lectures/:lectureId` | Super Admin, Admin                                                                       | Delete a lecture                                                                                                                          |
-| PUT    | `/api/courses/:courseId/sections/:sectionId/lectures/reorder`    | Super Admin, Admin                                                                       | Reorder lectures                                                                                                                          |
-| POST   | /api/enrollments/:courseId                                       | Student                                                                                  | Enrols the signed-in student in a published course (type and price decided by the server)                                                 |
-| DELETE | /api/enrollments/:courseId                                       | Student                                                                                  | Removes the student's own enrolment                                                                                                       |
-| GET    | /api/enrollments                                                 | Student                                                                                  | The student's enrolled courses, newest first                                                                                              |
-| GET    | /api/enrollments/:courseId/check                                 | Student                                                                                  | Whether the student is enrolled in the course                                                                                             |
-| GET    | /api/enrollments/admin/course/:courseId                          | Super Admin, Admin                                                                       | Enrolments of a course (optional `?type=free\|paid\|subscription`)                                                                        |
-| GET    | /api/enrollments/admin/course/:courseId/stats                    | Super Admin, Admin                                                                       | Counts per type and earnings of a course                                                                                                  |
-| GET    | /api/enrollments/course/:courseId/students                       | Super Admin, Admin, Moderator, Teacher (own courses only)                                | Enrolled students (teachers do not get emails)                                                                                            |
-| GET    | /api/enrollments/course/:courseId/students/export                | Super Admin, Admin, Moderator                                                            | CSV of student names and emails                                                                                                           |
-| GET    | /api/enrollments/course/:courseId/count                          | Signed in                                                                                | Number of students enrolled in a course                                                                                                   |
-| GET    | /api/announcements/course/:courseId                              | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Announcements of a course, newest first                                                                                                   |
-| POST   | /api/announcements/course/:courseId                              | Super Admin, Admin, Moderator, Teacher                                                   | Posts an announcement (teachers: only their own courses)                                                                                  |
-| PUT    | /api/announcements/:id                                           | Super Admin, Admin, Moderator, Teacher                                                   | Edits an announcement (author or staff admin)                                                                                             |
-| DELETE | /api/announcements/:id                                           | Super Admin, Admin, Moderator, Teacher                                                   | Deletes an announcement (author or staff admin)                                                                                           |
-| GET    | /api/study-curricula/course/:courseId                            | Public (full data only for users with course access)                                     | Live classes (weekly curriculum) of a course, oldest first                                                                                |
-| POST   | /api/study-curricula/course/:courseId                            | Super Admin, Admin, Teacher                                                              | Adds a live class (teachers: only their own courses)                                                                                      |
-| PUT    | /api/study-curricula/:id                                         | Super Admin, Admin, Moderator, Teacher                                                   | Edits a live class (author or staff admin)                                                                                                |
-| DELETE | /api/study-curricula/:id                                         | Super Admin, Admin, Moderator, Teacher                                                   | Deletes a live class (author or staff admin)                                                                                              |
-| GET    | /api/study-materials/course/:courseId                            | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Study materials of a course, newest first                                                                                                 |
-| POST   | /api/study-materials/course/:courseId                            | Super Admin, Admin, Moderator, Teacher                                                   | Adds a study material (teachers: only their own courses)                                                                                  |
-| PUT    | /api/study-materials/:id                                         | Super Admin, Admin, Moderator, Teacher                                                   | Edits a study material (author or staff admin)                                                                                            |
-| DELETE | /api/study-materials/:id                                         | Super Admin, Admin, Moderator, Teacher                                                   | Deletes a study material (author or staff admin)                                                                                          |
-| GET    | /api/qa/questions/course/:courseId                               | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Questions of a course with answer counts                                                                                                  |
-| POST   | /api/qa/questions/course/:courseId                               | Signed in (enrolled student, assigned teacher, staff admin)                              | Asks a question                                                                                                                           |
-| GET    | /api/qa/questions/:id                                            | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | One question with its answers                                                                                                             |
-| PUT    | /api/qa/questions/:id                                            | Signed in (author or Super Admin, Admin, Moderator)                                      | Edits a question                                                                                                                          |
-| DELETE | /api/qa/questions/:id                                            | Signed in (author or Super Admin, Admin, Moderator)                                      | Deletes a question and its answers                                                                                                        |
-| PATCH  | /api/qa/questions/:id/resolve                                    | Signed in (author, assigned teacher, Super Admin, Admin, Moderator)                      | Marks a question resolved or reopens it                                                                                                   |
-| PATCH  | /api/qa/questions/:id/upvote                                     | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Toggles the caller's upvote                                                                                                               |
-| POST   | /api/qa/answers/question/:questionId                             | Signed in (enrolled student, assigned teacher, staff admin)                              | Answers a question                                                                                                                        |
-| PUT    | /api/qa/answers/:id                                              | Signed in (author or Super Admin, Admin, Moderator)                                      | Edits an answer                                                                                                                           |
-| DELETE | /api/qa/answers/:id                                              | Signed in (author or Super Admin, Admin, Moderator)                                      | Deletes an answer                                                                                                                         |
-| PATCH  | /api/qa/answers/:id/upvote                                       | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Toggles the caller's upvote                                                                                                               |
-| GET    | /api/qa/admin/course-questions                                   | Super Admin, Admin, Moderator                                                            | Unresolved questions of all courses, grouped by course                                                                                    |
-| GET    | `/api/quiz-bank/public/courses`                                  | Public                                                                                   | Courses that have at least one free-preview quiz section or bank (filters: search, categories, courseTypes, pricing)                      |
-| GET    | `/api/quiz-bank/public/course/:courseId`                         | Public                                                                                   | Free-preview quiz sections and banks of a course (without correct answers or explanations), plus counts of the locked banks and questions |
-| POST   | `/api/quiz-bank/public/:id/questions/:qId/check`                 | Public                                                                                   | Check one answer of a free-preview bank; returns whether it is correct, the correct indices and the explanations; nothing is stored       |
-| GET    | `/api/quiz-bank/course/:courseId`                                | Staff, teacher of the course, enrolled student (others: free-preview banks only)         | Quiz banks of a course                                                                                                                    |
-| GET    | `/api/quiz-bank/course/:courseId/my-attempts`                    | Staff, teacher of the course, enrolled student (others: free-preview banks only)         | My own quiz attempts in a course                                                                                                          |
-| GET    | `/api/quiz-bank/context/:contextType/:contextId`                 | Same as the course list                                                                  | Quiz banks attached to a Section, Announcement or Course                                                                                  |
-| POST   | `/api/quiz-bank`                                                 | Super Admin, Admin, Moderator, Teacher of the course                                     | Create a quiz bank                                                                                                                        |
-| GET    | `/api/quiz-bank/:id`                                             | Staff, teacher of the course, enrolled student, anyone signed in for a free-preview bank | One quiz bank with its questions                                                                                                          |
-| PUT    | `/api/quiz-bank/:id`                                             | Super Admin, Admin, Moderator, Teacher of the course                                     | Edit title, description, free-preview flag                                                                                                |
-| DELETE | `/api/quiz-bank/:id`                                             | Super Admin, Admin, Moderator, Teacher of the course                                     | Delete a bank and all attempts on it                                                                                                      |
-| POST   | `/api/quiz-bank/:id/questions`                                   | Super Admin, Admin, Moderator, Teacher of the course                                     | Add a question (4 options, 1+ correct)                                                                                                    |
-| PUT    | `/api/quiz-bank/:id/questions/:qId`                              | Super Admin, Admin, Moderator, Teacher of the course                                     | Edit a question                                                                                                                           |
-| DELETE | `/api/quiz-bank/:id/questions/:qId`                              | Super Admin, Admin, Moderator, Teacher of the course                                     | Delete a question                                                                                                                         |
-| GET    | `/api/quiz-bank/:id/attempt`                                     | Same as GET `/:id`                                                                       | My attempt on a bank (or null)                                                                                                            |
-| POST   | `/api/quiz-bank/:id/attempt/answer`                              | Same as GET `/:id`                                                                       | Answer one question; the server marks it correct or wrong                                                                                 |
-| DELETE | `/api/quiz-bank/:id/attempt`                                     | Same as GET `/:id`                                                                       | Reset (delete) my attempt                                                                                                                 |
-| GET    | `/api/quiz-sections/course/:courseId`                            | Signed in                                                                                | Quiz sections of a course                                                                                                                 |
-| POST   | `/api/quiz-sections`                                             | Super Admin, Admin, Moderator, Teacher of the course                                     | Create a quiz section                                                                                                                     |
-| PUT    | `/api/quiz-sections/:id`                                         | Super Admin, Admin, Moderator, Teacher of the course                                     | Edit a quiz section                                                                                                                       |
-| DELETE | `/api/quiz-sections/:id`                                         | Super Admin, Admin, Moderator, Teacher of the course                                     | Delete a section with its banks and attempts                                                                                              |
-| GET    | `/api/subscriptions/my`                                          | Signed in                                                                                | My active subscription (or null)                                                                                                          |
-| POST   | `/api/subscriptions/subscribe`                                   | Student                                                                                  | Subscribe to a plan (price from the plan configuration)                                                                                   |
-| DELETE | `/api/subscriptions/cancel-my`                                   | Student                                                                                  | Cancel my active subscription                                                                                                             |
-| GET    | `/api/subscriptions`                                             | Super Admin, Admin                                                                       | Paged list of all subscriptions with filters and status counts                                                                            |
-| POST   | `/api/subscriptions/assign`                                      | Super Admin, Admin                                                                       | Give a user a plan until a chosen date                                                                                                    |
-| PATCH  | `/api/subscriptions/:id/cancel`                                  | Super Admin, Admin                                                                       | Cancel any subscription                                                                                                                   |
-| GET    | `/api/subscription-plans`                                        | Public                                                                                   | Active plans, cheapest first, with billing options and course count                                                                       |
-| POST   | `/api/subscription-plans`                                        | Super Admin, Admin                                                                       | Create or update a plan by name                                                                                                           |
-| DELETE | `/api/subscription-plans/:id`                                    | Super Admin, Admin                                                                       | Delete a plan                                                                                                                             |
-| GET    | /api/dashboard/summary                                           | Super Admin                                                                              | Totals, revenue, charts, top courses and recent activity for the dashboard                                                                |
-| GET    | /api/performance/overview                                        | Super Admin                                                                              | Enrolment and revenue numbers and chart for one course or all courses                                                                     |
-| GET    | /api/performance/courses                                         | Super Admin                                                                              | All courses (title, price fields, status) for the performance filter                                                                      |
-| GET    | /api/chat/conversations                                          | Signed in                                                                                | Staff: all support conversations; student: their own (created if missing)                                                                 |
-| GET    | /api/chat/conversations/:id/messages                             | Signed in (staff or the conversation's student)                                          | Messages of one conversation, oldest first                                                                                                |
-| GET    | /api/notifications                                               | Signed in                                                                                | My notifications, newest first, paginated, with read state                                                                                |
-| GET    | /api/notifications/unread-count                                  | Signed in                                                                                | Number of my unread notifications                                                                                                         |
-| PATCH  | /api/notifications/read-all                                      | Signed in                                                                                | Mark all my notifications as read                                                                                                         |
-| PATCH  | /api/notifications/:id/read                                      | Signed in (recipient)                                                                    | Mark one of my notifications as read                                                                                                      |
-| POST   | /api/notifications                                               | Super Admin, Admin                                                                       | Send a notification to every user of the chosen roles                                                                                     |
-| GET    | /api/notifications/sent/all                                      | Super Admin, Admin                                                                       | All sent notifications, newest first, paginated                                                                                           |
-| PUT    | /api/notifications/:id                                           | Super Admin, Admin                                                                       | Edit a notification (title, message, priority, target roles)                                                                              |
-| DELETE | /api/notifications/:id                                           | Super Admin, Admin                                                                       | Delete a notification                                                                                                                     |
-| GET    | /api/home-hero-posts/public                                      | Public                                                                                   | Public homepage hero images (applies due schedules)                                                                                       |
-| GET    | /api/home-hero-posts/logo/public                                 | Public                                                                                   | The current site logo (or null)                                                                                                           |
-| GET    | /api/home-hero-posts/logo                                        | Super Admin, Admin                                                                       | Site logo with who updated it                                                                                                             |
-| PUT    | /api/home-hero-posts/logo                                        | Super Admin, Admin                                                                       | Upload or replace the site logo (field `logo`)                                                                                            |
-| GET    | /api/home-hero-posts                                             | Super Admin, Admin                                                                       | All hero posts (Public and Private)                                                                                                       |
-| POST   | /api/home-hero-posts                                             | Super Admin, Admin                                                                       | Upload hero images (fields `images` / `image`) with optional `title` and `description`                                                    |
-| PATCH  | /api/home-hero-posts/reorder                                     | Super Admin, Admin                                                                       | Set the order from a list of ids                                                                                                          |
-| PUT    | /api/home-hero-posts/:id                                         | Super Admin, Admin                                                                       | Change image, title, description, visibility, schedule or order                                                                           |
-| DELETE | /api/home-hero-posts/:id                                         | Super Admin, Admin                                                                       | Delete a hero post and its image                                                                                                          |
-| GET    | /api/study-schedules                                             | Signed in                                                                                | My timers and reminders (filters `type`, `status`)                                                                                        |
-| POST   | /api/study-schedules/timer                                       | Signed in                                                                                | Create a study timer                                                                                                                      |
-| POST   | /api/study-schedules/reminder                                    | Signed in                                                                                | Create a reminder                                                                                                                         |
-| PUT    | /api/study-schedules/:id                                         | Signed in (owner)                                                                        | Update progress, status, title or dates                                                                                                   |
-| DELETE | /api/study-schedules/:id                                         | Signed in (owner)                                                                        | Delete a timer or reminder                                                                                                                |
-| GET    | /api/community                                                   | Public (personalised when signed in)                                                     | Hub overview: channels, posts with replies, badges, counts, widgets. Guests get at most 10 posts.                                         |
-| GET    | /api/community/users/:userId                                     | Public (personalised when signed in)                                                     | A member's community profile (stats, badges, discussions, answers). Private profiles show only name, avatar and role.                     |
-| GET    | /api/community/settings                                          | Super Admin, Admin                                                                       | Read the hub title, description and header image.                                                                                         |
-| PUT    | /api/community/settings                                          | Super Admin, Admin                                                                       | Update title, description and header image.                                                                                               |
-| GET    | /api/community/admin/channels                                    | Super Admin, Admin                                                                       | List all hub channels, archived last.                                                                                                     |
-| POST   | /api/community/channels                                          | Super Admin, Admin                                                                       | Create a hub channel (name, description, image).                                                                                          |
-| PUT    | /api/community/channels/:id                                      | Super Admin, Admin                                                                       | Edit a hub channel.                                                                                                                       |
-| PATCH  | /api/community/channels/:id/archive                              | Super Admin, Admin                                                                       | Archive a hub channel.                                                                                                                    |
-| POST   | /api/community/posts                                             | Signed in                                                                                | Create a discussion (up to 8 images). Awards points.                                                                                      |
-| GET    | /api/community/posts/:postId                                     | Public (personalised when signed in)                                                     | One discussion with replies and child replies.                                                                                            |
-| GET    | /api/community/posts/:postId/replies                             | Public (personalised when signed in)                                                     | Page through a discussion's replies.                                                                                                      |
-| PUT    | /api/community/posts/:postId                                     | Signed in (author or staff)                                                              | Edit a discussion.                                                                                                                        |
-| POST   | /api/community/posts/:postId/replies                             | Signed in                                                                                | Reply to a discussion (images allowed). Awards points.                                                                                    |
-| PATCH  | /api/community/posts/:postId/reactions                           | Signed in                                                                                | Add, change or remove your reaction on a discussion.                                                                                      |
-| PATCH  | /api/community/posts/:postId/archive                             | Signed in (author or Super Admin, Admin, Moderator)                                      | Archive a discussion.                                                                                                                     |
-| PATCH  | /api/community/posts/:postId/pin                                 | Super Admin, Admin, Moderator                                                            | Pin or unpin a discussion.                                                                                                                |
-| PATCH  | /api/community/replies/:replyId/reactions                        | Signed in                                                                                | Add, change or remove your reaction on a reply.                                                                                           |
-| PATCH  | /api/community/replies/:replyId/accepted                         | Signed in (discussion creator)                                                           | Mark or unmark a reply as the accepted answer.                                                                                            |
-| PATCH  | /api/community/replies/:replyId/archive                          | Signed in (author or staff)                                                              | Delete (archive) a reply.                                                                                                                 |
-| GET    | /api/community/replies/:replyId/replies                          | Public (personalised when signed in)                                                     | Page through the child replies of a reply.                                                                                                |
-| POST   | /api/community/replies/:replyId/replies                          | Signed in                                                                                | Add a child reply to a reply.                                                                                                             |
-| PATCH  | /api/community/answer-replies/:childReplyId/archive              | Signed in (author or staff)                                                              | Delete (archive) a child reply.                                                                                                           |
-| GET    | /api/community/badges                                            | Super Admin, Admin                                                                       | List badges (archived last).                                                                                                              |
-| POST   | /api/community/badges                                            | Super Admin, Admin                                                                       | Create a badge (name, points needed, image).                                                                                              |
-| PUT    | /api/community/badges/:id                                        | Super Admin, Admin                                                                       | Edit a badge.                                                                                                                             |
-| PATCH  | /api/community/badges/:id/archive                                | Super Admin, Admin                                                                       | Archive a badge.                                                                                                                          |
-| GET    | /api/community/point-rules                                       | Super Admin, Admin                                                                       | Read the four point rules (created with defaults if missing).                                                                             |
-| PUT    | /api/community/point-rules                                       | Super Admin, Admin                                                                       | Change the points per rule (known keys only, points 0 or more).                                                                           |
-| GET    | /api/group-chat/channels                                         | Signed in                                                                                | Channels you belong to (staff: all; archived=true for archived).                                                                          |
-| GET    | /api/group-chat/channels/discover                                | Signed in                                                                                | Find public and private channels to join (max 30). Non-members get only a public card per channel.                                        |
-| POST   | /api/group-chat/channels                                         | Signed in                                                                                | Create a channel (Public or Private); you become its admin.                                                                               |
-| PATCH  | /api/group-chat/channels/:channelId                              | Signed in (creator or staff)                                                             | Rename / change description and type.                                                                                                     |
-| GET    | /api/group-chat/users/search                                     | Signed in                                                                                | Find users by name (max 20). Email shown to staff only.                                                                                   |
-| POST   | /api/group-chat/channels/:channelId/join                         | Signed in                                                                                | Join a public channel, or send a join request to a private one.                                                                           |
-| DELETE | /api/group-chat/channels/:channelId/join                         | Signed in                                                                                | Cancel your pending join request.                                                                                                         |
-| POST   | /api/group-chat/channels/:channelId/approve/:userId              | Signed in (channel admin or staff)                                                       | Approve a join request.                                                                                                                   |
-| POST   | /api/group-chat/channels/:channelId/members                      | Signed in (channel admin or staff)                                                       | Add users to a channel.                                                                                                                   |
-| DELETE | /api/group-chat/channels/:channelId/members/:userId              | Signed in (channel admin or staff)                                                       | Remove a member (not the creator).                                                                                                        |
-| POST   | /api/group-chat/channels/:channelId/leave                        | Signed in                                                                                | Leave a channel (not the creator).                                                                                                        |
-| PATCH  | /api/group-chat/channels/:channelId/archive                      | Signed in (creator or staff)                                                             | Archive a channel.                                                                                                                        |
-| PATCH  | /api/group-chat/channels/:channelId/block                        | Super Admin, Admin, Moderator                                                            | Block or unblock a channel.                                                                                                               |
-| GET    | /api/group-chat/channels/:channelId/messages                     | Signed in (members; staff any)                                                           | The last 200 messages, oldest first.                                                                                                      |
-| POST   | /api/group-chat/channels/:channelId/messages                     | Signed in (members; staff any)                                                           | Send text and/or up to 10 files.                                                                                                          |
-| PATCH  | /api/group-chat/channels/:channelId/read                         | Signed in (members; staff any)                                                           | Reset your unread counter.                                                                                                                |
-| POST   | `/api/courses/:id/images`                                        | Super Admin, Admin                                                                       | Upload one picture (field `image`) for a course page section; returns `{ url, publicId }`                                                 |
-| PATCH  | `/api/courses/:id/extras`                                        | Super Admin, Admin                                                                       | Replace course page sections: tools, what you get, projects, audience, success stories, FAQ                                               |
-| GET    | `/api/tools`                                                     | Public                                                                                   | All tools (name + logo), sorted by name                                                                                                   |
-| POST   | `/api/tools`                                                     | Super Admin, Admin                                                                       | Create a tool (multipart `name` + `logo`)                                                                                                 |
-| PUT    | `/api/tools/:id`                                                 | Super Admin, Admin                                                                       | Rename a tool and/or replace its logo                                                                                                     |
-| DELETE | `/api/tools/:id`                                                 | Super Admin, Admin                                                                       | Delete a tool (also removed from every course that lists it)                                                                              |
-| GET    | `/api/site-settings/public`                                      | Public                                                                                   | Hidden public pages and the company contact                                                                                               |
-| PUT    | `/api/site-settings/pages`                                       | Super Admin                                                                              | Set which public pages are hidden (`hiddenPages`)                                                                                         |
-| PUT    | `/api/site-settings/contact`                                     | Super Admin, Admin                                                                       | Set the company phone, WhatsApp, email and address                                                                                        |
+| Method | Path                                                             | Roles                                                                                    | What it does                                                                                                                                  |
+| ------ | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/health`                                                    | Public                                                                                   | Says whether the API is running (used by Docker health checks)                                                                                |
+| POST   | `/api/auth/register`                                             | Public                                                                                   | Create a Student account (optional phone number) and sign in                                                                                  |
+| POST   | `/api/auth/login`                                                | Public                                                                                   | Sign in with email + password (sets the `token` cookie)                                                                                       |
+| POST   | `/api/auth/logout`                                               | Public                                                                                   | Clear the `token` cookie                                                                                                                      |
+| GET    | `/api/auth/me`                                                   | Signed in                                                                                | The signed-in user                                                                                                                            |
+| PUT    | `/api/auth/me`                                                   | Signed in                                                                                | Update own profile, phone, password, avatar, community privacy                                                                                |
+| POST   | `/api/users`                                                     | Super Admin, Admin                                                                       | Create a user with a role (optional phone)                                                                                                    |
+| GET    | `/api/users`                                                     | Super Admin, Admin                                                                       | Paged user list (search, role; Super Admin: spending filters)                                                                                 |
+| GET    | `/api/users/:id`                                                 | Super Admin, Admin                                                                       | One user                                                                                                                                      |
+| PUT    | `/api/users/:id`                                                 | Super Admin, Admin                                                                       | Update name, email, phone, role, password                                                                                                     |
+| PUT    | `/api/users/:id/role`                                            | Super Admin, Admin                                                                       | Change only the role                                                                                                                          |
+| DELETE | `/api/users/:id`                                                 | Super Admin                                                                              | Delete a user                                                                                                                                 |
+| GET    | `/api/categories`                                                | Public                                                                                   | List all categories (sorted by name)                                                                                                          |
+| POST   | `/api/categories`                                                | Super Admin, Admin                                                                       | Create a category (slug built from the name)                                                                                                  |
+| PUT    | `/api/categories/:id`                                            | Super Admin, Admin                                                                       | Rename / describe a category                                                                                                                  |
+| DELETE | `/api/categories/:id`                                            | Super Admin, Admin                                                                       | Delete a category                                                                                                                             |
+| GET    | `/api/course-types`                                              | Public                                                                                   | List all course types (sorted by name)                                                                                                        |
+| POST   | `/api/course-types`                                              | Super Admin, Admin                                                                       | Create a course type (optional `isLive`)                                                                                                      |
+| PUT    | `/api/course-types/:id`                                          | Super Admin, Admin                                                                       | Update a course type (name, description, `isLive`)                                                                                            |
+| DELETE | `/api/course-types/:id`                                          | Super Admin, Admin                                                                       | Delete a course type                                                                                                                          |
+| GET    | `/api/teachers`                                                  | Public                                                                                   | List teacher profiles (sorted by name)                                                                                                        |
+| GET    | `/api/teachers/my-courses`                                       | Teacher                                                                                  | Courses the signed-in teacher teaches                                                                                                         |
+| GET    | `/api/teachers/:id`                                              | Public                                                                                   | One teacher profile                                                                                                                           |
+| POST   | `/api/teachers`                                                  | Super Admin, Admin                                                                       | Create a teacher profile (optional photo, optional login link)                                                                                |
+| PUT    | `/api/teachers/:id`                                              | Super Admin, Admin                                                                       | Update a teacher profile                                                                                                                      |
+| DELETE | `/api/teachers/:id`                                              | Super Admin, Admin                                                                       | Delete a teacher profile and its photo                                                                                                        |
+| GET    | `/api/courses`                                                   | Public (staff see more)                                                                  | Course list; staff: every course + enrolment statistics                                                                                       |
+| GET    | `/api/courses/browse`                                            | Public                                                                                   | Public catalog: Published + Public courses, filters (`liveOnly=true`: live course types), counts (incl. paid courses per course type), paging |
+| GET    | `/api/courses/discounts/active`                                  | Public                                                                                   | Summary of running discounts                                                                                                                  |
+| GET    | `/api/courses/:id`                                               | Public                                                                                   | One course with category, type, teachers, sections and lectures                                                                               |
+| POST   | `/api/courses`                                                   | Super Admin, Admin                                                                       | Create a Draft course (optional cover image)                                                                                                  |
+| PUT    | `/api/courses/:id`                                               | Super Admin, Admin                                                                       | Update a course                                                                                                                               |
+| PATCH  | `/api/courses/:id/status`                                        | Super Admin, Admin                                                                       | Publish or unpublish                                                                                                                          |
+| DELETE | `/api/courses/:id`                                               | Super Admin, Admin                                                                       | Delete a course and everything that belongs to it                                                                                             |
+| PATCH  | `/api/courses/bulk`                                              | Super Admin, Admin                                                                       | Update many courses and/or post one announcement to them                                                                                      |
+| PATCH  | `/api/courses/bulk/discount`                                     | Super Admin, Admin                                                                       | Apply a percentage discount with an end date to many courses                                                                                  |
+| POST   | `/api/courses/:courseId/sections`                                | Super Admin, Admin                                                                       | Add a section                                                                                                                                 |
+| PUT    | `/api/courses/:courseId/sections/:sectionId`                     | Super Admin, Admin                                                                       | Rename a section                                                                                                                              |
+| DELETE | `/api/courses/:courseId/sections/:sectionId`                     | Super Admin, Admin                                                                       | Delete a section and its lectures                                                                                                             |
+| PUT    | `/api/courses/:courseId/sections/reorder`                        | Super Admin, Admin                                                                       | Reorder sections                                                                                                                              |
+| POST   | `/api/courses/:courseId/sections/:sectionId/lectures`            | Super Admin, Admin                                                                       | Add a lecture                                                                                                                                 |
+| PUT    | `/api/courses/:courseId/sections/:sectionId/lectures/:lectureId` | Super Admin, Admin                                                                       | Update a lecture                                                                                                                              |
+| DELETE | `/api/courses/:courseId/sections/:sectionId/lectures/:lectureId` | Super Admin, Admin                                                                       | Delete a lecture                                                                                                                              |
+| PUT    | `/api/courses/:courseId/sections/:sectionId/lectures/reorder`    | Super Admin, Admin                                                                       | Reorder lectures                                                                                                                              |
+| POST   | /api/enrollments/:courseId                                       | Student                                                                                  | Enrols the signed-in student in a published course (type and price decided by the server)                                                     |
+| DELETE | /api/enrollments/:courseId                                       | Student                                                                                  | Removes the student's own enrolment                                                                                                           |
+| GET    | /api/enrollments                                                 | Student                                                                                  | The student's enrolled courses, newest first                                                                                                  |
+| GET    | /api/enrollments/:courseId/check                                 | Student                                                                                  | Whether the student is enrolled in the course                                                                                                 |
+| GET    | /api/enrollments/admin/course/:courseId                          | Super Admin, Admin                                                                       | Enrolments of a course (optional `?type=free\|paid\|subscription`)                                                                            |
+| GET    | /api/enrollments/admin/course/:courseId/stats                    | Super Admin, Admin                                                                       | Counts per type and earnings of a course                                                                                                      |
+| GET    | /api/enrollments/course/:courseId/students                       | Super Admin, Admin, Moderator, Teacher (own courses only)                                | Enrolled students (teachers do not get emails)                                                                                                |
+| GET    | /api/enrollments/course/:courseId/students/export                | Super Admin, Admin, Moderator                                                            | CSV of student names and emails                                                                                                               |
+| GET    | /api/enrollments/course/:courseId/count                          | Signed in                                                                                | Number of students enrolled in a course                                                                                                       |
+| GET    | /api/announcements/course/:courseId                              | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Announcements of a course, newest first                                                                                                       |
+| POST   | /api/announcements/course/:courseId                              | Super Admin, Admin, Moderator, Teacher                                                   | Posts an announcement (teachers: only their own courses)                                                                                      |
+| PUT    | /api/announcements/:id                                           | Super Admin, Admin, Moderator, Teacher                                                   | Edits an announcement (author or staff admin)                                                                                                 |
+| DELETE | /api/announcements/:id                                           | Super Admin, Admin, Moderator, Teacher                                                   | Deletes an announcement (author or staff admin)                                                                                               |
+| GET    | /api/study-curricula/course/:courseId                            | Public (full data only for users with course access)                                     | Live classes (weekly curriculum) of a course, oldest first                                                                                    |
+| POST   | /api/study-curricula/course/:courseId                            | Super Admin, Admin, Teacher                                                              | Adds a live class (teachers: only their own courses)                                                                                          |
+| PUT    | /api/study-curricula/:id                                         | Super Admin, Admin, Moderator, Teacher                                                   | Edits a live class (author or staff admin)                                                                                                    |
+| DELETE | /api/study-curricula/:id                                         | Super Admin, Admin, Moderator, Teacher                                                   | Deletes a live class (author or staff admin)                                                                                                  |
+| GET    | /api/study-materials/course/:courseId                            | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Study materials of a course, newest first                                                                                                     |
+| POST   | /api/study-materials/course/:courseId                            | Super Admin, Admin, Moderator, Teacher                                                   | Adds a study material (teachers: only their own courses)                                                                                      |
+| PUT    | /api/study-materials/:id                                         | Super Admin, Admin, Moderator, Teacher                                                   | Edits a study material (author or staff admin)                                                                                                |
+| DELETE | /api/study-materials/:id                                         | Super Admin, Admin, Moderator, Teacher                                                   | Deletes a study material (author or staff admin)                                                                                              |
+| GET    | /api/qa/questions/course/:courseId                               | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Questions of a course with answer counts                                                                                                      |
+| POST   | /api/qa/questions/course/:courseId                               | Signed in (enrolled student, assigned teacher, staff admin)                              | Asks a question                                                                                                                               |
+| GET    | /api/qa/questions/:id                                            | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | One question with its answers                                                                                                                 |
+| PUT    | /api/qa/questions/:id                                            | Signed in (author or Super Admin, Admin, Moderator)                                      | Edits a question                                                                                                                              |
+| DELETE | /api/qa/questions/:id                                            | Signed in (author or Super Admin, Admin, Moderator)                                      | Deletes a question and its answers                                                                                                            |
+| PATCH  | /api/qa/questions/:id/resolve                                    | Signed in (author, assigned teacher, Super Admin, Admin, Moderator)                      | Marks a question resolved or reopens it                                                                                                       |
+| PATCH  | /api/qa/questions/:id/upvote                                     | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Toggles the caller's upvote                                                                                                                   |
+| POST   | /api/qa/answers/question/:questionId                             | Signed in (enrolled student, assigned teacher, staff admin)                              | Answers a question                                                                                                                            |
+| PUT    | /api/qa/answers/:id                                              | Signed in (author or Super Admin, Admin, Moderator)                                      | Edits an answer                                                                                                                               |
+| DELETE | /api/qa/answers/:id                                              | Signed in (author or Super Admin, Admin, Moderator)                                      | Deletes an answer                                                                                                                             |
+| PATCH  | /api/qa/answers/:id/upvote                                       | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Toggles the caller's upvote                                                                                                                   |
+| GET    | /api/qa/admin/course-questions                                   | Super Admin, Admin, Moderator                                                            | Unresolved questions of all courses, grouped by course                                                                                        |
+| GET    | `/api/quiz-bank/public/courses`                                  | Public                                                                                   | Courses that have at least one free-preview quiz section or bank (filters: search, categories, courseTypes, pricing)                          |
+| GET    | `/api/quiz-bank/public/course/:courseId`                         | Public                                                                                   | Free-preview quiz sections and banks of a course (without correct answers or explanations), plus counts of the locked banks and questions     |
+| POST   | `/api/quiz-bank/public/:id/questions/:qId/check`                 | Public                                                                                   | Check one answer of a free-preview bank; returns whether it is correct, the correct indices and the explanations; nothing is stored           |
+| GET    | `/api/quiz-bank/course/:courseId`                                | Staff, teacher of the course, enrolled student (others: free-preview banks only)         | Quiz banks of a course                                                                                                                        |
+| GET    | `/api/quiz-bank/course/:courseId/my-attempts`                    | Staff, teacher of the course, enrolled student (others: free-preview banks only)         | My own quiz attempts in a course                                                                                                              |
+| GET    | `/api/quiz-bank/context/:contextType/:contextId`                 | Same as the course list                                                                  | Quiz banks attached to a Section, Announcement or Course                                                                                      |
+| POST   | `/api/quiz-bank`                                                 | Super Admin, Admin, Moderator, Teacher of the course                                     | Create a quiz bank                                                                                                                            |
+| GET    | `/api/quiz-bank/:id`                                             | Staff, teacher of the course, enrolled student, anyone signed in for a free-preview bank | One quiz bank with its questions                                                                                                              |
+| PUT    | `/api/quiz-bank/:id`                                             | Super Admin, Admin, Moderator, Teacher of the course                                     | Edit title, description, free-preview flag                                                                                                    |
+| DELETE | `/api/quiz-bank/:id`                                             | Super Admin, Admin, Moderator, Teacher of the course                                     | Delete a bank and all attempts on it                                                                                                          |
+| POST   | `/api/quiz-bank/:id/questions`                                   | Super Admin, Admin, Moderator, Teacher of the course                                     | Add a question (4 options, 1+ correct)                                                                                                        |
+| PUT    | `/api/quiz-bank/:id/questions/:qId`                              | Super Admin, Admin, Moderator, Teacher of the course                                     | Edit a question                                                                                                                               |
+| DELETE | `/api/quiz-bank/:id/questions/:qId`                              | Super Admin, Admin, Moderator, Teacher of the course                                     | Delete a question                                                                                                                             |
+| GET    | `/api/quiz-bank/:id/attempt`                                     | Same as GET `/:id`                                                                       | My attempt on a bank (or null)                                                                                                                |
+| POST   | `/api/quiz-bank/:id/attempt/answer`                              | Same as GET `/:id`                                                                       | Answer one question; the server marks it correct or wrong                                                                                     |
+| DELETE | `/api/quiz-bank/:id/attempt`                                     | Same as GET `/:id`                                                                       | Reset (delete) my attempt                                                                                                                     |
+| GET    | `/api/quiz-sections/course/:courseId`                            | Signed in                                                                                | Quiz sections of a course                                                                                                                     |
+| POST   | `/api/quiz-sections`                                             | Super Admin, Admin, Moderator, Teacher of the course                                     | Create a quiz section                                                                                                                         |
+| PUT    | `/api/quiz-sections/:id`                                         | Super Admin, Admin, Moderator, Teacher of the course                                     | Edit a quiz section                                                                                                                           |
+| DELETE | `/api/quiz-sections/:id`                                         | Super Admin, Admin, Moderator, Teacher of the course                                     | Delete a section with its banks and attempts                                                                                                  |
+| GET    | `/api/subscriptions/my`                                          | Signed in                                                                                | My active subscription (or null)                                                                                                              |
+| POST   | `/api/subscriptions/subscribe`                                   | Student                                                                                  | Subscribe to a plan (price from the plan configuration)                                                                                       |
+| DELETE | `/api/subscriptions/cancel-my`                                   | Student                                                                                  | Cancel my active subscription                                                                                                                 |
+| GET    | `/api/subscriptions`                                             | Super Admin, Admin                                                                       | Paged list of all subscriptions with filters and status counts                                                                                |
+| POST   | `/api/subscriptions/assign`                                      | Super Admin, Admin                                                                       | Give a user a plan until a chosen date                                                                                                        |
+| PATCH  | `/api/subscriptions/:id/cancel`                                  | Super Admin, Admin                                                                       | Cancel any subscription                                                                                                                       |
+| GET    | `/api/subscription-plans`                                        | Public                                                                                   | Active plans, cheapest first, with billing options and course count                                                                           |
+| POST   | `/api/subscription-plans`                                        | Super Admin, Admin                                                                       | Create or update a plan by name                                                                                                               |
+| DELETE | `/api/subscription-plans/:id`                                    | Super Admin, Admin                                                                       | Delete a plan                                                                                                                                 |
+| GET    | /api/dashboard/summary                                           | Super Admin                                                                              | Revenue today / last 7 days / this month / all time, counts, daily and monthly timelines, top 5 courses                                       |
+| GET    | /api/performance/overview                                        | Super Admin                                                                              | Revenue and enrolments of all or chosen courses: periods, chosen range (incl. custom days), chart                                             |
+| GET    | /api/performance/courses                                         | Super Admin                                                                              | All courses (title, cover, price fields, status, paid-student count) for the course picker                                                    |
+| GET    | /api/students                                                    | Super Admin, Admin                                                                       | Paged student list (search, `courseIds` filter) with course count and money spent                                                             |
+| GET    | /api/students/courses                                            | Super Admin, Admin                                                                       | All courses (title, cover, status, enrolled and paid student counts) for the picker                                                           |
+| GET    | /api/students/:id                                                | Super Admin, Admin                                                                       | One student: contact details, courses bought, subscriptions, money spent                                                                      |
+| GET    | /api/chat/conversations                                          | Signed in                                                                                | Staff: all support conversations; student: their own (created if missing)                                                                     |
+| GET    | /api/chat/conversations/:id/messages                             | Signed in (staff or the conversation's student)                                          | Messages of one conversation, oldest first                                                                                                    |
+| GET    | /api/notifications                                               | Signed in                                                                                | My notifications, newest first, paginated, with read state                                                                                    |
+| GET    | /api/notifications/unread-count                                  | Signed in                                                                                | Number of my unread notifications                                                                                                             |
+| PATCH  | /api/notifications/read-all                                      | Signed in                                                                                | Mark all my notifications as read                                                                                                             |
+| PATCH  | /api/notifications/:id/read                                      | Signed in (recipient)                                                                    | Mark one of my notifications as read                                                                                                          |
+| POST   | /api/notifications                                               | Super Admin, Admin                                                                       | Send a notification to every user of the chosen roles                                                                                         |
+| GET    | /api/notifications/sent/all                                      | Super Admin, Admin                                                                       | All sent notifications, newest first, paginated                                                                                               |
+| PUT    | /api/notifications/:id                                           | Super Admin, Admin                                                                       | Edit a notification (title, message, priority, target roles)                                                                                  |
+| DELETE | /api/notifications/:id                                           | Super Admin, Admin                                                                       | Delete a notification                                                                                                                         |
+| GET    | /api/home-hero-posts/public                                      | Public                                                                                   | Public homepage hero images (applies due schedules)                                                                                           |
+| GET    | /api/home-hero-posts/logo/public                                 | Public                                                                                   | The current site logo (or null)                                                                                                               |
+| GET    | /api/home-hero-posts/logo                                        | Super Admin, Admin                                                                       | Site logo with who updated it                                                                                                                 |
+| PUT    | /api/home-hero-posts/logo                                        | Super Admin, Admin                                                                       | Upload or replace the site logo (field `logo`)                                                                                                |
+| GET    | /api/home-hero-posts                                             | Super Admin, Admin                                                                       | All hero posts (Public and Private)                                                                                                           |
+| POST   | /api/home-hero-posts                                             | Super Admin, Admin                                                                       | Upload hero images (fields `images` / `image`) with optional `title` and `description`                                                        |
+| PATCH  | /api/home-hero-posts/reorder                                     | Super Admin, Admin                                                                       | Set the order from a list of ids                                                                                                              |
+| PUT    | /api/home-hero-posts/:id                                         | Super Admin, Admin                                                                       | Change image, title, description, visibility, schedule or order                                                                               |
+| DELETE | /api/home-hero-posts/:id                                         | Super Admin, Admin                                                                       | Delete a hero post and its image                                                                                                              |
+| GET    | /api/study-schedules                                             | Signed in                                                                                | My timers and reminders (filters `type`, `status`)                                                                                            |
+| POST   | /api/study-schedules/timer                                       | Signed in                                                                                | Create a study timer                                                                                                                          |
+| POST   | /api/study-schedules/reminder                                    | Signed in                                                                                | Create a reminder                                                                                                                             |
+| PUT    | /api/study-schedules/:id                                         | Signed in (owner)                                                                        | Update progress, status, title or dates                                                                                                       |
+| DELETE | /api/study-schedules/:id                                         | Signed in (owner)                                                                        | Delete a timer or reminder                                                                                                                    |
+| GET    | /api/community                                                   | Public (personalised when signed in)                                                     | Hub overview: channels, posts with replies, badges, counts, widgets. Guests get at most 10 posts.                                             |
+| GET    | /api/community/users/:userId                                     | Public (personalised when signed in)                                                     | A member's community profile (stats, badges, discussions, answers). Private profiles show only name, avatar and role.                         |
+| GET    | /api/community/settings                                          | Super Admin, Admin                                                                       | Read the hub title, description and header image.                                                                                             |
+| PUT    | /api/community/settings                                          | Super Admin, Admin                                                                       | Update title, description and header image.                                                                                                   |
+| GET    | /api/community/admin/channels                                    | Super Admin, Admin                                                                       | List all hub channels, archived last.                                                                                                         |
+| POST   | /api/community/channels                                          | Super Admin, Admin                                                                       | Create a hub channel (name, description, image).                                                                                              |
+| PUT    | /api/community/channels/:id                                      | Super Admin, Admin                                                                       | Edit a hub channel.                                                                                                                           |
+| PATCH  | /api/community/channels/:id/archive                              | Super Admin, Admin                                                                       | Archive a hub channel.                                                                                                                        |
+| POST   | /api/community/posts                                             | Signed in                                                                                | Create a discussion (up to 8 images). Awards points.                                                                                          |
+| GET    | /api/community/posts/:postId                                     | Public (personalised when signed in)                                                     | One discussion with replies and child replies.                                                                                                |
+| GET    | /api/community/posts/:postId/replies                             | Public (personalised when signed in)                                                     | Page through a discussion's replies.                                                                                                          |
+| PUT    | /api/community/posts/:postId                                     | Signed in (author or staff)                                                              | Edit a discussion.                                                                                                                            |
+| POST   | /api/community/posts/:postId/replies                             | Signed in                                                                                | Reply to a discussion (images allowed). Awards points.                                                                                        |
+| PATCH  | /api/community/posts/:postId/reactions                           | Signed in                                                                                | Add, change or remove your reaction on a discussion.                                                                                          |
+| PATCH  | /api/community/posts/:postId/archive                             | Signed in (author or Super Admin, Admin, Moderator)                                      | Archive a discussion.                                                                                                                         |
+| PATCH  | /api/community/posts/:postId/pin                                 | Super Admin, Admin, Moderator                                                            | Pin or unpin a discussion.                                                                                                                    |
+| PATCH  | /api/community/replies/:replyId/reactions                        | Signed in                                                                                | Add, change or remove your reaction on a reply.                                                                                               |
+| PATCH  | /api/community/replies/:replyId/accepted                         | Signed in (discussion creator)                                                           | Mark or unmark a reply as the accepted answer.                                                                                                |
+| PATCH  | /api/community/replies/:replyId/archive                          | Signed in (author or staff)                                                              | Delete (archive) a reply.                                                                                                                     |
+| GET    | /api/community/replies/:replyId/replies                          | Public (personalised when signed in)                                                     | Page through the child replies of a reply.                                                                                                    |
+| POST   | /api/community/replies/:replyId/replies                          | Signed in                                                                                | Add a child reply to a reply.                                                                                                                 |
+| PATCH  | /api/community/answer-replies/:childReplyId/archive              | Signed in (author or staff)                                                              | Delete (archive) a child reply.                                                                                                               |
+| GET    | /api/community/badges                                            | Super Admin, Admin                                                                       | List badges (archived last).                                                                                                                  |
+| POST   | /api/community/badges                                            | Super Admin, Admin                                                                       | Create a badge (name, points needed, image).                                                                                                  |
+| PUT    | /api/community/badges/:id                                        | Super Admin, Admin                                                                       | Edit a badge.                                                                                                                                 |
+| PATCH  | /api/community/badges/:id/archive                                | Super Admin, Admin                                                                       | Archive a badge.                                                                                                                              |
+| GET    | /api/community/point-rules                                       | Super Admin, Admin                                                                       | Read the four point rules (created with defaults if missing).                                                                                 |
+| PUT    | /api/community/point-rules                                       | Super Admin, Admin                                                                       | Change the points per rule (known keys only, points 0 or more).                                                                               |
+| GET    | /api/group-chat/channels                                         | Signed in                                                                                | Channels you belong to (staff: all; archived=true for archived).                                                                              |
+| GET    | /api/group-chat/channels/discover                                | Signed in                                                                                | Find public and private channels to join (max 30). Non-members get only a public card per channel.                                            |
+| POST   | /api/group-chat/channels                                         | Signed in                                                                                | Create a channel (Public or Private); you become its admin.                                                                                   |
+| PATCH  | /api/group-chat/channels/:channelId                              | Signed in (creator or staff)                                                             | Rename / change description and type.                                                                                                         |
+| GET    | /api/group-chat/users/search                                     | Signed in                                                                                | Find users by name (max 20). Email shown to staff only.                                                                                       |
+| POST   | /api/group-chat/channels/:channelId/join                         | Signed in                                                                                | Join a public channel, or send a join request to a private one.                                                                               |
+| DELETE | /api/group-chat/channels/:channelId/join                         | Signed in                                                                                | Cancel your pending join request.                                                                                                             |
+| POST   | /api/group-chat/channels/:channelId/approve/:userId              | Signed in (channel admin or staff)                                                       | Approve a join request.                                                                                                                       |
+| POST   | /api/group-chat/channels/:channelId/members                      | Signed in (channel admin or staff)                                                       | Add users to a channel.                                                                                                                       |
+| DELETE | /api/group-chat/channels/:channelId/members/:userId              | Signed in (channel admin or staff)                                                       | Remove a member (not the creator).                                                                                                            |
+| POST   | /api/group-chat/channels/:channelId/leave                        | Signed in                                                                                | Leave a channel (not the creator).                                                                                                            |
+| PATCH  | /api/group-chat/channels/:channelId/archive                      | Signed in (creator or staff)                                                             | Archive a channel.                                                                                                                            |
+| PATCH  | /api/group-chat/channels/:channelId/block                        | Super Admin, Admin, Moderator                                                            | Block or unblock a channel.                                                                                                                   |
+| GET    | /api/group-chat/channels/:channelId/messages                     | Signed in (members; staff any)                                                           | The last 200 messages, oldest first.                                                                                                          |
+| POST   | /api/group-chat/channels/:channelId/messages                     | Signed in (members; staff any)                                                           | Send text and/or up to 10 files.                                                                                                              |
+| PATCH  | /api/group-chat/channels/:channelId/read                         | Signed in (members; staff any)                                                           | Reset your unread counter.                                                                                                                    |
+| POST   | `/api/courses/:id/images`                                        | Super Admin, Admin                                                                       | Upload one picture (field `image`) for a course page section; returns `{ url, publicId }`                                                     |
+| PATCH  | `/api/courses/:id/extras`                                        | Super Admin, Admin                                                                       | Replace course page sections: tools, what you get, projects, audience, success stories, FAQ                                                   |
+| GET    | `/api/tools`                                                     | Public                                                                                   | All tools (name + logo), sorted by name                                                                                                       |
+| POST   | `/api/tools`                                                     | Super Admin, Admin                                                                       | Create a tool (multipart `name` + `logo`)                                                                                                     |
+| PUT    | `/api/tools/:id`                                                 | Super Admin, Admin                                                                       | Rename a tool and/or replace its logo                                                                                                         |
+| DELETE | `/api/tools/:id`                                                 | Super Admin, Admin                                                                       | Delete a tool (also removed from every course that lists it)                                                                                  |
+| GET    | `/api/site-settings/public`                                      | Public                                                                                   | Hidden public pages and the company contact                                                                                                   |
+| PUT    | `/api/site-settings/pages`                                       | Super Admin                                                                              | Set which public pages are hidden (`hiddenPages`)                                                                                             |
+| PUT    | `/api/site-settings/contact`                                     | Super Admin, Admin                                                                       | Set the company phone, WhatsApp, email and address                                                                                            |
 
 ## Features
 
@@ -351,6 +354,13 @@ changes); register says when an email is already registered.
 change revocation, avatar upload/removal with Cloudinary stubbed).
 
 ### User management
+
+**Phone number:** every account may have an optional contact phone (`phone`: digits, spaces and dashes with an
+optional leading `+`, 6-20 characters in all). It is set at `POST /api/auth/register`, by the user at
+`PUT /api/auth/me` and by staff at `POST /api/users` / `PUT /api/users/:id` (an Admin still cannot change an Admin
+or Super Admin account: 403); an empty string removes it; anything else (letters, too short or long, objects,
+arrays, numbers) is 400 `Invalid phone number` (`utils/phone.ts`). It is returned by `GET /api/auth/me`,
+`GET /api/users[/:id]` and the Students endpoints only. Tests: `backend/tests/integration/user.phone.test.ts`.
 
 **What it does:** lets Super Admins and Admins create, list, edit, re-role and (Super Admin only) delete
 accounts.
@@ -582,6 +592,11 @@ flagged `isLive` (none when no type is flagged; combined with `courseTypes` it k
 `filterCounts.liveCategories` gives the course count per category among the live courses, and the populated
 `courseType` now includes `isLive`. `GET /api/courses/:id` also returns the course page sections (see "Course
 page sections") with the tools populated (`name`, `logoUrl`).
+
+**Paid courses per course type:** `filterCounts.paidByCourseType`
+(`{ "<courseTypeId>": { "total": 3, "categories": { "<categoryId>": 2 } } }`) counts the published paid courses
+of each course type, and per category: the catalog (`/courses`) uses it to show one section per course type
+(test: `course.browse.live.test.ts`).
 
 **How it works:**
 
@@ -1084,18 +1099,36 @@ sequenceDiagram
 
 ### Dashboard
 
-**What it does:** gives the Super Admin one call with every number the dashboard shows.
+**What it does:** gives the Super Admin one call with every number the dashboard shows: revenue per period, the
+platform counts, revenue and enrolment timelines and the five best-earning courses.
 
 **How it works:**
 
-1. The Super Admin calls `GET /api/dashboard/summary`.
-2. The server counts users, students, teacher profiles, courses (published/draft), categories, enrolments,
-   this month's enrolments, active subscriptions (status Active and end date in the future) and unresolved
-   questions.
-3. It adds course revenue (paid enrolments: `paidPrice`, else the course price) and subscription revenue
-   (`pricePaid`, else the plan price).
-4. It builds a 30-day timeline (one entry per day, date key `month/day` in server time), the top 5 courses by
-   enrolments, the 6 newest enrolments and the 6 newest users.
+1. The Super Admin's browser calls `GET /api/dashboard/summary?tz=<IANA zone>` (e.g. `Asia/Dhaka`); without `tz`
+   the periods are counted in UTC.
+2. The server counts users, students (and new students this month), teacher profiles, courses (published/draft),
+   categories, active subscriptions (status Active and end date in the future) and unresolved questions.
+3. It turns every enrolment and subscription into an entry: course revenue (paid enrolments: `paidPrice`, else the
+   course price; free and subscription enrolments earn 0) and subscription revenue (`pricePaid`, else the plan
+   price).
+4. It sums the entries for **today**, the **last 7 days** (today and the 6 days before), **this month** and
+   **lifetime**, in the viewer's time zone.
+5. It builds a 30-day timeline (`yyyy-MM-dd`) and a 12-month timeline (`yyyy-MM`) with all enrolments, paid
+   enrolments, course, subscription and total revenue per day / month (empty days included).
+6. Top courses: the five courses with the most revenue (ties: more enrolments), with enrolment and paid-enrolment
+   counts.
+
+```mermaid
+sequenceDiagram
+  participant B as Browser (Super Admin)
+  participant A as API
+  participant D as MongoDB
+  B->>A: GET /api/dashboard/summary?tz=Asia/Dhaka
+  A->>D: counts + every enrolment (course price) + every subscription
+  A->>A: revenue per entry, sums per period (viewer's zone)
+  A->>A: 30 daily + 12 monthly buckets, top 5 courses by revenue
+  A-->>B: totals, revenue, revenueTimeline, monthlyRevenue, topCourses
+```
 
 **Endpoints**
 
@@ -1103,7 +1136,7 @@ sequenceDiagram
 | ------ | ------------------------ | ----------- | ----------------- |
 | GET    | `/api/dashboard/summary` | Super Admin | Dashboard numbers |
 
-**Example:** `GET /api/dashboard/summary`
+**Example:** `GET /api/dashboard/summary?tz=Asia/Dhaka`
 
 ```json
 {
@@ -1112,6 +1145,7 @@ sequenceDiagram
     "totals": {
       "users": 7,
       "students": 3,
+      "newStudentsThisMonth": 3,
       "teachers": 1,
       "courses": 3,
       "publishedCourses": 2,
@@ -1122,81 +1156,122 @@ sequenceDiagram
       "activeSubscriptions": 1,
       "openQuestions": 2,
       "totalRevenue": 530,
-      "thisMonthRevenue": 450,
+      "thisMonthRevenue": 430,
       "courseRevenue": 390,
       "subscriptionRevenue": 140
     },
-    "roleCounts": [{ "label": "Student", "value": 3 }],
-    "courseStatusCounts": [{ "label": "Published", "value": 2 }],
-    "coursePricingCounts": [{ "label": "Paid", "value": 2 }],
+    "revenue": {
+      "today": {
+        "total": 430,
+        "course": 350,
+        "subscription": 80,
+        "enrollments": 4,
+        "paidEnrollments": 2
+      },
+      "week": {
+        "total": 430,
+        "course": 350,
+        "subscription": 80,
+        "enrollments": 4,
+        "paidEnrollments": 2
+      },
+      "month": {
+        "total": 430,
+        "course": 350,
+        "subscription": 80,
+        "enrollments": 4,
+        "paidEnrollments": 2
+      },
+      "lifetime": {
+        "total": 530,
+        "course": 390,
+        "subscription": 140,
+        "enrollments": 5,
+        "paidEnrollments": 3
+      }
+    },
     "revenueTimeline": [
       {
-        "date": "10/29",
-        "enrollments": 2,
+        "date": "2026-11-02",
+        "enrollments": 4,
+        "paidEnrollments": 2,
         "courseRevenue": 350,
-        "subscriptionRevenue": 100,
-        "totalRevenue": 450
+        "subscriptionRevenue": 80,
+        "totalRevenue": 430
+      }
+    ],
+    "monthlyRevenue": [
+      {
+        "date": "2026-11",
+        "enrollments": 4,
+        "paidEnrollments": 2,
+        "courseRevenue": 350,
+        "subscriptionRevenue": 80,
+        "totalRevenue": 430
       }
     ],
     "topCourses": [
       {
-        "course": { "_id": "...", "title": "Course 2", "pricing": "Paid", "price": 200 },
-        "enrollments": 3
+        "course": {
+          "_id": "...",
+          "title": "Course 2",
+          "pricing": "Paid",
+          "price": 200,
+          "status": "Published"
+        },
+        "enrollments": 3,
+        "paidEnrollments": 2,
+        "revenue": 350
       }
-    ],
-    "recentEnrollments": [
-      {
-        "_id": "...",
-        "student": { "name": "Student 3", "email": "..." },
-        "course": { "title": "Course 2" },
-        "enrollmentType": "free",
-        "createdAt": "..."
-      }
-    ],
-    "recentUsers": [
-      { "_id": "...", "name": "Student 3", "email": "...", "role": "Student", "createdAt": "..." }
     ]
   }
 }
 ```
 
-**Business rules:** Super Admin only; no password hashes in `recentUsers` or `recentEnrollments`; free
-enrolments earn nothing; the timeline "enrollments" counts paid enrolments only.
+**Business rules:** Super Admin only; free and subscription enrolments earn nothing; the periods and timelines use
+the viewer's time zone; a deleted course in the top list comes back as `course: null`. The role, course status and
+course pricing groups and the recent enrolment / user lists are no longer sent.
 
 **Data model:** reads User, Teacher, Course, Category, Enrollment, Subscription, SubscriptionPlanConfig, Question.
+Time periods: `utils/reportPeriods.ts` (Luxon); money rules: `utils/revenue.ts` (shared with the performance
+report and the students page).
 
-**Errors:** 401 not signed in; 403 any other role.
-
-**Fixed issues:**
-
-- "This month" revenue and the timeline's subscription revenue now use `pricePaid`, else the plan price, else 0
-  (the same rule as the total), so the numbers agree when a price was changed or discounted.
+**Errors:** 401 not signed in; 403 any other role; 400 `Invalid time zone` for a `tz` that is not an IANA zone.
 
 **Tests:** `backend/tests/integration/dashboard.summary.test.ts` (401, 403 per role, Bearer, exact totals and
-revenue, role/status/pricing groups, top courses, recent lists without passwords, 30-day timeline).
+revenue, today / week / month / lifetime split, `tz` accepted and rejected, removed fields, top courses by revenue,
+30-day and 12-month timelines).
 
 ---
 
 ### Performance reports
 
-**What it does:** shows enrolments and revenue for one course or all courses over 7 days, 30 days or lifetime.
+**What it does:** shows revenue and enrolments for all courses or the chosen ones: today, the last 7 days, this
+month and all time, plus a chart over a chosen range (today, 7 days, 30 days, this month, all time or custom days).
 
 **How it works:**
 
-1. The Super Admin calls `GET /api/performance/overview?courseId=<id|all>&dateRange=<7d|30d|lifetime>`
-   (defaults: all, 30d).
-2. The server loads the enrolments, sums paid revenue (`paidPrice`, else course price), and builds chart
-   buckets: one per day for 7d/30d, one per month (`YYYY-MM`) for lifetime.
-3. `GET /api/performance/courses` lists all courses for the course filter.
+1. The Super Admin calls
+   `GET /api/performance/overview?courseIds=<id,id|all>&dateRange=<today|7d|30d|month|lifetime|custom>&from=&to=&tz=`
+   (defaults: all courses, `30d`, UTC). The older `courseId=<id>` still works.
+2. `custom` needs `from` and `to` as `yyyy-MM-dd` (both days included, in the viewer's zone).
+3. The server loads the enrolments of the selection with the course price and sums revenue (`paidPrice`, else the
+   course price; free and subscription enrolments earn 0).
+4. `periods` holds today / last 7 days / this month / lifetime; `selected` holds the chosen range (revenue,
+   enrolments, paid enrolments and the free / paid / subscription breakdown).
+5. Chart buckets (`granularity`): one per hour for `today` (`yyyy-MM-ddTHH`, all 24 hours), one per day for 7d,
+   30d, this month and custom ranges up to 92 days (`yyyy-MM-dd`), one per month otherwise (`yyyy-MM`).
+6. `GET /api/performance/courses` lists every course (title, cover, price fields, status) with its number of paid
+   students, for the multi-select course picker.
 
 **Endpoints**
 
-| Method | Path                        | Roles       | Description                                         |
-| ------ | --------------------------- | ----------- | --------------------------------------------------- |
-| GET    | `/api/performance/overview` | Super Admin | Numbers, chart and free/paid/subscription breakdown |
-| GET    | `/api/performance/courses`  | Super Admin | All courses, newest first                           |
+| Method | Path                        | Roles       | Description                                   |
+| ------ | --------------------------- | ----------- | --------------------------------------------- |
+| GET    | `/api/performance/overview` | Super Admin | Periods, chosen range, chart and breakdown    |
+| GET    | `/api/performance/courses`  | Super Admin | All courses, newest first, with paid students |
 
-**Example:** `GET /api/performance/overview?courseId=all&dateRange=7d`
+**Example:** `GET /api/performance/overview?courseIds=all&dateRange=custom&from=2026-10-01&to=2026-10-31&tz=Asia/Dhaka`
 
 ```json
 {
@@ -1206,28 +1281,133 @@ revenue, role/status/pricing groups, top courses, recent lists without passwords
     "totalRevenue": 255,
     "thisMonthCount": 4,
     "totalEnrollments": 6,
-    "chartData": [{ "date": "10/29", "revenue": 180, "enrollments": 3 }],
+    "periods": {
+      "today": { "revenue": 180, "enrollments": 3, "paidEnrollments": 2 },
+      "week": { "revenue": 180, "enrollments": 4, "paidEnrollments": 2 },
+      "month": { "revenue": 180, "enrollments": 4, "paidEnrollments": 2 },
+      "lifetime": { "revenue": 255, "enrollments": 6, "paidEnrollments": 4 }
+    },
+    "selected": {
+      "revenue": 50,
+      "enrollments": 2,
+      "paidEnrollments": 1,
+      "breakdown": { "free": 0, "paid": 1, "subscription": 1 }
+    },
+    "granularity": "day",
+    "chartData": [{ "date": "2026-10-13", "revenue": 50, "enrollments": 1, "paidEnrollments": 1 }],
     "breakdown": { "free": 1, "paid": 4, "subscription": 1 }
   }
 }
 ```
 
-**Business rules:** Super Admin only; totals and breakdown are all-time for the selection, the chart follows the
-range; subscription and free enrolments earn no revenue here.
+**Business rules:** Super Admin only; `breakdown` and the `total*` / `thisMonth*` fields are for the whole
+selection whatever the range; at most 500 course ids; a custom range is at most about ten years.
 
-**Data model:** reads Enrollment (populating the course price) and Course.
+**Data model:** reads Enrollment (populating the course price; index on `course`) and Course.
 
-**Errors:** 401; 403; 400 `Invalid date range` for a `dateRange` other than `7d`, `30d` or `lifetime`; 400
-`Invalid course` for a malformed `courseId` (the raw value is not echoed).
+**Errors:** 401; 403; 400 `Invalid date range` (unknown `dateRange`); 400 `Invalid course id` (a malformed id in
+`courseIds` / `courseId`, or the parameter sent twice); 400 `Too many courses selected`; 400 `Start and end dates are required`, `Invalid date`,
+`The start date must be before the end date`, `Date range is too long` (custom); 400 `Invalid time zone`.
 
 **Fixed issues:**
 
-- An unknown `dateRange` (e.g. `forever`) is now rejected with 400 `Invalid date range` instead of behaving like
-  `lifetime` (no `dateRange` still means `30d`).
-- `lifetime` for a selection with no enrolments now starts the chart at the current month (one entry) instead of
+- An unknown `dateRange` (e.g. `forever`) is rejected with 400 instead of behaving like `lifetime`.
+- `lifetime` for a selection with no enrolments starts the chart at the current month (one entry) instead of
   building monthly entries back to 1970.
 
-**Tests:** `backend/tests/integration/performance.overview.test.ts`.
+**Tests:** `backend/tests/integration/performance.overview.test.ts` (access per role, several courses, malformed,
+repeated and too many ids, every range, hourly today, periods, custom range incl. 400s, per-month custom ranges,
+`tz`, paid-student counts), `report.timezone.test.ts` (an enrolment at 00:30 Dhaka time is "today" for a Dhaka
+viewer, Dhaka hour buckets, this month from the 1st, a long custom range keeps the chart equal to `selected`),
+`reportPeriods.utils.test.ts` (unit tests of the period, bucket, custom range and zone helpers, incl. a
+daylight-saving day).
+
+**Fixed during review:** a custom range charted per month counted enrolments from the whole first and last month;
+the chart now keeps only enrolments inside the range, so it always adds up to `selected`.
+
+---
+
+### Students
+
+**What it does:** lets a Super Admin or Admin list every student, filter them by the courses they are enrolled in,
+and open one student's full details (contact, courses bought, subscriptions, money spent).
+
+**How it works:**
+
+1. `GET /api/students?search=&courseIds=a,b&page=&limit=` lists users with the Student role, newest first (20 per
+   page, at most 100). `search` matches name, email, student number (`123456789` also finds `123-456-789`) and
+   phone. `courseIds` keeps students enrolled in **any** of the courses.
+2. Each row adds `enrolledCourses` and `totalSpent` (paid courses + subscriptions, same money rules as the
+   dashboard).
+3. `GET /api/students/courses` lists every course (title, cover, status) with its enrolled and paid student counts
+   (the course picker).
+4. `GET /api/students/:id` returns the student (name, email, phone, student number, avatar, joined date), every
+   enrolment with the course (title, cover) and `amountPaid`, every subscription with `amountPaid`, and the totals.
+
+**Endpoints**
+
+| Method | Path                    | Roles              | Description                                 |
+| ------ | ----------------------- | ------------------ | ------------------------------------------- |
+| GET    | `/api/students`         | Super Admin, Admin | Paged students with course count and spend  |
+| GET    | `/api/students/courses` | Super Admin, Admin | Courses with enrolled / paid student counts |
+| GET    | `/api/students/:id`     | Super Admin, Admin | One student's contact, purchases and totals |
+
+**Example:** `GET /api/students/665f...`
+
+```json
+{
+  "success": true,
+  "data": {
+    "student": {
+      "_id": "665f...",
+      "name": "Asha Rahman",
+      "email": "asha@example.com",
+      "phone": "+880 1711-000000",
+      "studentNumber": "482-917-305",
+      "createdAt": "2026-10-01T08:00:00.000Z"
+    },
+    "enrollments": [
+      {
+        "_id": "...",
+        "course": {
+          "_id": "...",
+          "title": "Algebra 101",
+          "coverImage": "https://res.cloudinary.com/..."
+        },
+        "enrollmentType": "paid",
+        "paidPrice": 400,
+        "amountPaid": 400,
+        "createdAt": "2026-10-02T08:00:00.000Z"
+      }
+    ],
+    "subscriptions": [{ "_id": "...", "plan": "Premium", "status": "Active", "amountPaid": 99 }],
+    "totals": {
+      "enrolledCourses": 1,
+      "paidCourses": 1,
+      "courseSpent": 400,
+      "subscriptionSpent": 99,
+      "totalSpent": 499
+    }
+  }
+}
+```
+
+The list answers `{ "success": true, "data": [...], "total": 42, "page": 1, "limit": 20 }`.
+
+**Business rules:** Super Admin and Admin only (Moderators, Teachers and Students get 403); only users with the
+Student role are listed or opened; no password or other private fields are sent; search text is escaped (no regex
+injection); course ids are checked (no operator objects reach the query).
+
+**Data model:** reads User, Course, Enrollment (index on `course`), Subscription, SubscriptionPlanConfig.
+
+**Errors:** 401; 403; 400 `Invalid course id` (malformed, or the parameter sent twice) / `Too many courses
+selected`; 400 `Invalid student id`; 404
+`Student not found` (unknown id, or a user who is not a student).
+
+**Tests:** `backend/tests/integration/student.list.test.ts` (401 / 403 per role on every path, Bearer, list with
+counts and spend, course filter, phone search, student number with and without dashes, paging, limit cap and a
+page past the end, regex characters, malformed / repeated / too many ids, operator in search, a subscription-only
+student, course counts, details with totals, empty details, 404 for a non-student).
 
 ---
 

@@ -13,17 +13,19 @@ import type { FC } from 'react';
 
 const TOUCH_TARGET = 44;
 
-interface CourseSelectHeaderProps {
+interface CoursePickerHeaderProps {
   /** Id of the title (names the panel) */
   titleId: string;
+  title: string;
   search: string;
   onSearchChange: (value: string) => void;
   onClose: () => void;
 }
 
 /** Top of the course picker: title, close button and the title search box. */
-export const CourseSelectHeader: FC<CourseSelectHeaderProps> = ({
+export const CoursePickerHeader: FC<CoursePickerHeaderProps> = ({
   titleId,
+  title,
   search,
   onSearchChange,
   onClose,
@@ -33,7 +35,7 @@ export const CourseSelectHeader: FC<CourseSelectHeaderProps> = ({
     <Box sx={{ p: 3, pb: 2, flexShrink: 0 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Typography id={titleId} component="h2" variant="h6" sx={{ fontWeight: 700 }}>
-          {t('insights.performance.selectCourse')}
+          {title}
         </Typography>
         <IconButton
           onClick={onClose}
@@ -50,9 +52,9 @@ export const CourseSelectHeader: FC<CourseSelectHeaderProps> = ({
         onChange={(event) => {
           onSearchChange(event.target.value);
         }}
-        placeholder={t('insights.performance.searchCourses')}
+        placeholder={t('coursePicker.search')}
         slotProps={{
-          htmlInput: { 'aria-label': t('insights.performance.searchCourses') },
+          htmlInput: { 'aria-label': t('coursePicker.search') },
           input: {
             startAdornment: (
               <InputAdornment position="start">

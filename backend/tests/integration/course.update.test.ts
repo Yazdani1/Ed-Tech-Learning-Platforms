@@ -11,7 +11,6 @@ import { StudyCurriculum } from '../../src/models/StudyCurriculum.model';
 import {
   PNG_BYTES,
   authCookie,
-  bearer,
   createCategory,
   createCourse,
   createCourseType,

@@ -99,7 +99,8 @@
     "createdAt": "Created At",
     "updatedAt": "Updated At",
     "studentNumber": "Student number",
-    "studentNumberShort": "No. {{number}}"
+    "studentNumberShort": "No. {{number}}",
+    "phone": "Phone number (optional)"
   },
   "teachers": {
     "title": "Teachers",
@@ -254,5 +255,41 @@
     "needsStaffAnswer": "Needs staff answer",
     "answerCount_one": "{{count}} answer",
     "answerCount_other": "{{count}} answers"
+  },
+  "students": {
+    "title": "Students",
+    "subtitle": "Every student, what they bought and how to reach them.",
+    "search": "Search students",
+    "searchPlaceholder": "Name, email, student number or phone",
+    "chooseCourses": "Filter by course (now: {{course}})",
+    "student": "Student",
+    "studentNumber": "Student number",
+    "phone": "Phone",
+    "email": "Email",
+    "courses": "Courses",
+    "totalSpent": "Total spent",
+    "joined": "Joined",
+    "empty": "No students yet.",
+    "noMatch": "No students match your filters.",
+    "detailsTitle": "Student details",
+    "contact": "Contact details",
+    "spending": "Money spent",
+    "courseCount": "Courses",
+    "courseCountValue_one": "{{count}} course ({{paid}} paid)",
+    "courseCountValue_other": "{{count}} courses ({{paid}} paid)",
+    "courseSpent": "On courses",
+    "subscriptionSpent": "On subscriptions",
+    "coursesTitle": "Courses ({{count}})",
+    "subscriptionsTitle": "Subscriptions ({{count}})",
+    "noCourses": "Not enrolled in any course yet.",
+    "noSubscriptions": "No subscriptions.",
+    "deletedCourse": "Deleted course",
+    "enrolledOn": "Enrolled {{date}}",
+    "subscriptionPeriod": "{{start}} – {{end}}",
+    "status": {
+      "Active": "Active",
+      "Expired": "Expired",
+      "Cancelled": "Cancelled"
+    }
   }
 }

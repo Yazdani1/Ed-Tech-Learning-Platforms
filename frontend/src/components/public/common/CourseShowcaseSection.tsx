@@ -4,49 +4,53 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
-import { HOME_COURSES_PAGE_SIZE, useHomeCourses } from '@/api/public.api';
+import { HOME_COURSES_PAGE_SIZE, sectionCategoryCounts, useHomeCourses } from '@/api/public.api';
 import { ListPagination } from '@/components/common/ListPagination';
 import { QueryState } from '@/components/common/QueryState';
 
-import { CourseGrid } from '../common/CourseGrid';
+import { HomeCategoryFilter } from '../home/HomeCategoryFilter';
+import { HomeSectionTitle } from '../home/HomeSectionTitle';
 
-import { HomeCategoryFilter } from './HomeCategoryFilter';
-import { HomeSectionTitle } from './HomeSectionTitle';
+import { CourseGrid } from './CourseGrid';
 
-import type { HomeSection } from '@/schemas/public.schema';
+import type { CourseSectionSource } from '@/schemas/public.schema';
 import type { FC } from 'react';
 
-interface HomeCourseSectionProps {
-  /** live: courses of a live course type; free: free courses */
-  section: HomeSection;
-  /** i18n key group under public.home (title, subtitle, empty) */
-  textKey: 'paid' | 'free';
+interface CourseShowcaseSectionProps {
+  /** What the section lists (live courses, free courses, or one course type's paid courses) */
+  source: CourseSectionSource;
+  /** Element id (page changes scroll back to it) */
+  sectionId: string;
+  title: string;
+  subtitle: string;
+  emptyText: string;
 }
 
 const NO_COUNTS: Record<string, number> = {};
 /** One row of card-shaped skeletons while the first page loads */
 const SKELETON_CARDS = 4;
 
-/** One home page box: centred title, the category cards, then its course cards (30 per page). */
-export const HomeCourseSection: FC<HomeCourseSectionProps> = ({ section, textKey }) => {
-  const { t } = useTranslation();
+/**
+ * One course box (home page and catalog): centred title, the category cards, then its course cards
+ * (30 per page).
+ */
+export const CourseShowcaseSection: FC<CourseShowcaseSectionProps> = ({
+  source,
+  sectionId,
+  title,
+  subtitle,
+  emptyText,
+}) => {
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
   const { data, isPending, isPlaceholderData, error, refetch } = useHomeCourses({
-    section,
+    source,
     category,
     page,
   });
   const courses = data?.data ?? [];
   const pagination = data?.pagination;
-  const sectionId = `home-${textKey}-courses`;
-  const title = t(`public.home.${textKey}.title`);
-  const counts =
-    section === 'live'
-      ? data?.filterCounts?.liveCategories
-      : data?.filterCounts?.categoriesByPricing.Free;
 
   const changePage = (next: number): void => {
     setPage(next);
@@ -56,10 +60,10 @@ export const HomeCourseSection: FC<HomeCourseSectionProps> = ({ section, textKey
   return (
     <Container component="section" id={sectionId} maxWidth="lg" sx={{ pt: { xs: 4, md: 6 } }}>
       <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 2 }}>
-        <HomeSectionTitle title={title} subtitle={t(`public.home.${textKey}.subtitle`)} />
+        <HomeSectionTitle title={title} subtitle={subtitle} />
         <HomeCategoryFilter
           section={title}
-          counts={counts ?? NO_COUNTS}
+          counts={sectionCategoryCounts(source, data?.filterCounts) ?? NO_COUNTS}
           selected={category}
           onSelect={(next) => {
             setCategory(next);
@@ -72,7 +76,7 @@ export const HomeCourseSection: FC<HomeCourseSectionProps> = ({ section, textKey
           error={error}
           onRetry={() => void refetch()}
           isEmpty={!isPending && courses.length === 0}
-          emptyText={t(`public.home.${textKey}.empty`)}
+          emptyText={emptyText}
         >
           <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1 }}>
             <CourseGrid courses={courses} isLoading={isPending} skeletons={SKELETON_CARDS} />

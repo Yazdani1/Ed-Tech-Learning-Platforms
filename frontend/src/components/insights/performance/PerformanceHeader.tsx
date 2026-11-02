@@ -9,12 +9,12 @@ import { useTranslation } from 'react-i18next';
 import type { FC } from 'react';
 
 interface PerformanceHeaderProps {
-  /** Title of the selected course, or "All courses" */
+  /** "All courses", the selected course's title, or "3 courses" */
   courseLabel: string;
   onChooseCourse: () => void;
 }
 
-/** "Overview <course ▾>": the course name opens the course picker. */
+/** "Overview <courses ▾>": the course label opens the course picker. */
 export const PerformanceHeader: FC<PerformanceHeaderProps> = ({ courseLabel, onChooseCourse }) => {
   const { t } = useTranslation();
   return (

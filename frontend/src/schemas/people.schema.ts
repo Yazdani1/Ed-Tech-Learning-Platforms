@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { userRoleSchema } from './auth.schema';
+import { phoneField, userRoleSchema } from './auth.schema';
 import { postedBySchema } from './learn.schema';
 
 // People administration: users, teacher profiles, subscriptions + plans, and the staff course Q&A list.
@@ -39,6 +39,7 @@ export const managedUserSchema = z.object({
   role: userRoleSchema,
   /** Students only: "123-456-789" */
   studentNumber: z.string().nullish(),
+  phone: z.string().nullish(),
   avatar: z.string().nullish(),
   createdAt: z.string().nullish(),
   updatedAt: z.string().nullish(),
@@ -78,6 +79,7 @@ const passwordField = z
 export const userCreateSchema = z.object({
   name: nameField,
   email: emailField,
+  phone: phoneField,
   password: passwordField,
   role: userRoleSchema,
 });

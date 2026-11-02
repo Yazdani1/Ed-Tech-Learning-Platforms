@@ -23,7 +23,7 @@ export const CourseProjectsSection: FC<CourseProjectsSectionProps> = ({ projects
   if (projects.length === 0) return null;
   return (
     <DetailSection id="course-projects" title={t('browse.extras.projectsTitle')}>
-      <Box component="ul" sx={gridSx(2)}>
+      <Box component="ul" sx={gridSx(2, 3)}>
         {projects.map((project, index) => (
           <ProjectCard
             key={`${project.title}-${index}`}

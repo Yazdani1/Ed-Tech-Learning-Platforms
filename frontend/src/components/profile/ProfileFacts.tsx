@@ -4,6 +4,7 @@ import BadgeOutlined from '@mui/icons-material/BadgeOutlined';
 import CalendarToday from '@mui/icons-material/CalendarToday';
 import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOutlined';
 import EmailOutlined from '@mui/icons-material/EmailOutlined';
+import PhoneOutlined from '@mui/icons-material/PhoneOutlined';
 import SecurityOutlined from '@mui/icons-material/SecurityOutlined';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
@@ -15,59 +16,74 @@ import { formatDateTime } from '@/utils/dateTime';
 import { ProfileInfoItem } from './ProfileInfoItem';
 
 import type { Profile } from '@/schemas/profile.schema';
-import type { FC } from 'react';
+import type { TFunction } from 'i18next';
+import type { FC, ReactElement } from 'react';
 
 const FACT_SIZE = { xs: 12, sm: 6 } as const;
+
+interface Fact {
+  key: string;
+  icon: ReactElement;
+  label: string;
+  value: string;
+}
+
+/** The facts shown for this profile (the student number only for students). */
+const buildFacts = (t: TFunction, profile: Profile): Fact[] => {
+  const notAvailable = t('profile.notAvailable');
+  const facts: Fact[] = [
+    { key: 'email', icon: <EmailOutlined />, label: t('profile.email'), value: profile.email },
+    {
+      key: 'phone',
+      icon: <PhoneOutlined />,
+      label: t('profile.phone'),
+      value: profile.phone ?? notAvailable,
+    },
+    {
+      key: 'role',
+      icon: <BadgeOutlined />,
+      label: t('profile.role'),
+      value: t(`roles.${profile.role}`),
+    },
+    {
+      key: 'joined',
+      icon: <CalendarToday />,
+      label: t('profile.joined'),
+      value: formatDateTime(profile.createdAt) || notAvailable,
+    },
+    {
+      key: 'updated',
+      icon: <SecurityOutlined />,
+      label: t('profile.lastUpdated'),
+      value: formatDateTime(profile.updatedAt) || notAvailable,
+    },
+  ];
+  if (!profile.studentNumber) return facts;
+  const studentNumber: Fact = {
+    key: 'studentNumber',
+    icon: <ConfirmationNumberOutlined />,
+    label: t('profile.studentNumber'),
+    value: profile.studentNumber,
+  };
+  return [studentNumber, ...facts];
+};
 
 interface ProfileFactsProps {
   profile: Profile;
 }
 
-/** Student number (students), email, role, joined and last-updated dates, and who may edit the account. */
+/** Student number (students), email, phone, role, joined and last-updated dates, and who may edit the account. */
 export const ProfileFacts: FC<ProfileFactsProps> = ({ profile }) => {
   const { t } = useTranslation();
-  const notAvailable = t('profile.notAvailable');
   return (
     <Grid container spacing={3}>
       <Grid size={{ xs: 12, md: 8 }}>
         <Grid container spacing={2.5}>
-          {profile.studentNumber && (
-            <Grid size={FACT_SIZE}>
-              <ProfileInfoItem
-                icon={<ConfirmationNumberOutlined />}
-                label={t('profile.studentNumber')}
-                value={profile.studentNumber}
-              />
+          {buildFacts(t, profile).map(({ key, ...fact }) => (
+            <Grid key={key} size={FACT_SIZE}>
+              <ProfileInfoItem {...fact} />
             </Grid>
-          )}
-          <Grid size={FACT_SIZE}>
-            <ProfileInfoItem
-              icon={<EmailOutlined />}
-              label={t('profile.email')}
-              value={profile.email}
-            />
-          </Grid>
-          <Grid size={FACT_SIZE}>
-            <ProfileInfoItem
-              icon={<BadgeOutlined />}
-              label={t('profile.role')}
-              value={t(`roles.${profile.role}`)}
-            />
-          </Grid>
-          <Grid size={FACT_SIZE}>
-            <ProfileInfoItem
-              icon={<CalendarToday />}
-              label={t('profile.joined')}
-              value={formatDateTime(profile.createdAt) || notAvailable}
-            />
-          </Grid>
-          <Grid size={FACT_SIZE}>
-            <ProfileInfoItem
-              icon={<SecurityOutlined />}
-              label={t('profile.lastUpdated')}
-              value={formatDateTime(profile.updatedAt) || notAvailable}
-            />
-          </Grid>
+          ))}
         </Grid>
       </Grid>
       <Grid size={{ xs: 12, md: 4 }}>

@@ -1,6 +1,6 @@
 import { expect, request, test, type APIRequestContext } from '@playwright/test';
 
-import { ACCOUNTS, E2E_PASSWORD, expectNoHorizontalScroll, isPhone, uniqueEmail } from './helpers';
+import { ACCOUNTS, E2E_PASSWORD, expectNoHorizontalScroll, uniqueEmail } from './helpers';
 
 // Each test builds its own public course through the API (as the E2E Admin), so specs never share data.
 
@@ -67,7 +67,7 @@ const createCourse = async (baseURL: string, tag: string): Promise<CreatedCourse
 };
 
 test.describe('Course catalog', () => {
-  test('a visitor finds a course by search and category, and opens it', async ({
+  test('a visitor finds a course by search (no filter sidebar) and opens it', async ({
     page,
     baseURL,
   }, testInfo) => {
@@ -75,20 +75,10 @@ test.describe('Course catalog', () => {
 
     await page.goto(`/courses?search=${encodeURIComponent(course.title)}`);
     await expect(page.getByRole('heading', { level: 1, name: 'All Courses' })).toBeVisible();
-    await expect(page.getByText('1 course found')).toBeVisible();
+    await expect(page.getByText(`1 course found for "${course.title}"`)).toBeVisible();
+    await expect(page.getByRole('checkbox')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Show all courses' })).toBeVisible();
     await expectNoHorizontalScroll(page);
-
-    // The category filter (sidebar on desktop, drawer on phones) narrows the same search
-    if (isPhone(page)) await page.getByRole('button', { name: /^Filters/ }).click();
-    const panel = isPhone(page)
-      ? page.getByRole('dialog')
-      : page.getByRole('complementary', { name: 'Filters' });
-    // The checked state lives in the URL, so it flips after the navigation: click, then assert (not .check())
-    const categoryBox = panel.getByRole('checkbox', { name: new RegExp(course.categoryName) });
-    await categoryBox.click();
-    await expect(categoryBox).toBeChecked();
-    await expect(page).toHaveURL(/categories=/);
-    if (isPhone(page)) await page.getByRole('button', { name: /^Show courses/ }).click();
 
     await page.getByRole('link', { name: new RegExp(course.title) }).click();
     await expect(page).toHaveURL(new RegExp(`/courses/${course.id}$`));
@@ -97,6 +87,24 @@ test.describe('Course catalog', () => {
       'href',
       '/auth/register',
     );
+    await expectNoHorizontalScroll(page);
+  });
+
+  test('without a filter the catalog shows the free section with its category cards', async ({
+    page,
+    baseURL,
+  }, testInfo) => {
+    const course = await createCourse(baseURL ?? '', `sections ${testInfo.project.name}`);
+    await page.goto('/courses');
+
+    const free = page.locator('section', {
+      has: page.getByRole('heading', { name: 'Free Courses' }),
+    });
+    await expect(free).toBeVisible();
+    // Narrow the free section to the new course's category with its category card
+    await free.getByRole('button', { name: new RegExp(course.categoryName) }).click();
+    await expect(free.getByRole('link', { name: `See details of ${course.title}` })).toBeVisible();
+    await expect(page.getByRole('checkbox')).toHaveCount(0);
     await expectNoHorizontalScroll(page);
   });
 

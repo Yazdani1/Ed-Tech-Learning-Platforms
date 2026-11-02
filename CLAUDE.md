@@ -48,10 +48,10 @@ Source of truth: the user's instructions (in conversation) and this file.
 - `src/app.ts`: Express setup (CORS: CLIENT_URL in production, any localhost port in dev, credentials on),
   json, urlencoded, cookie-parser, `/api` routes, notFound, errorHandler. `src/server.ts`: HTTP server,
   Socket.io init, DB connection.
-- `src/routes/index.ts` mounts the 24 feature route files under `/api` (health, auth, users, teachers,
+- `src/routes/index.ts` mounts the feature route files under `/api` (health, auth, users, teachers,
   categories, course-types, courses, announcements, study-curricula, study-materials, subscriptions,
   subscription-plans, enrollments, performance, qa, dashboard, chat, notifications, quiz-bank, quiz-sections,
-  home-hero-posts, community, group-chat, study-schedules). Public health check: `GET /api/health`.
+  home-hero-posts, community, group-chat, study-schedules, site-settings, tools, students). Public health check: `GET /api/health`.
 - Controllers: `src/controllers/<feature>.controller.ts` (camelCase), every async handler wrapped in
   `asyncHandler()`, errors via `throw new AppError(message, statusCode)` (global errorHandler).
 - Models: `src/models/<Entity>.model.ts` (PascalCase), Mongoose schemas with timestamps and indexes.
@@ -186,4 +186,13 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   `/api/tools` (Course Setup > Tools); course page sections (`PATCH /api/courses/:id/extras`, pictures via
   `POST /api/courses/:id/images`): tools, what you get, projects, audience, success stories, FAQ; course page
   "Curriculum" tabs and sticky buy bar. Promo codes are NOT built (the bar shows the running discount).
+- Stage B batch 2 (2026-11-02): dashboard = revenue today / last 7 days / this month / all time (viewer's time
+  zone via `?tz=`, `utils/reportPeriods.ts` with Luxon in the backend, money rules in `utils/revenue.ts`), daily and
+  monthly revenue charts, top 5 courses by revenue (role/status/pricing charts and recent lists removed);
+  performance = several courses (`courseIds`), ranges today|7d|30d|month|lifetime|custom (from/to), shared left
+  multi-select picker `components/course-picker`; `/admin/students` + `/api/students` (Super Admin, Admin);
+  optional `User.phone` (register, profile, admin form); course page: curriculum and later sections full width, FAQ
+  cards; `/courses`: no sidebar, one box per course type (paid courses, `filterCounts.paidByCourseType`) + Free box,
+  plain results only with a search/filter in the URL. Known gap: a paid course without a course type is only found by
+  search.
 - Reports of every phase: .claude/reports/ (git-ignored).

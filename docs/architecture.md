@@ -63,6 +63,10 @@ flowchart LR
     Access -- "teacher of course?" --> Teachers
     Dashboard[Dashboard + performance] -- "revenue, counts" --> Enrollments
     Dashboard -- "revenue" --> Subscriptions
+    Dashboard -- "periods in the viewer's zone, money rules" --> Reports{{reportPeriods + revenue utils}}
+    Students[Students page API] -- "students, phone" --> Auth
+    Students -- "courses bought, money spent" --> Reports
+    Students -- "enrolments, subscriptions" --> Enrollments
     Chat[Support chat] -- "members" --> Socket[Socket.io]
     Group[Group chat] -- "channel rooms" --> Socket
     Notifications -- "live push" --> Socket
@@ -132,7 +136,11 @@ flowchart LR
     Teacher -- "enrolled students" --> EnrollmentApi
     Teacher -- "open course" --> Player
     Profile -- "teacher course count" --> TeacherApi
-    Insights[Super Admin dashboard + performance] -- "dashboard, performance" --> InsightsApi[insights.api]
+    Insights[Super Admin dashboard + performance] -- "dashboard, performance (with tz)" --> InsightsApi[insights.api]
+    Insights -- "multi-select course picker" --> Picker[course-picker]
+    StudentsUi[Students page] -- "list, courses, details" --> StudentsApi[students.api]
+    StudentsUi -- "multi-select course picker" --> Picker
+    Browse -- "one box per course type + Free (same box as home)" --> PublicApi
     AdminCoursesApi --> BeCourses & BeEnrol
     EnrollmentApi --> BeEnrol
     EditorApi --> BeCourses & BeQuiz
@@ -144,6 +152,7 @@ flowchart LR
     PeopleApi --> BeUsers[Users] & BeTeachers & BeSubs & BePlans & BeQa
     TeacherApi --> BeTeachers
     InsightsApi --> BeDash[Dashboard + performance]
+    StudentsApi --> BeStudents[Students]
     ChatUi[Support chat: inbox, page, floating button] -- "conversations, messages" --> ChatApi[chat.api]
     NotifUi[Notifications + unread badges] -- "inbox, send, edit, read" --> NotifApi[notifications.api]
     GroupUi[Group chat] -- "channels, members, messages, files" --> GroupApi[group-chat.api]
@@ -185,6 +194,24 @@ noreferrer"`. Videos are never embedded from stored HTML: the course page reads 
 from a lecture's video address and builds the player address itself on `https://www.youtube-nocookie.com`;
 the Content-Security-Policy (`utils/csp.ts`) allows frames only from YouTube (`frame-src`), so any other
 embed is blocked by the browser too.
+
+### Revenue reports (dashboard and performance)
+
+The browser sends its own time zone, so "today", "last 7 days" and "this month" are the viewer's.
+
+```mermaid
+sequenceDiagram
+  participant U as Super Admin
+  participant W as Next.js page
+  participant A as API
+  U->>W: open /admin/performance, tick courses, pick "Custom range"
+  W->>W: keep courses, range, from, to in the URL
+  W->>A: GET /api/performance/overview?courseIds=a,b&dateRange=custom&from=…&to=…&tz=Asia/Dhaka
+  A->>A: enrolments of a, b → revenue (paidPrice, else course price)
+  A->>A: periods (today, 7 days, month, all) + chosen range, buckets per hour / day / month
+  A-->>W: periods, selected, granularity, chartData
+  W-->>U: coloured period cards, range line, chart (labels in the viewer's language)
+```
 
 ### Signing in
 

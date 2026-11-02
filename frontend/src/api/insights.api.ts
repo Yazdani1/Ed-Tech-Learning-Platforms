@@ -13,40 +13,59 @@ import {
   type PerformanceOverview,
 } from '@/schemas/insights.schema';
 import { http, type ApiError } from '@/services/http.service';
+import { viewerTimeZone } from '@/utils/dateTime';
 
 import { queryKeys } from './query-keys';
 
-// Super Admin insights: the dashboard summary and the performance reports.
+// Super Admin insights: the dashboard summary and the performance reports. Both send the viewer's time
+// zone, so "today", "last 7 days" and "this month" are the viewer's own.
 
-/** "All courses" in GET /api/performance/overview. */
-export const ALL_COURSES = 'all';
+export interface PerformanceFilters {
+  /** Selected course ids; empty = every course */
+  courseIds: readonly string[];
+  dateRange: DateRange;
+  /** "yyyy-MM-dd", custom range only */
+  from: string;
+  to: string;
+}
+
+/** The query string of GET /api/performance/overview (from/to only for a custom range). */
+const performanceQuery = (filters: PerformanceFilters): Record<string, string> => ({
+  courseIds: filters.courseIds.length > 0 ? filters.courseIds.join(',') : 'all',
+  dateRange: filters.dateRange,
+  tz: viewerTimeZone(),
+  ...(filters.dateRange === 'custom' ? { from: filters.from, to: filters.to } : {}),
+});
 
 export const getDashboardSummary = (): Promise<DashboardSummary> =>
-  http.get('/api/dashboard/summary', dashboardSummarySchema);
+  http.get('/api/dashboard/summary', dashboardSummarySchema, {
+    params: { tz: viewerTimeZone() },
+  });
 
-export const getPerformanceOverview = (
-  courseId: string,
-  dateRange: DateRange,
-): Promise<PerformanceOverview> => {
-  const query = new URLSearchParams({ courseId, dateRange });
-  return http.get(`/api/performance/overview?${query.toString()}`, performanceOverviewSchema);
-};
+export const getPerformanceOverview = (filters: PerformanceFilters): Promise<PerformanceOverview> =>
+  http.get('/api/performance/overview', performanceOverviewSchema, {
+    params: performanceQuery(filters),
+  });
 
 export const getPerformanceCourses = (): Promise<PerformanceCourse[]> =>
   http.get('/api/performance/courses', z.array(performanceCourseSchema));
 
 export const useDashboardSummary = (): UseQueryResult<DashboardSummary, ApiError> =>
-  useQuery({ queryKey: queryKeys.insights.dashboard, queryFn: getDashboardSummary });
+  useQuery({
+    queryKey: queryKeys.insights.dashboard(viewerTimeZone()),
+    queryFn: getDashboardSummary,
+  });
 
-/** Keeps the previous numbers on screen while another course or range loads. */
+/** Keeps the previous numbers on screen while other courses or another range load. */
 export const usePerformanceOverview = (
-  courseId: string,
-  dateRange: DateRange,
+  filters: PerformanceFilters,
+  enabled = true,
 ): UseQueryResult<PerformanceOverview, ApiError> =>
   useQuery({
-    queryKey: queryKeys.insights.performance(courseId, dateRange),
-    queryFn: () => getPerformanceOverview(courseId, dateRange),
+    queryKey: queryKeys.insights.performance(performanceQuery(filters)),
+    queryFn: () => getPerformanceOverview(filters),
     placeholderData: keepPreviousData,
+    enabled,
   });
 
 export const usePerformanceCourses = (): UseQueryResult<PerformanceCourse[], ApiError> =>

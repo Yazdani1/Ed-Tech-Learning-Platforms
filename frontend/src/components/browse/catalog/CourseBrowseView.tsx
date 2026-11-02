@@ -1,73 +1,41 @@
 'use client';
 
-import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
-import Paper from '@mui/material/Paper';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { useBrowseCourses } from '@/api/browse.api';
 import { useBrowseParams } from '@/hooks/useBrowseParams';
 
 import { CatalogHeader } from './CatalogHeader';
-import { CourseFilterPanel } from './CourseFilterPanel';
+import { CatalogSections } from './CatalogSections';
 import { CourseResults } from './CourseResults';
-import { FilterDrawer } from './FilterDrawer';
 
-/** Sidebar width on desktop (as in the old page). */
-const SIDEBAR_WIDTH = 272;
-const SIDEBAR_SX = {
-  display: { xs: 'none', md: 'block' },
-  width: SIDEBAR_WIDTH,
-  flexShrink: 0,
-  position: 'sticky',
-  top: 88,
-  maxHeight: 'calc(100vh - 120px)',
-  overflowY: 'auto',
-  borderRadius: 0.5,
-} as const;
-
-/** /courses: the public catalog with filters (sidebar on desktop, drawer on phones) and paging in the URL. */
+/**
+ * /courses: without a search or filter, one section per course type plus the free courses (like the home
+ * page); with one (navbar search, "See all" links, category links), the matching courses with paging.
+ */
 export const CourseBrowseView = () => {
-  const { t } = useTranslation();
   const filters = useBrowseParams();
-  const query = useBrowseCourses(filters.query);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const total = query.data?.total ?? 0;
-  const panel = <CourseFilterPanel filters={filters} counts={query.data?.filterCounts} />;
+  const hasFilter = filters.search !== '' || filters.activeFilterCount > 0;
+  const query = useBrowseCourses(filters.query, hasFilter);
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 } }}>
-      <CatalogHeader
-        isLoading={query.isPending}
-        total={total}
-        activeFilterCount={filters.activeFilterCount}
-        onOpenFilters={() => {
-          setDrawerOpen(true);
-        }}
-      />
-      <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
-        <Paper
-          component="aside"
-          variant="outlined"
-          aria-label={t('browse.filters.title')}
-          sx={SIDEBAR_SX}
-        >
-          {panel}
-        </Paper>
-        <Box sx={{ flex: 1, minWidth: 0, pb: 6 }}>
+    <>
+      <Container maxWidth="lg" sx={{ pt: { xs: 3, md: 4 } }}>
+        <CatalogHeader
+          isFiltered={hasFilter}
+          isLoading={query.isPending}
+          total={query.data?.total ?? 0}
+          search={filters.search}
+          onShowAll={filters.clearAll}
+        />
+      </Container>
+      {hasFilter ? (
+        <Container maxWidth="lg" sx={{ pb: 6 }}>
           <CourseResults query={query} filters={filters} />
-        </Box>
-      </Box>
-      <FilterDrawer
-        open={drawerOpen}
-        onClose={() => {
-          setDrawerOpen(false);
-        }}
-        total={total}
-      >
-        {panel}
-      </FilterDrawer>
-    </Container>
+        </Container>
+      ) : (
+        <CatalogSections />
+      )}
+    </>
   );
 };

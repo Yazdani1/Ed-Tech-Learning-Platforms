@@ -11,6 +11,7 @@ import { escapeRegex } from '../utils/escapeRegex';
 import { generateToken, sendTokenCookie } from '../utils/jwt';
 import { disconnectUserSockets } from '../socket/index';
 import { ensureStudentNumber } from '../utils/studentNumber';
+import { parsePhone } from '../utils/phone';
 
 // Only a Super Admin may create, promote to, or change Admin and Super Admin accounts (no privilege
 // escalation, no admin taking over another admin's account).
@@ -48,6 +49,7 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
   }
   assertCanManageSuperAdmin(req.user.role, role);
   assertPasswordLength(password);
+  const phone = parsePhone((req.body as { phone?: unknown }).phone);
   const normalizedEmail = email.trim().toLowerCase();
 
   const existing = await User.findOne({ email: normalizedEmail });
@@ -55,9 +57,9 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
 
   const hashed = await bcrypt.hash(password, 12);
   const validRoles: UserRole[] = ['Super Admin', 'Admin', 'Moderator', 'Teacher', 'Student'];
-  const user = await User.create({ name: name.trim(), email: normalizedEmail, password: hashed, role: role && validRoles.includes(role) ? role : 'Student' });
+  const user = await User.create({ name: name.trim(), email: normalizedEmail, password: hashed, role: role && validRoles.includes(role) ? role : 'Student', ...(phone ? { phone } : {}) });
 
-  res.status(201).json({ success: true, message: 'User created', data: { _id: user._id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt } });
+  res.status(201).json({ success: true, message: 'User created', data: { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, createdAt: user.createdAt } });
 });
 
 export const getUsers = asyncHandler(async (req: Request, res: Response) => {
@@ -471,6 +473,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
     passwordChangedAt: Date;
     role: UserRole;
   }> = {};
+  const phone = parsePhone((req.body as { phone?: unknown }).phone);
   if (![name, email, password].every((value) => value === undefined || typeof value === 'string')) {
     throw new AppError('Invalid user data', 400);
   }
@@ -506,7 +509,9 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
     updates.passwordChangedAt = new Date(Date.now() - PASSWORD_CHANGE_CLOCK_SKEW_MS);
   }
 
-  const user = await User.findByIdAndUpdate(req.params.id, updates, {
+  // An empty phone removes the number
+  const update = phone === undefined ? updates : phone ? { ...updates, phone } : { ...updates, $unset: { phone: 1 } };
+  const user = await User.findByIdAndUpdate(req.params.id, update, {
     new: true,
     runValidators: true,
   }).select('-password');

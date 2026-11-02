@@ -126,7 +126,7 @@ export const useUsers = (params: ListParams, enabled = true): UseQueryResult<Use
   });
 
 export const useCreateUser = (): UseMutationResult<void, ApiError, UserCreateRequest> =>
-  useRefreshingMutation(createUser, [queryKeys.people.users]);
+  useRefreshingMutation(createUser, [queryKeys.people.users, queryKeys.students.all]);
 
 export const useUpdateUser = (): UseMutationResult<
   void,
@@ -135,7 +135,7 @@ export const useUpdateUser = (): UseMutationResult<
 > =>
   useRefreshingMutation(
     ({ userId, body }) => updateUser(userId, body),
-    [queryKeys.people.users, queryKeys.auth.me],
+    [queryKeys.people.users, queryKeys.auth.me, queryKeys.students.all],
   );
 
 export const useUpdateUserRole = (): UseMutationResult<
@@ -145,11 +145,15 @@ export const useUpdateUserRole = (): UseMutationResult<
 > =>
   useRefreshingMutation(
     ({ userId, role }) => updateUserRole(userId, role),
-    [queryKeys.people.users, queryKeys.auth.me],
+    [queryKeys.people.users, queryKeys.auth.me, queryKeys.students.all],
   );
 
 export const useDeleteUser = (): UseMutationResult<void, ApiError, string> =>
-  useRefreshingMutation(deleteUser, [queryKeys.people.users, queryKeys.people.subscriptions]);
+  useRefreshingMutation(deleteUser, [
+    queryKeys.people.users,
+    queryKeys.people.subscriptions,
+    queryKeys.students.all,
+  ]);
 
 /** Teacher profiles are read with public.api useTeachers; the staff course list shows their names. */
 const TEACHER_KEYS = [queryKeys.public.teachers, queryKeys.adminCourses.all] as const;
@@ -167,7 +171,11 @@ export const useSubscriptions = (params: ListParams): UseQueryResult<Subscriptio
     placeholderData: keepPreviousData,
   });
 
-const SUBSCRIPTION_KEYS = [queryKeys.people.subscriptions, queryKeys.people.users] as const;
+const SUBSCRIPTION_KEYS = [
+  queryKeys.people.subscriptions,
+  queryKeys.people.users,
+  queryKeys.students.all,
+] as const;
 
 export const useAssignSubscription = (): UseMutationResult<void, ApiError, AssignRequest> =>
   useRefreshingMutation(assignSubscription, SUBSCRIPTION_KEYS);

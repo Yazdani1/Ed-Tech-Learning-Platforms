@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { PASSWORD_MIN_LENGTH, userSchema } from './auth.schema';
+import { PASSWORD_MIN_LENGTH, phoneField, userSchema } from './auth.schema';
 
 /** Same limits as auth.controller updateMe (bcrypt only reads the first 72 bytes). */
 export const PASSWORD_MAX_LENGTH = 72;
@@ -18,6 +18,8 @@ export type ActiveSubscription = z.infer<typeof activeSubscriptionSchema>;
 export const profileSchema = userSchema.extend({
   /** Students only: their unique number, "123-456-789" */
   studentNumber: z.string().nullish(),
+  /** Optional contact number */
+  phone: z.string().nullish(),
   avatar: z
     .string()
     .nullish()
@@ -34,6 +36,7 @@ export type Profile = z.infer<typeof profileSchema>;
 export interface ProfileFormValues {
   name: string;
   email: string;
+  phone: string;
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
@@ -57,6 +60,7 @@ export const makeProfileFormSchema = (
     .object({
       name: z.string().trim().min(1, 'validation.required'),
       email: z.string().trim(),
+      phone: phoneField,
       currentPassword: z.string(),
       newPassword: z.string(),
       confirmPassword: z.string(),

@@ -22,6 +22,8 @@ export const buildProfileFormData = (
 
   if (name !== profile.name) body.append('name', name);
   if (emailChanged) body.append('email', email);
+  // An empty phone removes the number
+  if (values.phone.trim() !== (profile.phone ?? '')) body.append('phone', values.phone.trim());
   if (avatar.file) body.append('avatar', avatar.file);
   else if (avatar.remove && profile.avatar) body.append('removeAvatar', 'true');
   if (values.isCommunityProfilePrivate !== profile.isCommunityProfilePrivate) {
@@ -37,6 +39,7 @@ export const buildProfileFormData = (
 export const profileFormDefaults = (profile: Profile): ProfileFormValues => ({
   name: profile.name,
   email: profile.email,
+  phone: profile.phone ?? '',
   currentPassword: '',
   newPassword: '',
   confirmPassword: '',

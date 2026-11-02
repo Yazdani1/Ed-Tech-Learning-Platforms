@@ -34,5 +34,7 @@ const enrollmentSchema = new Schema<IEnrollment>(
 );
 
 enrollmentSchema.index({ student: 1, course: 1 }, { unique: true });
+// Course filters of the performance report and the students page
+enrollmentSchema.index({ course: 1 });
 
 export const Enrollment = model<IEnrollment>('Enrollment', enrollmentSchema);

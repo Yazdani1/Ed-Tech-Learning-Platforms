@@ -3,7 +3,6 @@
 import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import { useTranslation } from 'react-i18next';
 
 import { AppModal } from '@/components/common/AppModal';
@@ -12,6 +11,7 @@ import type { Profile } from '@/schemas/profile.schema';
 
 import { AvatarPicker } from './AvatarPicker';
 import { CommunityPrivacySwitch } from './CommunityPrivacySwitch';
+import { ProfileContactFields } from './ProfileContactFields';
 import { ProfilePasswordFields } from './ProfilePasswordFields';
 import { ROLE_COLORS } from './subscription.utils';
 import { useProfileFieldError } from './useProfileFieldError';
@@ -28,7 +28,7 @@ interface EditProfileModalProps {
 const safePreview = (url: string | undefined): string | undefined =>
   url?.startsWith('blob:') || isCloudinaryUrl(url) ? url : undefined;
 
-/** Edit name, email (students), avatar, community privacy and password in one save. */
+/** Edit name, email (students), phone, avatar, community privacy and password in one save. */
 export const EditProfileModal: FC<EditProfileModalProps> = ({ profile, onClose }) => {
   const { t } = useTranslation();
   const { form, formError, avatar, onSubmit, isSaving } = useProfileForm(profile, onClose);
@@ -58,25 +58,11 @@ export const EditProfileModal: FC<EditProfileModalProps> = ({ profile, onClose }
       />
       <Stack spacing={2}>
         {formError && <Alert severity="error">{formError}</Alert>}
-        <TextField
-          {...register('name')}
-          label={t('profile.name')}
-          required
-          fullWidth
-          autoComplete="name"
-          {...fieldError(formState.errors.name)}
-        />
-        <TextField
-          {...register('email')}
-          label={t('profile.email')}
-          type="email"
-          required
-          fullWidth
-          autoComplete="email"
-          // Read-only (not disabled): a disabled input would drop the value from the form
-          slotProps={{ htmlInput: { readOnly: !isStudent } }}
-          helperText={t(isStudent ? 'profile.emailHelpStudent' : 'profile.emailHelpStaff')}
-          {...fieldError(formState.errors.email)}
+        <ProfileContactFields
+          register={register}
+          errors={formState.errors}
+          fieldError={fieldError}
+          isStudent={isStudent}
         />
         <CommunityPrivacySwitch control={control} />
         <Divider />

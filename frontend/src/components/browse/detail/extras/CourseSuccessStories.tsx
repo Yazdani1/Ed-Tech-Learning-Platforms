@@ -19,7 +19,7 @@ export const CourseSuccessStories: FC<CourseSuccessStoriesProps> = ({ stories })
   if (stories.length === 0) return null;
   return (
     <DetailSection id="course-stories" title={t('browse.extras.storiesTitle')}>
-      <Box component="ul" sx={gridSx(2)}>
+      <Box component="ul" sx={gridSx(2, 3)}>
         {stories.map((story, index) => (
           <SuccessStoryCard key={`${story.title}-${index}`} story={story} />
         ))}

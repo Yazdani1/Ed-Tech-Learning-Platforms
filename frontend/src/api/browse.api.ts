@@ -58,10 +58,15 @@ export const isNotFoundError = (error: unknown): boolean =>
 
 // ---- Hooks ----
 
-export const useBrowseCourses = (params: BrowseQuery): UseQueryResult<BrowseResult, ApiError> =>
+/** `enabled` false: nothing is requested (the catalog shows its sections instead of results). */
+export const useBrowseCourses = (
+  params: BrowseQuery,
+  enabled = true,
+): UseQueryResult<BrowseResult, ApiError> =>
   useQuery({
     queryKey: queryKeys.browse.courses(params),
     queryFn: () => browseCourses(params),
+    enabled,
     // Keep the old cards on screen while a new filter loads (no flashing grid)
     placeholderData: keepPreviousData,
   });

@@ -12,8 +12,8 @@ import { useAuth } from '@/hooks/useAuth';
 
 import { CHART_HEIGHT } from '../insights.utils';
 
+import { DashboardRevenueCards } from './DashboardRevenueCards';
 import { DashboardStatGrid } from './DashboardStatGrid';
-import { RecentEnrollmentsCard } from './RecentEnrollmentsCard';
 import { TopCoursesCard } from './TopCoursesCard';
 
 /** Room for the two chart rows while recharts loads. */
@@ -25,7 +25,7 @@ const DashboardCharts = dynamic(() => import('./DashboardCharts'), {
   loading: () => <Skeleton variant="rounded" height={CHARTS_PLACEHOLDER_HEIGHT} sx={{ mb: 3 }} />,
 });
 
-/** /admin/dashboard (Super Admin): headline numbers, charts, top courses and the newest enrolments. */
+/** /admin/dashboard (Super Admin): revenue per period, headline counts, revenue charts and the top courses. */
 export const SuperAdminDashboard = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -45,18 +45,10 @@ export const SuperAdminDashboard = () => {
       >
         {summary.data && (
           <>
+            <DashboardRevenueCards revenue={summary.data.revenue} />
             <DashboardStatGrid totals={summary.data.totals} />
             <DashboardCharts summary={summary.data} />
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', xl: 'repeat(2, minmax(0, 1fr))' },
-                gap: 2,
-              }}
-            >
-              <TopCoursesCard courses={summary.data.topCourses} />
-              <RecentEnrollmentsCard enrollments={summary.data.recentEnrollments} />
-            </Box>
+            <TopCoursesCard courses={summary.data.topCourses} />
           </>
         )}
       </QueryState>

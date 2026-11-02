@@ -35,7 +35,14 @@ describe('SidebarContent', () => {
     const menu = await renderAdminMenu('Moderator');
 
     expect(within(menu).getByRole('link', { name: 'Courses' })).toBeInTheDocument();
-    for (const label of ['Dashboard', 'Teachers', 'User List', 'Subscriptions', 'Performance']) {
+    for (const label of [
+      'Dashboard',
+      'Teachers',
+      'User List',
+      'Students',
+      'Subscriptions',
+      'Performance',
+    ]) {
       expect(within(menu).queryByRole('link', { name: label })).not.toBeInTheDocument();
     }
   });
@@ -44,6 +51,10 @@ describe('SidebarContent', () => {
     const menu = await renderAdminMenu('Admin');
 
     expect(within(menu).getByRole('link', { name: 'User List' })).toBeInTheDocument();
+    expect(within(menu).getByRole('link', { name: 'Students' })).toHaveAttribute(
+      'href',
+      '/admin/students',
+    );
     expect(within(menu).queryByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
     expect(within(menu).queryByRole('link', { name: 'Performance' })).not.toBeInTheDocument();
   });

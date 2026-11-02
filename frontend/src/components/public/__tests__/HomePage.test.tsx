@@ -77,6 +77,9 @@ describe('HomePage', () => {
     expect(freeRequests).toHaveLength(1);
     expect(freeRequests[0]?.get('liveOnly')).toBeNull();
     expect(requests.every((params) => params.get('limit') === '30')).toBe(true);
+    // Page buttons scroll back to these anchors
+    expect(paid.closest('section')?.id ?? paid.id).toBe('home-paid-courses');
+    expect(free.closest('section')?.id ?? free.id).toBe('home-free-courses');
   });
 
   it('lists only the categories with courses in that section, with their course counts', async () => {

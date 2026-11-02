@@ -510,6 +510,7 @@ erDiagram
     Date passwordChangedAt
     String role
     String studentNumber "unique"
+    String phone
     String avatar
     String avatarPublicId
     Number communityPoints

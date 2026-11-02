@@ -1,131 +1,163 @@
 import type { Request, Response } from 'express';
+import { DateTime } from 'luxon';
+import { Types } from 'mongoose';
 import { Enrollment } from '../models/Enrollment.model';
 import { Course } from '../models/Course.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import {
+  MAX_DAILY_BUCKETS,
+  bucketKey,
+  bucketKeys,
+  customRange,
+  periodStarts,
+  resolveTimeZone,
+  type Granularity,
+} from '../utils/reportPeriods';
+import { enrollmentRevenue, money } from '../utils/revenue';
 
-type DateRange = '7d' | '30d' | 'lifetime';
+const DATE_RANGES = ['today', '7d', '30d', 'month', 'lifetime', 'custom'] as const;
+type DateRange = (typeof DATE_RANGES)[number];
+const THIRTY_DAYS = 30;
+/** More course ids than this in one request is refused */
+const MAX_COURSE_IDS = 500;
 
-function rangeStart(dateRange: DateRange): { start: Date; groupByMonth: boolean } {
+interface ReportEnrollment {
+  course?: unknown;
+  enrollmentType: string;
+  paidPrice?: number;
+  createdAt: Date;
+}
+
+/** ?courseIds=a,b (or the older ?courseId=a); "all" or nothing = every course. 400 for a malformed id. */
+function courseFilterFrom(query: Request['query']): Record<string, unknown> {
+  const raw = query.courseIds ?? query.courseId ?? 'all';
+  // A repeated parameter (?courseIds=a&courseIds=b) or an operator object is refused, never read as "all"
+  if (typeof raw !== 'string') throw new AppError('Invalid course id', 400);
+  const ids = raw.split(',').map((id) => id.trim()).filter((id) => id && id !== 'all');
+  if (ids.length === 0) return {};
+  if (ids.length > MAX_COURSE_IDS) throw new AppError('Too many courses selected', 400);
+  if (!ids.every((id) => Types.ObjectId.isValid(id))) throw new AppError('Invalid course id', 400);
+  return { course: { $in: ids.map((id) => new Types.ObjectId(id)) } };
+}
+
+/** Start, end and chart buckets of the chosen range (lifetime starts at the first enrolment). */
+function rangeOf(dateRange: DateRange, query: Request['query'], zone: string, enrollments: ReportEnrollment[]) {
   const now = new Date();
-  if (dateRange === '7d') {
-    return { start: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), groupByMonth: false };
+  const starts = periodStarts(zone);
+  const today = DateTime.fromJSDate(starts.today, { zone });
+  // Today: all 24 hours on the axis (the later ones are still empty)
+  if (dateRange === 'today') {
+    return { start: starts.today, end: today.endOf('day').toJSDate(), granularity: 'hour' as Granularity };
   }
+  if (dateRange === '7d') return { start: starts.week, end: now, granularity: 'day' as Granularity };
   if (dateRange === '30d') {
-    return { start: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), groupByMonth: false };
+    return { start: today.minus({ days: THIRTY_DAYS - 1 }).toJSDate(), end: now, granularity: 'day' as Granularity };
   }
-  return { start: new Date(0), groupByMonth: true };
+  if (dateRange === 'month') return { start: starts.month, end: now, granularity: 'day' as Granularity };
+  if (dateRange === 'custom') {
+    const { start, end, days } = customRange(query.from, query.to, zone);
+    return { start, end, granularity: (days > MAX_DAILY_BUCKETS ? 'month' : 'day') as Granularity };
+  }
+  const first = enrollments.reduce((min, e) => Math.min(min, new Date(e.createdAt).getTime()), now.getTime());
+  return { start: new Date(first), end: now, granularity: 'month' as Granularity };
 }
 
-function dayKey(d: Date) {
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+/** Revenue, enrolment count, paid enrolment count and type breakdown of a list of enrolments. */
+function summarise(enrollments: ReportEnrollment[]) {
+  return {
+    revenue: money(enrollments.reduce((sum, e) => sum + enrollmentRevenue(e), 0)),
+    enrollments: enrollments.length,
+    paidEnrollments: enrollments.filter((e) => e.enrollmentType === 'paid').length,
+    breakdown: {
+      free: enrollments.filter((e) => e.enrollmentType === 'free').length,
+      paid: enrollments.filter((e) => e.enrollmentType === 'paid').length,
+      subscription: enrollments.filter((e) => e.enrollmentType === 'subscription').length,
+    },
+  };
 }
 
-function monthKey(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+function chartOf(enrollments: ReportEnrollment[], range: ReturnType<typeof rangeOf>, zone: string) {
+  const buckets = new Map(
+    bucketKeys(range.start, range.end, zone, range.granularity).map((key) => [
+      key,
+      { revenue: 0, enrollments: 0, paidEnrollments: 0 },
+    ]),
+  );
+  enrollments.forEach((e) => {
+    const date = new Date(e.createdAt);
+    // Month buckets span whole months: enrolments outside the range stay out (chart = "selected")
+    if (date < range.start || date > range.end) return;
+    const bucket = buckets.get(bucketKey(date, zone, range.granularity));
+    if (!bucket) return;
+    bucket.enrollments++;
+    bucket.revenue += enrollmentRevenue(e);
+    if (e.enrollmentType === 'paid') bucket.paidEnrollments++;
+  });
+  return Array.from(buckets.entries()).map(([date, data]) => ({ date, ...data, revenue: money(data.revenue) }));
 }
 
 export const getPerformanceOverview = asyncHandler(async (req: Request, res: Response) => {
-  const courseId = String(req.query.courseId ?? 'all');
   const dateRange = (req.query.dateRange ?? '30d') as DateRange;
-  if (!['7d', '30d', 'lifetime'].includes(dateRange)) throw new AppError('Invalid date range', 400);
+  if (!DATE_RANGES.includes(dateRange)) throw new AppError('Invalid date range', 400);
+  const zone = resolveTimeZone(req.query.tz);
+  const courseFilter = courseFilterFrom(req.query);
 
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const { start, groupByMonth } = rangeStart(dateRange);
-
-  const courseFilter: Record<string, unknown> = {};
-  if (courseId !== 'all') courseFilter.course = courseId;
-
-  // Fetch all enrollments for the selected course(s) — with course price
+  // Every enrolment of the selected course(s), with the course price (revenue fallback)
   const allEnrollments = await Enrollment.find(courseFilter)
+    .select('course enrollmentType paidPrice createdAt')
     .populate('course', 'price')
     .lean();
 
-  // All-time stats
-  const totalEnrollments = allEnrollments.length;
-  const totalRevenue = allEnrollments
-    .filter((e) => e.enrollmentType === 'paid')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .reduce((sum, e) => sum + (e.paidPrice || (e.course as any)?.price || 0), 0);
-
-  // This-month stats
-  const thisMonthList = allEnrollments.filter((e) => new Date(e.createdAt) >= startOfMonth);
-  const thisMonthCount = thisMonthList.length;
-  const thisMonthRevenue = thisMonthList
-    .filter((e) => e.enrollmentType === 'paid')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .reduce((sum, e) => sum + (e.paidPrice || (e.course as any)?.price || 0), 0);
-
-  // Chart: filter by date range
-  const inRange = allEnrollments.filter((e) => new Date(e.createdAt) >= start);
-
-  // Build empty buckets for every day / month in the range
-  const buckets = new Map<string, { revenue: number; enrollments: number }>();
-
-  if (groupByMonth) {
-    const earliest =
-      inRange.length > 0
-        ? new Date(Math.min(...inRange.map((e) => new Date(e.createdAt).getTime())))
-        : now;
-    let d = new Date(earliest.getFullYear(), earliest.getMonth(), 1);
-    while (d <= now) {
-      buckets.set(monthKey(d), { revenue: 0, enrollments: 0 });
-      d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-    }
-  } else {
-    const d = new Date(start);
-    d.setHours(0, 0, 0, 0);
-    while (d <= now) {
-      buckets.set(dayKey(d), { revenue: 0, enrollments: 0 });
-      d.setDate(d.getDate() + 1);
-    }
-  }
-
-  // Fill buckets
-  inRange.forEach((e) => {
-    const d = new Date(e.createdAt);
-    const key = groupByMonth ? monthKey(d) : dayKey(d);
-    const bucket = buckets.get(key);
-    if (bucket) {
-      bucket.enrollments++;
-      if (e.enrollmentType === 'paid') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        bucket.revenue += e.paidPrice || (e.course as any)?.price || 0;
-      }
-    }
+  const range = rangeOf(dateRange, req.query, zone, allEnrollments);
+  const between = (start: Date, end = new Date()) =>
+    allEnrollments.filter((e) => new Date(e.createdAt) >= start && new Date(e.createdAt) <= end);
+  const starts = periodStarts(zone);
+  const lifetime = summarise(allEnrollments);
+  const thisMonth = summarise(between(starts.month));
+  const pick = ({ revenue, enrollments, paidEnrollments }: ReturnType<typeof summarise>) => ({
+    revenue,
+    enrollments,
+    paidEnrollments,
   });
-
-  const chartData = Array.from(buckets.entries()).map(([date, data]) => ({
-    date,
-    revenue: Math.round(data.revenue * 100) / 100,
-    enrollments: data.enrollments,
-  }));
-
-  // Pie breakdown (all-time for the course selection)
-  const breakdown = {
-    free: allEnrollments.filter((e) => e.enrollmentType === 'free').length,
-    paid: allEnrollments.filter((e) => e.enrollmentType === 'paid').length,
-    subscription: allEnrollments.filter((e) => e.enrollmentType === 'subscription').length,
-  };
 
   res.json({
     success: true,
     data: {
-      thisMonthRevenue: Math.round(thisMonthRevenue * 100) / 100,
-      totalRevenue: Math.round(totalRevenue * 100) / 100,
-      thisMonthCount,
-      totalEnrollments,
-      chartData,
-      breakdown,
+      thisMonthRevenue: thisMonth.revenue,
+      totalRevenue: lifetime.revenue,
+      thisMonthCount: thisMonth.enrollments,
+      totalEnrollments: lifetime.enrollments,
+      periods: {
+        today: pick(summarise(between(starts.today))),
+        week: pick(summarise(between(starts.week))),
+        month: pick(thisMonth),
+        lifetime: pick(lifetime),
+      },
+      // The chosen range (the chart and its pie)
+      selected: summarise(between(range.start, range.end)),
+      granularity: range.granularity,
+      chartData: chartOf(allEnrollments, range, zone),
+      breakdown: lifetime.breakdown,
     },
   });
 });
 
 export const getPerformanceCourses = asyncHandler(async (_req: Request, res: Response) => {
-  const courses = await Course.find()
-    .select('title coverImage pricing price listPrice discountPrice status')
-    .sort({ createdAt: -1 });
+  const [courses, paidCounts] = await Promise.all([
+    Course.find()
+      .select('title coverImage pricing price status')
+      .sort({ createdAt: -1 })
+      .lean(),
+    Enrollment.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { enrollmentType: 'paid' } },
+      { $group: { _id: '$course', count: { $sum: 1 } } },
+    ]),
+  ]);
+  const paidByCourse = new Map(paidCounts.map((item) => [String(item._id), item.count]));
 
-  res.json({ success: true, data: courses });
+  res.json({
+    success: true,
+    data: courses.map((course) => ({ ...course, paidStudents: paidByCourse.get(String(course._id)) ?? 0 })),
+  });
 });

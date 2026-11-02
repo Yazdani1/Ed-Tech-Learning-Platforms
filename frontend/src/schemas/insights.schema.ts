@@ -1,15 +1,17 @@
 import { z } from 'zod';
 
-import { enrollmentTypeSchema } from './catalog.schema';
-
 // Super Admin insights: GET /api/dashboard/summary and the /api/performance reads.
 
-const labelCountSchema = z.object({ label: z.string(), value: z.number() });
-export type LabelCount = z.infer<typeof labelCountSchema>;
+/** One slice of a pie chart (label already translated). */
+export interface LabelCount {
+  label: string;
+  value: number;
+}
 
 const dashboardTotalsSchema = z.object({
   users: z.number(),
   students: z.number(),
+  newStudentsThisMonth: z.number(),
   teachers: z.number(),
   courses: z.number(),
   publishedCourses: z.number(),
@@ -26,10 +28,25 @@ const dashboardTotalsSchema = z.object({
 });
 export type DashboardTotals = z.infer<typeof dashboardTotalsSchema>;
 
+/** Revenue of one period (today, last 7 days, this month, lifetime): course + subscription. */
+const revenuePeriodSchema = z.object({
+  total: z.number(),
+  course: z.number(),
+  subscription: z.number(),
+  enrollments: z.number(),
+  paidEnrollments: z.number(),
+});
+export type RevenuePeriod = z.infer<typeof revenuePeriodSchema>;
+
+/** The four headline periods (the server counts them in the viewer's time zone, sent as ?tz=). */
+export const REVENUE_PERIODS = ['today', 'week', 'month', 'lifetime'] as const;
+export type RevenuePeriodKey = (typeof REVENUE_PERIODS)[number];
+
 const timelineEntrySchema = z.object({
-  /** "month/day" in server time */
+  /** "yyyy-MM-dd" (days) or "yyyy-MM" (months) in the viewer's zone */
   date: z.string(),
   enrollments: z.number(),
+  paidEnrollments: z.number(),
   courseRevenue: z.number(),
   subscriptionRevenue: z.number(),
   totalRevenue: z.number(),
@@ -47,58 +64,81 @@ const topCourseSchema = z.object({
     })
     .nullable(),
   enrollments: z.number(),
+  paidEnrollments: z.number(),
+  revenue: z.number(),
 });
 export type TopCourse = z.infer<typeof topCourseSchema>;
 
-const recentEnrollmentSchema = z.object({
-  _id: z.string(),
-  student: z.object({ name: z.string() }).nullable(),
-  course: z.object({ title: z.string() }).nullable(),
-  enrollmentType: enrollmentTypeSchema,
-  createdAt: z.string(),
-});
-export type RecentEnrollment = z.infer<typeof recentEnrollmentSchema>;
-
-/** GET /api/dashboard/summary (Super Admin). */
+/** GET /api/dashboard/summary?tz= (Super Admin). */
 export const dashboardSummarySchema = z.object({
   totals: dashboardTotalsSchema,
-  roleCounts: z.array(labelCountSchema),
-  courseStatusCounts: z.array(labelCountSchema),
-  coursePricingCounts: z.array(labelCountSchema),
+  revenue: z.object({
+    today: revenuePeriodSchema,
+    week: revenuePeriodSchema,
+    month: revenuePeriodSchema,
+    lifetime: revenuePeriodSchema,
+  }),
+  /** The last 30 days */
   revenueTimeline: z.array(timelineEntrySchema),
+  /** The last 12 months */
+  monthlyRevenue: z.array(timelineEntrySchema),
   topCourses: z.array(topCourseSchema),
-  recentEnrollments: z.array(recentEnrollmentSchema),
 });
 export type DashboardSummary = z.infer<typeof dashboardSummarySchema>;
 
-/** The only ranges GET /api/performance/overview accepts (anything else is a 400). */
-export const DATE_RANGES = ['7d', '30d', 'lifetime'] as const;
+/** The ranges GET /api/performance/overview accepts (custom needs from + to). */
+export const DATE_RANGES = ['today', '7d', '30d', 'month', 'lifetime', 'custom'] as const;
 export const dateRangeSchema = z.enum(DATE_RANGES);
 export type DateRange = z.infer<typeof dateRangeSchema>;
 
+export const GRANULARITIES = ['hour', 'day', 'month'] as const;
+export type Granularity = (typeof GRANULARITIES)[number];
+
 const performancePointSchema = z.object({
-  /** "month/day" for 7d/30d, "YYYY-MM" for lifetime */
+  /** "yyyy-MM-ddTHH" (hour), "yyyy-MM-dd" (day) or "yyyy-MM" (month), in the viewer's zone */
   date: z.string(),
   revenue: z.number(),
   enrollments: z.number(),
+  paidEnrollments: z.number(),
 });
 export type PerformancePoint = z.infer<typeof performancePointSchema>;
 
-/** GET /api/performance/overview?courseId=&dateRange= (Super Admin). */
+const breakdownSchema = z.object({ free: z.number(), paid: z.number(), subscription: z.number() });
+
+const periodNumbersSchema = z.object({
+  revenue: z.number(),
+  enrollments: z.number(),
+  paidEnrollments: z.number(),
+});
+export type PeriodNumbers = z.infer<typeof periodNumbersSchema>;
+
+/** GET /api/performance/overview?courseIds=&dateRange=&from=&to=&tz= (Super Admin). */
 export const performanceOverviewSchema = z.object({
   thisMonthRevenue: z.number(),
   totalRevenue: z.number(),
   thisMonthCount: z.number(),
   totalEnrollments: z.number(),
+  periods: z.object({
+    today: periodNumbersSchema,
+    week: periodNumbersSchema,
+    month: periodNumbersSchema,
+    lifetime: periodNumbersSchema,
+  }),
+  /** The chosen range */
+  selected: periodNumbersSchema.extend({ breakdown: breakdownSchema }),
+  granularity: z.enum(GRANULARITIES),
   chartData: z.array(performancePointSchema),
-  breakdown: z.object({ free: z.number(), paid: z.number(), subscription: z.number() }),
+  /** All time */
+  breakdown: breakdownSchema,
 });
 export type PerformanceOverview = z.infer<typeof performanceOverviewSchema>;
 
-/** One item of GET /api/performance/courses (title, cover, price fields and status only). */
+/** One item of GET /api/performance/courses: title, cover, status and the paid-student count. */
 export const performanceCourseSchema = z.object({
   _id: z.string(),
   title: z.string(),
+  coverImage: z.string().nullish(),
   status: z.enum(['Draft', 'Published']),
+  paidStudents: z.number(),
 });
 export type PerformanceCourse = z.infer<typeof performanceCourseSchema>;

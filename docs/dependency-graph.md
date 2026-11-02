@@ -22,6 +22,7 @@ subgraph frontend["frontend"]
       frontend_src_components_course_card["course-card"]
       frontend_src_components_course_editor["course-editor"]
       frontend_src_components_course_fields["course-fields"]
+      frontend_src_components_course_picker["course-picker"]
       frontend_src_components_enrollments["enrollments"]
       frontend_src_components_errors["errors"]
       frontend_src_components_group_chat["group-chat"]
@@ -56,6 +57,7 @@ subgraph frontend["frontend"]
 end
 frontend_src_api-->frontend_src_schemas
 frontend_src_api-->frontend_src_services
+frontend_src_api-->frontend_src_utils
 frontend_src_api-->frontend_src_types
 frontend_src_app-->frontend_src_components_community
 frontend_src_app-->frontend_src_components_public
@@ -105,11 +107,12 @@ frontend_src_components_auth-->frontend_src_schemas
 frontend_src_components_browse-->frontend_src_api
 frontend_src_components_browse-->frontend_src_hooks
 frontend_src_components_browse-->frontend_src_schemas
-frontend_src_components_browse-->frontend_src_components_common
 frontend_src_components_browse-->frontend_src_utils
+frontend_src_components_browse-->frontend_src_components_common
 frontend_src_components_browse-->frontend_src_components_course_card
 frontend_src_components_browse-->frontend_src_components_permissions
 frontend_src_components_browse-->frontend_src_components_setup
+frontend_src_components_browse-->frontend_src_components_public
 frontend_src_components_browse-->frontend_src_services
 frontend_src_components_chat-->frontend_src_api
 frontend_src_components_chat-->frontend_src_schemas
@@ -138,6 +141,9 @@ frontend_src_components_course_editor-->frontend_src_components_course_card
 frontend_src_components_course_editor-->frontend_src_components_setup
 frontend_src_components_course_editor-->frontend_src_components_live_class
 frontend_src_components_course_fields-->frontend_src_components_common
+frontend_src_components_course_picker-->frontend_src_components_common
+frontend_src_components_course_picker-->frontend_src_utils
+frontend_src_components_course_picker-->frontend_src_services
 frontend_src_components_enrollments-->frontend_src_components_common
 frontend_src_components_enrollments-->frontend_src_schemas
 frontend_src_components_enrollments-->frontend_src_utils
@@ -153,9 +159,9 @@ frontend_src_components_i18n-->frontend_src_utils
 frontend_src_components_insights-->frontend_src_api
 frontend_src_components_insights-->frontend_src_components_common
 frontend_src_components_insights-->frontend_src_hooks
-frontend_src_components_insights-->frontend_src_utils
 frontend_src_components_insights-->frontend_src_schemas
-frontend_src_components_insights-->frontend_src_services
+frontend_src_components_insights-->frontend_src_utils
+frontend_src_components_insights-->frontend_src_components_course_picker
 frontend_src_components_layout-->frontend_src_components_chat
 frontend_src_components_layout-->frontend_src_types
 frontend_src_components_layout-->frontend_src_utils
@@ -190,6 +196,7 @@ frontend_src_components_people-->frontend_src_components_permissions
 frontend_src_components_people-->frontend_src_utils
 frontend_src_components_people-->frontend_src_schemas
 frontend_src_components_people-->frontend_src_hooks
+frontend_src_components_people-->frontend_src_components_course_picker
 frontend_src_components_people-->frontend_src_services
 frontend_src_components_people-->frontend_src_types
 frontend_src_components_permissions-->frontend_src_hooks
@@ -214,11 +221,11 @@ frontend_src_components_profile-->frontend_src_types
 frontend_src_components_public-->frontend_src_api
 frontend_src_components_public-->frontend_src_components_errors
 frontend_src_components_public-->frontend_src_schemas
-frontend_src_components_public-->frontend_src_i18n
-frontend_src_components_public-->frontend_src_utils
-frontend_src_components_public-->frontend_src_hooks
 frontend_src_components_public-->frontend_src_components_common
+frontend_src_components_public-->frontend_src_hooks
+frontend_src_components_public-->frontend_src_utils
 frontend_src_components_public-->frontend_src_components_course_card
+frontend_src_components_public-->frontend_src_i18n
 frontend_src_components_schedule-->frontend_src_components_common
 frontend_src_components_schedule-->frontend_src_api
 frontend_src_components_schedule-->frontend_src_schemas

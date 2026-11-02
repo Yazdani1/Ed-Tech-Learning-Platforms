@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import { http } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { fail, makeUser, signedInAs } from '@/test/msw/handlers';
+import { fail, makeUser, ok, signedInAs } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { renderWithProviders } from '@/test/render';
 
@@ -16,36 +16,69 @@ describe('SuperAdminDashboard', () => {
     server.use(signedInAs(makeUser('Super Admin', { name: 'Nadia' })));
   });
 
-  it('shows the headline numbers, top courses and recent enrolments', async () => {
+  it('shows revenue for today, the last 7 days, this month and all time, each on its own card', async () => {
     server.use(summaryReturns(makeSummary()));
     renderWithProviders(<SuperAdminDashboard />);
 
-    expect(await screen.findByText('৳1,530')).toBeInTheDocument();
+    const cards = await screen.findByRole('region', { name: 'Revenue' });
+    const periods: [string, string][] = [
+      ['Today', '৳120'],
+      ['Last 7 days', '৳300'],
+      ['This month', '৳450'],
+      ['All time', '৳1,530'],
+    ];
+    for (const [label, amount] of periods) {
+      expect(within(cards).getByText(label)).toBeInTheDocument();
+      expect(within(cards).getByText(amount)).toBeInTheDocument();
+    }
+    expect(within(cards).getByText('Courses ৳390 · Subscriptions ৳1,140')).toBeInTheDocument();
+    expect(within(cards).getByText('5 enrollments (3 paid)')).toBeInTheDocument();
+  });
+
+  it('shows the student count and the other platform numbers', async () => {
+    server.use(summaryReturns(makeSummary()));
+    renderWithProviders(<SuperAdminDashboard />);
+
+    const counts = await screen.findByRole('region', { name: 'Platform numbers' });
+    expect(within(counts).getByText('Students')).toBeInTheDocument();
+    expect(within(counts).getByText('2 new this month')).toBeInTheDocument();
+    expect(within(counts).getByText('2 published, 1 draft')).toBeInTheDocument();
     expect(
-      await screen.findByText('Welcome back, Nadia. Here is the current application snapshot.'),
+      screen.getByText('Welcome back, Nadia. Here is how the platform is doing.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('৳450 this month')).toBeInTheDocument();
-    expect(screen.getByText('4 enrollments this month')).toBeInTheDocument();
-    expect(screen.getByText('2 published, 1 draft')).toBeInTheDocument();
-    expect(screen.getByText('৳1,140 subscription revenue')).toBeInTheDocument();
-    expect(screen.getByText('Unresolved Q&A')).toBeInTheDocument();
-    expect(screen.getByText('5 total enrollments')).toBeInTheDocument();
+  });
 
-    const top = screen.getByRole('region', { name: 'Top Courses' });
+  it('lists the top 5 courses with their revenue and enrolled students; no recent enrolments', async () => {
+    server.use(summaryReturns(makeSummary()));
+    renderWithProviders(<SuperAdminDashboard />);
+
+    const top = await screen.findByRole('region', { name: 'Top 5 courses by revenue' });
     expect(within(top).getByText('Algebra 101')).toBeInTheDocument();
-    expect(within(top).getByText('3 enrollments')).toBeInTheDocument();
+    expect(within(top).getByText('৳350')).toBeInTheDocument();
+    expect(within(top).getByText('3 students enrolled (2 paid)')).toBeInTheDocument();
     expect(within(top).getByText('Deleted course')).toBeInTheDocument();
-
-    const recent = screen.getByRole('list', { name: 'Recent Enrollments' });
-    expect(within(recent).getByText('Asha Karim')).toBeInTheDocument();
-    expect(within(recent).getByText('Paid')).toBeInTheDocument();
+    expect(screen.queryByText(/recent enrollments/i)).not.toBeInTheDocument();
   });
 
   it('says so when nobody has enrolled yet', async () => {
-    server.use(summaryReturns(makeSummary({ topCourses: [], recentEnrollments: [] })));
+    server.use(summaryReturns(makeSummary({ topCourses: [] })));
     renderWithProviders(<SuperAdminDashboard />);
 
-    expect(await screen.findAllByText('No enrollments yet.')).toHaveLength(2);
+    expect(await screen.findByText('No enrollments yet.')).toBeInTheDocument();
+  });
+
+  it('sends the viewer time zone with the request', async () => {
+    let tz: string | null = null;
+    server.use(
+      http.get('*/api/dashboard/summary', ({ request }) => {
+        tz = new URL(request.url).searchParams.get('tz');
+        return ok(makeSummary());
+      }),
+    );
+    renderWithProviders(<SuperAdminDashboard />);
+
+    await screen.findByRole('region', { name: 'Revenue' });
+    expect(tz).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
   });
 
   it('shows the server message when the summary cannot load', async () => {

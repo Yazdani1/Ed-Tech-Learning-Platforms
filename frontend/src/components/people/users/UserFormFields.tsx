@@ -20,7 +20,7 @@ interface UserFormFieldsProps {
   isEdit: boolean;
 }
 
-/** Name, email, password and role fields of the user form. */
+/** Name, email, phone, password and role fields of the user form. */
 export const UserFormFields: FC<UserFormFieldsProps> = ({ form, isEdit }) => {
   const { t } = useTranslation();
   const { errors } = form.formState;
@@ -48,6 +48,14 @@ export const UserFormFields: FC<UserFormFieldsProps> = ({ form, isEdit }) => {
         required
         fullWidth
         {...errorProps(errors.email)}
+      />
+      <TextField
+        {...form.register('phone')}
+        label={t('people.users.phone')}
+        type="tel"
+        autoComplete="off"
+        fullWidth
+        {...errorProps(errors.phone)}
       />
       <TextField
         {...form.register('password')}

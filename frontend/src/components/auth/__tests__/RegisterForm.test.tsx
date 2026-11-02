@@ -52,7 +52,38 @@ describe('RegisterForm', () => {
     await waitFor(() => {
       expect(queryClient.getQueryData(queryKeys.auth.me)).toEqual(student);
     });
-    // The client never sends a role: the backend always creates a Student
-    expect(body).toEqual({ name: 'Rahim', email: 'rahim@example.com', password: 'secret1' });
+    // The client never sends a role: the backend always creates a Student; the phone is optional
+    expect(body).toEqual({
+      name: 'Rahim',
+      email: 'rahim@example.com',
+      phone: '',
+      password: 'secret1',
+    });
+  });
+
+  it('sends an optional phone number, and refuses one that is not a phone number', async () => {
+    let body: unknown;
+    server.use(
+      http.post('*/api/auth/register', async ({ request }) => {
+        body = await request.json();
+        return ok(makeUser('Student'));
+      }),
+    );
+    renderWithProviders(<RegisterForm />);
+    const phone = screen.getByLabelText('Phone number');
+
+    await userEvent.type(phone, 'call me');
+    await fill('Rahim', 'rahim@example.com', 'secret1');
+    expect(
+      await screen.findByText('Enter a valid phone number (digits, spaces, dashes, optional +)'),
+    ).toBeInTheDocument();
+    expect(body).toBeUndefined();
+
+    await userEvent.clear(phone);
+    await userEvent.type(phone, '+880 1711-000000');
+    await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    await waitFor(() => {
+      expect(body).toMatchObject({ phone: '+880 1711-000000' });
+    });
   });
 });

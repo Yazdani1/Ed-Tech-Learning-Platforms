@@ -123,6 +123,10 @@ describe('CourseDetailView sections', () => {
     const faq = screen.getByRole('region', { name: 'Frequently asked questions' });
     await userEvent.setup().click(within(faq).getByRole('button', { name: 'Is it live?' }));
     expect(await within(faq).findByText('Yes, twice a week.')).toBeVisible();
+    // One card per question under a centred heading
+    expect(within(faq).getByRole('heading', { name: 'Frequently asked questions' })).toHaveStyle({
+      textAlign: 'center',
+    });
   });
 
   it('uses the default headings when a section has no title of its own', async () => {

@@ -108,7 +108,9 @@
     "heroVideoBody": "Continue lessons, attend classes, and ask questions from your dashboard.",
     "heroInstructorTitle": "Instructor-led experience",
     "heroInstructorBody": "Learn from teachers with practical expertise and organized curriculum.",
-    "logoutFailed": "Could not sign out. Check your connection and try again."
+    "logoutFailed": "Could not sign out. Check your connection and try again.",
+    "phone": "Phone number",
+    "phoneHelp": "Optional"
   },
   "course": {
     "title": "Course Title",
@@ -177,6 +179,25 @@
   "validation": {
     "required": "This field is required",
     "email": "Enter a valid email address",
-    "passwordMin": "Password must be at least {{min}} characters"
+    "passwordMin": "Password must be at least {{min}} characters",
+    "phone": "Enter a valid phone number (digits, spaces, dashes, optional +)"
+  },
+  "coursePicker": {
+    "title": "Select courses",
+    "search": "Search for a keyword",
+    "allCourses": "All courses",
+    "courseList": "Courses",
+    "noMatch": "No courses match your search.",
+    "unpublished": "Unpublished",
+    "clear": "Clear",
+    "apply_one": "Apply ({{count}} course)",
+    "apply_other": "Apply ({{count}} courses)",
+    "applyAll": "Show all courses",
+    "selectedCount_one": "{{count}} course",
+    "selectedCount_other": "{{count}} courses",
+    "paidStudents_one": "{{count}} paid student",
+    "paidStudents_other": "{{count}} paid students",
+    "students_one": "{{count}} student",
+    "students_other": "{{count}} students"
   }
 }

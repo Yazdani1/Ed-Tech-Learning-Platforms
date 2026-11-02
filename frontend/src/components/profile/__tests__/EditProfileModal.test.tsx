@@ -73,6 +73,30 @@ describe('EditProfileModal', () => {
     expect(await screen.findByText('Profile updated')).toBeInTheDocument();
   });
 
+  it('sends a new phone number, and an empty one to remove it', async () => {
+    const profile = makeProfile('Student', { phone: '01711 000111' });
+    const capture = captureUpdate({ ...profile, phone: undefined });
+    const view = renderModal(profile);
+    const user = userEvent.setup();
+
+    const phone = screen.getByLabelText('Phone number');
+    expect(phone).toHaveValue('01711 000111');
+    await user.clear(phone);
+    await user.type(phone, 'not a phone');
+    await save(user);
+    expect(
+      await screen.findByText('Enter a valid phone number (digits, spaces, dashes, optional +)'),
+    ).toBeInTheDocument();
+    expect(capture.sent).toBeNull();
+
+    await user.clear(phone);
+    await save(user);
+    await waitFor(() => {
+      expect(view.isClosed()).toBe(true);
+    });
+    expect(capture.sent).toEqual({ phone: '' });
+  });
+
   it('says so when nothing changed and sends nothing', async () => {
     const capture = captureUpdate(makeProfile('Admin'));
     renderModal(makeProfile('Admin'));

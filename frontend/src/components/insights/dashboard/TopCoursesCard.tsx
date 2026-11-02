@@ -16,7 +16,7 @@ interface TopCoursesCardProps {
   courses: TopCourse[];
 }
 
-/** The five courses with the most enrolments. */
+/** The five courses that earned the most, with their revenue and enrolled students. */
 export const TopCoursesCard: FC<TopCoursesCardProps> = ({ courses }) => {
   const { t } = useTranslation();
   const titleId = useId();
@@ -36,7 +36,8 @@ export const TopCoursesCard: FC<TopCoursesCardProps> = ({ courses }) => {
             <TopCourseRow
               key={item.course?._id ?? `deleted-${String(index)}`}
               item={item}
-              isFirst={index === 0}
+              rank={index + 1}
+              maxRevenue={courses[0]?.revenue ?? 0}
             />
           ))}
         </Box>

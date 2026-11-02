@@ -99,7 +99,8 @@
     "createdAt": "তৈরির সময়",
     "updatedAt": "হালনাগাদের সময়",
     "studentNumber": "শিক্ষার্থী নম্বর",
-    "studentNumberShort": "নং {{number}}"
+    "studentNumberShort": "নং {{number}}",
+    "phone": "ফোন নম্বর (ঐচ্ছিক)"
   },
   "teachers": {
     "title": "শিক্ষকগণ",
@@ -254,5 +255,41 @@
     "needsStaffAnswer": "স্টাফের উত্তর দরকার",
     "answerCount_one": "{{count}}টি উত্তর",
     "answerCount_other": "{{count}}টি উত্তর"
+  },
+  "students": {
+    "title": "শিক্ষার্থী",
+    "subtitle": "সব শিক্ষার্থী, তারা কী কিনেছে এবং যোগাযোগের তথ্য।",
+    "search": "শিক্ষার্থী খুঁজুন",
+    "searchPlaceholder": "নাম, ইমেইল, শিক্ষার্থী নম্বর বা ফোন",
+    "chooseCourses": "কোর্স অনুযায়ী ফিল্টার (এখন: {{course}})",
+    "student": "শিক্ষার্থী",
+    "studentNumber": "শিক্ষার্থী নম্বর",
+    "phone": "ফোন",
+    "email": "ইমেইল",
+    "courses": "কোর্স",
+    "totalSpent": "মোট খরচ",
+    "joined": "যোগদান",
+    "empty": "এখনো কোনো শিক্ষার্থী নেই।",
+    "noMatch": "আপনার ফিল্টারের সাথে কোনো শিক্ষার্থী মেলেনি।",
+    "detailsTitle": "শিক্ষার্থীর বিস্তারিত",
+    "contact": "যোগাযোগের তথ্য",
+    "spending": "খরচ",
+    "courseCount": "কোর্স",
+    "courseCountValue_one": "{{count}}টি কোর্স ({{paid}}টি পেইড)",
+    "courseCountValue_other": "{{count}}টি কোর্স ({{paid}}টি পেইড)",
+    "courseSpent": "কোর্সে",
+    "subscriptionSpent": "সাবস্ক্রিপশনে",
+    "coursesTitle": "কোর্স ({{count}})",
+    "subscriptionsTitle": "সাবস্ক্রিপশন ({{count}})",
+    "noCourses": "এখনো কোনো কোর্সে এনরোল করেনি।",
+    "noSubscriptions": "কোনো সাবস্ক্রিপশন নেই।",
+    "deletedCourse": "মুছে ফেলা কোর্স",
+    "enrolledOn": "এনরোল {{date}}",
+    "subscriptionPeriod": "{{start}} – {{end}}",
+    "status": {
+      "Active": "সক্রিয়",
+      "Expired": "মেয়াদোত্তীর্ণ",
+      "Cancelled": "বাতিল"
+    }
   }
 }

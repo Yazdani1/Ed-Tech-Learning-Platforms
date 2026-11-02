@@ -9,6 +9,8 @@ export interface IUser extends Document {
   role: UserRole;
   /** Students only: unique 9-digit number shown as 123-456-789 (set on creation, never changes) */
   studentNumber?: string;
+  /** Optional contact number (digits, spaces, dashes, leading "+") */
+  phone?: string;
   avatar?: string;
   avatarPublicId?: string;
   communityPoints: number;
@@ -38,6 +40,7 @@ const userSchema = new Schema<IUser>(
       default: 'Student',
     },
     studentNumber: { type: String, unique: true, sparse: true },
+    phone: { type: String, trim: true, maxlength: 20 },
     avatar: String,
     avatarPublicId: { type: String, select: false },
     communityPoints: { type: Number, default: 0, min: 0 },

@@ -73,5 +73,7 @@
   "passwordMismatch": "New passwords do not match.",
   "noChanges": "Make at least one change before saving.",
   "updated": "Profile updated",
-  "studentNumber": "Student number"
+  "studentNumber": "Student number",
+  "phone": "Phone number",
+  "phoneHelp": "Optional. Staff can see it to contact you."
 }
