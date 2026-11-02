@@ -5,18 +5,20 @@
 // file changes must be polled. On the host it reads the files directly, so pages compile in seconds.
 //
 //   1. checks that the frontend packages are installed and the ports are free
-//   2. removes the Docker frontend container (if any) and starts mongo + backend in Docker
+//   2. removes the Docker frontend container (if any) and starts mongo + backend in Docker (the backend is
+//      recreated when backend/package-lock.json changed since it started, so new packages get installed)
 //   3. waits until the backend answers, then starts the frontend here (Ctrl+C stops it)
 //
 // Docker keeps running after Ctrl+C; `npm run dev:down` stops it.
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 
 const FRONTEND_DIR = fileURLToPath(new URL('../frontend/', import.meta.url));
 const NEXT_BIN = `${FRONTEND_DIR}node_modules/next/dist/bin/next`;
+const BACKEND_LOCK = fileURLToPath(new URL('../backend/package-lock.json', import.meta.url));
 
 // The first start builds the dev image and installs the backend packages: allow a few minutes
 const BACKEND_WAIT_MS = 5 * 60_000;
@@ -60,6 +62,21 @@ function addressIsFree(port, host) {
 /** True when the port is free on both IPv4 and IPv6 localhost ("localhost" may resolve to either). */
 async function portIsFree(port) {
   return (await addressIsFree(port, '127.0.0.1')) && (await addressIsFree(port, '::1'));
+}
+
+/**
+ * True when the backend container started before backend/package-lock.json last changed: its `npm ci` ran with
+ * the old package list (e.g. a newly added package is missing), so it must be recreated.
+ */
+function backendPackagesChanged() {
+  const result = spawnSync(
+    'docker',
+    ['inspect', '--format', '{{.State.StartedAt}}', 'edtech-learning-platform-backend-1'],
+    { encoding: 'utf8' },
+  );
+  if (result.status !== 0) return false; // no container yet: `up` creates it and installs
+  const startedAt = Date.parse(result.stdout.trim());
+  return Number.isFinite(startedAt) && statSync(BACKEND_LOCK).mtimeMs > startedAt;
 }
 
 function backendState() {
@@ -130,9 +147,14 @@ run(
   ['compose', '--profile', 'frontend', 'rm', '--stop', '--force', 'frontend'],
   'Could not remove the Docker frontend.',
 );
+// The backend installs its packages (`npm ci`) only when its container starts: after a package change it is
+// recreated, otherwise an old, still-running container would crash on the missing package
+const recreate = backendPackagesChanged() ? ['--force-recreate'] : [];
+if (recreate.length > 0)
+  console.log('\nBackend packages changed: recreating the backend container.');
 run(
   'docker',
-  ['compose', 'up', '-d', '--build', 'mongo', 'backend'],
+  ['compose', 'up', '-d', '--build', ...recreate, 'mongo', 'backend'],
   'Could not start MongoDB and the backend.',
 );
 await waitForBackend();
