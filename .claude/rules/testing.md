@@ -12,8 +12,9 @@ paths:
 - Every change ends with the tests RUN and PASSING, not only written (CLAUDE.md "Definition of done"):
   `npm run check:feature -- <specs>` (lint, types, format, docs, all backend + frontend tests, the named e2e
   specs on desktop + mobile). Pick the specs by what the changed code touches, not only the feature name.
-- The full `npm run check` (all e2e + image build) runs when the user asks, before merging to main, and after
-  changes to app-wide shared code; CI runs it on every push and deploys only when it passes.
+- The full `npm run check` (all e2e + image build) runs only when the user asks (from time to time, after several
+  features) and before merging to main. After changes to app-wide shared code, check:feature with the e2e specs of
+  every page using that code is enough. CI runs the full suite on every push and deploys only when it passes.
 - Never skip a suite because "it needs Docker": check `docker info` and run it. If it truly cannot run, say so,
   do not call the task done, and give the user the exact command.
 

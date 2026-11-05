@@ -12,6 +12,9 @@ import { ProjectDetailsDrawer } from './ProjectDetailsDrawer';
 import type { CourseProject } from '@/schemas/course-extras.schema';
 import type { FC } from 'react';
 
+/** Light grey across the whole screen width */
+const PROJECTS_BAND = '#eef1f5';
+
 interface CourseProjectsSectionProps {
   projects: readonly CourseProject[];
 }
@@ -22,7 +25,11 @@ export const CourseProjectsSection: FC<CourseProjectsSectionProps> = ({ projects
   const details = useModal<CourseProject>();
   if (projects.length === 0) return null;
   return (
-    <DetailSection id="course-projects" title={t('browse.extras.projectsTitle')}>
+    <DetailSection
+      id="course-projects"
+      title={t('browse.extras.projectsTitle')}
+      band={PROJECTS_BAND}
+    >
       <Box component="ul" sx={gridSx(2)}>
         {projects.map((project, index) => (
           <ProjectCard

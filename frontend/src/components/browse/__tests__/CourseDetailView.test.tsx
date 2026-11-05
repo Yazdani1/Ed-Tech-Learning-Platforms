@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ConfirmProvider } from '@/context/ConfirmContext';
 import { fail, makeUser, ok, signedInAs } from '@/test/msw/handlers';
@@ -79,7 +79,7 @@ describe('CourseDetailView (/courses/[id])', () => {
       await screen.findByRole('heading', { level: 1, name: 'Intro to TypeScript' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Types')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Your Instructors' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Instructors & Mentors' })).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: 'Enroll Free' })).toHaveAttribute(
       'href',
       '/auth/register',
@@ -250,6 +250,76 @@ describe('CourseDetailView (/courses/[id])', () => {
     expect(screen.queryByText('Live class time')).not.toBeInTheDocument();
   });
 
+  it('folds a long About text: Show more opens it, Show less folds it again; a short one has no button', async () => {
+    const long = `<p>${'Full stack development with AI. '.repeat(20)}</p>`;
+    // jsdom has no layout: long text measures 400 px, short text 40 px; the size watcher does nothing
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe = vi.fn();
+        disconnect = vi.fn();
+      },
+    );
+    const height = vi
+      .spyOn(HTMLElement.prototype, 'scrollHeight', 'get')
+      .mockImplementation(function measured(this: HTMLElement) {
+        return this.textContent.length > 300 ? 400 : 40;
+      });
+    server.use(...courseHandlers({ course: { ...course, description: long } }));
+    const { unmount } = renderPage();
+    const user = userEvent.setup();
+
+    const more = await screen.findByRole('button', { name: 'Show more' });
+    expect(more).toHaveAttribute('aria-expanded', 'false');
+    await user.click(more);
+    const less = screen.getByRole('button', { name: 'Show less' });
+    expect(less).toHaveAttribute('aria-expanded', 'true');
+    await user.click(less);
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeInTheDocument();
+    unmount();
+
+    server.use(...courseHandlers());
+    renderPage();
+    await screen.findByRole('heading', { name: 'About this course' });
+    expect(screen.queryByRole('button', { name: 'Show more' })).not.toBeInTheDocument();
+    height.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('shows each instructor with initials when there is no Cloudinary photo, the main skill as a badge', async () => {
+    server.use(
+      ...courseHandlers({
+        course: {
+          ...course,
+          teachers: [
+            {
+              _id: 't1',
+              name: 'Jane Doe',
+              bio: 'Builds LLM tools.',
+              expertise: ['Lead AI Instructor', 'Google Cloud'],
+            },
+            { _id: 't2', name: 'Karim', profileImage: 'https://evil.example/x.png', expertise: [] },
+          ],
+        },
+      }),
+    );
+    renderPage();
+
+    const section = (await screen.findByRole('heading', { name: 'Instructors & Mentors' })).closest(
+      'section',
+    );
+    if (!section) throw new Error('no instructors section');
+    const box = within(section);
+    expect(box.getByText('JD')).toBeInTheDocument();
+    expect(box.getByText('K')).toBeInTheDocument();
+    expect(box.getByText('Lead AI Instructor')).toBeInTheDocument();
+    expect(box.getByText('Google Cloud')).toBeInTheDocument();
+    expect(box.getByText('Builds LLM tools.')).toBeInTheDocument();
+    // No skills: the plain badge
+    expect(box.getByText('Instructor')).toBeInTheDocument();
+    expect(section.querySelector('img[src*="evil.example"]')).toBeNull();
+  });
+
   it('shows the course sections in the agreed order', async () => {
     server.use(
       ...courseHandlers({
@@ -279,7 +349,7 @@ describe('CourseDetailView (/courses/[id])', () => {
       'About this course',
       "What you'll learn",
       'Curriculum',
-      'Your Instructors',
+      'Instructors & Mentors',
       'Tech you will learn',
       'Projects',
       'What will you get from this course',

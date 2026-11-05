@@ -7,6 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
+import { ENROLL_ATTENTION_SX } from './enroll-attention';
 import { EnrollmentPerks } from './EnrollmentPerks';
 import { paymentHref } from './EnrollNowButton';
 import { GuestSignUpButtons } from './GuestSignUpButtons';
@@ -57,7 +58,7 @@ export const DirectPurchaseActions: FC<DirectPurchaseActionsProps> = ({
             fullWidth
             variant="contained"
             endIcon={<ArrowForwardIcon />}
-            sx={BUTTON_SX}
+            sx={{ ...BUTTON_SX, ...ENROLL_ATTENTION_SX }}
           >
             {t('browse.buyBar.enroll')}
           </Button>

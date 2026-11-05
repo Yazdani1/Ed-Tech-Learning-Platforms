@@ -9,6 +9,10 @@ export interface ICompanyContact {
 	whatsapp?: string;
 	email?: string;
 	address?: string;
+	facebook?: string;
+	youtube?: string;
+	linkedin?: string;
+	instagram?: string;
 }
 
 export interface ISiteSetting extends Document {
@@ -30,6 +34,10 @@ const siteSettingSchema = new Schema<ISiteSetting>(
 			whatsapp: { type: String, trim: true },
 			email: { type: String, trim: true, lowercase: true },
 			address: { type: String, trim: true },
+			facebook: { type: String, trim: true },
+			youtube: { type: String, trim: true },
+			linkedin: { type: String, trim: true },
+			instagram: { type: String, trim: true },
 		},
 		updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
 	},

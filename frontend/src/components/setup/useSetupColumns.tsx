@@ -26,14 +26,6 @@ export const useSetupColumns = (
       render: (item) => (
         <Typography variant="body2" sx={{ fontWeight: 650, overflowWrap: 'anywhere' }}>
           {item.name}
-          {kind === 'courseType' && item.isLive && (
-            <Chip
-              label={t('showcase.setup.liveChip')}
-              size="small"
-              color="error"
-              sx={{ ml: 1, fontWeight: 700 }}
-            />
-          )}
         </Typography>
       ),
     },

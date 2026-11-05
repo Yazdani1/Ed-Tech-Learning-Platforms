@@ -24,7 +24,5 @@ export const setupItemRequestSchema = z.object({
     .max(SETUP_NAME_MAX, 'showcase.setup.nameTooLong')
     .regex(/[\p{L}\p{N}]/u, 'showcase.setup.nameNeedsLetters'),
   description: z.string().trim().max(SETUP_DESCRIPTION_MAX, 'showcase.setup.descriptionTooLong'),
-  /** Course types only (categories ignore it) */
-  isLive: z.boolean().optional(),
 });
 export type SetupItemRequest = z.infer<typeof setupItemRequestSchema>;

@@ -8,22 +8,14 @@ import { useTranslation } from 'react-i18next';
 import type { FC } from 'react';
 
 interface CatalogHeaderProps {
-  /** A search or filter is in the URL: show the result count and "Show all courses" */
-  isFiltered: boolean;
   isLoading: boolean;
   total: number;
   search: string;
   onShowAll: () => void;
 }
 
-/** "All Courses" with a short intro; with a search or filter, the number found and "Show all courses". */
-export const CatalogHeader: FC<CatalogHeaderProps> = ({
-  isFiltered,
-  isLoading,
-  total,
-  search,
-  onShowAll,
-}) => {
+/** Above the search / filter results: "All Courses", the number found and "Show all courses". */
+export const CatalogHeader: FC<CatalogHeaderProps> = ({ isLoading, total, search, onShowAll }) => {
   const { t } = useTranslation();
   const summary = (): string => {
     if (isLoading) return t('browse.catalog.loading');
@@ -34,12 +26,11 @@ export const CatalogHeader: FC<CatalogHeaderProps> = ({
   return (
     <Box
       sx={{
-        mb: isFiltered ? 3 : 0,
+        mb: 3,
         display: 'flex',
         flexWrap: 'wrap',
         alignItems: 'flex-end',
-        justifyContent: isFiltered ? 'space-between' : 'center',
-        textAlign: isFiltered ? 'left' : 'center',
+        justifyContent: 'space-between',
         gap: 2,
       }}
     >
@@ -48,14 +39,12 @@ export const CatalogHeader: FC<CatalogHeaderProps> = ({
           {t('browse.catalog.title')}
         </Typography>
         <Typography color="text.secondary" sx={{ mt: 0.5 }} aria-live="polite">
-          {isFiltered ? summary() : t('browse.catalog.subtitle')}
+          {summary()}
         </Typography>
       </Box>
-      {isFiltered && (
-        <Button variant="outlined" onClick={onShowAll} sx={{ minHeight: 44 }}>
-          {t('browse.catalog.showAll')}
-        </Button>
-      )}
+      <Button variant="outlined" onClick={onShowAll} sx={{ minHeight: 44 }}>
+        {t('browse.catalog.showAll')}
+      </Button>
     </Box>
   );
 };

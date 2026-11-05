@@ -15,6 +15,8 @@ import { FOOTER_LINKS } from '../common/public-links';
 import { useVisibleLinks } from '../common/useVisibleLinks';
 
 import { FOOTER_HEADING_SX, FOOTER_LINE_SX, FooterContact } from './FooterContact';
+import { FooterPaymentMarks } from './FooterPaymentMarks';
+import { FooterSocialLinks } from './FooterSocialLinks';
 
 const FOOTER_SX = {
   color: 'common.white',
@@ -36,7 +38,7 @@ const COPYRIGHT_SX = {
   borderTop: '1px solid rgba(255,255,255,0.25)',
 } as const;
 
-/** Gradient footer of every public page: name and tagline, main links, company contact, copyright. */
+/** Gradient footer of every public page: name, tagline and social icons, main links, company contact, payment methods, copyright. */
 export const PublicFooter = () => {
   const { t } = useTranslation();
   const links = useVisibleLinks(FOOTER_LINKS);
@@ -57,6 +59,7 @@ export const PublicFooter = () => {
             <Typography variant="body2" sx={{ maxWidth: 380, lineHeight: 1.7 }}>
               {t('public.footer.tagline')}
             </Typography>
+            <FooterSocialLinks />
           </Box>
           <Box component="nav" aria-label={t('public.footer.label')}>
             <Typography component="h2" sx={FOOTER_HEADING_SX}>
@@ -77,6 +80,7 @@ export const PublicFooter = () => {
           </Box>
           <FooterContact />
         </Box>
+        <FooterPaymentMarks />
         <Typography variant="body2" sx={COPYRIGHT_SX}>
           {t('public.footer.copyright', { year: DateTime.now().year })}
         </Typography>

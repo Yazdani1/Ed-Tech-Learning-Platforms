@@ -48,7 +48,6 @@ export const getTeachers = (): Promise<AdminTeacher[]> =>
 
 /** The browse filter of a course section. */
 const sourceParams = (source: CourseSectionSource): Record<string, string> => {
-  if (source.kind === 'live') return { liveOnly: 'true' };
   if (source.kind === 'free') return { pricing: 'Free' };
   return { courseTypes: source.courseTypeId, pricing: 'Paid' };
 };
@@ -58,12 +57,11 @@ export const sectionCategoryCounts = (
   source: CourseSectionSource,
   counts: CoursePage['filterCounts'],
 ): Record<string, number> | undefined => {
-  if (source.kind === 'live') return counts?.liveCategories;
   if (source.kind === 'free') return counts?.categoriesByPricing.Free;
   return counts?.paidByCourseType[source.courseTypeId]?.categories;
 };
 
-/** One section's page: the live courses, the free ones, or one course type's paid courses. */
+/** One section's page: the free courses, or one course type's paid courses. */
 export const getHomeCourses = ({
   source,
   category,

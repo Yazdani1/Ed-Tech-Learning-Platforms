@@ -32,9 +32,11 @@ Source of truth: the user's instructions (in conversation) and this file.
 - npm run docs:generate / docs:check
 - npm run check:feature -- <specs>: lint + typecheck + format:check + docs:check + ALL backend and frontend
   tests + e2e of the named specs only (e.g. `-- public browse`). Must pass before every commit.
-- npm run check: the same + ALL e2e specs + docker build (~30 min). Run when the user asks ("run the full
-  check"), before merging to main, and after changes to shared building blocks used across the app (http
-  service, auth, AppShell/layouts, theme, i18n setup). CI runs the full suite on every push anyway.
+- npm run check: the same + ALL e2e specs + docker build (~30 min). Run only when the user asks ("run the full
+  check"; they do so from time to time after several features) and before merging to main (user's decision
+  2026-11-05). Per feature, check:feature is enough, also after changes to shared building blocks (http
+  service, auth, AppShell/layouts, theme, i18n setup): then name the e2e specs of every page that uses them.
+  CI runs the full suite on every push anyway.
 - Before any long run: run format:check and docs:check first (seconds) so the long run does not fail late.
 - "It needs Docker" is never a reason to skip a test: check `docker info`, start Docker Desktop, run it.
 - Per app (also used by CI): `npm --prefix backend run build|lint|lint:fix`,
@@ -179,8 +181,7 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
 - Existing lint warnings (not errors): backend 4.
 - Known follow-up (Stage B): payment gateway; until then subscribing activates the plan and paid courses can be
   enrolled in without payment.
-- Stage B batch 1 (2026-11-01): Live course types (`CourseType.isLive`, home Live section via
-  `browse?liveOnly=true`); slider captions + right-side drawer editor (`components/common/SideDrawer`, one image
+- Stage B batch 1 (2026-11-01): slider captions + right-side drawer editor (`components/common/SideDrawer`, one image
   per upload); student numbers (`User.studentNumber`, 123-456-789, backfilled at start-up); `/api/site-settings`
   (Super Admin Site Pages: hidden public pages answer "not found" via `PageVisibilityGate`; Company Contact);
   `/api/tools` (Course Setup > Tools); course page sections (`PATCH /api/courses/:id/extras`, pictures via
@@ -200,4 +201,8 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   pay button does the existing paid enrolment), new home course card and category pills, gradient `PublicFooter`,
   fonts through `app/fonts.ts` + `theme/fonts.ts`. Known gaps: no Wishlist, promo code, batch number or support class
   time (they need backend fields).
+- Stage B batch 4 (2026-11-05): `CourseType.isLive` and `browse?liveOnly` removed: the home page and `/courses` show
+  one box per course type (`components/public/common/CourseTypeSections`) plus the free courses; Company Contact has
+  social links (footer icons) and the email refuses mailto parameters; grouped admin menu (`NAV_SECTIONS`); course
+  page bands for Instructors and Projects (`DetailSection band`), foldable About text, animated Enroll Now.
 - Reports of every phase: .claude/reports/ (git-ignored).

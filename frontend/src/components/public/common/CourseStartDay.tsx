@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import { formatDate, isInPast } from '@/utils/dateTime';
 
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 
 interface CourseStartDayProps {
   startDate: string | null | undefined;
@@ -17,43 +17,44 @@ interface CourseStartDayProps {
 const CHIP_SX = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: 0.5,
-  flexShrink: 0,
-  ml: 'auto',
-  px: 1,
+  flexWrap: 'wrap',
+  alignSelf: 'flex-start',
+  columnGap: 0.75,
+  rowGap: 0.25,
+  px: 1.25,
   py: 0.5,
   borderRadius: 99,
   bgcolor: '#f1f3f6',
   color: '#334155',
   fontSize: '0.8rem',
-  whiteSpace: 'nowrap',
 } as const;
 const ICON_SX = { fontSize: 16 } as const;
 
-/** The card's date chip: the start date (viewer's time zone and language), or that it is still to come or open. */
+/** "Course Start Date:" with a coming date (viewer's time zone and language), or that it is still to come or open. */
 export const CourseStartDay: FC<CourseStartDayProps> = ({ startDate }) => {
   const { t, i18n } = useTranslation();
   const date = formatDate(startDate, i18n.language);
+  let icon: ReactNode = <EventIcon sx={{ ...ICON_SX, color: '#1d4ed8' }} aria-hidden />;
+  let value = date;
+  let hasDate = true;
   if (!date) {
-    return (
-      <Box sx={CHIP_SX}>
-        <EventAvailableIcon sx={ICON_SX} aria-hidden />
-        {t('public.courses.startTba')}
-      </Box>
-    );
-  }
-  if (isInPast(startDate)) {
-    return (
-      <Box sx={CHIP_SX}>
-        <HowToRegOutlinedIcon sx={{ ...ICON_SX, color: '#047857' }} aria-hidden />
-        {t('public.courses.registrationOpen')}
-      </Box>
-    );
+    icon = <EventAvailableIcon sx={ICON_SX} aria-hidden />;
+    value = t('public.courses.startTba');
+    hasDate = false;
+  } else if (isInPast(startDate)) {
+    icon = <HowToRegOutlinedIcon sx={{ ...ICON_SX, color: '#047857' }} aria-hidden />;
+    value = t('public.courses.registrationOpen');
+    hasDate = false;
   }
   return (
     <Box sx={CHIP_SX}>
-      <EventIcon sx={{ ...ICON_SX, color: '#1d4ed8' }} aria-hidden />
-      {date}
+      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+        {icon}
+        {hasDate && t('public.courses.startDateLabel')}
+      </Box>
+      <Box component="span" sx={{ fontWeight: 700 }}>
+        {value}
+      </Box>
     </Box>
   );
 };

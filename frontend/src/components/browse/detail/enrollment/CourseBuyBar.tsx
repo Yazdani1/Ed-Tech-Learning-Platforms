@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useSiteSettings } from '@/api/site-settings.api';
 
 import { BuyBarPrice } from './BuyBarPrice';
+import { ENROLL_ATTENTION_SX } from './enroll-attention';
 import { EnrollNowButton } from './EnrollNowButton';
 import { useCanEnroll } from './useCanEnroll';
 
@@ -33,6 +34,7 @@ const BAR_SX = {
   borderColor: 'divider',
 } as const;
 const BUTTON_SX = {
+  ...ENROLL_ATTENTION_SX,
   minHeight: 48,
   px: { xs: 2, sm: 4 },
   fontWeight: 800,

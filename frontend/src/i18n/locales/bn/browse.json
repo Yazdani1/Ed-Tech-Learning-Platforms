@@ -6,7 +6,6 @@
     "found_other": "{{count}}টি কোর্স পাওয়া গেছে",
     "emptyFiltered": "আপনার ফিল্টারের সাথে কোনো কোর্স মেলেনি।",
     "empty": "এখনো কোনো প্রকাশিত কোর্স নেই।",
-    "subtitle": "কোর্সের ধরন অনুযায়ী সাজানো কোর্স, তারপর ফ্রি কোর্স।",
     "foundFor_one": "\"{{search}}\" এর জন্য {{count}}টি কোর্স পাওয়া গেছে",
     "foundFor_other": "\"{{search}}\" এর জন্য {{count}}টি কোর্স পাওয়া গেছে",
     "showAll": "সব কোর্স দেখুন",
@@ -49,11 +48,12 @@
     "whatYouWillLearn": "আপনি যা শিখবেন",
     "requirements": "কোর্সের প্রয়োজনীয়তা",
     "about": "এই কোর্স সম্পর্কে",
-    "instructors": "আপনার প্রশিক্ষকগণ",
+    "instructors": "শিক্ষক ও মেন্টর",
     "liveClassTime": "লাইভ ক্লাসের সময়",
     "saveChip": "সাশ্রয় {{amount}} ({{percent}}% ছাড়)",
-    "limitedPricing": "সীমিত সময়ের ব্যাচ মূল্য",
-    "guarantee": "তাৎক্ষণিক অ্যাক্সেস ও ৩০ দিনের মানি-ব্যাক গ্যারান্টি"
+    "showMore": "আরও দেখুন",
+    "showLess": "কম দেখুন",
+    "instructorBadge": "শিক্ষক"
   },
   "content": {
     "title": "কারিকুলাম",
@@ -149,7 +149,6 @@
     "viewProjectNamed": "প্রজেক্ট দেখুন: {{name}}",
     "liveDemo": "লাইভ ডেমো",
     "watchVideo": "পরিচিতি ভিডিও দেখুন",
-    "introVideo": "পরিচিতি ভিডিও",
     "screenshots": "স্ক্রিনশট",
     "screenshotAlt": "{{name}} স্ক্রিনশট {{number}}"
   },

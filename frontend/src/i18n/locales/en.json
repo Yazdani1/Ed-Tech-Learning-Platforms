@@ -67,12 +67,18 @@
     "courseSetup": "Course Setup",
     "userList": "User List",
     "performance": "Performance",
-    "analytics": "Analytics",
     "pricing": "Pricing",
     "assignedCourses": "Assigned courses",
     "mainMenu": "Main menu",
     "sitePages": "Site Pages",
-    "companyContact": "Company Contact"
+    "companyContact": "Company Contact",
+    "group": {
+      "courses": "Course Management",
+      "people": "Users & Students",
+      "communication": "Communication",
+      "website": "Website",
+      "analytics": "Analytics"
+    }
   },
   "auth": {
     "login": "Login",

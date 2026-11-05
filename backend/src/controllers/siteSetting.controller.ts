@@ -5,7 +5,11 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 const SETTINGS_KEY = 'site';
 const PHONE_PATTERN = /^\+?[0-9][0-9\s-]{5,19}$/;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// No "?", "&", "%", ",", ";": the address goes into mailto: links and must not add parameters (bcc, ...)
+const EMAIL_PATTERN = /^[^\s@?&%,;]+@[^\s@?&%,;]+\.[^\s@?&%,;]+$/;
+const URL_MAX = 300;
+/** Social links shown in the footer (https only) */
+const SOCIAL_FIELDS = ['facebook', 'youtube', 'linkedin', 'instagram'] as const;
 const EMAIL_MAX = 254;
 const ADDRESS_MAX = 300;
 
@@ -16,6 +20,7 @@ const publicView = (setting: { hiddenPages?: SitePageKey[]; contact?: ICompanyCo
 		whatsapp: setting?.contact?.whatsapp ?? '',
 		email: setting?.contact?.email ?? '',
 		address: setting?.contact?.address ?? '',
+		...Object.fromEntries(SOCIAL_FIELDS.map((field) => [field, setting?.contact?.[field] ?? ''])),
 	},
 });
 
@@ -29,6 +34,15 @@ const contactText = (value: unknown, label: string, valid: (text: string) => boo
 };
 
 const isPhone = (text: string) => PHONE_PATTERN.test(text);
+
+const isHttpsUrl = (text: string): boolean => {
+	if (text.length > URL_MAX) return false;
+	try {
+		return new URL(text).protocol === 'https:';
+	} catch {
+		return false;
+	}
+};
 
 // GET /api/site-settings/public — hidden pages and company contact (everyone)
 export const getPublicSiteSettings = asyncHandler(async (_req: Request, res: Response) => {
@@ -52,7 +66,8 @@ export const updateHiddenPages = asyncHandler(async (req: Request, res: Response
 	res.status(200).json({ success: true, message: 'Page visibility updated', data: publicView(setting) });
 });
 
-// PUT /api/site-settings/contact — { phone?, whatsapp?, email?, address? } (Super Admin, Admin)
+// PUT /api/site-settings/contact — { phone?, whatsapp?, email?, address?, facebook?, youtube?, linkedin?, instagram? }
+// (Super Admin, Admin)
 export const updateCompanyContact = asyncHandler(async (req: Request, res: Response) => {
 	const body = req.body as Record<string, unknown>;
 	const fields: Array<[keyof ICompanyContact, string | undefined]> = [
@@ -60,6 +75,10 @@ export const updateCompanyContact = asyncHandler(async (req: Request, res: Respo
 		['whatsapp', contactText(body.whatsapp, 'WhatsApp number', isPhone)],
 		['email', contactText(body.email, 'Email', (text) => text.length <= EMAIL_MAX && EMAIL_PATTERN.test(text))],
 		['address', contactText(body.address, 'Address', (text) => text.length <= ADDRESS_MAX)],
+		...SOCIAL_FIELDS.map((field): [keyof ICompanyContact, string | undefined] => [
+			field,
+			contactText(body[field], `${field[0]?.toUpperCase() ?? ''}${field.slice(1)} link`, isHttpsUrl),
+		]),
 	];
 	const updates: Record<string, string> = {};
 	for (const [field, value] of fields) if (value !== undefined) updates[`contact.${field}`] = value;

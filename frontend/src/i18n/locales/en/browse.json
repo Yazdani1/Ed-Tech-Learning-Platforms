@@ -6,7 +6,6 @@
     "found_other": "{{count}} courses found",
     "emptyFiltered": "No courses match your filters.",
     "empty": "No published courses yet.",
-    "subtitle": "Courses grouped by course type, then the free courses.",
     "foundFor_one": "{{count}} course found for \"{{search}}\"",
     "foundFor_other": "{{count}} courses found for \"{{search}}\"",
     "showAll": "Show all courses",
@@ -49,11 +48,12 @@
     "whatYouWillLearn": "What you'll learn",
     "requirements": "Course Requirements",
     "about": "About this course",
-    "instructors": "Your Instructors",
+    "instructors": "Instructors & Mentors",
     "liveClassTime": "Live class time",
     "saveChip": "Save {{amount}} ({{percent}}% OFF)",
-    "limitedPricing": "Limited time cohort pricing",
-    "guarantee": "Instant access & 30-day money-back guarantee"
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "instructorBadge": "Instructor"
   },
   "content": {
     "title": "Curriculum",
@@ -149,7 +149,6 @@
     "viewProjectNamed": "View project: {{name}}",
     "liveDemo": "Live demo",
     "watchVideo": "Watch intro video",
-    "introVideo": "Intro video",
     "screenshots": "Screenshots",
     "screenshotAlt": "{{name}} screenshot {{number}}"
   },

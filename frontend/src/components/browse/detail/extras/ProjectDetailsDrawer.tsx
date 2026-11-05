@@ -5,8 +5,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import { SideDrawer } from '@/components/common/SideDrawer';
 import { CloudImage } from '@/components/common/CloudImage';
+import { SideDrawer } from '@/components/common/SideDrawer';
 
 import { youTubeId } from '../../course-utils';
 import { YouTubeEmbed } from '../YouTubeEmbed';
@@ -29,16 +29,13 @@ const PLAYER_SX = {
   overflow: 'hidden',
   bgcolor: 'common.black',
 } as const;
-const SHOT_SX = {
-  width: '100%',
-  aspectRatio: '16 / 10',
-  borderRadius: 1,
-  border: 1,
-  borderColor: 'divider',
-  bgcolor: 'grey.50',
-} as const;
+/** Screenshots sit straight on the panel: no frame or background behind them */
+const SHOT_SX = { width: '100%', aspectRatio: '16 / 10', borderRadius: 1 } as const;
 
-/** A project's full details: description, links, intro video (YouTube plays here) and every screenshot. */
+/**
+ * A project's full details, in this order: the intro video (a YouTube link plays here), Live demo (and a
+ * non-YouTube video link), the description, then every screenshot.
+ */
 export const ProjectDetailsDrawer: FC<ProjectDetailsDrawerProps> = ({ project, open, onClose }) => {
   const { t } = useTranslation();
   const videoId = youTubeId(project?.videoUrl);
@@ -47,29 +44,26 @@ export const ProjectDetailsDrawer: FC<ProjectDetailsDrawerProps> = ({ project, o
     <SideDrawer open={open} onClose={onClose} title={project?.title ?? ''} hideActions wide>
       {project && (
         <Stack spacing={3}>
-          {project.description && (
-            <Typography sx={{ whiteSpace: 'pre-line' }}>{project.description}</Typography>
+          {videoId && (
+            <Box sx={PLAYER_SX}>
+              <YouTubeEmbed videoId={videoId} title={project.title} />
+            </Box>
           )}
           <ProjectLinks
             liveDemoUrl={project.liveDemoUrl}
             externalVideoUrl={videoId ? '' : project.videoUrl}
           />
-          {videoId && (
-            <Box>
-              <Typography component="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                {t('browse.extras.introVideo')}
-              </Typography>
-              <Box sx={PLAYER_SX}>
-                <YouTubeEmbed videoId={videoId} title={project.title} />
-              </Box>
-            </Box>
+          {project.description && (
+            <Typography sx={{ whiteSpace: 'pre-line', lineHeight: 1.7 }}>
+              {project.description}
+            </Typography>
           )}
           {project.images.length > 0 && (
             <Box>
-              <Typography component="h3" sx={{ fontWeight: 700, mb: 1 }}>
+              <Typography component="h3" sx={{ fontWeight: 700, mb: 1.5 }}>
                 {t('browse.extras.screenshots')}
               </Typography>
-              <Stack spacing={1.5}>
+              <Stack spacing={2}>
                 {project.images.map((image, index) => (
                   <CloudImage
                     key={image.publicId}

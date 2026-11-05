@@ -183,7 +183,14 @@ describe('CourseDetailView sections', () => {
       'href',
       'https://demo.example.com',
     );
-    expect(within(drawer).getByText('Intro video')).toBeInTheDocument();
+    // The video comes first, then Live demo, the description and the screenshots
+    const player = within(drawer).getByTitle('Todo app');
+    const demo = within(drawer).getByRole('link', { name: /Live demo/ });
+    const text = within(drawer).getByText('Build a todo app');
+    const [firstShot] = within(drawer).getAllByRole('img', { name: /Todo app screenshot/ });
+    const follows = (a: Element, b: Element | undefined) =>
+      b !== undefined && Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(follows(player, demo) && follows(demo, text) && follows(text, firstShot)).toBe(true);
     expect(
       within(drawer).queryByRole('link', { name: /Watch intro video/ }),
     ).not.toBeInTheDocument();

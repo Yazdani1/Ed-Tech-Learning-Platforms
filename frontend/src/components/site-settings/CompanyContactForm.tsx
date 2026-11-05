@@ -14,6 +14,7 @@ import { useUpdateCompanyContact } from '@/api/site-settings.api';
 import { useFieldError } from '@/hooks/useFieldError';
 import {
   companyContactFormSchema,
+  SOCIAL_FIELDS,
   type CompanyContact,
   type CompanyContactForm as ContactValues,
 } from '@/schemas/site-settings.schema';
@@ -25,9 +26,20 @@ interface CompanyContactFormProps {
 }
 
 const ADDRESS_ROWS = 3;
-const FIELDS = ['phone', 'whatsapp', 'email'] as const;
+/** Every field, in form order, with its input type */
+const INPUT_TYPES = {
+  phone: 'tel',
+  whatsapp: 'tel',
+  email: 'email',
+  address: 'text',
+  facebook: 'url',
+  youtube: 'url',
+  linkedin: 'url',
+  instagram: 'url',
+} as const satisfies Record<keyof ContactValues, string>;
+const FIELDS = ['phone', 'whatsapp', 'email', 'address', ...SOCIAL_FIELDS] as const;
 
-/** The contact form; empty fields clear the saved value. */
+/** The contact form (phones, email, address, social links); empty fields clear the saved value. */
 export const CompanyContactForm: FC<CompanyContactFormProps> = ({ contact }) => {
   const { t } = useTranslation();
   const fieldError = useFieldError();
@@ -55,20 +67,15 @@ export const CompanyContactForm: FC<CompanyContactFormProps> = ({ contact }) => 
           <TextField
             key={field}
             {...form.register(field)}
-            type={field === 'email' ? 'email' : 'tel'}
+            type={INPUT_TYPES[field]}
             label={t(`showcase.contact.${field}`)}
+            placeholder={INPUT_TYPES[field] === 'url' ? 'https://' : undefined}
             fullWidth
+            multiline={field === 'address'}
+            rows={field === 'address' ? ADDRESS_ROWS : undefined}
             {...fieldError(errors[field])}
           />
         ))}
-        <TextField
-          {...form.register('address')}
-          label={t('showcase.contact.address')}
-          fullWidth
-          multiline
-          rows={ADDRESS_ROWS}
-          {...fieldError(errors.address)}
-        />
         <Button
           type="submit"
           variant="contained"

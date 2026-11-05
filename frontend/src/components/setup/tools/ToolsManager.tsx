@@ -1,7 +1,6 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import { useTranslation } from 'react-i18next';
 
 import { useTools } from '@/api/tools.api';
@@ -25,7 +24,7 @@ const GRID_SX = {
   gap: 2,
 } as const;
 
-/** Course Setup > Tools: header with count and Add, the tools as a grid of logo cards, the form. */
+/** Course Setup > Tools: header with count and Add, the tools as a grid of logo cards (no box around them), the form. */
 export const ToolsManager = () => {
   const { t } = useTranslation();
   const query = useTools();
@@ -33,7 +32,7 @@ export const ToolsManager = () => {
   const tools = query.data ?? [];
 
   return (
-    <Card variant="outlined" sx={{ overflow: 'hidden' }}>
+    <Box>
       <SetupManagerHeader
         kind="tool"
         count={query.data?.length}
@@ -41,7 +40,7 @@ export const ToolsManager = () => {
           modal.openModal();
         }}
       />
-      <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+      <Box sx={{ pt: 2 }}>
         <QueryState
           isLoading={query.isPending}
           error={query.error}
@@ -63,6 +62,6 @@ export const ToolsManager = () => {
         </QueryState>
       </Box>
       <ToolFormModal open={modal.open} tool={modal.data} onClose={modal.closeModal} />
-    </Card>
+    </Box>
   );
 };

@@ -67,12 +67,18 @@
     "courseSetup": "কোর্স সেটআপ",
     "userList": "ব্যবহারকারীর তালিকা",
     "performance": "পারফরম্যান্স",
-    "analytics": "অ্যানালিটিক্স",
     "pricing": "মূল্য",
     "assignedCourses": "নির্ধারিত কোর্স",
     "mainMenu": "প্রধান মেনু",
     "sitePages": "সাইট পেজ",
-    "companyContact": "কোম্পানির যোগাযোগ"
+    "companyContact": "কোম্পানির যোগাযোগ",
+    "group": {
+      "courses": "কোর্স ব্যবস্থাপনা",
+      "people": "ব্যবহারকারী ও শিক্ষার্থী",
+      "communication": "যোগাযোগ",
+      "website": "ওয়েবসাইট",
+      "analytics": "অ্যানালিটিক্স"
+    }
   },
   "auth": {
     "login": "লগইন",

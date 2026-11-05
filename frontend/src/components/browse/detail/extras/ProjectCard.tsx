@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import { CloudImage } from '@/components/common/CloudImage';
 
-import { CARD_RADIUS, SOFT_BG, SOFT_BORDER } from '../detail-styles';
+import { CARD_RADIUS, SOFT_BORDER } from '../detail-styles';
 
 import type { CourseProject } from '@/schemas/course-extras.schema';
 import type { FC } from 'react';
@@ -27,13 +27,21 @@ const CARD_SX = {
   justifyContent: 'flex-start',
   gap: { xs: 1.5, sm: 2.5 },
   textAlign: 'left',
-  bgcolor: SOFT_BG,
-  border: `1px solid ${SOFT_BORDER}`,
+  bgcolor: 'common.white',
+  border: `2px solid ${SOFT_BORDER}`,
   borderRadius: CARD_RADIUS,
-  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+  transition: 'border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease',
+  '& img': { transition: 'transform 0.4s ease' },
   '&:hover, &.Mui-focusVisible': {
-    borderColor: 'primary.main',
-    boxShadow: '0 6px 18px rgba(15,23,42,0.08)',
+    borderColor: '#2563eb',
+    transform: 'translateY(-4px)',
+    boxShadow: '0 14px 30px rgba(37,99,235,0.16)',
+  },
+  '&:hover img': { transform: 'scale(1.06)' },
+  '@media (prefers-reduced-motion: reduce)': {
+    transition: 'none',
+    '&:hover, &.Mui-focusVisible': { transform: 'none' },
+    '&:hover img': { transform: 'none' },
   },
 } as const;
 const COVER_SX = {

@@ -30,7 +30,6 @@ const counts = {
   categories: { [CATEGORY._id]: 3 },
   pricing: { Free: 2, Paid: 1 },
   categoriesByPricing: { Free: { [CATEGORY._id]: 1 }, Paid: { [CATEGORY._id]: 1 } },
-  liveCategories: {},
   paidByCourseType: { [COURSE_TYPE._id]: { total: 1, categories: { [CATEGORY._id]: 1 } } },
 };
 
@@ -82,6 +81,9 @@ describe('CourseBrowseView (/courses)', () => {
 
     expect(screen.queryByRole('heading', { name: EMPTY_TYPE.name })).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    // No intro text above the boxes; the page title is there for screen readers only
+    expect(screen.getByRole('heading', { level: 1, name: 'All Courses' })).toBeInTheDocument();
+    expect(screen.queryByText(/grouped by course type/)).not.toBeInTheDocument();
   });
 
   it('asks for the paid courses of each course type and the free courses', async () => {

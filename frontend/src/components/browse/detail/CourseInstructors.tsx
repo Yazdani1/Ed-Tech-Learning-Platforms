@@ -13,16 +13,28 @@ interface CourseInstructorsProps {
   teachers: readonly (TeacherRef | null)[];
 }
 
-/** "Your Instructors": a card per teacher, two per row from tablet width and three on wide screens. */
+/** Soft blue across the whole screen width */
+const INSTRUCTORS_BAND = '#e8f0fe';
+
+/** "Instructors & Mentors": a wide card per teacher, two per row from tablet width, on a blue band. */
 export const CourseInstructors: FC<CourseInstructorsProps> = ({ teachers }) => {
   const { t } = useTranslation();
   const list = teachers.flatMap((teacher) => (teacher ? [teacher] : []));
   if (list.length === 0) return null;
   return (
-    <DetailSection id="course-instructors" title={t('browse.detail.instructors')}>
-      <Box sx={gridSx(2, 3)}>
+    <DetailSection
+      id="course-instructors"
+      title={t('browse.detail.instructors')}
+      band={INSTRUCTORS_BAND}
+    >
+      <Box sx={gridSx(list.length > 1 ? 2 : 1, list.length > 1 ? 2 : 1)}>
         {list.map((teacher, index) => (
-          <InstructorCard key={teacher._id} teacher={teacher} index={index} />
+          <Box
+            key={teacher._id}
+            sx={{ maxWidth: list.length > 1 ? 'none' : 640, width: '100%', mx: 'auto' }}
+          >
+            <InstructorCard teacher={teacher} index={index} />
+          </Box>
         ))}
       </Box>
     </DetailSection>

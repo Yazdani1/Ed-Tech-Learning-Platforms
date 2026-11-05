@@ -17,10 +17,12 @@ describe('CourseStartDay', () => {
       <CourseStartDay startDate="2099-12-05T12:00:00.000Z" />,
     );
     expect(screen.getByText(/^Dec \d, 2099$/)).toBeInTheDocument();
+    expect(screen.getByText('Course Start Date:')).toBeInTheDocument();
     unmount();
 
     const past = renderWithProviders(<CourseStartDay startDate="2000-01-05T12:00:00.000Z" />);
     expect(screen.getByText('Registration open')).toBeInTheDocument();
+    expect(screen.queryByText('Course Start Date:')).not.toBeInTheDocument();
     past.unmount();
 
     renderWithProviders(<CourseStartDay startDate={null} />);
@@ -41,7 +43,7 @@ describe('CourseCardPrice', () => {
     expect(screen.getByText('Save ৳200')).toBeInTheDocument();
   });
 
-  it('shows no chips without a discount, and the scholarship chip on a free course', () => {
+  it('shows no chips without a discount or on a free course', () => {
     const { unmount } = renderWithProviders(
       <CourseCardPrice course={{ pricing: 'Paid', price: 500, listPrice: 500 }} />,
     );
@@ -51,7 +53,7 @@ describe('CourseCardPrice', () => {
 
     renderWithProviders(<CourseCardPrice course={{ pricing: 'Free' }} />);
     expect(screen.getByText('Free')).toBeInTheDocument();
-    expect(screen.getByText('Scholarship access')).toBeInTheDocument();
+    expect(screen.queryByText(/Scholarship|% off|Save/)).not.toBeInTheDocument();
   });
 
   it('writes Bangla digits for Bangla readers', async () => {

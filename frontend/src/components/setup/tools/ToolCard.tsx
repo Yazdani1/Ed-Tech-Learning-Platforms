@@ -39,7 +39,7 @@ export const ToolCard: FC<ToolCardProps> = ({ tool, onEdit }) => {
   return (
     <Paper
       variant="outlined"
-      sx={{ position: 'relative', p: 2, pt: 3, textAlign: 'center', borderRadius: 2 }}
+      sx={{ position: 'relative', p: 2, pt: 3, textAlign: 'center', borderRadius: '4px' }}
     >
       <Box sx={{ position: 'absolute', top: 4, right: 4 }}>
         <ActionMenu

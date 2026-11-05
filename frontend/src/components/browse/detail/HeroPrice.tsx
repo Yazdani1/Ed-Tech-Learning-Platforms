@@ -65,12 +65,6 @@ export const HeroPrice: FC<HeroPriceProps> = ({ course }) => {
               i18n.language,
             )}
           </Box>
-          <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
-            <Box component="span" sx={{ color: '#34d399', mr: 0.75 }} aria-hidden>
-              ●
-            </Box>
-            {t('browse.detail.limitedPricing')}
-          </Typography>
         </>
       )}
     </Box>

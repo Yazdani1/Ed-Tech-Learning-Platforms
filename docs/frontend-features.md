@@ -36,7 +36,7 @@ flowchart LR
 | `/admin/tools`                                                             | Course setup: tools (logo cards)                                                                                                        | Super Admin, Admin                                                        |
 | `/admin/homepage-showcase`                                                 | Homepage showcase (logo + slider)                                                                                                       | Super Admin, Admin                                                        |
 | `/admin/site-pages`                                                        | Site Pages: show or hide public pages                                                                                                   | Super Admin                                                               |
-| `/admin/company-contact`                                                   | Company Contact: phone, WhatsApp, email, address                                                                                        | Super Admin, Admin                                                        |
+| `/admin/company-contact`                                                   | Company Contact: phone, WhatsApp, email, address, social links                                                                          | Super Admin, Admin                                                        |
 | `/admin/courses`                                                           | Courses (staff list, filters, bulk edit)                                                                                                | Super Admin, Admin; Moderator (published courses, no manager tools)       |
 | `/admin/courses/[id]`                                                      | Course details (staff view of the course page)                                                                                          | Super Admin, Admin, Moderator                                             |
 | `/admin/enrollments/[courseId]`                                            | Course enrolments (students, revenue, CSV export)                                                                                       | Super Admin, Admin; Moderator (students + CSV only)                       |
@@ -133,7 +133,11 @@ sign-out button.
 **How to use it:**
 
 1. The menu shows only the items the role may open (for example, Moderators do not see Dashboard, Teachers,
-   User List, Subscriptions or Performance; Performance appears under "Analytics" for Super Admins).
+   User List, Subscriptions or Performance). The admin menu is grouped: Home, Dashboard, Profile and Schedule
+   first, then **Course Management** (Courses, Course Setup, Teachers, Course Q & A), **Users & Students** (User
+   List, Students, Subscriptions), **Communication** (Support Chat, Create Channel, Notifications), **Website**
+   (Homepage Showcase, Site Pages, Company Contact) and **Analytics** (Performance). A heading is left out when the
+   role sees none of its items; the collapsed menu shows a line between the groups instead of the headings.
 2. The current page is highlighted. On desktop the arrow button collapses the menu to icons (tooltips show
    the names); course create/edit and course player pages start collapsed.
 3. **Logout** signs out and opens `/auth/login`. If the server cannot be reached, the user stays signed in and
@@ -186,7 +190,10 @@ later practice quiz and community hub) · **Menu:** the public navbar
    "English") and switches the whole site between English and Bangla at once. The choice is remembered in
    this browser (same key as before, `i18nextLng`) and used again on the next visit.
 6. **Footer** (indigo to rose gradient): app name and tagline, links to Courses, Free Courses, Teachers, Pricing, the
-   company phone, email and address from the Company Contact page (each only when saved), and the copyright line.
+   company phone, email and address from the Company Contact page (each only when saved), round social icons
+   (Facebook, YouTube, LinkedIn, Instagram; only the links saved on the Company Contact page, opening in a new
+   tab), "We accept" with the payment method cards (bKash, Nagad, Rocket, Upay, VISA, Mastercard, AMEX, DBBL
+   Nexus; word marks, no images) and the copyright line.
 
 The banner, home page, catalog, pricing, teachers and footer use the same container width (at most 1200 px,
 centred); only the navbar is full width.
@@ -214,30 +221,31 @@ onto several lines. Every button is at least 44 px high.
 
 **Who can use it:** everyone.
 
-**What it is for:** the landing page: showcase images, then the live courses and the free ones, each with its
-own category cards.
+**What it is for:** the landing page: showcase images, then one box per course type (its name, description,
+category cards and courses) and the free courses.
 
 **How to use it:**
 
 1. **Showcase slider** (container width, rounded corners): the public images admins put on the Homepage
    Showcase page, one after another every 5 seconds. Dots switch images by hand; the previous / next arrows
    appear only while the mouse is over the slider (always shown on touch screens, and when a key focuses
-   them). The slider holds still while the mouse is over it or a control in it has keyboard focus. There is no
+   them; amber-to-pink round buttons). The slider holds still while the mouse is over it or a control in it has keyboard focus. There is no
    pause/play button; for people who turn off animations (prefers-reduced-motion) it does not move by itself.
    Without images a blue banner is shown. An image with a title and/or description (set on the Homepage
    Showcase page) shows them at the bottom of the image on a dark gradient.
-2. **Live Courses** (one box): the title in the centre, then category pills (icon from words in the name, name and
-   number of courses),
-   then the course cards. Only courses whose **course type is flagged "Live"** (Course Setup > Course Types)
-   are shown here. The first card, **All**, shows every live course; picking a category shows only its live
-   courses (the picked card is highlighted). Only categories that have live courses get a card. With no live
-   course type, the box says "No live courses yet."
-3. **Upcoming Free Live Courses** (a second box, same layout): the same, for **free** courses only.
-4. **Course cards** (both boxes, three per row on wide screens): cover, course type pill and a date chip (the start
-   date in the viewer's time zone and language, "To be announced" without one, "Registration open" once it has
-   passed), title, big price with the struck-through list price, "N% off" and "Save ৳X" chips ("Scholarship access"
-   on a free course) and a gradient **See Details** button. The whole card also opens the course page. In Bangla the
-   prices use Bangla digits. On mouse hover the card lifts and the cover zooms in slightly. A signed-in Student also
+2. **One box per course type** that has published paid courses (in the Course Setup order): the course type's
+   own **name and description** (from Course Setup > Course Types; the course count when there is no
+   description) in the centre, then category pills (icon from words in the name, name and number of courses),
+   then that type's paid course cards. The first pill, **All**, shows every course of the box; picking a category
+   shows only its courses (the picked pill is highlighted). Only categories with courses in that box get a pill.
+3. **Free Courses** (the last box, same layout): every free course, whatever its course type.
+4. **Course cards** (every box, three per row on wide screens): cover, "Course Start Date:" with the date (viewer's
+   time zone and language; "To be announced" without one, "Registration open" once it has passed), title, then one
+   row with the big price, the struck-through list price and the "N% off" and "Save ৳X" chips (a free course shows
+   only "Free"), and a gradient **See Details** button. The course type is not shown on the card (the box says it).
+   The whole card also opens the course page. In Bangla the prices use Bangla digits. The card has a soft shadow;
+   on mouse hover (or keyboard focus) it lifts, the cover zooms in slightly and a coloured gradient border runs
+   around it. A signed-in Student also
    sees **Continue Learning** on courses they are enrolled in (opens the course player).
 5. **Paging:** each box shows up to 30 courses. Page buttons appear under a box only when it has more than 30
    courses. Filters and search are on `/courses`.
@@ -247,14 +255,16 @@ that scrolls sideways inside the box (the page itself never scrolls sideways); t
 phones.
 
 **API endpoints used:** `GET /api/home-hero-posts/public`, `GET /api/categories`,
-`GET /api/courses/browse?liveOnly=true&categories&page&limit=30` (the Live box; category counts from
-`filterCounts.liveCategories`) and `GET /api/courses/browse?pricing=Free&categories&page&limit=30` (the Free box;
-counts from `filterCounts.categoriesByPricing.Free`), `GET /api/enrollments` (signed-in Students only).
+`GET /api/course-types`, `GET /api/courses/browse?page=1&limit=1` (which course types have paid courses:
+`filterCounts.paidByCourseType`), `GET /api/courses/browse?courseTypes=<id>&pricing=Paid&categories&page&limit=30`
+(a course type box; category counts from `filterCounts.paidByCourseType`) and
+`GET /api/courses/browse?pricing=Free&categories&page&limit=30` (the Free box; counts from
+`filterCounts.categoriesByPricing.Free`), `GET /api/enrollments` (signed-in Students only).
 
 **Code:** `frontend/src/app/(public)/page.tsx`, `frontend/src/components/public/home/` (`HomePage`,
 `HomeHeroSlider`, `HeroSlide`, `HeroSliderControls`, `HomeSectionTitle`, `HomeCategoryFilter`,
-`CategoryFilterCard`), `frontend/src/components/public/common/` (`CourseShowcaseSection` (one course box, shared
-with the catalog), `CourseGrid`,
+`CategoryFilterCard`), `frontend/src/components/public/common/` (`CourseTypeSections` (every box, shared with the
+catalog), `CourseShowcaseSection` (one course box), `CourseGrid`,
 `CourseCard`, `CourseStartDay`, helpers), `frontend/src/components/course-card/` (`CourseCover`, `CoursePrice`),
 `frontend/src/api/public.api.ts` (`useHomeCourses`), `frontend/src/api/catalog.api.ts` (categories, enrolments).
 
@@ -333,7 +343,8 @@ screen with the filters stacked above the courses.
 - **Who can use it:** everyone. A signed-in Student also sees "Go to this course" on courses they are enrolled in.
 - **What it is for:** finding a course among all Published + Public courses.
 - **Step by step:**
-  1. The page shows "All Courses" with a short intro. There is no filter sidebar.
+  1. Without a search or filter the page starts straight with the boxes below (the same boxes as the home
+     page; no title or intro text). There is no filter sidebar.
   2. One box per **course type** that has published paid courses (in the Course Setup order): the course type
      name, its description (or the course count), the **category cards** of that type ("All" plus every category
      with courses; picking one narrows the box) and the paid course cards of that type (30 per page, page buttons
@@ -354,7 +365,8 @@ screen with the filters stacked above the courses.
   (`courseTypes=<id>&pricing=Paid` or `pricing=Free`, `categories`, `page`, `limit=30`); with a filter
   `GET /api/courses/browse` (filters, `page`, `limit=12`); for Students `GET /api/enrollments`.
 - **Code:** `frontend/src/app/(public)/courses/page.tsx`, `frontend/src/components/browse/catalog/*`
-  (CourseBrowseView, CatalogHeader, CatalogSections, CourseResults), the shared box
+  (CourseBrowseView, CatalogHeader, CourseResults), the shared boxes
+  `frontend/src/components/public/common/CourseTypeSections.tsx` and
   `frontend/src/components/public/common/CourseShowcaseSection.tsx` (also used by the home page),
   `frontend/src/components/browse/card/*`, `frontend/src/hooks/useBrowseParams.ts`, `frontend/src/api/browse.api.ts`,
   `frontend/src/api/public.api.ts` (`useHomeCourses` by source, `useCatalogCounts`), `frontend/src/schemas/public.schema.ts`.
@@ -409,13 +421,17 @@ screen with the filters stacked above the courses.
 - **What it is for:** everything about one course and how to get it.
 - **Step by step:**
   1. The dark navy banner shows the breadcrumb, the course type (a pill with a green dot), title, subtitle, price
-     (gold; while a discount runs also the struck-through list price, "Save ৳X (N% OFF)" and "Limited time cohort
-     pricing"), "Subscription" for plan courses and, for those who can enrol, **Enroll Now** (with the guarantee line on a paid course).
+     (gold; while a discount runs also the struck-through list price and "Save ৳X (N% OFF)"), "Subscription" for
+     plan courses and, for those who can enrol, **Enroll Now**. Every Enroll Now button of the page (banner,
+     enrolment card, buy bar) starts a light sweep and a small nudge after 3 seconds and repeats it every 5
+     seconds, three times in all (paused on hover; still for people who turn off animations).
   2. Beside the enrolment card (which overlaps the banner on wider screens): the schedule cards with a gradient
      border (**Class start date**, **Live class time** = the next live class from the plan, **Course end date**;
-     each only when it exists) and **About this course** (rich text, sanitised). Under both, every other section is
-     a white card at the **full page width**, with a centred heading, in this order: **What you'll learn**,
-     **Curriculum**, **Your Instructors**, **Tech you will learn** (tools), **Projects**, **What will you get from
+     each only when it exists) and **About this course** (rich text, sanitised; a long text shows its first lines
+     with a fade and **Show more**, then **Show less**). Under both, every other section uses the **full page
+     width** with a centred heading (a white card; **Instructors & Mentors** and **Projects** instead sit on a
+     coloured band across the whole screen), in this order: **What you'll learn**,
+     **Curriculum**, **Instructors & Mentors**, **Tech you will learn** (tools, four per row in the middle), **Projects**, **What will you get from
      this course**, **Who this course is for** (only when filled in), **Course Requirements** (the icon comes from
      words in the text: laptop, internet, skill), **Success stories** and **Frequently Asked Questions**.
   3. **Curriculum** (centred heading) has up to three lists, switched with centred buttons in this order:
@@ -423,9 +439,13 @@ screen with the filters stacked above the courses.
      teacher wrote them), **Recorded Lectures** (sections with lecture count and length; "Expand all
      sections") and **Quizzes** (free-preview quiz banks, each opening `/practice-quiz?courseId=…&bankId=…`).
      A button is shown only when its list has at least one item; the first one is open at the start.
-  4. **Projects:** two cards per row (first screenshot on the left, title and one line of description); clicking a
-     card opens a panel from the right with the full description, **Live demo** (new tab), the intro video (a YouTube
-     link plays in the panel, other links open in a new tab as **Watch intro video**) and every screenshot.
+  4. **Instructors & Mentors** (soft blue band): a wide card per teacher with the round photo (or initials on a
+     gradient) and a green dot, a dashed badge with the first expertise, the name, the bio and the other expertise.
+     **Projects** (light grey band): two white cards per row (first screenshot on the left, title and one line of
+     description); on hover the border turns blue, the card lifts and the picture zooms. Clicking a card opens a
+     panel from the right with, in this order: the intro video (a YouTube link plays in the panel), **Live demo**
+     (new tab; a non-YouTube video link shows as **Watch intro video**), the description and every screenshot
+     (straight on the panel, no frame).
      **Success stories:** photo (or an icon), name, what they do now, company name and logo. **FAQ:** one card per
      question, the first one open; the answer sits on a soft gradient box. Each section is hidden while it is empty.
   5. **Buy bar** (fixed to the bottom of the screen) for visitors and students who have not enrolled: "Call
@@ -613,9 +633,9 @@ and course types (live course, recorded course, seminar, ...). The public catalo
    "<name>"? This cannot be undone." first).
 5. An item that courses still use cannot be deleted: the server's message is shown as a toast, for example
    "Category is used by 3 course(s)".
-6. **Course Types** have a **Live course type** switch in the form; a live type shows a red "Live" chip in the
-   list, and its courses fill the home page's Live Courses section.
-7. **Tools:** a grid of cards (logo with the tool name under it; 2 per row on phones, 5 on desktops). **Add
+6. Every **course type** gets its own box on the home page and on `/courses`, with its name and description.
+7. **Tools:** under the grey header, a grid of cards straight on the page (no box around the grid; each card has
+   4 px corners; logo with the tool name under it; 2 per row on phones, 5 on desktops). **Add
    Tool** opens a form with the name (e.g. Node.js, at most 60 characters) and **Choose logo** (PNG, JPEG,
    GIF or WEBP up to 5 MB, previewed at once; required for a new tool). The card menu (⋮) has **Edit**
    (rename, **Change logo**) and **Delete** (asks first; the tool is also removed from every course that
@@ -630,7 +650,7 @@ table row; the form opens full screen.
 
 **Code:** `frontend/src/app/admin/categories/page.tsx`, `frontend/src/app/admin/course-types/page.tsx`,
 `frontend/src/components/setup/` (`CourseSetupPage`, `SetupTabs`, `SetupManager`, `SetupManagerHeader`,
-`SetupItemFormModal`, `LiveTypeSwitch`, `SetupRowMenu`, `useSetupColumns`, `tools/` (`ToolsManager`,
+`SetupItemFormModal`, `SetupRowMenu`, `useSetupColumns`, `tools/` (`ToolsManager`,
 `ToolCard`, `ToolLogo`, `ToolFormModal`)), `frontend/src/app/admin/tools/page.tsx`, `frontend/src/api/tools.api.ts`,
 `frontend/src/schemas/tools.schema.ts`, `frontend/src/api/setup.api.ts` (the list is the
 shared read in `frontend/src/api/catalog.api.ts`, so a save also refreshes the public pages),
@@ -678,13 +698,14 @@ Moderator blocked).
 
 **Who can use it:** Super Admin and Admin.
 
-**What it is for:** the company's phone, WhatsApp, email and address. The phone number is the "Call Now"
-number of the buy bar on course pages.
+**What it is for:** the company's phone, WhatsApp, email, address and social links. The phone number is the
+"Call Now" number of the buy bar on course pages; the social links are the footer icons.
 
 **How to use it:**
 
 1. Fill in any of **Phone number**, **WhatsApp number** (digits, spaces, dashes, optional + at the start),
-   **Email** and **Address** (at most 300 characters). Empty fields clear the saved value.
+   **Email**, **Address** (at most 300 characters) and the **Facebook**, **YouTube**, **LinkedIn** and **Instagram**
+   links (full `https://` addresses). Empty fields clear the saved value.
 2. **Save** stores them ("Company contact saved"); a wrong value shows its message under the field.
 
 **On mobile:** one column, full-width fields.

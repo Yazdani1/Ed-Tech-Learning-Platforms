@@ -19,8 +19,6 @@ import {
   type SetupKind,
 } from '@/schemas/setup.schema';
 
-import { LiveTypeSwitch } from './LiveTypeSwitch';
-
 import type { FC } from 'react';
 
 interface SetupItemFormModalProps {
@@ -37,10 +35,9 @@ const DESCRIPTION_ROWS = 3;
 const itemValues = (item: SetupItem | undefined): SetupItemRequest => ({
   name: item?.name ?? '',
   description: item?.description ?? '',
-  isLive: item?.isLive ?? false,
 });
 
-/** Add or edit a category / course type (name required, description optional; course types: the live flag). */
+/** Add or edit a category / course type (name required, description optional). */
 export const SetupItemFormModal: FC<SetupItemFormModalProps> = ({ kind, open, item, onClose }) => {
   const { t } = useTranslation();
   const fieldError = useFieldError();
@@ -60,8 +57,7 @@ export const SetupItemFormModal: FC<SetupItemFormModalProps> = ({ kind, open, it
 
   const onSave = form.handleSubmit((body) => {
     save.mutate(
-      // Only course types have the "live" flag
-      { id: item?._id, body: kind === 'courseType' ? body : { ...body, isLive: undefined } },
+      { id: item?._id, body },
       {
         onSuccess: () => {
           toast.success(t(`showcase.setup.${kind}.${item ? 'updated' : 'created'}`));
@@ -98,7 +94,6 @@ export const SetupItemFormModal: FC<SetupItemFormModalProps> = ({ kind, open, it
           rows={DESCRIPTION_ROWS}
           {...fieldError(form.formState.errors.description)}
         />
-        {kind === 'courseType' && <LiveTypeSwitch control={form.control} />}
       </Stack>
     </AppModal>
   );

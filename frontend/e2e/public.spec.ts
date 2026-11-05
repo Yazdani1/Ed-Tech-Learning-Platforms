@@ -61,9 +61,8 @@ test.describe('Public site', () => {
     expect(published.ok()).toBe(true);
 
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Live Courses', exact: true })).toBeVisible();
     const free = page.locator('section', {
-      has: page.getByRole('heading', { name: 'Upcoming Free Live Courses' }),
+      has: page.getByRole('heading', { name: 'Free Courses', exact: true }),
     });
     await expect(free).toBeVisible();
     await expect(page.getByText('Learn what matches your ambition')).toHaveCount(0);
@@ -85,7 +84,7 @@ test.describe('Public site', () => {
     const carousel = page.locator('[aria-roledescription="carousel"]');
     await expect(carousel).toBeVisible();
     await page.getByRole('button', { name: 'Switch to Bangla' }).click();
-    await expect(page.getByRole('heading', { name: 'লাইভ কোর্স', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'ফ্রি কোর্স', exact: true })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'bn');
 
     // The choice survives a reload
@@ -93,7 +92,7 @@ test.describe('Public site', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'bn');
     await expect(carousel).toBeVisible();
     await page.getByRole('button', { name: 'ইংরেজিতে দেখুন' }).click();
-    await expect(page.getByRole('heading', { name: 'Live Courses', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Free Courses', exact: true })).toBeVisible();
     await expectNoHorizontalScroll(page);
   });
 

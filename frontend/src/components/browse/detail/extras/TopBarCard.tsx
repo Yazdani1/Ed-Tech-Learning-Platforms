@@ -10,17 +10,20 @@ interface TopBarCardProps {
   index: number;
   /** Padding and inner layout */
   sx: SxProps<Theme>;
+  /** Width of the card in a wrapping row (default: the grid cell) */
+  width?: string | Partial<Record<'xs' | 'sm' | 'md' | 'lg', string>>;
   children: ReactNode;
 }
 
 const BAR_HEIGHT = 6;
 
 /** A soft list card with a coloured gradient bar along its top edge. */
-export const TopBarCard: FC<TopBarCardProps> = ({ index, sx, children }) => (
+export const TopBarCard: FC<TopBarCardProps> = ({ index, sx, width, children }) => (
   <Box
     component="li"
     sx={{
       position: 'relative',
+      width,
       overflow: 'hidden',
       bgcolor: SOFT_BG,
       border: `1px solid ${SOFT_BORDER}`,

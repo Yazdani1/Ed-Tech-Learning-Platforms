@@ -253,7 +253,6 @@ erDiagram
     String name "required"
     String slug "required, unique"
     String description
-    Boolean isLive
     ObjectId _id PK
     Date createdAt
     Date updatedAt
@@ -409,6 +408,10 @@ erDiagram
     String contact_whatsapp
     String contact_email
     String contact_address
+    String contact_facebook
+    String contact_youtube
+    String contact_linkedin
+    String contact_instagram
     ObjectId updatedBy FK
     ObjectId _id PK
     Date createdAt

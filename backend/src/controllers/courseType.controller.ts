@@ -10,22 +10,15 @@ const toSlug = (name: string) =>
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '');
 
-const parseIsLive = (value: unknown): boolean | undefined => {
-  if (value === undefined) return undefined;
-  if (typeof value !== 'boolean') throw new AppError('isLive must be true or false', 400);
-  return value;
-};
-
 export const getCourseTypes = asyncHandler(async (_req: Request, res: Response) => {
   const courseTypes = await CourseType.find().sort({ name: 1 });
   res.status(200).json({ success: true, data: courseTypes, total: courseTypes.length });
 });
 
 export const createCourseType = asyncHandler(async (req: Request, res: Response) => {
-  const { name, description, isLive } = req.body as { name: string; description?: string; isLive?: unknown };
+  const { name, description } = req.body as { name: string; description?: string };
 
   if (typeof name !== 'string' || !name.trim()) throw new AppError('Course type name is required', 400);
-  const live = parseIsLive(isLive) ?? false;
 
   const slug = toSlug(name.trim());
   if (!slug) throw new AppError('Course type name must contain valid characters', 400);
@@ -33,16 +26,14 @@ export const createCourseType = asyncHandler(async (req: Request, res: Response)
   const existing = await CourseType.findOne({ slug });
   if (existing) throw new AppError('A course type with this name already exists', 400);
 
-  const courseType = await CourseType.create({ name: name.trim(), slug, description, isLive: live });
+  const courseType = await CourseType.create({ name: name.trim(), slug, description });
   res.status(201).json({ success: true, message: 'Course type created', data: courseType });
 });
 
 export const updateCourseType = asyncHandler(async (req: Request, res: Response) => {
-  const { name, description, isLive } = req.body as { name?: string; description?: string; isLive?: unknown };
+  const { name, description } = req.body as { name?: string; description?: string };
 
-  const update: Partial<{ name: string; slug: string; description: string; isLive: boolean }> = {};
-  const live = parseIsLive(isLive);
-  if (live !== undefined) update.isLive = live;
+  const update: Partial<{ name: string; slug: string; description: string }> = {};
 
   if (name !== undefined) {
     if (typeof name !== 'string' || !name.trim()) throw new AppError('Course type name cannot be empty', 400);

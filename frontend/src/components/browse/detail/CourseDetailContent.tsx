@@ -39,7 +39,7 @@ export const CourseDetailContent: FC<CourseDetailContentProps> = ({ course }) =>
   return (
     <>
       <CourseDetailHero course={course} enrollTargetId={ENROLMENT_CARD_ID} />
-      <Container maxWidth="lg" sx={{ pt: { xs: 3, md: 4 }, pb: { xs: 3, md: 4 } }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 3, md: 4 } }}>
         <Grid container spacing={{ xs: 3, md: 4 }} sx={{ alignItems: 'flex-start' }}>
           <Grid size={{ xs: 12, md: 8 }} sx={{ order: { xs: 2, md: 1 }, minWidth: 0 }}>
             <CourseScheduleCards course={course} weeks={weeks} />
@@ -61,13 +61,13 @@ export const CourseDetailContent: FC<CourseDetailContentProps> = ({ course }) =>
             <CourseEnrollmentCard course={course} lectureCount={lectureCount} />
           </Grid>
         </Grid>
-        <CourseDetailWideSections
-          course={course}
-          weeks={weeks}
-          quizSections={quizSections}
-          onPreview={preview.openModal}
-        />
       </Container>
+      <CourseDetailWideSections
+        course={course}
+        weeks={weeks}
+        quizSections={quizSections}
+        onPreview={preview.openModal}
+      />
       <CourseBuyBar course={course} targetId={ENROLMENT_CARD_ID} />
       <CoursePreviewModal
         open={preview.open}

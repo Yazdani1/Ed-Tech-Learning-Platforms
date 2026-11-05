@@ -38,7 +38,14 @@
     "copyright": "© {{year}} MedhaBee E-Learning Platform. All rights reserved.",
     "tagline": "Learn from expert teachers with live classes, real projects and support that stays with you.",
     "explore": "Explore",
-    "contact": "Contact us"
+    "contact": "Contact us",
+    "social": "Follow us",
+    "facebook": "Facebook",
+    "youtube": "YouTube",
+    "linkedin": "LinkedIn",
+    "instagram": "Instagram",
+    "payWith": "We accept",
+    "paymentMethods": "Payment methods we accept"
   },
   "hero": {
     "label": "Featured",
@@ -51,16 +58,6 @@
     "allCategories": "All",
     "courseCount_one": "{{count}} course",
     "courseCount_other": "{{count}} courses",
-    "paid": {
-      "title": "Live Courses",
-      "subtitle": "Join live classes with our expert teachers",
-      "empty": "No live courses yet."
-    },
-    "free": {
-      "title": "Upcoming Free Live Courses",
-      "subtitle": "Start learning for free in our upcoming live classes",
-      "empty": "No free courses yet."
-    },
     "countShort": "{{shown}}"
   },
   "courses": {
@@ -75,7 +72,7 @@
     "startTba": "To be announced",
     "registrationOpen": "Registration open",
     "save": "Save {{amount}}",
-    "scholarship": "Scholarship access"
+    "startDateLabel": "Course Start Date:"
   },
   "instructors": {
     "title": "Our Instructors",

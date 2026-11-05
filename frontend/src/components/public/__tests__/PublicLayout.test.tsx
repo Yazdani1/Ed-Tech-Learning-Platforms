@@ -52,6 +52,7 @@ describe('PublicLayout', () => {
             whatsapp: '',
             email: 'help@example.com',
             address: 'Dhaka',
+            facebook: 'https://facebook.com/medhabee',
           },
         }),
       ),
@@ -67,6 +68,15 @@ describe('PublicLayout', () => {
       'mailto:help@example.com',
     );
     expect(within(footer).getByText('Dhaka')).toBeInTheDocument();
+    expect(within(footer).getByRole('link', { name: 'Facebook' })).toHaveAttribute(
+      'href',
+      'https://facebook.com/medhabee',
+    );
+    // Only saved links get an icon
+    expect(within(footer).queryByRole('link', { name: 'YouTube' })).not.toBeInTheDocument();
+    const payments = within(footer).getByRole('list', { name: 'Payment methods we accept' });
+    expect(within(payments).getByText('bKash')).toBeInTheDocument();
+    expect(within(payments).getByText('Nagad')).toBeInTheDocument();
     unmount();
 
     server.use(
@@ -77,6 +87,34 @@ describe('PublicLayout', () => {
     renderLayout();
     await screen.findAllByRole('contentinfo');
     expect(screen.queryByRole('heading', { name: 'Contact us' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Follow us' })).not.toBeInTheDocument();
+  });
+
+  it('shows no icon for a saved social link that is not a plain web address; real ones open safely', async () => {
+    server.use(
+      http.get('*/api/site-settings/public', () =>
+        ok({
+          hiddenPages: [],
+          contact: {
+            phone: '',
+            whatsapp: '',
+            email: '',
+            address: '',
+            facebook: 'javascript:alert(1)',
+            youtube: 'data:text/html,hi',
+            linkedin: 'https://linkedin.com/company/medhabee',
+            instagram: '',
+          },
+        }),
+      ),
+    );
+    renderLayout();
+    const footer = screen.getByRole('contentinfo');
+    const linkedin = await within(footer).findByRole('link', { name: 'LinkedIn' });
+    expect(linkedin).toHaveAttribute('target', '_blank');
+    expect(linkedin).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(within(footer).queryByRole('link', { name: 'Facebook' })).not.toBeInTheDocument();
+    expect(within(footer).queryByRole('link', { name: 'YouTube' })).not.toBeInTheDocument();
   });
 
   it('leaves out the links of pages a Super Admin hid, in the navbar and the footer', async () => {

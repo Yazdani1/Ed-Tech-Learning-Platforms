@@ -19,7 +19,16 @@ beforeEach(async () => {
   await SiteSetting.deleteMany({});
 });
 
-const EMPTY_CONTACT = { phone: '', whatsapp: '', email: '', address: '' };
+const EMPTY_CONTACT = {
+  phone: '',
+  whatsapp: '',
+  email: '',
+  address: '',
+  facebook: '',
+  youtube: '',
+  linkedin: '',
+  instagram: '',
+};
 
 describe('GET /api/site-settings/public', () => {
   it('returns empty defaults for guests', async () => {
@@ -132,12 +141,16 @@ describe('PUT /api/site-settings/contact', () => {
     expect(res.status).toBe(403);
   });
 
-  it.each(['Super Admin', 'Admin'] as UserRole[])('%s can save all four fields', async (role) => {
+  it.each(['Super Admin', 'Admin'] as UserRole[])('%s can save every field', async (role) => {
     const body = {
       phone: '+8801711123456',
       whatsapp: '01711 123456',
       email: 'Info@Example.com',
       address: 'Dhaka',
+      facebook: 'https://facebook.com/medhabee',
+      youtube: 'https://youtube.com/@medhabee',
+      linkedin: 'https://www.linkedin.com/company/medhabee',
+      instagram: 'https://instagram.com/medhabee',
     };
     const res = await request(app).put(`${BASE}/contact`).set('Cookie', as(role)).send(body);
     expect(res.status).toBe(200);
@@ -155,6 +168,70 @@ describe('PUT /api/site-settings/contact', () => {
       .send({ address: '  ' });
     expect(res.status).toBe(200);
     expect(res.body.data.contact).toEqual({ ...EMPTY_CONTACT, phone: '+8801711123456' });
+  });
+
+  it('everyone reads the saved social links back; links never saved stay empty', async () => {
+    await request(app).put(`${BASE}/contact`).set('Cookie', as('Admin')).send({
+      facebook: 'https://facebook.com/medhabee',
+      instagram: '  https://instagram.com/mb  ',
+    });
+    for (const cookie of [undefined, as('Student')]) {
+      const call = request(app).get(`${BASE}/public`);
+      const res = await (cookie ? call.set('Cookie', cookie) : call);
+      expect(res.status).toBe(200);
+      expect(res.body.data.contact).toEqual({
+        ...EMPTY_CONTACT,
+        facebook: 'https://facebook.com/medhabee',
+        instagram: 'https://instagram.com/mb',
+      });
+    }
+  });
+
+  it('accepts a 300 character social link and refuses 301', async () => {
+    const link = (length: number) =>
+      `https://x.com/${'a'.repeat(length - 'https://x.com/'.length)}`;
+    const ok300 = await request(app)
+      .put(`${BASE}/contact`)
+      .set('Cookie', as('Admin'))
+      .send({ youtube: link(300) });
+    expect(ok300.status).toBe(200);
+    const bad301 = await request(app)
+      .put(`${BASE}/contact`)
+      .set('Cookie', as('Admin'))
+      .send({ youtube: link(301) });
+    expect(bad301.status).toBe(400);
+  });
+
+  it.each(['Moderator', 'Teacher', 'Student'] as UserRole[])(
+    '403 for %s changing a social link',
+    async (role) => {
+      const res = await request(app)
+        .put(`${BASE}/contact`)
+        .set('Cookie', as(role))
+        .send({ facebook: 'https://facebook.com/x' });
+      expect(res.status).toBe(403);
+      expect(await SiteSetting.countDocuments()).toBe(0);
+    },
+  );
+
+  it('401 for a guest changing a social link', async () => {
+    const res = await request(app)
+      .put(`${BASE}/contact`)
+      .send({ facebook: 'https://facebook.com/x' });
+    expect(res.status).toBe(401);
+  });
+
+  it('clears a social link with an empty string', async () => {
+    await request(app)
+      .put(`${BASE}/contact`)
+      .set('Cookie', as('Admin'))
+      .send({ facebook: 'https://facebook.com/medhabee' });
+    const res = await request(app)
+      .put(`${BASE}/contact`)
+      .set('Cookie', as('Admin'))
+      .send({ facebook: '' });
+    expect(res.status).toBe(200);
+    expect(res.body.data.contact.facebook).toBe('');
   });
 
   it('accepts a 300 character address', async () => {
@@ -177,6 +254,13 @@ describe('PUT /api/site-settings/contact', () => {
     ['address too long', { address: 'a'.repeat(301) }],
     ['non-string phone', { phone: 12345678 }],
     ['object email', { email: { $ne: '' } }],
+    ['email with mailto parameters', { email: 'help@example.com?bcc=evil%40x.com' }],
+    ['email with a comma', { email: 'a@b.com,c@d.com' }],
+    ['http social link', { facebook: 'http://facebook.com/x' }],
+    ['script social link', { youtube: 'javascript:alert(1)' }],
+    ['not a link', { linkedin: 'medhabee' }],
+    ['social link too long', { instagram: `https://instagram.com/${'a'.repeat(300)}` }],
+    ['object social link', { facebook: { $ne: '' } }],
   ])('400 for %s', async (_label, body) => {
     const res = await request(app).put(`${BASE}/contact`).set('Cookie', as('Admin')).send(body);
     expect(res.status).toBe(400);

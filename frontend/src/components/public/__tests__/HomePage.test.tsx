@@ -14,6 +14,13 @@ import { browsePage, makeCategory, makeCourse } from './public-fixtures';
 
 const PROGRAMMING = makeCategory();
 const DESIGN = makeCategory({ _id: '650000000000000000000002', name: 'Design' });
+const RECORDED = makeCategory({
+  _id: '650000000000000000000009',
+  name: 'Recorded',
+  description: 'Learn at your own pace',
+});
+/** A course type without paid courses: it gets no box */
+const BOOTCAMP = makeCategory({ _id: '650000000000000000000010', name: 'Bootcamp' });
 const MANY_COURSES = 31;
 
 const paidCourse = makeCourse({ startDate: '2099-12-05T04:00:00.000Z' });
@@ -25,18 +32,22 @@ const freeCourse = makeCourse({
   listPrice: 0,
   discountPrice: 0,
 });
-/** Category counts of the Live section (filterCounts.liveCategories) and of the Free section */
-const LIVE_COUNTS = { [PROGRAMMING._id]: 1 };
+/** Category counts of the free box and of the Recorded box (paid courses per course type) */
 const FREE_COUNTS = { Free: { [PROGRAMMING._id]: 1, [DESIGN._id]: 2 } };
+const TYPE_COUNTS = { [RECORDED._id]: { total: 1, categories: { [PROGRAMMING._id]: 1 } } };
+const CARD_NAME = /^Course Start Date.*TypeScript Basics/;
 
-/** Answers browse requests by section (liveOnly or pricing=Free), recording every query string. */
-const browseHandler = (requests: URLSearchParams[] = []) =>
+/** Answers browse requests by box (pricing=Free or courseTypes), recording every query string. */
+const browseHandler = (requests: URLSearchParams[] = [], freeTotal = 1) =>
   http.get('*/api/courses/browse', ({ request }) => {
     const params = new URL(request.url).searchParams;
     requests.push(params);
-    return params.get('pricing') === 'Free'
-      ? browsePage([freeCourse], 1, 1, FREE_COUNTS)
-      : browsePage([paidCourse], 1, 1, {}, LIVE_COUNTS);
+    if (params.get('pricing') === 'Free') {
+      const page = Number(params.get('page') ?? '1');
+      return browsePage([freeCourse], page, freeTotal, FREE_COUNTS, TYPE_COUNTS);
+    }
+    if (params.get('courseTypes')) return browsePage([paidCourse], 1, 1, FREE_COUNTS, TYPE_COUNTS);
+    return browsePage([], 1, 0, FREE_COUNTS, TYPE_COUNTS);
   });
 
 const section = async (name: string): Promise<HTMLElement> => {
@@ -51,48 +62,45 @@ describe('HomePage', () => {
     server.use(
       http.get('*/api/home-hero-posts/public', () => ok([])),
       http.get('*/api/categories', () => ok([PROGRAMMING, DESIGN])),
+      http.get('*/api/course-types', () => ok([RECORDED, BOOTCAMP])),
       browseHandler(),
     );
   });
 
-  it('shows a Live Courses section (live course types) and a free section with only free ones', async () => {
+  it('shows one box per course type with paid courses (its name and description), then the free courses', async () => {
     const requests: URLSearchParams[] = [];
     server.use(browseHandler(requests));
     renderWithProviders(<HomePage />);
 
-    const paid = await section('Live Courses');
-    expect(
-      await within(paid).findByRole('link', { name: /^Recorded .*TypeScript Basics/ }),
-    ).toBeInTheDocument();
-    expect(within(paid).queryByText('Free HTML Live')).not.toBeInTheDocument();
+    const recorded = await section('Recorded');
+    expect(within(recorded).getByText('Learn at your own pace')).toBeInTheDocument();
+    expect(await within(recorded).findByRole('link', { name: CARD_NAME })).toBeInTheDocument();
+    expect(within(recorded).queryByText('Free HTML Live')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Bootcamp' })).not.toBeInTheDocument();
 
-    const free = await section('Upcoming Free Live Courses');
+    const free = await section('Free Courses');
     expect(await within(free).findByText('Free HTML Live')).toBeInTheDocument();
     expect(within(free).queryByText('TypeScript Basics')).not.toBeInTheDocument();
 
-    const live = requests.filter((params) => params.get('liveOnly') === 'true');
-    const freeRequests = requests.filter((params) => params.get('pricing') === 'Free');
-    expect(live).toHaveLength(1);
-    expect(live[0]?.get('pricing')).toBeNull();
-    expect(freeRequests).toHaveLength(1);
-    expect(freeRequests[0]?.get('liveOnly')).toBeNull();
-    expect(requests.every((params) => params.get('limit') === '30')).toBe(true);
+    const typeRequest = requests.find((params) => params.get('courseTypes') === RECORDED._id);
+    expect(typeRequest?.get('pricing')).toBe('Paid');
+    expect(requests.some((params) => params.get('liveOnly') !== null)).toBe(false);
     // Page buttons scroll back to these anchors
-    expect(paid.closest('section')?.id ?? paid.id).toBe('home-paid-courses');
-    expect(free.closest('section')?.id ?? free.id).toBe('home-free-courses');
+    expect(recorded.id).toBe(`home-type-${RECORDED._id}`);
+    expect(free.id).toBe('home-free-courses');
   });
 
-  it('lists only the categories with courses in that section, with their course counts', async () => {
+  it('lists only the categories with courses in that box, with their course counts', async () => {
     renderWithProviders(<HomePage />);
 
-    const paid = await section('Live Courses');
-    const paidGroup = await within(paid).findByRole('group', { name: /Live Courses/ });
-    expect(within(paidGroup).getByRole('button', { name: /Programming/ })).toHaveTextContent(
+    const recorded = await section('Recorded');
+    const typeGroup = await within(recorded).findByRole('group', { name: /Recorded/ });
+    expect(within(typeGroup).getByRole('button', { name: /Programming/ })).toHaveTextContent(
       /Programming\s*1$/,
     );
-    expect(within(paidGroup).queryByRole('button', { name: /Design/ })).not.toBeInTheDocument();
+    expect(within(typeGroup).queryByRole('button', { name: /Design/ })).not.toBeInTheDocument();
 
-    const free = await section('Upcoming Free Live Courses');
+    const free = await section('Free Courses');
     const freeGroup = await within(free).findByRole('group');
     expect(within(freeGroup).getByRole('button', { name: /All/ })).toHaveTextContent(/^All\s*3$/);
     expect(within(freeGroup).getByRole('button', { name: /Design/ })).toHaveTextContent(
@@ -100,58 +108,38 @@ describe('HomePage', () => {
     );
   });
 
-  it('filters a section by the picked category', async () => {
+  it('filters a box by the picked category, and "All" clears it in that box only', async () => {
     const requests: URLSearchParams[] = [];
     server.use(browseHandler(requests));
     renderWithProviders(<HomePage />);
     const user = userEvent.setup();
 
-    const free = await section('Upcoming Free Live Courses');
+    const free = await section('Free Courses');
     const design = await within(free).findByRole('button', { name: /Design/ });
     await user.click(design);
-
     expect(design).toHaveAttribute('aria-pressed', 'true');
     expect(
       requests.some(
         (params) => params.get('pricing') === 'Free' && params.get('categories') === DESIGN._id,
       ),
     ).toBe(true);
-  });
 
-  it('"All" clears the category, and a category only filters its own section', async () => {
-    const requests: URLSearchParams[] = [];
-    server.use(browseHandler(requests));
-    renderWithProviders(<HomePage />);
-    const user = userEvent.setup();
-
-    const free = await section('Upcoming Free Live Courses');
-    await user.click(await within(free).findByRole('button', { name: /Design/ }));
     requests.length = 0;
     await user.click(within(free).getByRole('button', { name: /All/ }));
-
     await waitFor(() => {
       expect(requests.some((params) => params.get('pricing') === 'Free')).toBe(true);
     });
     expect(requests.every((params) => params.get('categories') === null)).toBe(true);
-    const paid = await section('Live Courses');
-    expect(within(paid).getByRole('button', { name: /All/ })).toHaveAttribute(
+    const recorded = await section('Recorded');
+    expect(within(recorded).getByRole('button', { name: /All/ })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
   });
 
-  it('pages a section and goes back to page 1 when the category changes', async () => {
+  it('pages a box only when it has more than 30 courses, and goes back to page 1 on a new category', async () => {
     const requests: URLSearchParams[] = [];
-    server.use(
-      http.get('*/api/courses/browse', ({ request }) => {
-        const params = new URL(request.url).searchParams;
-        requests.push(params);
-        const page = Number(params.get('page'));
-        return params.get('pricing') === 'Free'
-          ? browsePage([freeCourse], page, MANY_COURSES, FREE_COUNTS)
-          : browsePage([paidCourse], 1, 1, {}, LIVE_COUNTS);
-      }),
-    );
+    server.use(browseHandler(requests, MANY_COURSES));
     // jsdom has no scrolling
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
@@ -159,7 +147,11 @@ describe('HomePage', () => {
     const user = userEvent.setup();
     const freeRequests = () => requests.filter((params) => params.get('pricing') === 'Free');
 
-    const free = await section('Upcoming Free Live Courses');
+    const recorded = await section('Recorded');
+    await within(recorded).findByRole('link', { name: CARD_NAME });
+    expect(within(recorded).queryByRole('navigation')).not.toBeInTheDocument();
+
+    const free = await section('Free Courses');
     await user.click(await within(free).findByRole('button', { name: 'Go to page 2' }));
     await waitFor(() => {
       expect(freeRequests().at(-1)?.get('page')).toBe('2');
@@ -173,29 +165,17 @@ describe('HomePage', () => {
     expect(freeRequests().at(-1)?.get('page')).toBe('1');
   });
 
-  it('shows no category cards when the counts are missing', async () => {
-    server.use(
-      http.get('*/api/courses/browse', () =>
-        ok([paidCourse], { total: 1, pagination: { page: 1, limit: 30, total: 1, totalPages: 1 } }),
-      ),
-    );
+  it('shows the card with start date, price and "See Details", without course type, teacher or category', async () => {
     renderWithProviders(<HomePage />);
 
-    await screen.findAllByRole('link', { name: /^Recorded .*TypeScript Basics/ });
-    expect(screen.queryByRole('group')).not.toBeInTheDocument();
-  });
-
-  it('shows the card with type, start day, price and "See Details", without teacher or category', async () => {
-    renderWithProviders(<HomePage />);
-
-    const card = await screen.findByRole('link', { name: /^Recorded .*TypeScript Basics/ });
+    const card = await screen.findByRole('link', { name: CARD_NAME });
     expect(card).toHaveAttribute('href', `/courses/${paidCourse._id}`);
-    expect(within(card).getByText('Recorded')).toBeInTheDocument();
     expect(within(card).getByText(/^Dec \d, 2099$/)).toBeInTheDocument();
     expect(within(card).getByText('৳800')).toBeInTheDocument();
     expect(within(card).getByText('৳1,000')).toBeInTheDocument();
     expect(within(card).getByText('20% off')).toBeInTheDocument();
     expect(within(card).getByText('Save ৳200')).toBeInTheDocument();
+    expect(within(card).queryByText('Recorded')).not.toBeInTheDocument();
     expect(within(card).queryByText('Ada Lovelace')).not.toBeInTheDocument();
     expect(within(card).queryByText('Programming')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'See details of TypeScript Basics' })).toHaveAttribute(
@@ -207,51 +187,33 @@ describe('HomePage', () => {
   it('says when a course has no start date yet', async () => {
     renderWithProviders(<HomePage />);
 
-    const free = await section('Upcoming Free Live Courses');
+    const free = await section('Free Courses');
     expect(await within(free).findByText('To be announced')).toBeInTheDocument();
   });
 
-  it('shows the pagination only when a section has more than 30 courses', async () => {
-    server.use(
-      http.get('*/api/courses/browse', ({ request }) => {
-        const isFree = new URL(request.url).searchParams.get('pricing') === 'Free';
-        return isFree ? browsePage([freeCourse], 1, MANY_COURSES) : browsePage([paidCourse], 1, 1);
-      }),
-    );
-    renderWithProviders(<HomePage />);
-
-    const free = await section('Upcoming Free Live Courses');
-    expect(await within(free).findByRole('button', { name: 'Go to page 2' })).toBeInTheDocument();
-    const paid = await section('Live Courses');
-    await within(paid).findByRole('link', { name: /^Recorded .*TypeScript Basics/ });
-    expect(within(paid).queryByRole('navigation')).not.toBeInTheDocument();
-    expect(within(paid).queryByText(/Showing/)).not.toBeInTheDocument();
-  });
-
-  it('says when a section has no courses yet', async () => {
+  it('shows only the free box (with its empty text) when no course type has paid courses', async () => {
     server.use(http.get('*/api/courses/browse', () => browsePage([])));
     renderWithProviders(<HomePage />);
 
-    expect(await screen.findByText('No live courses yet.')).toBeInTheDocument();
-    expect(screen.getByText('No free courses yet.')).toBeInTheDocument();
+    expect(await screen.findByText('No free courses yet.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Recorded' })).not.toBeInTheDocument();
   });
 
   it('shows the error with a retry when courses cannot load', async () => {
     server.use(http.get('*/api/courses/browse', () => fail(500, 'Server error')));
     renderWithProviders(<HomePage />);
 
-    await waitFor(() => {
-      expect(screen.getAllByText('Server error')).toHaveLength(2);
-    });
-    expect(screen.getAllByRole('button', { name: 'Try again' })).toHaveLength(2);
+    expect(await screen.findByText('Server error')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 
-  it('no longer shows the learning paths or the instructors band', async () => {
+  it('no longer shows the learning paths, the instructors band or a Live Courses box', async () => {
     renderWithProviders(<HomePage />);
 
-    await screen.findByRole('heading', { name: 'Live Courses' });
+    await screen.findByRole('heading', { name: 'Recorded' });
     expect(screen.queryByText('Learn what matches your ambition')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Our Instructors' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Live Courses' })).not.toBeInTheDocument();
   });
 
   it('offers "Continue Learning" on courses a signed-in Student is enrolled in', async () => {
@@ -280,7 +242,7 @@ describe('HomePage', () => {
     );
     renderWithProviders(<HomePage />);
 
-    await screen.findByRole('link', { name: /^Recorded .*TypeScript Basics/ });
+    await screen.findByRole('link', { name: CARD_NAME });
     expect(enrolmentsAsked).toBe(false);
     expect(screen.queryByRole('link', { name: 'Continue Learning' })).not.toBeInTheDocument();
   });
@@ -332,7 +294,7 @@ describe('HomePage', () => {
 
       server.use(http.get('*/api/home-hero-posts/public', () => ok([posts[0]])));
       renderWithProviders(<HomePage />);
-      await screen.findByRole('heading', { name: 'Live Courses' });
+      await screen.findByRole('heading', { name: 'Recorded' });
       expect(screen.queryByRole('button', { name: 'Next header image' })).not.toBeInTheDocument();
     });
   });

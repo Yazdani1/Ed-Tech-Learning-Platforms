@@ -5,11 +5,11 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import { SafeHtml } from '@/components/common/SafeHtml';
 import { DISPLAY_FONT } from '@/theme/fonts';
 import { hasVisibleText } from '@/utils/html-text';
 
 import { SIDE_CARD_SX } from './detail-styles';
+import { FoldableHtml } from './FoldableHtml';
 
 import type { FC } from 'react';
 
@@ -28,7 +28,10 @@ const HTML_SX = {
   '& h1, & h2, & h3': { fontFamily: DISPLAY_FONT, color: '#0f172a', lineHeight: 1.3, mb: 2 },
 } as const;
 
-/** "About this course" (rich text) beside the enrolment card; hidden when there is no description. */
+/**
+ * "About this course" (rich text) beside the enrolment card: a long text shows its first lines with a fade and
+ * "Show more"; hidden when there is no description.
+ */
 export const CourseAboutCard: FC<CourseAboutCardProps> = ({ description }) => {
   const { t } = useTranslation();
   if (!hasVisibleText(description)) return null;
@@ -53,7 +56,7 @@ export const CourseAboutCard: FC<CourseAboutCardProps> = ({ description }) => {
         >
           {t('browse.detail.about')}
         </Typography>
-        <SafeHtml html={description} sx={HTML_SX} />
+        <FoldableHtml html={description} id="course-about-body" htmlSx={HTML_SX} />
       </Box>
     </Paper>
   );

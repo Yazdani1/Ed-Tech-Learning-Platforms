@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/hooks/useAuth';
 
-import { isNavItemActive, type NavItem } from './nav-items';
+import { isNavItemActive, NAV_SECTIONS, type NavItem } from './nav-items';
 import { SidebarHeader } from './SidebarHeader';
 import { SidebarNavItem } from './SidebarNavItem';
 import { SidebarUserFooter } from './SidebarUserFooter';
@@ -25,7 +25,7 @@ interface SidebarContentProps {
   onNavigate?: () => void;
 }
 
-/** Brand, the role-filtered menu and the user footer: shared by the desktop sidebar and the phone drawer. */
+/** Brand, the role-filtered menu (grouped items under headings) and the user footer: shared by the desktop sidebar and the phone drawer. */
 export const SidebarContent: FC<SidebarContentProps> = ({
   navItems,
   collapsed,
@@ -36,7 +36,6 @@ export const SidebarContent: FC<SidebarContentProps> = ({
   const pathname = usePathname();
   const { hasRole } = useAuth();
   const visible = navItems.filter((item) => !item.roles || hasRole(item.roles));
-  const analytics = visible.filter((item) => item.section === 'analytics');
   const renderItem = (item: NavItem) => (
     <SidebarNavItem
       key={item.href}
@@ -46,14 +45,15 @@ export const SidebarContent: FC<SidebarContentProps> = ({
       onNavigate={onNavigate}
     />
   );
-  const analyticsHeading = collapsed ? undefined : (
-    <Typography
-      variant="overline"
-      sx={{ px: 2, display: 'block', color: 'text.disabled', fontWeight: 700 }}
-    >
-      {t('nav.analytics')}
-    </Typography>
-  );
+  const heading = (section: string) =>
+    collapsed ? undefined : (
+      <Typography
+        variant="overline"
+        sx={{ px: 2, display: 'block', color: 'text.disabled', fontWeight: 700, lineHeight: 2.5 }}
+      >
+        {t(`nav.group.${section}`)}
+      </Typography>
+    );
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -61,9 +61,18 @@ export const SidebarContent: FC<SidebarContentProps> = ({
       <Divider />
       <Box component="nav" aria-label={t('nav.mainMenu')} sx={{ flex: 1, overflowY: 'auto' }}>
         <List sx={{ pt: 1 }}>{visible.filter((item) => !item.section).map(renderItem)}</List>
-        {analytics.length > 0 && (
-          <List subheader={analyticsHeading}>{analytics.map(renderItem)}</List>
-        )}
+        {NAV_SECTIONS.map((section) => {
+          const items = visible.filter((item) => item.section === section);
+          if (items.length === 0) return null;
+          return (
+            <Box key={section}>
+              {collapsed && <Divider sx={{ mx: 1.5, my: 0.5 }} />}
+              <List dense disablePadding subheader={heading(section)} sx={{ pb: 0.5 }}>
+                {items.map(renderItem)}
+              </List>
+            </Box>
+          );
+        })}
       </Box>
       <Divider />
       <SidebarUserFooter collapsed={collapsed} />

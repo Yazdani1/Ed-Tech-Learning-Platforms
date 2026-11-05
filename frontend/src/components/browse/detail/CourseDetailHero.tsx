@@ -1,6 +1,5 @@
 'use client';
 
-import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Container from '@mui/material/Container';
@@ -9,8 +8,8 @@ import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
 import { DISPLAY_FONT, MONO_FONT } from '@/theme/fonts';
-import { getCoursePriceInfo } from '@/utils/price';
 
+import { ENROLL_ATTENTION_SX } from './enrollment/enroll-attention';
 import { EnrollNowButton } from './enrollment/EnrollNowButton';
 import { useCanEnroll } from './enrollment/useCanEnroll';
 import { HeroBreadcrumbs } from './HeroBreadcrumbs';
@@ -70,6 +69,7 @@ const DOT_SX = {
   flexShrink: 0,
 } as const;
 const ENROLL_SX = {
+  ...ENROLL_ATTENTION_SX,
   minHeight: 54,
   px: 4,
   borderRadius: '12px',
@@ -81,7 +81,7 @@ const ENROLL_SX = {
   '&:hover': { background: 'linear-gradient(100deg, #d97706 0%, #f59e0b 55%, #ef4444 100%)' },
 } as const;
 
-/** Dark banner: breadcrumb, course type, title, subtitle, price with its saving, Enroll Now. */
+/** Dark banner: breadcrumb, course type, title, subtitle, price with its saving, Enroll Now (animated). */
 export const CourseDetailHero: FC<CourseDetailHeroProps> = ({ course, enrollTargetId }) => {
   const { t } = useTranslation();
   const canEnroll = useCanEnroll(course._id);
@@ -117,15 +117,7 @@ export const CourseDetailHero: FC<CourseDetailHeroProps> = ({ course, enrollTarg
               />
             )}
             {canEnroll && (
-              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2.5 }}>
-                <EnrollNowButton course={course} targetId={enrollTargetId} sx={ENROLL_SX} />
-                {!getCoursePriceInfo(course).isFree && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#e2e8f0' }}>
-                    <VerifiedOutlinedIcon sx={{ fontSize: 20, color: '#34d399' }} aria-hidden />
-                    <Typography variant="body2">{t('browse.detail.guarantee')}</Typography>
-                  </Box>
-                )}
-              </Box>
+              <EnrollNowButton course={course} targetId={enrollTargetId} sx={ENROLL_SX} />
             )}
           </Grid>
         </Grid>

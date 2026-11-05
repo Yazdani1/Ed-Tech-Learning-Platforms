@@ -101,6 +101,7 @@ describe('CourseSetupPage', () => {
     let called = false;
     server.use(
       http.get('*/api/categories', () => ok([])),
+      http.get('*/api/course-types', () => ok([])),
       http.post('*/api/categories', () => {
         called = true;
         return ok(WEB);
@@ -228,64 +229,10 @@ describe('CourseSetupPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Course type created')).toBeInTheDocument();
-    expect(body).toEqual({ name: 'Seminar', description: '', isLive: false });
+    expect(body).toEqual({ name: 'Seminar', description: '' });
   });
 
-  it('sends isLive true when the "Live course type" switch is on, and shows one Live chip', async () => {
-    let body: unknown;
-    server.use(
-      http.get('*/api/course-types', () =>
-        ok([
-          setupItemSchema.parse({ ...makeItem('003', 'Live Batch'), isLive: true }),
-          makeItem('005', 'Recorded'),
-        ]),
-      ),
-      http.post('*/api/course-types', async ({ request }) => {
-        body = await request.json();
-        return ok(makeItem('004', 'Workshop'));
-      }),
-    );
-    renderPage('courseType', 'Super Admin');
-    const user = userEvent.setup();
-
-    await screen.findByText('Live Batch');
-    expect(screen.getAllByText('Live')).toHaveLength(1);
-    await user.click(screen.getByRole('button', { name: 'Add Course Type' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Add Course Type' });
-    await user.type(within(dialog).getByLabelText(/Name/), 'Workshop');
-    await user.click(within(dialog).getByRole('switch', { name: /Live course type/ }));
-    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
-
-    expect(await screen.findByText('Course type created')).toBeInTheDocument();
-    expect(body).toEqual({ name: 'Workshop', description: '', isLive: true });
-  });
-
-  it('edits a live course type with the switch already on', async () => {
-    const live = setupItemSchema.parse({ ...makeItem('003', 'Live Batch'), isLive: true });
-    let body: unknown;
-    server.use(
-      http.get('*/api/course-types', () => ok([live])),
-      http.put('*/api/course-types/:id', async ({ request }) => {
-        body = await request.json();
-        return ok(live);
-      }),
-    );
-    renderPage('courseType', 'Admin');
-    const user = userEvent.setup();
-
-    await openRowMenu('Live Batch');
-    await user.click(await screen.findByRole('menuitem', { name: 'Edit' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Edit Course Type' });
-    const toggle = within(dialog).getByRole('switch', { name: /Live course type/ });
-    expect(toggle).toBeChecked();
-    await user.click(toggle);
-    await user.click(within(dialog).getByRole('button', { name: 'Update' }));
-
-    expect(await screen.findByText('Course type updated')).toBeInTheDocument();
-    expect(body).toMatchObject({ name: 'Live Batch', isLive: false });
-  });
-
-  it('categories have no live switch and never send isLive', async () => {
+  it('course types have no live switch any more', async () => {
     let body: Record<string, unknown> = {};
     server.use(
       http.get('*/api/categories', () => ok([])),

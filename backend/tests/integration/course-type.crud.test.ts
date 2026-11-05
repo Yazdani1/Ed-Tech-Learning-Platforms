@@ -269,87 +269,38 @@ describe('DELETE /api/course-types/:id', () => {
   });
 });
 
-describe('CourseType isLive flag', () => {
-  it('defaults to false on create', async () => {
+describe('course types have no "live" flag any more', () => {
+  it('ignores isLive on create and update, and never returns it', async () => {
     const admin = await createUser('Admin');
-    const res = await request(app)
+    const created = await request(app)
       .post('/api/course-types')
       .set('Cookie', authCookie(admin))
-      .send({ name: `Plain ${nextId()}` });
-    expect(res.status).toBe(201);
-    expect(res.body.data.isLive).toBe(false);
-  });
+      .send({ name: `Batch ${nextId()}`, isLive: true });
+    expect(created.status).toBe(201);
+    expect(created.body.data).not.toHaveProperty('isLive');
 
-  it('saves isLive: true on create', async () => {
-    const admin = await createUser('Admin');
-    const res = await request(app)
-      .post('/api/course-types')
-      .set('Cookie', authCookie(admin))
-      .send({ name: `Live ${nextId()}`, isLive: true });
-    expect(res.status).toBe(201);
-    expect(res.body.data.isLive).toBe(true);
-    expect((await CourseType.findById(res.body.data._id))?.isLive).toBe(true);
-  });
-
-  it.each(['true', 1, null, {}, 'yes'])(
-    'answers 400 on create when isLive is %j',
-    async (isLive) => {
-      const admin = await createUser('Admin');
-      const res = await request(app)
-        .post('/api/course-types')
-        .set('Cookie', authCookie(admin))
-        .send({ name: `Bad ${nextId()}`, isLive });
-      expect(res.status).toBe(400);
-      expect(res.body).toEqual({ success: false, message: 'isLive must be true or false' });
-    },
-  );
-
-  it('updates isLive on its own and keeps name and slug', async () => {
-    const admin = await createUser('Admin');
-    const type = await createCourseType({ name: `Keep ${nextId()}` });
-    const res = await request(app)
-      .put(`/api/course-types/${type._id}`)
+    const updated = await request(app)
+      .put(`/api/course-types/${String(created.body.data._id)}`)
       .set('Cookie', authCookie(admin))
       .send({ isLive: true });
-    expect(res.status).toBe(200);
-    expect(res.body.data).toMatchObject({ name: type.name, slug: type.slug, isLive: true });
-
-    const off = await request(app)
-      .put(`/api/course-types/${type._id}`)
-      .set('Cookie', authCookie(admin))
-      .send({ isLive: false });
-    expect(off.body.data.isLive).toBe(false);
+    expect(updated.status).toBe(200);
+    expect(updated.body.data).not.toHaveProperty('isLive');
+    // The stored document has no such field either
+    expect(
+      await CourseType.collection.findOne({ slug: created.body.data.slug }),
+    ).not.toHaveProperty('isLive');
   });
 
-  it('leaves isLive unchanged when an update does not send it', async () => {
-    const admin = await createUser('Admin');
-    const type = await createCourseType({ isLive: true });
-    const res = await request(app)
-      .put(`/api/course-types/${type._id}`)
-      .set('Cookie', authCookie(admin))
-      .send({ description: 'new text' });
-    expect(res.status).toBe(200);
-    expect(res.body.data.isLive).toBe(true);
-  });
+  it('browse ignores liveOnly and has no liveCategories count', async () => {
+    const tag = `nolive${nextId()}`;
+    const course = await createCourse({ title: `${tag} course` });
+    const withFlag = await request(app).get(`/api/courses/browse?liveOnly=true&search=${tag}`);
+    const without = await request(app).get(`/api/courses/browse?search=${tag}`);
 
-  it.each(['false', 0, null])('answers 400 on update when isLive is %j', async (isLive) => {
-    const admin = await createUser('Admin');
-    const type = await createCourseType();
-    const res = await request(app)
-      .put(`/api/course-types/${type._id}`)
-      .set('Cookie', authCookie(admin))
-      .send({ isLive });
-    expect(res.status).toBe(400);
-    expect((await CourseType.findById(type._id))?.isLive).toBe(false);
-  });
-
-  it.each(NON_ADMIN_ROLES)('answers 403 for %s changing isLive', async (role) => {
-    const user = await createUser(role);
-    const type = await createCourseType();
-    const res = await request(app)
-      .put(`/api/course-types/${type._id}`)
-      .set('Cookie', authCookie(user))
-      .send({ isLive: true });
-    expect(res.status).toBe(403);
+    expect(withFlag.status).toBe(200);
+    expect(withFlag.body.data.map((c: { _id: string }) => c._id)).toEqual([String(course._id)]);
+    expect(withFlag.body.data).toEqual(without.body.data);
+    expect(withFlag.body.filterCounts).not.toHaveProperty('liveCategories');
+    expect(withFlag.body.data[0].courseType).not.toHaveProperty('isLive');
   });
 });

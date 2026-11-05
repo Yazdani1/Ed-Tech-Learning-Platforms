@@ -72,7 +72,7 @@ flowchart LR
     Notifications -- "live push" --> Socket
     Community[Community hub] -- "points, badges" --> Auth
     Showcase[Hero posts + logo] -- "images" --> CLD[(Cloudinary)]
-    Courses -- "live course types (home Live section)" --> Setup
+    Courses -- "course types (one home / catalog box each)" --> Setup
     Courses -- "page sections: tools" --> Tools[Tools]
     Courses -- "section pictures" --> CLD
     Tools -- "logos" --> CLD

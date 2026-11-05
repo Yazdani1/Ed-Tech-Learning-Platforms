@@ -31,6 +31,47 @@ describe('SidebarContent', () => {
     expect(within(menu).getByText('Analytics')).toBeInTheDocument();
   });
 
+  it('groups the admin items under headings, each item under its own group', async () => {
+    const menu = await renderAdminMenu('Super Admin');
+    const groupOf = (heading: string) => {
+      const list = within(menu).getByText(heading).closest('ul');
+      if (!list) throw new Error(`no list for ${heading}`);
+      return within(list);
+    };
+
+    expect(
+      groupOf('Course Management').getByRole('link', { name: 'Course Setup' }),
+    ).toBeInTheDocument();
+    expect(groupOf('Users & Students').getByRole('link', { name: 'Students' })).toBeInTheDocument();
+    expect(
+      groupOf('Communication').getByRole('link', { name: 'Support Chat' }),
+    ).toBeInTheDocument();
+    expect(groupOf('Website').getByRole('link', { name: 'Site Pages' })).toBeInTheDocument();
+    expect(groupOf('Analytics').getByRole('link', { name: 'Performance' })).toBeInTheDocument();
+  });
+
+  it('shows an Admin the manager groups but no Analytics heading', async () => {
+    const menu = await renderAdminMenu('Admin');
+    expect(within(menu).getByText('Users & Students')).toBeInTheDocument();
+    expect(within(menu).getByText('Website')).toBeInTheDocument();
+    expect(within(menu).queryByText('Analytics')).not.toBeInTheDocument();
+  });
+
+  it('student menus have no group headings', async () => {
+    server.use(signedInAs(makeUser('Student')));
+    renderWithProviders(<SidebarContent navItems={STUDENT_NAV} collapsed={false} />);
+    await screen.findByRole('link', { name: 'My Courses' });
+    expect(screen.queryByText('Course Management')).not.toBeInTheDocument();
+    expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
+  });
+
+  it('leaves out a heading when the role sees none of its items', async () => {
+    const menu = await renderAdminMenu('Moderator');
+    expect(within(menu).getByText('Course Management')).toBeInTheDocument();
+    expect(within(menu).queryByText('Users & Students')).not.toBeInTheDocument();
+    expect(within(menu).queryByText('Analytics')).not.toBeInTheDocument();
+  });
+
   it('hides the Super Admin and manager items from a Moderator', async () => {
     const menu = await renderAdminMenu('Moderator');
 

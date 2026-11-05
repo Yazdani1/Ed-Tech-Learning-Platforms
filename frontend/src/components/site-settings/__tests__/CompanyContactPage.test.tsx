@@ -17,7 +17,12 @@ const SAVED = {
   whatsapp: '',
   email: 'hello@example.com',
   address: 'Dhaka',
+  facebook: 'https://facebook.com/medhabee',
+  youtube: '',
+  linkedin: '',
+  instagram: '',
 };
+const NO_SOCIAL = { facebook: '', youtube: '', linkedin: '', instagram: '' };
 
 const renderPage = (role: UserRole = 'Admin') => {
   server.use(
@@ -98,13 +103,37 @@ describe('CompanyContactPage', () => {
       }),
     );
     const user = userEvent.setup();
-    for (const label of ['Phone number', 'Email', 'Address']) {
+    for (const label of ['Phone number', 'Email', 'Address', 'Facebook page link']) {
       await user.clear(await screen.findByLabelText(label));
     }
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Company contact saved')).toBeInTheDocument();
-    expect(body).toEqual({ phone: '', whatsapp: '', email: '', address: '' });
+    expect(body).toEqual({ phone: '', whatsapp: '', email: '', address: '', ...NO_SOCIAL });
+  });
+
+  it('saves a social link and refuses one that is not a full https link', async () => {
+    let body: Record<string, unknown> | undefined;
+    renderPage();
+    server.use(
+      http.put('*/api/site-settings/contact', async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return ok({ hiddenPages: [], contact: SAVED });
+      }),
+    );
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText('YouTube channel link'), 'youtube.com/x');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Enter a full https:// link.')).toBeInTheDocument();
+    expect(body).toBeUndefined();
+
+    await user.clear(screen.getByLabelText('YouTube channel link'));
+    await user.type(screen.getByLabelText('YouTube channel link'), 'https://youtube.com/@medhabee');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => {
+      expect(body?.youtube).toBe('https://youtube.com/@medhabee');
+    });
   });
 
   it('shows the backend message when saving fails', async () => {

@@ -8,7 +8,16 @@ import { ACCOUNTS, E2E_PASSWORD, expectNoHorizontalScroll, isPhone } from './hel
 
 interface SiteSettings {
   hiddenPages: string[];
-  contact: { phone: string; whatsapp: string; email: string; address: string };
+  contact: {
+    phone: string;
+    whatsapp: string;
+    email: string;
+    address: string;
+    facebook: string;
+    youtube: string;
+    linkedin: string;
+    instagram: string;
+  };
 }
 
 const dataOf = async <T>(response: Awaited<ReturnType<APIRequestContext['post']>>): Promise<T> => {
@@ -144,7 +153,7 @@ test.describe('Company contact', () => {
       await expect(async () => {
         await signInByApi(page, ACCOUNTS.admin.email);
         await page.request.put('/api/site-settings/contact', {
-          data: { ...(await readSettings(page.request)).contact, phone },
+          data: { phone },
         });
         await page.context().clearCookies();
         await page.goto(`/courses/${course.id}`);
@@ -168,9 +177,52 @@ test.describe('Company contact', () => {
       const isE2eNumber = ['01711111111', '01722222222'].includes(before.contact.phone);
       if (stillMine.contact.phone === phone) {
         await page.request.put('/api/site-settings/contact', {
-          data: { ...before.contact, phone: isE2eNumber ? '' : before.contact.phone },
+          data: { phone: isE2eNumber ? '' : before.contact.phone },
         });
       }
+    }
+  });
+
+  test('a social link saved on Company Contact becomes a footer icon; an http link is refused', async ({
+    page,
+  }, testInfo) => {
+    // Desktop and mobile use different fields, so the two projects never undo each other
+    const isMobile = testInfo.project.name === 'mobile';
+    const label = isMobile ? 'Instagram link' : 'LinkedIn page link';
+    const field = isMobile ? 'instagram' : 'linkedin';
+    const icon = isMobile ? 'Instagram' : 'LinkedIn';
+    const link = `https://example.com/medhabee-${field}`;
+    await signInByApi(page, ACCOUNTS.admin.email);
+    const before = await readSettings(page.request);
+
+    try {
+      await page.goto('/admin/company-contact');
+      await page.getByLabel(label).fill('http://example.com/plain');
+      await page.getByRole('button', { name: 'Save' }).click();
+      await expect(page.getByText('Enter a full https:// link.')).toBeVisible();
+
+      await page.getByLabel(label).fill(link);
+      await page.getByRole('button', { name: 'Save' }).click();
+      await expect(page.getByText('Company contact saved')).toBeVisible();
+
+      // Other flows change the contact at the same time: save this one field again until the footer shows it
+      const footer = page.getByRole('contentinfo');
+      await expect(async () => {
+        await signInByApi(page, ACCOUNTS.admin.email);
+        await page.request.put('/api/site-settings/contact', { data: { [field]: link } });
+        await page.context().clearCookies();
+        await page.goto('/');
+        await expect(footer.getByRole('link', { name: icon })).toHaveAttribute('href', link, {
+          timeout: 8000,
+        });
+      }).toPass({ timeout: 60_000 });
+      await expect(footer.getByRole('list', { name: 'Payment methods we accept' })).toBeVisible();
+      await expectNoHorizontalScroll(page);
+    } finally {
+      await signInByApi(page, ACCOUNTS.admin.email);
+      await page.request.put('/api/site-settings/contact', {
+        data: { [field]: before.contact[field] },
+      });
     }
   });
 

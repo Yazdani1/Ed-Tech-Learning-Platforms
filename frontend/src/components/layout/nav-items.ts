@@ -22,6 +22,10 @@ import { MANAGER_ROLES, SUPER_ADMIN_ROLES } from '@/utils/roles';
 import type { UserRole } from '@/types';
 import type SvgIcon from '@mui/material/SvgIcon';
 
+/** Headings of the admin menu, in this order (i18n keys nav.group.<name>). */
+export const NAV_SECTIONS = ['courses', 'people', 'communication', 'website', 'analytics'] as const;
+export type NavSection = (typeof NAV_SECTIONS)[number];
+
 export interface NavItem {
   /** i18n key of the menu text */
   labelKey: string;
@@ -31,15 +35,15 @@ export interface NavItem {
   roles?: readonly UserRole[];
   /** Active only on this exact path (default: also on its sub-pages) */
   exact?: boolean;
-  /** Shown under a heading after the main items */
-  section?: 'analytics';
+  /** Shown under that group's heading, after the items without a group */
+  section?: NavSection;
   /** Unread badge on the icon (support chat / notifications), as the old sidebars had */
   badge?: 'chat' | 'notifications';
 }
 
 /**
  * Admin area menu (Super Admin, Admin, Moderator): the old AdminSidebar's items and roles, plus Group Chat
- * (the old sidebar had no link to /admin/group-chat; added so the page can be reached).
+ * (the old sidebar had no link to /admin/group-chat; added so the page can be reached), grouped under headings.
  */
 export const ADMIN_NAV: readonly NavItem[] = [
   { labelKey: 'nav.home', href: '/', icon: Home, exact: true },
@@ -50,44 +54,84 @@ export const ADMIN_NAV: readonly NavItem[] = [
     roles: SUPER_ADMIN_ROLES,
   },
   { labelKey: 'nav.profile', href: '/admin/profile', icon: Person },
-  { labelKey: 'nav.courses', href: '/admin/courses', icon: School },
-  { labelKey: 'nav.courseQa', href: '/admin/course-qa', icon: QuestionAnswer },
   { labelKey: 'nav.schedule', href: '/admin/schedule', icon: EventNote },
-  { labelKey: 'nav.supportChat', href: '/admin/chat', icon: Chat, badge: 'chat' },
-  { labelKey: 'nav.groupChat', href: '/admin/group-chat', icon: Groups },
+  { labelKey: 'nav.courses', href: '/admin/courses', icon: School, section: 'courses' },
+  {
+    labelKey: 'nav.courseSetup',
+    href: '/admin/categories',
+    icon: Category,
+    roles: MANAGER_ROLES,
+    section: 'courses',
+  },
+  {
+    labelKey: 'nav.teachers',
+    href: '/admin/teachers',
+    icon: Person,
+    roles: MANAGER_ROLES,
+    section: 'courses',
+  },
+  {
+    labelKey: 'nav.courseQa',
+    href: '/admin/course-qa',
+    icon: QuestionAnswer,
+    section: 'courses',
+  },
+  {
+    labelKey: 'nav.userList',
+    href: '/admin/users',
+    icon: People,
+    roles: MANAGER_ROLES,
+    section: 'people',
+  },
+  {
+    labelKey: 'nav.students',
+    href: '/admin/students',
+    icon: Face,
+    roles: MANAGER_ROLES,
+    section: 'people',
+  },
+  {
+    labelKey: 'nav.subscriptions',
+    href: '/admin/subscriptions',
+    icon: CardMembership,
+    roles: MANAGER_ROLES,
+    section: 'people',
+  },
+  {
+    labelKey: 'nav.supportChat',
+    href: '/admin/chat',
+    icon: Chat,
+    badge: 'chat',
+    section: 'communication',
+  },
+  { labelKey: 'nav.groupChat', href: '/admin/group-chat', icon: Groups, section: 'communication' },
   {
     labelKey: 'nav.notifications',
     href: '/admin/notifications',
     icon: Notifications,
     badge: 'notifications',
+    section: 'communication',
   },
   {
     labelKey: 'nav.homepageShowcase',
     href: '/admin/homepage-showcase',
     icon: Collections,
     roles: MANAGER_ROLES,
+    section: 'website',
   },
   {
     labelKey: 'nav.sitePages',
     href: '/admin/site-pages',
     icon: ToggleOn,
     roles: SUPER_ADMIN_ROLES,
+    section: 'website',
   },
   {
     labelKey: 'nav.companyContact',
     href: '/admin/company-contact',
     icon: ContactPhone,
     roles: MANAGER_ROLES,
-  },
-  { labelKey: 'nav.teachers', href: '/admin/teachers', icon: Person, roles: MANAGER_ROLES },
-  { labelKey: 'nav.courseSetup', href: '/admin/categories', icon: Category, roles: MANAGER_ROLES },
-  { labelKey: 'nav.userList', href: '/admin/users', icon: People, roles: MANAGER_ROLES },
-  { labelKey: 'nav.students', href: '/admin/students', icon: Face, roles: MANAGER_ROLES },
-  {
-    labelKey: 'nav.subscriptions',
-    href: '/admin/subscriptions',
-    icon: CardMembership,
-    roles: MANAGER_ROLES,
+    section: 'website',
   },
   {
     labelKey: 'nav.performance',

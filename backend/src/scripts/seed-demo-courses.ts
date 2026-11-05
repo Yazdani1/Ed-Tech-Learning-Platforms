@@ -23,7 +23,7 @@ const CATEGORIES = [
 
 const COURSE_TYPES = [
   { name: 'Recorded Course', slug: 'demo-recorded-course' },
-  { name: 'Live Course', slug: 'demo-live-course', isLive: true },
+  { name: 'Live Course', slug: 'demo-live-course' },
   { name: 'Bootcamp', slug: 'demo-bootcamp' },
 ];
 

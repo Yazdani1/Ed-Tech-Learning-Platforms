@@ -89,12 +89,10 @@ export type CourseCardData = z.infer<typeof courseCardSchema>;
 export const coursePageSchema = z.object({
   data: z.array(courseCardSchema),
   total: z.number().optional(),
-  /** Public course count per category, per pricing ({ Paid: {...}, Free: {...} }) and among live courses */
+  /** Public course count per category, per pricing ({ Paid: {...}, Free: {...} }) */
   filterCounts: z
     .object({
       categoriesByPricing: z.record(z.string(), z.record(z.string(), z.number())).catch({}),
-      /** Course count per category among the live courses */
-      liveCategories: z.record(z.string(), z.number()).catch({}),
       /** Per course type: its paid course count and that count per category (the catalog sections) */
       paidByCourseType: z
         .record(
@@ -117,12 +115,8 @@ export type CoursePage = z.infer<typeof coursePageSchema>;
 
 export type CoursePricing = CourseCardData['pricing'];
 
-/**
- * What a course section lists: the live courses (home), the free courses (home and catalog), or the paid
- * courses of one course type (catalog).
- */
-export type CourseSectionSource =
-  { kind: 'live' } | { kind: 'free' } | { kind: 'courseType'; courseTypeId: string };
+/** What a course section lists (home page and catalog): the free courses, or the paid courses of one course type. */
+export type CourseSectionSource = { kind: 'free' } | { kind: 'courseType'; courseTypeId: string };
 
 /** Filters of one course section (home page or catalog). */
 export interface HomeCourseFilters {

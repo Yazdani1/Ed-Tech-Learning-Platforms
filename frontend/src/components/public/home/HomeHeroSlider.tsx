@@ -7,20 +7,13 @@ import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
 import { useHeroPosts } from '@/api/public.api';
+import { VISUALLY_HIDDEN } from '@/theme/visually-hidden';
 import { isCloudinaryUrl } from '@/utils/urls';
 
 import { HeroSlide } from './HeroSlide';
 import { HERO_SLIDER_CLASS, HeroSliderControls } from './HeroSliderControls';
 import { useHeroAutoplay } from './useHeroAutoplay';
 
-const VISUALLY_HIDDEN = {
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  overflow: 'hidden',
-  clip: 'rect(0 0 0 0)',
-  whiteSpace: 'nowrap',
-} as const;
 const HERO_HEIGHT = { xs: 220, sm: 320, md: 420 } as const;
 const HERO_RADIUS = 2;
 /** Shown when no showcase post is public (same blue gradient as the old fallback image). */
