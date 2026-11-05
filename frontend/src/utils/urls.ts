@@ -20,3 +20,7 @@ export const isSafeHttpUrl = (value: string | null | undefined): value is string
   const url = parse(value);
   return url !== null && (url.protocol === 'https:' || url.protocol === 'http:');
 };
+
+/** "mailto:" link of a saved email; "?", "&" and "#" are escaped so it cannot add hidden parameters such as bcc. */
+export const mailtoHref = (email: string): string =>
+  `mailto:${email.replace(/[?&#]/g, encodeURIComponent)}`;

@@ -3,44 +3,65 @@
 import SchoolIcon from '@mui/icons-material/School';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
-import Divider from '@mui/material/Divider';
 import MuiLink from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { DateTime } from 'luxon';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
+import { DISPLAY_FONT } from '@/theme/fonts';
+
 import { FOOTER_LINKS } from '../common/public-links';
 import { useVisibleLinks } from '../common/useVisibleLinks';
 
-/** Dark footer of every public page: app name, main links and the copyright line. */
+import { FOOTER_HEADING_SX, FOOTER_LINE_SX, FooterContact } from './FooterContact';
+
+const FOOTER_SX = {
+  color: 'common.white',
+  background: 'linear-gradient(115deg, #1e1b4b 0%, #4c1d95 38%, #86198f 70%, #9f1239 100%)',
+  borderTop: '4px solid transparent',
+  borderImage: 'linear-gradient(90deg, #22d3ee, #a78bfa, #fbbf24, #fb7185) 1',
+  pt: { xs: 5, md: 7 },
+  pb: 3,
+} as const;
+const GRID_SX = {
+  display: 'grid',
+  gap: { xs: 4, md: 6 },
+  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: '2fr 1fr 1.5fr' },
+  mb: { xs: 4, md: 5 },
+} as const;
+const COPYRIGHT_SX = {
+  pt: 3,
+  textAlign: 'center',
+  borderTop: '1px solid rgba(255,255,255,0.25)',
+} as const;
+
+/** Gradient footer of every public page: name and tagline, main links, company contact, copyright. */
 export const PublicFooter = () => {
   const { t } = useTranslation();
   const links = useVisibleLinks(FOOTER_LINKS);
   return (
-    <Box component="footer" sx={{ bgcolor: 'grey.900', color: 'grey.400', py: 5 }}>
+    <Box component="footer" sx={FOOTER_SX}>
       <Container maxWidth="lg">
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 2,
-            mb: 3,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SchoolIcon sx={{ color: 'primary.light', fontSize: 28 }} aria-hidden />
-            <Typography variant="h6" component="p" sx={{ color: 'common.white', fontWeight: 800 }}>
-              {t('common.appName')}
+        <Box sx={GRID_SX}>
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+              <SchoolIcon sx={{ fontSize: 32, color: '#fde68a' }} aria-hidden />
+              <Typography
+                component="p"
+                sx={{ fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: '1.5rem' }}
+              >
+                {t('common.appName')}
+              </Typography>
+            </Box>
+            <Typography variant="body2" sx={{ maxWidth: 380, lineHeight: 1.7 }}>
+              {t('public.footer.tagline')}
             </Typography>
           </Box>
-          <Box
-            component="nav"
-            aria-label={t('public.footer.label')}
-            sx={{ display: 'flex', flexWrap: 'wrap', columnGap: 3 }}
-          >
+          <Box component="nav" aria-label={t('public.footer.label')}>
+            <Typography component="h2" sx={FOOTER_HEADING_SX}>
+              {t('public.footer.explore')}
+            </Typography>
             {links.map((link) => (
               <MuiLink
                 key={link.href}
@@ -48,15 +69,15 @@ export const PublicFooter = () => {
                 href={link.href}
                 variant="body2"
                 underline="hover"
-                sx={{ color: 'inherit', py: 1.5, '&:hover': { color: 'common.white' } }}
+                sx={FOOTER_LINE_SX}
               >
                 {t(link.labelKey)}
               </MuiLink>
             ))}
           </Box>
+          <FooterContact />
         </Box>
-        <Divider sx={{ borderColor: 'grey.800', mb: 3 }} />
-        <Typography variant="body2" sx={{ textAlign: 'center' }}>
+        <Typography variant="body2" sx={COPYRIGHT_SX}>
           {t('public.footer.copyright', { year: DateTime.now().year })}
         </Typography>
       </Container>

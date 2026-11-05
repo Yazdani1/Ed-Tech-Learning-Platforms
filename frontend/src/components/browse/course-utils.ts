@@ -1,6 +1,8 @@
 // Pure helpers of the public catalog (durations, YouTube previews). No React, easy to unit test.
 // Prices: utils/price.ts; image hosts: utils/urls.ts.
-import type { Course, CourseLecture, CourseSection } from '@/schemas/browse.schema';
+import { DateTime } from 'luxon';
+
+import type { Course, CourseLecture, CourseSection, LiveClassWeek } from '@/schemas/browse.schema';
 
 const SECONDS_PER_MINUTE = 60;
 const SECONDS_PER_HOUR = 3600;
@@ -61,4 +63,14 @@ export const findIntroVideoId = (course: Course): string | null => {
       lecture.title.toLowerCase().includes(INTRO_TITLE) && youTubeId(lecture.videoUrl) !== null,
   );
   return youTubeId(intro?.videoUrl) ?? youTubeId(previewLectures(course)[0]?.videoUrl);
+};
+
+/** The next live class still to come by its written day ("yyyy-mm-dd"); null when none is left. */
+export const nextLiveClass = (
+  weeks: readonly LiveClassWeek[],
+  today: string = DateTime.local().toFormat('yyyy-LL-dd'),
+): LiveClassWeek['lectures'][number] | null => {
+  const classes = weeks.flatMap((week) => week.lectures).filter((lecture) => lecture.day !== '');
+  const sorted = [...classes].sort((a, b) => a.day.localeCompare(b.day));
+  return sorted.find((lecture) => lecture.day >= today) ?? null;
 };

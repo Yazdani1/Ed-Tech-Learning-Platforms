@@ -1,0 +1,66 @@
+{
+  "title": "Complete Payment",
+  "subtitle": "Get into the course right after your payment is complete.",
+  "official": "Official payment gateway • VAT included",
+  "stepCourse": "Select course",
+  "stepDetails": "Payment details",
+  "stepSuccess": "Payment success",
+  "secured": "Secured payment",
+  "methodTitle": "Payment method",
+  "samePrice": "Same price on every method",
+  "fromBangladesh": "From Bangladesh",
+  "noExtraCharge": "0% extra charge",
+  "mostPopular": "Most popular",
+  "methods": {
+    "bkash": {
+      "name": "bKash",
+      "hint": "Easy payment with the bKash app or USSD"
+    },
+    "other": {
+      "name": "Cards & other mobile banking",
+      "hint": "Nagad • Rocket • Visa • Mastercard • Amex"
+    }
+  },
+  "logoPayment": "PAYMENT",
+  "logoNagad": "Nagad",
+  "logoRocket": "Rocket",
+  "summaryLabel": "Order summary",
+  "regularPrice": "Regular course price",
+  "discount": "Discount",
+  "platformAccess": "Platform access & VAT",
+  "freeLabel": "Free",
+  "total": "Total payment",
+  "saving": "Saving {{amount}} ({{percent}}% off)",
+  "oneTime": "One-time payment",
+  "pay": "Complete payment",
+  "signInToPay": "Sign in to continue",
+  "studentsOnly": "Only student accounts can enrol in a course.",
+  "terms": "By completing the payment you agree to our terms and refund policy.",
+  "guaranteeShort": "30-day guarantee",
+  "instantAccess": "Instant access",
+  "mentorTitle": "Live mentorship support",
+  "mentorText": "Join the dedicated Discord group as soon as the course starts.",
+  "trust": {
+    "sslTitle": "SSL encrypted payment",
+    "sslText": "Your bank and card details stay fully safe",
+    "callTitle": "Call {{phone}}",
+    "callText": "Support from 10 am to 10 pm",
+    "accessTitle": "Enter the course after payment",
+    "accessText": "Automatic learning dashboard access"
+  },
+  "band": {
+    "sslTitle": "256-Bit SSL Encryption",
+    "sslText": "Bank-grade security protocol keeps your payment data and credentials fully encrypted.",
+    "guaranteeTitle": "30-Day Money-Back Guarantee",
+    "guaranteeText": "Explore the curriculum risk-free. Full refund within 30 days if you are not completely satisfied.",
+    "supportTitle": "Academic & Payment Support",
+    "supportText": "Questions about enrollment or invoices? Contact us."
+  },
+  "viewCourse": "View course",
+  "alreadyEnrolled": "You are already enrolled in {{title}}.",
+  "freeCourse": "{{title}} is free, so there is nothing to pay.",
+  "weeks_one": "{{count}} week",
+  "weeks_other": "{{count}} weeks",
+  "sessions_one": "{{count}} live session",
+  "sessions_other": "{{count}} live sessions"
+}

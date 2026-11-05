@@ -1,6 +1,7 @@
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { headers } from 'next/headers';
 
+import { FONT_VARIABLES } from './fonts';
 import { Providers } from './providers';
 
 import type { Metadata, Viewport } from 'next';
@@ -23,7 +24,7 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
   const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     // suppressHydrationWarning: LanguageSync changes <html lang> and browser extensions add attributes
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={FONT_VARIABLES} suppressHydrationWarning>
       <body suppressHydrationWarning>
         <AppRouterCacheProvider options={{ key: 'mui', nonce }}>
           <Providers>{children}</Providers>

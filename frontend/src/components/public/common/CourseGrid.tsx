@@ -22,8 +22,8 @@ interface CourseGridProps {
   size?: { xs: number; sm: number; md: number; lg?: number };
 }
 
-const DEFAULT_SIZE = { xs: 12, sm: 6, md: 4, lg: 3 };
-const SKELETON_HEIGHT = 300;
+const DEFAULT_SIZE = { xs: 12, sm: 6, md: 4 };
+const SKELETON_HEIGHT = 440;
 
 /** Grid of course cards; a signed-in Student sees "Continue Learning" on courses they are enrolled in. */
 export const CourseGrid: FC<CourseGridProps> = ({

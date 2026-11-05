@@ -1,6 +1,7 @@
 'use client';
 
 import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 
@@ -11,6 +12,7 @@ import { ADMIN_AREA_ROLES, STUDENT_ROLES } from '@/utils/roles';
 
 import { findIntroVideoId } from '../../course-utils';
 
+import { CourseShareButton } from './CourseShareButton';
 import { EnrolledActions } from './EnrolledActions';
 import { EnrollmentMedia } from './EnrollmentMedia';
 import { PurchaseOptions } from './PurchaseOptions';
@@ -28,7 +30,7 @@ interface CourseEnrollmentCardProps {
 
 /**
  * The sticky card beside the course: intro video, then staff actions, "Go to this course" for an enrolled
- * student, or the ways to get the course (subscription / direct) for everyone else.
+ * student, or the ways to get the course (subscription / direct) for everyone else; sharing at the bottom.
  */
 export const CourseEnrollmentCard: FC<CourseEnrollmentCardProps> = ({ course, lectureCount }) => {
   const { user, hasRole, isLoading } = useAuth();
@@ -57,7 +59,6 @@ export const CourseEnrollmentCard: FC<CourseEnrollmentCardProps> = ({ course, le
       <PurchaseOptions
         course={course}
         subscription={getSubscriptionState(course, plans.data ?? [], mySubscription.data)}
-        lectureCount={lectureCount}
         isStudent={isStudent}
         isSignedIn={user !== null}
       />
@@ -66,13 +67,25 @@ export const CourseEnrollmentCard: FC<CourseEnrollmentCardProps> = ({ course, le
 
   return (
     <Box sx={{ position: { md: 'sticky' }, top: { md: 90 } }}>
-      <Paper elevation={3} sx={{ borderRadius: 0.5, overflow: 'hidden' }}>
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: '18px',
+          overflow: 'hidden',
+          border: '1px solid #e7ebf1',
+          boxShadow: '0 16px 40px rgba(15,23,42,0.14)',
+        }}
+      >
         <EnrollmentMedia
           title={course.title}
           coverImage={course.coverImage}
           introVideoId={findIntroVideoId(course)}
         />
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>{renderBody()}</Box>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          {renderBody()}
+          <Divider sx={{ mt: 2.5, mb: 1 }} />
+          <CourseShareButton title={course.title} />
+        </Box>
       </Paper>
     </Box>
   );

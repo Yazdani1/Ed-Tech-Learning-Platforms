@@ -195,4 +195,9 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   cards; `/courses`: no sidebar, one box per course type (paid courses, `filterCounts.paidByCourseType`) + Free box,
   plain results only with a search/filter in the URL. Known gap: a paid course without a course type is only found by
   search.
+- Stage B batch 3 (2026-11-04, frontend only): new course page (full-width white section cards in a fixed order,
+  `extras/DetailSection`, `TopBarCard`), `/courses/[id]/payment` (`components/payment`; design only: no gateway, the
+  pay button does the existing paid enrolment), new home course card and category pills, gradient `PublicFooter`,
+  fonts through `app/fonts.ts` + `theme/fonts.ts`. Known gaps: no Wishlist, promo code, batch number or support class
+  time (they need backend fields).
 - Reports of every phase: .claude/reports/ (git-ignored).

@@ -2,8 +2,11 @@
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
+
+import { DetailSection } from '../extras/DetailSection';
 
 import { ContentViewButtons } from './ContentViewButtons';
 import { LiveClassList } from './LiveClassList';
@@ -28,7 +31,7 @@ const HEADER_SX = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  mb: 2,
+  mb: 1,
   flexWrap: 'wrap',
   gap: 1,
 } as const;
@@ -57,10 +60,7 @@ export const CourseContentTabs: FC<CourseContentTabsProps> = ({
   const unit = tabs.view === 'recorded' ? 'Sections' : 'Weeks';
 
   return (
-    <Box component="section" sx={{ mb: 4 }}>
-      <Typography component="h2" variant="h5" sx={{ fontWeight: 800, textAlign: 'center', mb: 2 }}>
-        {t('browse.content.title')}
-      </Typography>
+    <DetailSection id="course-curriculum" title={t('browse.content.title')}>
       <ContentViewButtons views={tabs.views} view={tabs.view} onChange={tabs.setView} />
       <Box sx={HEADER_SX}>
         <Typography variant="body2" color="text.secondary">
@@ -72,6 +72,7 @@ export const CourseContentTabs: FC<CourseContentTabsProps> = ({
           </Button>
         )}
       </Box>
+      <Divider sx={{ mb: 3 }} />
       {tabs.view === 'recorded' && (
         <RecordedLectureList
           sections={sections}
@@ -84,6 +85,6 @@ export const CourseContentTabs: FC<CourseContentTabsProps> = ({
         <LiveClassList weeks={weeks} expanded={tabs.openWeeks} onToggle={tabs.toggleWeek} />
       )}
       {tabs.view === 'quizzes' && <QuizSectionList courseId={courseId} sections={quizSections} />}
-    </Box>
+    </DetailSection>
   );
 };

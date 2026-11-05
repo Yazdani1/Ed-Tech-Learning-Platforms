@@ -1,14 +1,14 @@
 'use client';
 
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
+import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
 import { CloudImage } from '@/components/common/CloudImage';
+
+import { CARD_RADIUS, SOFT_BG, SOFT_BORDER } from '../detail-styles';
 
 import type { CourseProject } from '@/schemas/course-extras.schema';
 import type { FC } from 'react';
@@ -18,59 +18,78 @@ interface ProjectCardProps {
   onOpen: () => void;
 }
 
+const CARD_SX = {
+  width: '100%',
+  height: '100%',
+  p: { xs: 1.5, sm: 2.5 },
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  gap: { xs: 1.5, sm: 2.5 },
+  textAlign: 'left',
+  bgcolor: SOFT_BG,
+  border: `1px solid ${SOFT_BORDER}`,
+  borderRadius: CARD_RADIUS,
+  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+  '&:hover, &.Mui-focusVisible': {
+    borderColor: 'primary.main',
+    boxShadow: '0 6px 18px rgba(15,23,42,0.08)',
+  },
+} as const;
 const COVER_SX = {
-  aspectRatio: '16 / 9',
+  width: { xs: 96, sm: 168 },
+  height: { xs: 96, sm: 168 },
+  flexShrink: 0,
+  overflow: 'hidden',
+  borderRadius: '12px',
   bgcolor: 'grey.100',
   display: 'grid',
   placeItems: 'center',
 } as const;
-const CLAMP_SX = {
-  display: '-webkit-box',
-  WebkitLineClamp: 3,
-  WebkitBoxOrient: 'vertical',
-  overflow: 'hidden',
-} as const;
 
-/** A project card: first screenshot, title, short description and "View project". */
+/** A project: first screenshot on the left, title and a one-line description; the card opens the details. */
 export const ProjectCard: FC<ProjectCardProps> = ({ project, onOpen }) => {
   const { t } = useTranslation();
   const [cover] = project.images;
   return (
-    <Paper
-      component="li"
-      variant="outlined"
-      sx={{ borderRadius: 2, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
-    >
-      <Box sx={COVER_SX}>
-        {cover ? (
-          <CloudImage
-            url={cover.url}
-            alt=""
-            sizes="(max-width: 600px) 100vw, 400px"
-            sx={{ width: '100%', height: '100%' }}
-          />
-        ) : (
-          <WorkOutlineIcon color="disabled" sx={{ fontSize: 48 }} aria-hidden />
-        )}
-      </Box>
-      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}>
-        <Typography component="h3" sx={{ fontWeight: 800 }}>
-          {project.title}
-        </Typography>
-        {project.description && (
-          <Typography variant="body2" color="text.secondary" sx={CLAMP_SX}>
-            {project.description}
+    <Box component="li" sx={{ minWidth: 0 }}>
+      <ButtonBase
+        onClick={onOpen}
+        aria-label={t('browse.extras.viewProjectNamed', { name: project.title })}
+        sx={CARD_SX}
+      >
+        <Box sx={COVER_SX}>
+          {cover ? (
+            <CloudImage
+              url={cover.url}
+              alt=""
+              sizes="168px"
+              sx={{ width: '100%', height: '100%' }}
+            />
+          ) : (
+            <WorkOutlineIcon color="disabled" sx={{ fontSize: 48 }} aria-hidden />
+          )}
+        </Box>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography
+            component="span"
+            noWrap
+            sx={{ display: 'block', fontWeight: 600, fontSize: '1.2rem' }}
+          >
+            {project.title}
           </Typography>
-        )}
-        <Button
-          endIcon={<ArrowForwardIcon />}
-          onClick={onOpen}
-          aria-label={t('browse.extras.viewProjectNamed', { name: project.title })}
-          sx={{ alignSelf: 'flex-start', mt: 'auto', minHeight: 44, px: 0 }}
-        >
-          {t('browse.extras.viewProject')}
-        </Button>
-      </Box>
-    </Paper>
+          {project.description && (
+            <Typography
+              component="span"
+              noWrap
+              color="text.secondary"
+              sx={{ display: 'block', mt: 0.5 }}
+            >
+              {project.description}
+            </Typography>
+          )}
+        </Box>
+      </ButtonBase>
+    </Box>
   );
 };

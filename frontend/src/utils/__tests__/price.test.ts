@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatAmount, formatBdt, getCoursePriceInfo } from '../price';
+import { formatAmount, formatBdt, getCoursePriceInfo, localizeDigits } from '../price';
 
 const NOW = Date.parse('2026-10-30T12:00:00Z');
 
@@ -55,5 +55,12 @@ describe('formatBdt / formatAmount', () => {
     expect(formatBdt(undefined)).toBe('');
     expect(formatBdt(null)).toBe('');
     expect(formatAmount(1234567)).toBe('1,234,567');
+  });
+});
+
+describe('localizeDigits', () => {
+  it('writes Bangla digits for Bangla readers only', () => {
+    expect(localizeDigits('৳1,250', 'bn')).toBe('৳১,২৫০');
+    expect(localizeDigits('৳1,250', 'en')).toBe('৳1,250');
   });
 });

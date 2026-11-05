@@ -61,3 +61,14 @@ export const getCoursePriceInfo = (
     hasDiscount: discountAmount > 0,
   };
 };
+
+const BANGLA_ZERO_CODE = 0x09e6;
+const LATIN_ZERO_CODE = 0x30;
+
+/** "৳1,200" as "৳১,২০০" for Bangla readers; other languages keep the text as it is. */
+export const localizeDigits = (text: string, language: string): string =>
+  language.startsWith('bn')
+    ? text.replace(/[0-9]/g, (digit) =>
+        String.fromCharCode(digit.charCodeAt(0) - LATIN_ZERO_CODE + BANGLA_ZERO_CODE),
+      )
+    : text;

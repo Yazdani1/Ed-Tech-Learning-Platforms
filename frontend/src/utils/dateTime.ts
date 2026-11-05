@@ -16,6 +16,12 @@ const toLocal = (value: DateInput, locale?: string): DateTime | null => {
 export const formatDate = (value: DateInput, locale?: string): string =>
   toLocal(value, locale)?.toLocaleString(DateTime.DATE_MED) ?? '';
 
+/** The moment has passed (false for a missing or invalid value). */
+export const isInPast = (value: DateInput): boolean => {
+  const local = toLocal(value);
+  return local !== null && local <= DateTime.local();
+};
+
 /** "Oct 29, 2026, 3:45 PM" */
 export const formatDateTime = (value: DateInput, locale?: string): string =>
   toLocal(value, locale)?.toLocaleString(DateTime.DATETIME_MED) ?? '';

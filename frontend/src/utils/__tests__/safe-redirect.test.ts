@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { postLoginPath, safeRedirectPath } from '../safe-redirect';
+import { postLoginPath, safeRedirectPath, authSwitchHref } from '../safe-redirect';
 
 describe('safeRedirectPath', () => {
   it.each([
@@ -57,5 +57,15 @@ describe('postLoginPath', () => {
     ['Student', '/student/dashboard'],
   ] as const)('sends %s home (%s) when ?next= is unsafe', (role, home) => {
     expect(postLoginPath(role, '/\t/evil.example')).toBe(home);
+  });
+});
+
+describe('authSwitchHref', () => {
+  it('keeps a safe next and drops an unsafe one', () => {
+    expect(authSwitchHref('/auth/register', '/courses/1/payment')).toBe(
+      '/auth/register?next=%2Fcourses%2F1%2Fpayment',
+    );
+    expect(authSwitchHref('/auth/register', 'https://evil.example')).toBe('/auth/register');
+    expect(authSwitchHref('/auth/login', null)).toBe('/auth/login');
   });
 });

@@ -16,14 +16,14 @@ interface CourseProjectsSectionProps {
   projects: readonly CourseProject[];
 }
 
-/** The projects students build: a card each; "View project" opens the details in a right-side panel. */
+/** The projects students build: a card each; clicking one opens the details in a right-side panel. */
 export const CourseProjectsSection: FC<CourseProjectsSectionProps> = ({ projects }) => {
   const { t } = useTranslation();
   const details = useModal<CourseProject>();
   if (projects.length === 0) return null;
   return (
     <DetailSection id="course-projects" title={t('browse.extras.projectsTitle')}>
-      <Box component="ul" sx={gridSx(2, 3)}>
+      <Box component="ul" sx={gridSx(2)}>
         {projects.map((project, index) => (
           <ProjectCard
             key={`${project.title}-${index}`}

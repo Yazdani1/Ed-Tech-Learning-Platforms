@@ -29,7 +29,7 @@ interface CourseShowcaseSectionProps {
 
 const NO_COUNTS: Record<string, number> = {};
 /** One row of card-shaped skeletons while the first page loads */
-const SKELETON_CARDS = 4;
+const SKELETON_CARDS = 3;
 
 /**
  * One course box (home page and catalog): centred title, the category cards, then its course cards

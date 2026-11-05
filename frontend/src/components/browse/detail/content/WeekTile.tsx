@@ -11,11 +11,11 @@ interface WeekTileProps {
   index: number;
 }
 
-const WEEK_COLORS = ['#f59e0b', '#fb7c3c', '#0ea5e9'] as const;
 const TILE_SX = {
-  width: 64,
-  minHeight: 72,
-  borderRadius: 1,
+  width: 68,
+  height: 68,
+  borderRadius: '14px',
+  background: 'linear-gradient(145deg, #b45309 0%, #c2410c 55%, #b91c1c 100%)',
   color: 'common.white',
   display: 'flex',
   flexDirection: 'column',
@@ -24,15 +24,18 @@ const TILE_SX = {
   flexShrink: 0,
 } as const;
 
-/** Coloured "Week N" tile at the start of a live-class week. */
+/** Gradient "Week N" tile at the start of a live-class week. */
 export const WeekTile: FC<WeekTileProps> = ({ index }) => {
   const { t } = useTranslation();
   return (
-    <Box sx={{ ...TILE_SX, bgcolor: WEEK_COLORS[index % WEEK_COLORS.length] }}>
-      <Typography component="span" sx={{ fontSize: '0.78rem', fontWeight: 800 }}>
+    <Box sx={TILE_SX}>
+      <Typography
+        component="span"
+        sx={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase' }}
+      >
         {t('browse.content.week')}
       </Typography>
-      <Typography component="span" sx={{ fontSize: '1.25rem', fontWeight: 900, lineHeight: 1.1 }}>
+      <Typography component="span" sx={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1.1 }}>
         {index + 1}
       </Typography>
     </Box>

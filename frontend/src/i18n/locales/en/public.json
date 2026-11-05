@@ -35,7 +35,10 @@
     "freeCourses": "Free Courses",
     "teachers": "Teachers",
     "pricing": "Pricing",
-    "copyright": "© {{year}} MedhaBee E-Learning Platform. All rights reserved."
+    "copyright": "© {{year}} MedhaBee E-Learning Platform. All rights reserved.",
+    "tagline": "Learn from expert teachers with live classes, real projects and support that stays with you.",
+    "explore": "Explore",
+    "contact": "Contact us"
   },
   "hero": {
     "label": "Featured",
@@ -57,7 +60,8 @@
       "title": "Upcoming Free Live Courses",
       "subtitle": "Start learning for free in our upcoming live classes",
       "empty": "No free courses yet."
-    }
+    },
+    "countShort": "{{shown}}"
   },
   "courses": {
     "free": "Free",
@@ -68,7 +72,10 @@
     "seeDetails": "See Details",
     "seeDetailsOf": "See details of {{title}}",
     "starts": "Starts {{date}}",
-    "startTba": "Start date to be announced"
+    "startTba": "To be announced",
+    "registrationOpen": "Registration open",
+    "save": "Save {{amount}}",
+    "scholarship": "Scholarship access"
   },
   "instructors": {
     "title": "Our Instructors",

@@ -1,29 +1,27 @@
 'use client';
 
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
+import GlobalStyles from '@mui/material/GlobalStyles';
 import Paper from '@mui/material/Paper';
 import { useTranslation } from 'react-i18next';
 
-import { useEnrollmentCheck } from '@/api/browse.api';
 import { useSiteSettings } from '@/api/site-settings.api';
-import { useAuth } from '@/hooks/useAuth';
-import { STUDENT_ROLES } from '@/utils/roles';
 
 import { BuyBarPrice } from './BuyBarPrice';
+import { EnrollNowButton } from './EnrollNowButton';
+import { useCanEnroll } from './useCanEnroll';
 
 import type { Course } from '@/schemas/browse.schema';
 import type { FC } from 'react';
 
 interface CourseBuyBarProps {
   course: Course;
-  /** Id of the enrolment card the button scrolls to */
+  /** Id of the enrolment card (see EnrollNowButton) */
   targetId: string;
 }
 
-/** Height kept free under the page so the bar never covers the footer */
-export const BUY_BAR_SPACE = { xs: 12, sm: 11 } as const;
+/** Space kept free under the page while the bar shows, so it never covers the footer */
+const BAR_SPACE_PX = 96;
 
 const BAR_SX = {
   position: 'fixed',
@@ -46,41 +44,33 @@ const BUTTON_SX = {
 
 /**
  * Bar fixed to the bottom of the course page: "Call Now" with the company phone, the price with the running
- * discount, and the button that takes the visitor to the ways to enrol (the enrolment card).
- * Shown to visitors and to students who have not enrolled yet.
+ * discount, and Enroll Now. Shown to visitors and to students who have not enrolled yet.
  */
 export const CourseBuyBar: FC<CourseBuyBarProps> = ({ course, targetId }) => {
   const { t } = useTranslation();
-  const { user, hasRole, isLoading } = useAuth();
-  const isStudent = hasRole(STUDENT_ROLES);
-  const check = useEnrollmentCheck(course._id, isStudent);
+  const canEnroll = useCanEnroll(course._id);
   const phone = useSiteSettings().data?.contact.phone;
 
-  // Only visitors and students who have not enrolled yet can enrol (staff and teachers cannot)
-  if (isLoading || (user !== null && !isStudent) || check.data?.isEnrolled) return null;
-
-  const goToEnrolment = (): void => {
-    const card = document.getElementById(targetId);
-    card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    card?.focus({ preventScroll: true });
-  };
+  if (!canEnroll) return null;
 
   return (
-    <Paper component="aside" aria-label={t('browse.buyBar.label')} elevation={8} square sx={BAR_SX}>
-      <Container
-        maxWidth="lg"
-        sx={{ py: { xs: 1, sm: 1.5 }, display: 'flex', alignItems: 'center', gap: 2 }}
+    <>
+      <GlobalStyles styles={{ body: { paddingBottom: BAR_SPACE_PX } }} />
+      <Paper
+        component="aside"
+        aria-label={t('browse.buyBar.label')}
+        elevation={8}
+        square
+        sx={BAR_SX}
       >
-        <BuyBarPrice course={course} phone={phone} />
-        <Button
-          variant="contained"
-          onClick={goToEnrolment}
-          endIcon={<ChevronRightIcon />}
-          sx={BUTTON_SX}
+        <Container
+          maxWidth="lg"
+          sx={{ py: { xs: 1, sm: 1.5 }, display: 'flex', alignItems: 'center', gap: 2 }}
         >
-          {t('browse.buyBar.enroll')}
-        </Button>
-      </Container>
-    </Paper>
+          <BuyBarPrice course={course} phone={phone} />
+          <EnrollNowButton course={course} targetId={targetId} sx={BUTTON_SX} />
+        </Container>
+      </Paper>
+    </>
   );
 };

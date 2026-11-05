@@ -4,6 +4,7 @@ import {
   countLectures,
   findIntroVideoId,
   formatLectureDuration,
+  nextLiveClass,
   previewLectures,
   splitDuration,
   youTubeId,
@@ -15,6 +16,8 @@ import { COURSE_TYPE, makeCourse, PLANS } from './browse-fixtures';
 
 const NOW = Date.parse('2026-10-30T12:00:00Z');
 const YT = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+
+import type { LiveClassWeek } from '@/schemas/browse.schema';
 
 describe('durations and videos', () => {
   it('formats lecture lengths', () => {
@@ -107,5 +110,22 @@ describe('getSubscriptionState', () => {
       NOW,
     );
     expect(state).toMatchObject({ active: null, coversCourse: false, needsUpgrade: false });
+  });
+});
+
+describe('nextLiveClass', () => {
+  const lecture = (day: string) => ({ title: day, day, time: '18:00' });
+  const week = (...days: string[]) =>
+    ({ _id: days.join(), lectures: days.map(lecture) }) as unknown as LiveClassWeek;
+
+  it('finds the first class from today on, across weeks', () => {
+    const weeks = [week('2026-11-20', '2026-11-01'), week('2026-11-10')];
+    expect(nextLiveClass(weeks, '2026-11-05')?.day).toBe('2026-11-10');
+    expect(nextLiveClass(weeks, '2026-11-10')?.day).toBe('2026-11-10');
+  });
+
+  it('is null when all classes are over or there are none', () => {
+    expect(nextLiveClass([week('2026-01-02', '2026-01-01')], '2026-11-05')).toBeNull();
+    expect(nextLiveClass([], '2026-11-05')).toBeNull();
   });
 });

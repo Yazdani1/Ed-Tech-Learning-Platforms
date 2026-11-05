@@ -99,6 +99,8 @@ are refreshed together by `api/course-cache.ts`. "A --> B" means A uses B.
 flowchart LR
     PublicSite[Public site: home, teachers, pricing] -- "logo, hero posts, discount, courses, teachers" --> PublicApi[public.api]
     Browse[Course browse + details] -- "courses, course, live classes, enrolment check" --> BrowseApi[browse.api]
+    Payment[Payment details page] -- "course, live classes, enrolment check" --> BrowseApi
+    Payment -- "paid enrolment" --> CatalogApi
     Browse -- "quiz preview (public tree)" --> QuizApi[quiz.api]
     Student[Student area: dashboard, My Courses] -- "enrolments, unenrol" --> CatalogApi[catalog.api]
     Profile[Profile] -- "me, update, teacher course count" --> ProfileApi[profile.api]

@@ -35,19 +35,18 @@ export const ContentViewButtons: FC<ContentViewButtonsProps> = ({ views, view, o
       direction="row"
       role="group"
       aria-label={t('browse.content.views')}
-      sx={{ gap: 1, mb: 2, flexWrap: 'wrap', justifyContent: 'center' }}
+      sx={{ gap: 1.5, mb: 3, flexWrap: 'wrap', justifyContent: 'center' }}
     >
       {views.map((item) => (
         <Button
           key={item}
-          size="small"
           variant={view === item ? 'contained' : 'outlined'}
           aria-pressed={view === item}
           startIcon={ICONS[item]}
           onClick={() => {
             onChange(item);
           }}
-          sx={{ minHeight: 44 }}
+          sx={{ minHeight: 48, px: 2.5, borderRadius: 99, fontSize: '1rem' }}
         >
           {t(`browse.content.${item}`)}
         </Button>

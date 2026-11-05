@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   formatDate,
+  isInPast,
   formatDateTime,
   formatPlainDate,
   formatPlainTime,
@@ -79,5 +80,14 @@ describe('report helpers', () => {
     expect(isDateInput('2026-02-30')).toBe(false);
     expect(isDateInput('02/28/2026')).toBe(false);
     expect(isDateInput('')).toBe(false);
+  });
+});
+
+describe('isInPast', () => {
+  it('is true only for a valid moment that has passed', () => {
+    expect(isInPast('2000-01-01T00:00:00.000Z')).toBe(true);
+    expect(isInPast('2999-01-01T00:00:00.000Z')).toBe(false);
+    expect(isInPast(null)).toBe(false);
+    expect(isInPast('not a date')).toBe(false);
   });
 });

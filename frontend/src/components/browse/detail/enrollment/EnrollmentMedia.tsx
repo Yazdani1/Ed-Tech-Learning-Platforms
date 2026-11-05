@@ -1,13 +1,15 @@
 'use client';
 
-import PlayCircleOutlinedIcon from '@mui/icons-material/PlayCircleOutlined';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
-import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CourseCover } from '@/components/course-card/CourseCover';
+import { MONO_FONT } from '@/theme/fonts';
+
 import { YouTubeEmbed } from '../YouTubeEmbed';
 
 import type { FC } from 'react';
@@ -19,8 +21,38 @@ interface EnrollmentMediaProps {
   introVideoId: string | null;
 }
 
-const MEDIA_HEIGHT = 200;
+const MEDIA_HEIGHT = 232;
 const SIZES = '(max-width: 900px) 100vw, 400px';
+const PLAY_SX = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 66,
+  height: 66,
+  borderRadius: '50%',
+  bgcolor: '#2563eb',
+  color: 'common.white',
+  display: 'grid',
+  placeItems: 'center',
+  boxShadow: '0 8px 24px rgba(37,99,235,0.5)',
+} as const;
+const CAPTION_SX = {
+  position: 'absolute',
+  left: 12,
+  bottom: 12,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 0.75,
+  px: 1,
+  py: 0.5,
+  borderRadius: '6px',
+  bgcolor: 'rgba(2,6,23,0.8)',
+  color: 'common.white',
+  fontFamily: MONO_FONT,
+  fontSize: '0.75rem',
+  fontWeight: 700,
+} as const;
 
 /** Top of the enrolment card: the cover, which plays the introduction video when there is one. */
 export const EnrollmentMedia: FC<EnrollmentMediaProps> = ({ title, coverImage, introVideoId }) => {
@@ -48,25 +80,12 @@ export const EnrollmentMedia: FC<EnrollmentMediaProps> = ({ title, coverImage, i
       sx={{ position: 'relative', display: 'block', width: '100%', height: MEDIA_HEIGHT }}
     >
       <CourseCover src={coverImage} alt="" height={MEDIA_HEIGHT} sizes={SIZES} priority />
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          bgcolor: 'rgba(0,0,0,0.35)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 0.75,
-          color: 'common.white',
-        }}
-      >
-        <PlayCircleOutlinedIcon
-          sx={{ fontSize: 56, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))' }}
-        />
-        <Typography variant="caption" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
-          {t('browse.enroll.previewCourse')}
-        </Typography>
+      <Box sx={PLAY_SX} aria-hidden>
+        <PlayArrowIcon sx={{ fontSize: 36 }} />
+      </Box>
+      <Box sx={CAPTION_SX}>
+        <VideocamOutlinedIcon sx={{ fontSize: 16, color: '#34d399' }} aria-hidden />
+        {t('browse.enroll.coursePreview')}
       </Box>
     </ButtonBase>
   );

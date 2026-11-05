@@ -47,6 +47,7 @@ export const HomeCategoryFilter: FC<HomeCategoryFilterProps> = ({
     >
       <CategoryFilterCard
         name={t('public.home.allCategories')}
+        isAll
         count={total}
         selected={selected === ''}
         onSelect={() => {

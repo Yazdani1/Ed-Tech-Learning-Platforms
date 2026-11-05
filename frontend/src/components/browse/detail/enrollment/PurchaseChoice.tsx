@@ -56,7 +56,7 @@ export const PurchaseChoice: FC<PurchaseChoiceProps> = ({
           setOption('direct');
         }}
         color={DIRECT_COLOR}
-        header={<DirectPriceHeader price={price} />}
+        header={<DirectPriceHeader price={price} compact />}
       >
         {direct}
       </OptionCard>

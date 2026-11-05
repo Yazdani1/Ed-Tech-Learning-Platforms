@@ -2,9 +2,10 @@
 
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
+
+import { CARD_RADIUS, SOFT_BG, SOFT_BORDER } from '../detail-styles';
 
 import { DetailSection, gridSx } from './DetailSection';
 
@@ -14,6 +15,16 @@ interface CourseAudienceSectionProps {
   items: readonly string[];
 }
 
+const ITEM_SX = {
+  p: 2.5,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 1.5,
+  bgcolor: SOFT_BG,
+  border: `1px solid ${SOFT_BORDER}`,
+  borderRadius: CARD_RADIUS,
+} as const;
+
 /** "Who this course is for": one card per item. */
 export const CourseAudienceSection: FC<CourseAudienceSectionProps> = ({ items }) => {
   const { t } = useTranslation();
@@ -22,15 +33,12 @@ export const CourseAudienceSection: FC<CourseAudienceSectionProps> = ({ items })
     <DetailSection id="course-audience" title={t('browse.extras.audienceTitle')}>
       <Box component="ul" sx={gridSx(2)}>
         {items.map((item, index) => (
-          <Paper
-            component="li"
-            key={`${index}-${item}`}
-            variant="outlined"
-            sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5, borderRadius: 2 }}
-          >
+          <Box component="li" key={`${index}-${item}`} sx={ITEM_SX}>
             <PersonOutlineIcon color="primary" aria-hidden />
-            <Typography sx={{ fontWeight: 600 }}>{item}</Typography>
-          </Paper>
+            <Typography sx={{ fontWeight: 600, minWidth: 0, overflowWrap: 'anywhere' }}>
+              {item}
+            </Typography>
+          </Box>
         ))}
       </Box>
     </DetailSection>

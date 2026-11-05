@@ -27,6 +27,7 @@ flowchart LR
 | `/courses`                                                                 | Course catalog: one section per course type (paid courses) and a Free section; search results from the navbar                           | Everyone                                                                  |
 | `/free-courses`                                                            | Free courses by course type                                                                                                             | Everyone                                                                  |
 | `/courses/[id]`                                                            | Course page (details, previews, enrolment)                                                                                              | Everyone; actions depend on the role                                      |
+| `/courses/[id]/payment`                                                    | Payment details of a paid course (methods, order summary)                                                                               | Everyone can see it; only students can complete it                        |
 | `/student/dashboard`                                                       | Student dashboard                                                                                                                       | Students                                                                  |
 | `/student/courses`                                                         | My Courses                                                                                                                              | Students                                                                  |
 | `/admin/profile`, `/student/profile`, `/teacher/profile`                   | My Profile                                                                                                                              | Everyone signed in (each in their own area)                               |
@@ -184,7 +185,8 @@ later practice quiz and community hub) · **Menu:** the public navbar
 5. **Language switch** (left of the sign-in buttons, translate icon): shows the other language ("বাংলা" or
    "English") and switches the whole site between English and Bangla at once. The choice is remembered in
    this browser (same key as before, `i18nextLng`) and used again on the next visit.
-6. **Footer:** app name, links to Courses, Free Courses, Teachers, Pricing, and the copyright line.
+6. **Footer** (indigo to rose gradient): app name and tagline, links to Courses, Free Courses, Teachers, Pricing, the
+   company phone, email and address from the Company Contact page (each only when saved), and the copyright line.
 
 The banner, home page, catalog, pricing, teachers and footer use the same container width (at most 1200 px,
 centred); only the navbar is full width.
@@ -224,18 +226,19 @@ own category cards.
    pause/play button; for people who turn off animations (prefers-reduced-motion) it does not move by itself.
    Without images a blue banner is shown. An image with a title and/or description (set on the Homepage
    Showcase page) shows them at the bottom of the image on a dark gradient.
-2. **Live Courses** (one box): the title in the centre, then small category cards (name and number of courses),
+2. **Live Courses** (one box): the title in the centre, then category pills (icon from words in the name, name and
+   number of courses),
    then the course cards. Only courses whose **course type is flagged "Live"** (Course Setup > Course Types)
    are shown here. The first card, **All**, shows every live course; picking a category shows only its live
    courses (the picked card is highlighted). Only categories that have live courses get a card. With no live
    course type, the box says "No live courses yet."
 3. **Upcoming Free Live Courses** (a second box, same layout): the same, for **free** courses only.
-4. **Course cards** (both boxes): cover, course type, title, start day ("Starts Dec 5, 2026", in the viewer's
-   time zone and language, or "Start date to be announced"), price (struck-through list price and "N% off"
-   while a discount runs, or "Free") and a **See Details** button. The whole card also opens the course page.
-   Teachers and category are not shown on the card. On mouse hover the card lifts, gets a shadow, the cover
-   zooms in slightly and the title turns blue. A signed-in Student also sees **Continue Learning** on courses
-   they are enrolled in (opens the course player).
+4. **Course cards** (both boxes, three per row on wide screens): cover, course type pill and a date chip (the start
+   date in the viewer's time zone and language, "To be announced" without one, "Registration open" once it has
+   passed), title, big price with the struck-through list price, "N% off" and "Save ৳X" chips ("Scholarship access"
+   on a free course) and a gradient **See Details** button. The whole card also opens the course page. In Bangla the
+   prices use Bangla digits. On mouse hover the card lifts and the cover zooms in slightly. A signed-in Student also
+   sees **Continue Learning** on courses they are enrolled in (opens the course player).
 5. **Paging:** each box shows up to 30 courses. Page buttons appear under a box only when it has more than 30
    courses. Filters and search are on `/courses`.
 
@@ -373,6 +376,31 @@ screen with the filters stacked above the courses.
 - **Code:** `frontend/src/app/(public)/free-courses/page.tsx`, `frontend/src/components/browse/free/*`.
 - **Tests:** `frontend/src/components/browse/__tests__/FreeCoursesView.test.tsx`, `e2e/browse.spec.ts`.
 
+### Payment details (`/courses/[id]/payment`)
+
+- **Route:** `/courses/[id]/payment` (opened by **Enroll Now** on a paid course).
+- **Who can use it:** everyone can see it for a course they can see; only students can complete it. Visitors get
+  **Sign in to continue** (they come back here after signing in); staff and teachers see the button disabled with
+  "Only student accounts can enrol in a course."
+- **What it is for:** the last step before getting a paid course. **There is no payment gateway yet:** the methods
+  (bKash, cards and other mobile banking) are only the design, and **Complete payment** does the same paid enrolment
+  as the old Buy button (`POST /api/enrollments/:courseId` with `{ enrollmentType: 'paid' }`); no money is taken.
+- **Step by step:**
+  1. Top: three progress bars, the steps (**Select course** links back to the course page) and "Secured payment".
+  2. Left: **Payment method** (radio cards, bKash chosen at the start). Right: the order summary: cover, course type,
+     title, weeks and live sessions from the plan, regular price, discount (the course's running discount; promo
+     codes are not built), total with the saving, the pay button and the promises. The prices come from the course.
+  3. Under them: the teacher card, three trust cards (the phone comes from the Company Contact page and is hidden
+     without one), and a grey band (the support email also comes from there).
+  4. After enrolling, or when already enrolled, the page says so with **Go to this course**. A free course says there
+     is nothing to pay, with **View course**.
+- **Mobile behaviour:** one column: methods, then the summary, then the cards.
+- **API endpoints used:** `GET /api/courses/:id`, `GET /api/study-curricula/course/:id`,
+  `GET /api/site-settings/public`; Students: `GET /api/enrollments/:courseId/check`,
+  `POST /api/enrollments/:courseId`.
+- **Code:** `frontend/src/app/(public)/courses/[id]/payment/page.tsx`, `frontend/src/components/payment/*`.
+- **Tests:** `frontend/src/components/payment/__tests__/CoursePaymentView.test.tsx`, `e2e/payment.spec.ts`.
+
 ### Course page (`/courses/[id]`)
 
 - **Route:** `/courses/[id]`.
@@ -380,34 +408,38 @@ screen with the filters stacked above the courses.
   found." except for staff and the course's teachers (the backend decides).
 - **What it is for:** everything about one course and how to get it.
 - **Step by step:**
-  1. The dark banner shows the breadcrumb, the course type (gradient badge above the title), title, subtitle,
-     price (with discount) and "Subscription". It shows no status and no teacher names.
-  2. Below, beside the enrolment card: course type and start / end dates, "What you'll learn", "This course
-     includes", **Tools you will use** (logo cards, with the section title and description from the editor) and
-     **What you get** (cards with a logo, title and description). Under both, using the **full page width**:
-     **Curriculum**, **Projects** (three per row on wide screens), **Who this course is for**, requirements,
-     "About this course" (rich text, sanitised), "Your Instructors", **Success stories** (three per row on wide
-     screens) and the FAQ.
+  1. The dark navy banner shows the breadcrumb, the course type (a pill with a green dot), title, subtitle, price
+     (gold; while a discount runs also the struck-through list price, "Save ৳X (N% OFF)" and "Limited time cohort
+     pricing"), "Subscription" for plan courses and, for those who can enrol, **Enroll Now** (with the guarantee line on a paid course).
+  2. Beside the enrolment card (which overlaps the banner on wider screens): the schedule cards with a gradient
+     border (**Class start date**, **Live class time** = the next live class from the plan, **Course end date**;
+     each only when it exists) and **About this course** (rich text, sanitised). Under both, every other section is
+     a white card at the **full page width**, with a centred heading, in this order: **What you'll learn**,
+     **Curriculum**, **Your Instructors**, **Tech you will learn** (tools), **Projects**, **What will you get from
+     this course**, **Who this course is for** (only when filled in), **Course Requirements** (the icon comes from
+     words in the text: laptop, internet, skill), **Success stories** and **Frequently Asked Questions**.
   3. **Curriculum** (centred heading) has up to three lists, switched with centred buttons in this order:
      **Live Class** (weekly plan, two week cards per row from tablet width, each class's day and time as the
      teacher wrote them), **Recorded Lectures** (sections with lecture count and length; "Expand all
      sections") and **Quizzes** (free-preview quiz banks, each opening `/practice-quiz?courseId=…&bankId=…`).
      A button is shown only when its list has at least one item; the first one is open at the start.
-  4. **Projects:** a card per project (first screenshot, title, short description); **View project** opens a
-     panel from the right with the full description, **Live demo** (new tab), the intro video (a YouTube link
-     plays in the panel, other links open in a new tab as **Watch intro video**) and every screenshot. After the
-     instructors come **Success stories** (photo, title, story, company logo and name) and **Frequently asked
-     questions**: a centred heading, one card per question; opening a card shows the answer on a light tinted
-     band (not a separate card). Each section is hidden while it is empty.
+  4. **Projects:** two cards per row (first screenshot on the left, title and one line of description); clicking a
+     card opens a panel from the right with the full description, **Live demo** (new tab), the intro video (a YouTube
+     link plays in the panel, other links open in a new tab as **Watch intro video**) and every screenshot.
+     **Success stories:** photo (or an icon), name, what they do now, company name and logo. **FAQ:** one card per
+     question, the first one open; the answer sits on a soft gradient box. Each section is hidden while it is empty.
   5. **Buy bar** (fixed to the bottom of the screen) for visitors and students who have not enrolled: "Call
      Now:" with the phone number from the Company Contact page (a `tel:` link; hidden when no number is set),
-     the price, the struck-through list price and "N% discount applied" while a discount runs, and **Enroll
-     Now**, which scrolls to the enrolment card. Staff, teachers and enrolled students do not see it.
+     the price, the struck-through list price and "N% discount applied" while a discount runs, and **Enroll Now**.
+     Staff, teachers and enrolled students do not see it. **Enroll Now** (banner and bar) opens the payment details
+     page of a paid course; on a free course or one that is part of a plan it scrolls to the enrolment card, where
+     the buttons or the choices are.
   6. A lecture marked "Free Preview" with a YouTube video opens the preview player (with the list of every
      other free preview). Locked lectures have no video address for viewers without access.
   7. The card on the right (top on phones) depends on the viewer:
-     - **Visitor:** price, "Enroll Free" / "Get Started" (to sign-up) and "Sign In".
-     - **Student, not enrolled:** "Enroll Now – Free" / "Buy Now". When the course is part of subscription
+     - **Visitor:** paid course: price and **Enroll Now** (payment details page); free course: "Enroll Free" (to
+       sign-up) and "Sign In".
+     - **Student, not enrolled:** "Enroll Now – Free", or **Enroll Now** (payment details page) on a paid course. When the course is part of subscription
        plans there are two choices: **Subscribe and save** (cheapest plan price; "Enroll with Subscription"
        when the student's running plan includes the course, "Upgrade Subscription" when it does not, otherwise
        a link to the plans) or **Buy this course** (always a direct, paid enrolment).
@@ -415,6 +447,8 @@ screen with the filters stacked above the courses.
        "Leave this course" (asks for confirmation).
      - **Super Admin / Admin:** "Edit Course" and "Student View"; **Moderator:** "Student View" only.
      - **Teacher:** the price only.
+       Under it: perks (certificate, any device, direct support) and **Share course** (the phone's share sheet, or
+       copies the address).
   8. If the course has a "Course introduction" lecture (or any free preview) on YouTube, the card's picture plays it.
 - **Mobile behaviour:** single column; the enrolment card comes right after the banner; the preview player
   opens full screen with the preview list under the video.
@@ -422,7 +456,7 @@ screen with the filters stacked above the courses.
   `GET /api/study-curricula/course/:id` (public fields for guests), `GET /api/quiz-bank/public/course/:id`,
   `GET /api/subscription-plans`, `GET /api/site-settings/public` (the "Call Now" number); Students:
   `GET /api/enrollments/:courseId/check`, `GET /api/subscriptions/my`, `POST /api/enrollments/:courseId`
-  (body `{ enrollmentType: 'paid' }` when buying a paid course directly), `DELETE /api/enrollments/:courseId`.
+  (the free and subscription buttons; the paid one is on the payment details page), `DELETE /api/enrollments/:courseId`.
 - **Security:** YouTube is the only embedded site (CSP `frame-src https://www.youtube.com
 https://www.youtube-nocookie.com`, thumbnails `img-src https://i.ytimg.com`); videos are embedded from the
   11-character id only, through the privacy-enhanced domain. Cover and teacher pictures are shown only from

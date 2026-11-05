@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -198,7 +198,7 @@ describe('CourseDetailView (/courses/[id])', () => {
     expect(body).toEqual({});
   });
 
-  it('buying a paid course directly asks for a paid enrolment even with a subscription option', async () => {
+  it('buying a paid course directly goes to the payment page even with a subscription option', async () => {
     const paid = {
       ...course,
       pricing: 'Paid',
@@ -208,23 +208,85 @@ describe('CourseDetailView (/courses/[id])', () => {
       includedInSubscription: true,
       allowedSubscriptionPlans: ['Premium'],
     };
-    let body: unknown = null;
-    server.use(
-      ...courseHandlers({ course: paid }),
-      ...studentHandlers(false),
-      http.post(`*/api/enrollments/${course._id}`, async ({ request }) => {
-        body = await request.json();
-        return ok(undefined);
-      }),
-    );
+    server.use(...courseHandlers({ course: paid }), ...studentHandlers(false));
     renderPage();
 
     expect(await screen.findByText('From ৳600 /month')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('radio', { name: /Buy this course/ }));
-    await userEvent.click(screen.getByRole('button', { name: 'Buy Now - ৳800' }));
-    await waitFor(() => {
-      expect(body).toEqual({ enrollmentType: 'paid' });
-    });
+    const card = screen.getByRole('radiogroup', { name: 'How to get this course' });
+    expect(within(card).getByRole('link', { name: 'Enroll Now' })).toHaveAttribute(
+      'href',
+      `/courses/${course._id}/payment`,
+    );
+  });
+
+  it('shows the start date, the next live class and the end date, each only when it exists', async () => {
+    server.use(
+      http.get(`*/api/study-curricula/course/${course._id}`, () =>
+        ok([
+          {
+            ...WEEK,
+            lectures: [{ _id: 'lc1', title: 'Kick-off', day: '2099-11-02', time: '18:30' }],
+          },
+        ]),
+      ),
+      ...courseHandlers({
+        course: { ...course, startDate: '2099-12-22T12:00:00Z', endDate: '2100-01-22T12:00:00Z' },
+      }),
+    );
+    const { unmount } = renderPage();
+    expect(await screen.findByText('Class start date')).toBeInTheDocument();
+    expect(await screen.findByText('Live class time')).toBeInTheDocument();
+    expect(screen.getByText('Course end date')).toBeInTheDocument();
+    unmount();
+
+    server.use(
+      http.get(`*/api/study-curricula/course/${course._id}`, () => ok([])),
+      ...courseHandlers(),
+    );
+    renderPage();
+    await screen.findByRole('heading', { level: 1, name: 'Intro to TypeScript' });
+    expect(screen.queryByText('Class start date')).not.toBeInTheDocument();
+    expect(screen.queryByText('Live class time')).not.toBeInTheDocument();
+  });
+
+  it('shows the course sections in the agreed order', async () => {
+    server.use(
+      ...courseHandlers({
+        course: {
+          ...course,
+          description: '<p>About text</p>',
+          whatYouWillLearn: ['Types'],
+          requirements: ['A laptop'],
+          toolsSection: {
+            title: '',
+            description: '',
+            tools: [{ _id: 't1', name: 'Node', logoUrl: '' }],
+          },
+          projects: [{ title: 'Blog', description: '', images: [], liveDemoUrl: '', videoUrl: '' }],
+          benefitsSection: { title: '', description: '', items: [{ title: 'Support' }] },
+          successStories: [{ title: 'Rahim', description: '', companyName: '' }],
+          faqs: [{ question: 'Live?', answer: 'Yes' }],
+        },
+      }),
+    );
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Frequently Asked Questions' });
+    expect(
+      screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
+    ).toEqual([
+      'About this course',
+      "What you'll learn",
+      'Curriculum',
+      'Your Instructors',
+      'Tech you will learn',
+      'Projects',
+      'What will you get from this course',
+      'Course Requirements',
+      'Success stories',
+      'Frequently Asked Questions',
+    ]);
   });
 
   it('a student whose plan includes the course enrols with the subscription', async () => {

@@ -72,7 +72,7 @@ test.describe('Public site', () => {
     const categoryCard = free.getByRole('button', { name: new RegExp(name) });
     // Phones: the category row scrolls sideways inside the box
     await categoryCard.scrollIntoViewIfNeeded();
-    await expect(categoryCard).toContainText('1 course');
+    await expect(categoryCard).toHaveText(`${name}1`);
     await categoryCard.click();
     await expect(categoryCard).toHaveAttribute('aria-pressed', 'true');
     await free.getByRole('link', { name: `See details of ${title}` }).click();

@@ -17,6 +17,7 @@ import en_student from './locales/en/student.json';
 import en_teacher from './locales/en/teacher.json';
 import en_adminCourses from './locales/en/adminCourses.json';
 import en_groupChat from './locales/en/groupChat.json';
+import en_payment from './locales/en/payment.json';
 import bnBase from './locales/bn.json';
 import bn_public from './locales/bn/public.json';
 import bn_browse from './locales/bn/browse.json';
@@ -34,6 +35,7 @@ import bn_student from './locales/bn/student.json';
 import bn_teacher from './locales/bn/teacher.json';
 import bn_adminCourses from './locales/bn/adminCourses.json';
 import bn_groupChat from './locales/bn/groupChat.json';
+import bn_payment from './locales/bn/payment.json';
 
 export const en = {
   ...enBase,
@@ -53,6 +55,7 @@ export const en = {
   teacher: en_teacher,
   adminCourses: en_adminCourses,
   groupChat: en_groupChat,
+  payment: en_payment,
 };
 
 export const bn = {
@@ -73,4 +76,5 @@ export const bn = {
   teacher: bn_teacher,
   adminCourses: bn_adminCourses,
   groupChat: bn_groupChat,
+  payment: bn_payment,
 };

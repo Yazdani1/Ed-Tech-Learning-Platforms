@@ -12,6 +12,8 @@ import { useTranslation } from 'react-i18next';
 
 import { SafeHtml } from '@/components/common/SafeHtml';
 
+import { CARD_RADIUS, SOFT_BG, SOFT_BORDER } from '../detail-styles';
+
 import { LiveClassItem } from './LiveClassItem';
 import { WeekTile } from './WeekTile';
 
@@ -26,20 +28,36 @@ interface LiveClassWeekCardProps {
 }
 
 const CARD_SX = {
-  border: '1px solid',
-  borderColor: 'divider',
-  borderRadius: '8px !important',
+  border: `1px solid ${SOFT_BORDER}`,
+  borderRadius: `${CARD_RADIUS} !important`,
   overflow: 'hidden',
-  boxShadow: '0 6px 18px rgba(15, 23, 42, 0.08)',
+  boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
   '&::before': { display: 'none' },
 } as const;
 const SUMMARY_SX = {
-  px: { xs: 1.5, sm: 2.5 },
-  py: 1,
-  '& .MuiAccordionSummary-content': { alignItems: 'center', gap: 1.5, minWidth: 0 },
+  px: { xs: 2, sm: 3 },
+  py: 1.5,
+  alignItems: 'flex-start',
+  '& .MuiAccordionSummary-content': { alignItems: 'flex-start', gap: 2, minWidth: 0, m: 0 },
+  '& .MuiAccordionSummary-expandIconWrapper': { mt: 0.5 },
+} as const;
+const COUNT_CHIP_SX = {
+  display: { xs: 'none', sm: 'inline-flex' },
+  flexShrink: 0,
+  mr: 1,
+  bgcolor: SOFT_BG,
+  border: `1px solid ${SOFT_BORDER}`,
+  '& .MuiChip-icon': { color: '#1d4ed8' },
+} as const;
+const DESCRIPTION_SX = {
+  px: { xs: 2, sm: 3 },
+  pb: 2,
+  lineHeight: 1.7,
+  color: '#475569',
+  '& p': { m: 0 },
 } as const;
 
-/** One week of the live-class plan: number tile, title, description and its classes with day and time. */
+/** One week of the live-class plan: gradient number tile, title, description and its classes with day and time. */
 export const LiveClassWeekCard: FC<LiveClassWeekCardProps> = ({
   week,
   index,
@@ -61,24 +79,25 @@ export const LiveClassWeekCard: FC<LiveClassWeekCardProps> = ({
         <WeekTile index={index} />
         <Typography
           component="span"
-          sx={{ fontWeight: 800, flex: 1, minWidth: 0, wordBreak: 'break-word' }}
+          sx={{
+            fontWeight: 700,
+            fontSize: '1.2rem',
+            lineHeight: 1.35,
+            flex: 1,
+            minWidth: 0,
+            wordBreak: 'break-word',
+          }}
         >
           {week.title ?? week.weekName}
         </Typography>
         <Chip
           icon={<EventIcon sx={{ fontSize: 17 }} />}
           label={t('browse.content.liveClassCount', { count: week.lectures.length })}
-          size="small"
-          sx={{ display: { xs: 'none', sm: 'inline-flex' }, fontWeight: 800, mr: 1 }}
+          sx={COUNT_CHIP_SX}
         />
       </AccordionSummary>
       <AccordionDetails sx={{ p: 0 }}>
-        {week.description && (
-          <SafeHtml
-            html={week.description}
-            sx={{ px: 2.5, py: 1.5, fontSize: '0.9rem', lineHeight: 1.7, color: 'text.secondary' }}
-          />
-        )}
+        {week.description && <SafeHtml html={week.description} sx={DESCRIPTION_SX} />}
         <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
           {week.lectures.map((lecture, lectureIndex) => (
             <LiveClassItem key={lecture._id ?? lectureIndex} lecture={lecture} />

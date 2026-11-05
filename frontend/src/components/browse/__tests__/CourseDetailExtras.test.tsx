@@ -1,7 +1,7 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ConfirmProvider } from '@/context/ConfirmContext';
 import { makeUser, ok, signedInAs } from '@/test/msw/handlers';
@@ -120,12 +120,12 @@ describe('CourseDetailView sections', () => {
         .map((li) => li.textContent),
     ).toEqual(['Beginners', 'Career changers']);
 
-    const faq = screen.getByRole('region', { name: 'Frequently asked questions' });
+    const faq = screen.getByRole('region', { name: 'Frequently Asked Questions' });
+    // The first answer starts open; its question closes it
+    expect(within(faq).getByText('Yes, twice a week.')).toBeVisible();
     await userEvent.setup().click(within(faq).getByRole('button', { name: 'Is it live?' }));
-    expect(await within(faq).findByText('Yes, twice a week.')).toBeVisible();
-    // One card per question under a centred heading
-    expect(within(faq).getByRole('heading', { name: 'Frequently asked questions' })).toHaveStyle({
-      textAlign: 'center',
+    await waitFor(() => {
+      expect(within(faq).getByText('Yes, twice a week.')).not.toBeVisible();
     });
   });
 
@@ -137,8 +137,10 @@ describe('CourseDetailView sections', () => {
     server.use(...handlersFor(target));
     renderPage(target);
 
-    expect(await screen.findByRole('region', { name: 'Tools you will use' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'What you get' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Tech you will learn' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'What will you get from this course' }),
+    ).toBeInTheDocument();
   });
 
   it('shows success stories with their photo, company and story', async () => {
@@ -162,7 +164,7 @@ describe('CourseDetailView sections', () => {
       'Projects',
       'Who this course is for',
       'Success stories',
-      'Frequently asked questions',
+      'Frequently Asked Questions',
     ]) {
       expect(screen.queryByRole('region', { name })).not.toBeInTheDocument();
     }
@@ -205,6 +207,33 @@ describe('CourseDetailView sections', () => {
 });
 
 describe('CourseDetailView buy bar', () => {
+  it('Enroll Now in the banner opens the payment page of a paid course', async () => {
+    server.use(...handlersFor());
+    renderPage();
+    // The banner's comes first on the page
+    const [link] = await screen.findAllByRole('link', { name: 'Enroll Now' });
+    expect(link).toHaveAttribute('href', `/courses/${course._id}/payment`);
+  });
+
+  it('shares the course page: the share sheet, or copying the address', async () => {
+    server.use(...handlersFor());
+    renderPage();
+    const user = userEvent.setup();
+    const button = await screen.findByRole('button', { name: 'Share course' });
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    await user.click(button);
+    expect(writeText).toHaveBeenCalledWith(window.location.href);
+    expect(await screen.findByText('Course link copied')).toBeInTheDocument();
+
+    const share = vi.fn().mockRejectedValue(new Error('closed'));
+    Object.defineProperty(navigator, 'share', { value: share, configurable: true });
+    await user.click(button);
+    expect(share).toHaveBeenCalledWith({ title: 'Full Stack', url: window.location.href });
+    Reflect.deleteProperty(navigator, 'share');
+  });
+
   it('shows a visitor the company phone, price, struck list price, discount and Enroll Now', async () => {
     server.use(
       ...handlersFor(),
@@ -226,7 +255,10 @@ describe('CourseDetailView buy bar', () => {
     expect(within(bar).getByText('৳800')).toBeInTheDocument();
     expect(within(bar).getByText('৳1,000')).toBeInTheDocument();
     expect(within(bar).getByText('20% discount applied')).toBeInTheDocument();
-    expect(within(bar).getByRole('button', { name: 'Enroll Now' })).toBeInTheDocument();
+    expect(within(bar).getByRole('link', { name: 'Enroll Now' })).toHaveAttribute(
+      'href',
+      `/courses/${course._id}/payment`,
+    );
   });
 
   it('leaves out "Call Now" when no phone is saved, and shows Free for a free course', async () => {
@@ -239,16 +271,17 @@ describe('CourseDetailView buy bar', () => {
     expect(within(bar).queryByText(/discount applied/)).not.toBeInTheDocument();
   });
 
-  it('Enroll Now scrolls to the enrolment card', async () => {
-    server.use(...handlersFor());
-    renderPage();
+  it('Enroll Now on a free course scrolls to the enrolment card', async () => {
+    server.use(...handlersFor(empty));
+    renderPage(empty);
     const scrolled: string[] = [];
     Element.prototype.scrollIntoView = function scroll(this: Element) {
       scrolled.push(this.id);
     };
     const user = userEvent.setup();
 
-    await user.click(await screen.findByRole('button', { name: 'Enroll Now' }));
+    const bar = await screen.findByRole('complementary', { name: 'Enrol in this course' });
+    await user.click(within(bar).getByRole('button', { name: 'Enroll Now' }));
 
     expect(scrolled).toEqual(['course-enrollment-card']);
   });
@@ -257,7 +290,8 @@ describe('CourseDetailView buy bar', () => {
     server.use(...handlersFor(), ...asRole('Student', false));
     renderPage();
 
-    expect(await screen.findByRole('button', { name: 'Enroll Now' })).toBeInTheDocument();
+    const bar = await screen.findByRole('complementary', { name: 'Enrol in this course' });
+    expect(within(bar).getByRole('link', { name: 'Enroll Now' })).toBeInTheDocument();
   });
 
   it.each<[UserRole, boolean]>([
@@ -273,7 +307,7 @@ describe('CourseDetailView buy bar', () => {
     // Let the sign-in and enrolment checks settle
     await screen.findByText(/Lifetime access/);
     await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(screen.queryByRole('button', { name: 'Enroll Now' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Enroll Now' })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('complementary', { name: 'Enrol in this course' }),
     ).not.toBeInTheDocument();

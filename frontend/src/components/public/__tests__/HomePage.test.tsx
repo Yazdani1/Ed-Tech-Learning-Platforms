@@ -16,7 +16,7 @@ const PROGRAMMING = makeCategory();
 const DESIGN = makeCategory({ _id: '650000000000000000000002', name: 'Design' });
 const MANY_COURSES = 31;
 
-const paidCourse = makeCourse({ startDate: '2026-12-05T04:00:00.000Z' });
+const paidCourse = makeCourse({ startDate: '2099-12-05T04:00:00.000Z' });
 const freeCourse = makeCourse({
   _id: '660000000000000000000002',
   title: 'Free HTML Live',
@@ -62,7 +62,7 @@ describe('HomePage', () => {
 
     const paid = await section('Live Courses');
     expect(
-      await within(paid).findByRole('link', { name: /^Recorded TypeScript Basics/ }),
+      await within(paid).findByRole('link', { name: /^Recorded .*TypeScript Basics/ }),
     ).toBeInTheDocument();
     expect(within(paid).queryByText('Free HTML Live')).not.toBeInTheDocument();
 
@@ -88,15 +88,15 @@ describe('HomePage', () => {
     const paid = await section('Live Courses');
     const paidGroup = await within(paid).findByRole('group', { name: /Live Courses/ });
     expect(within(paidGroup).getByRole('button', { name: /Programming/ })).toHaveTextContent(
-      '1 course',
+      /Programming\s*1$/,
     );
     expect(within(paidGroup).queryByRole('button', { name: /Design/ })).not.toBeInTheDocument();
 
     const free = await section('Upcoming Free Live Courses');
     const freeGroup = await within(free).findByRole('group');
-    expect(within(freeGroup).getByRole('button', { name: /All/ })).toHaveTextContent('3 courses');
+    expect(within(freeGroup).getByRole('button', { name: /All/ })).toHaveTextContent(/^All\s*3$/);
     expect(within(freeGroup).getByRole('button', { name: /Design/ })).toHaveTextContent(
-      '2 courses',
+      /Design\s*2$/,
     );
   });
 
@@ -181,20 +181,21 @@ describe('HomePage', () => {
     );
     renderWithProviders(<HomePage />);
 
-    await screen.findAllByRole('link', { name: /^Recorded TypeScript Basics/ });
+    await screen.findAllByRole('link', { name: /^Recorded .*TypeScript Basics/ });
     expect(screen.queryByRole('group')).not.toBeInTheDocument();
   });
 
   it('shows the card with type, start day, price and "See Details", without teacher or category', async () => {
     renderWithProviders(<HomePage />);
 
-    const card = await screen.findByRole('link', { name: /^Recorded TypeScript Basics/ });
+    const card = await screen.findByRole('link', { name: /^Recorded .*TypeScript Basics/ });
     expect(card).toHaveAttribute('href', `/courses/${paidCourse._id}`);
     expect(within(card).getByText('Recorded')).toBeInTheDocument();
-    expect(within(card).getByText(/^Starts Dec \d, 2026$/)).toBeInTheDocument();
+    expect(within(card).getByText(/^Dec \d, 2099$/)).toBeInTheDocument();
     expect(within(card).getByText('৳800')).toBeInTheDocument();
     expect(within(card).getByText('৳1,000')).toBeInTheDocument();
     expect(within(card).getByText('20% off')).toBeInTheDocument();
+    expect(within(card).getByText('Save ৳200')).toBeInTheDocument();
     expect(within(card).queryByText('Ada Lovelace')).not.toBeInTheDocument();
     expect(within(card).queryByText('Programming')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'See details of TypeScript Basics' })).toHaveAttribute(
@@ -207,7 +208,7 @@ describe('HomePage', () => {
     renderWithProviders(<HomePage />);
 
     const free = await section('Upcoming Free Live Courses');
-    expect(await within(free).findByText('Start date to be announced')).toBeInTheDocument();
+    expect(await within(free).findByText('To be announced')).toBeInTheDocument();
   });
 
   it('shows the pagination only when a section has more than 30 courses', async () => {
@@ -222,7 +223,7 @@ describe('HomePage', () => {
     const free = await section('Upcoming Free Live Courses');
     expect(await within(free).findByRole('button', { name: 'Go to page 2' })).toBeInTheDocument();
     const paid = await section('Live Courses');
-    await within(paid).findByRole('link', { name: /^Recorded TypeScript Basics/ });
+    await within(paid).findByRole('link', { name: /^Recorded .*TypeScript Basics/ });
     expect(within(paid).queryByRole('navigation')).not.toBeInTheDocument();
     expect(within(paid).queryByText(/Showing/)).not.toBeInTheDocument();
   });
@@ -279,7 +280,7 @@ describe('HomePage', () => {
     );
     renderWithProviders(<HomePage />);
 
-    await screen.findByRole('link', { name: /^Recorded TypeScript Basics/ });
+    await screen.findByRole('link', { name: /^Recorded .*TypeScript Basics/ });
     expect(enrolmentsAsked).toBe(false);
     expect(screen.queryByRole('link', { name: 'Continue Learning' })).not.toBeInTheDocument();
   });

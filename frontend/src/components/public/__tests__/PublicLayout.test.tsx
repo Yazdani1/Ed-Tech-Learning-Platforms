@@ -42,6 +42,43 @@ describe('PublicLayout', () => {
     expect(screen.getByRole('contentinfo')).toHaveTextContent('MedhaBee E-Learning Platform');
   });
 
+  it('shows the saved company contact in the footer, and no column without one', async () => {
+    server.use(
+      http.get('*/api/site-settings/public', () =>
+        ok({
+          hiddenPages: [],
+          contact: {
+            phone: '+880 1700-000000',
+            whatsapp: '',
+            email: 'help@example.com',
+            address: 'Dhaka',
+          },
+        }),
+      ),
+    );
+    const { unmount } = renderLayout();
+    const footer = screen.getByRole('contentinfo');
+    expect(await within(footer).findByRole('link', { name: '+880 1700-000000' })).toHaveAttribute(
+      'href',
+      'tel:+8801700000000',
+    );
+    expect(within(footer).getByRole('link', { name: 'help@example.com' })).toHaveAttribute(
+      'href',
+      'mailto:help@example.com',
+    );
+    expect(within(footer).getByText('Dhaka')).toBeInTheDocument();
+    unmount();
+
+    server.use(
+      http.get('*/api/site-settings/public', () =>
+        ok({ hiddenPages: [], contact: { phone: '', whatsapp: '', email: '', address: '' } }),
+      ),
+    );
+    renderLayout();
+    await screen.findAllByRole('contentinfo');
+    expect(screen.queryByRole('heading', { name: 'Contact us' })).not.toBeInTheDocument();
+  });
+
   it('leaves out the links of pages a Super Admin hid, in the navbar and the footer', async () => {
     server.use(
       http.get('*/api/site-settings/public', () =>

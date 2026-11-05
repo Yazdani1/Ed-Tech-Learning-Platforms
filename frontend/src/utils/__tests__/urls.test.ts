@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { isCloudinaryUrl, isSafeHttpUrl } from '../urls';
+import { isCloudinaryUrl, isSafeHttpUrl, mailtoHref } from '../urls';
 
 describe('url guards', () => {
+  it('builds a mailto link without hidden parameters', () => {
+    expect(mailtoHref('help@example.com')).toBe('mailto:help@example.com');
+    expect(mailtoHref('help@example.com?bcc=x%40y.z')).toBe(
+      'mailto:help@example.com%3Fbcc=x%40y.z',
+    );
+  });
+
   it('accepts only https Cloudinary images', () => {
     expect(isCloudinaryUrl('https://res.cloudinary.com/demo/a.png')).toBe(true);
     expect(isCloudinaryUrl('https://evil.example/a.png')).toBe(false);

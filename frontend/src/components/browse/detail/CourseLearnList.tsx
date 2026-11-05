@@ -1,10 +1,12 @@
 'use client';
 
-import CheckIcon from '@mui/icons-material/Check';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
+
+import { CARD_RADIUS, SOFT_BG, SOFT_BORDER } from './detail-styles';
+import { DetailSection, gridSx } from './extras/DetailSection';
 
 import type { FC } from 'react';
 
@@ -12,37 +14,32 @@ interface CourseLearnListProps {
   items: readonly string[];
 }
 
-/** "What you'll learn": two columns of ticks on wider screens, one on phones. */
+const ITEM_SX = {
+  p: { xs: 2, sm: 2.5 },
+  display: 'flex',
+  gap: 1.5,
+  alignItems: 'flex-start',
+  bgcolor: SOFT_BG,
+  border: `1px solid ${SOFT_BORDER}`,
+  borderRadius: CARD_RADIUS,
+} as const;
+
+/** "What you'll learn": a soft card with a green tick per item, two per row from tablet width. */
 export const CourseLearnList: FC<CourseLearnListProps> = ({ items }) => {
   const { t } = useTranslation();
   if (items.length === 0) return null;
   return (
-    <Box
-      component="section"
-      sx={{
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 2,
-        p: { xs: 2, sm: 3 },
-        mb: 4,
-      }}
-    >
-      <Typography component="h2" variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-        {t('browse.detail.whatYouWillLearn')}
-      </Typography>
-      <Grid container spacing={1} component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
+    <DetailSection id="course-learn" title={t('browse.detail.whatYouWillLearn')}>
+      <Box component="ul" sx={gridSx(2)}>
         {items.map((item, index) => (
-          <Grid key={`${index}-${item}`} size={{ xs: 12, sm: 6 }} component="li">
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-              <CheckIcon
-                sx={{ fontSize: 18, color: 'success.main', mt: 0.25, flexShrink: 0 }}
-                aria-hidden
-              />
-              <Typography variant="body2">{item}</Typography>
-            </Box>
-          </Grid>
+          <Box component="li" key={`${index}-${item}`} sx={ITEM_SX}>
+            <CheckCircleOutlineIcon sx={{ color: '#059669', flexShrink: 0 }} aria-hidden />
+            <Typography sx={{ lineHeight: 1.6, minWidth: 0, overflowWrap: 'anywhere' }}>
+              {item}
+            </Typography>
+          </Box>
         ))}
-      </Grid>
-    </Box>
+      </Box>
+    </DetailSection>
   );
 };

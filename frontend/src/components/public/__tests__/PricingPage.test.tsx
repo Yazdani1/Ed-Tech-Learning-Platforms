@@ -157,7 +157,7 @@ describe('PricingPage', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Premium included courses' });
     expect(
-      await within(dialog).findByRole('link', { name: /^Recorded TypeScript Basics/ }),
+      await within(dialog).findByRole('link', { name: /^Recorded .*TypeScript Basics/ }),
     ).toBeInTheDocument();
     expect(within(dialog).getByText('1 course included')).toBeInTheDocument();
     expect(plansParam).toBe('Premium');

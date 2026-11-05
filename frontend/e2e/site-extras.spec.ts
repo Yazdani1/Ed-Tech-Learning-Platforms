@@ -257,8 +257,8 @@ test.describe('Tools and course page sections', () => {
     await expect(page.getByRole('heading', { level: 1, name: course.title })).toBeVisible();
     const audience = page.getByRole('region', { name: 'Who this course is for' });
     await expect(audience.getByText('Complete beginners')).toBeVisible();
-    const faq = page.getByRole('region', { name: 'Frequently asked questions' });
-    await faq.getByRole('button', { name: 'Is there a certificate?' }).click();
+    const faq = page.getByRole('region', { name: 'Frequently Asked Questions' });
+    await expect(faq.getByRole('button', { name: 'Is there a certificate?' })).toBeVisible();
     await expect(faq.getByText('Yes, after the final quiz.')).toBeVisible();
     await expectNoHorizontalScroll(page);
   });
@@ -266,7 +266,8 @@ test.describe('Tools and course page sections', () => {
   test('the course page buy bar is hidden from staff', async ({ page, baseURL }, testInfo) => {
     const course = await createCourse(baseURL ?? '', `bar ${testInfo.project.name}`);
     await page.goto(`/courses/${course.id}`);
-    await expect(page.getByRole('button', { name: 'Enroll Now' })).toBeVisible();
+    const bar = page.getByRole('complementary', { name: 'Enrol in this course' });
+    await expect(bar.getByRole('button', { name: 'Enroll Now' })).toBeVisible();
 
     await signInByApi(page, ACCOUNTS.admin.email);
     await page.goto(`/courses/${course.id}`);
