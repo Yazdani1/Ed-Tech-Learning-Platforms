@@ -9,6 +9,8 @@ paths:
 
 ## Run the tests yourself, every change
 
+- While building, run only the feature's tests: `npm run test:backend -- <names>`,
+  `npm run test:frontend -- <names>`, `npm run test:e2e -- <spec>` (seconds to minutes instead of the full suite).
 - Every change ends with the tests RUN and PASSING, not only written (CLAUDE.md "Definition of done"):
   `npm run check:feature -- <specs>` (lint, types, format, docs, all backend + frontend tests, the named e2e
   specs on desktop + mobile). Pick the specs by what the changed code touches, not only the feature name.

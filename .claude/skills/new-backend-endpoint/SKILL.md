@@ -14,5 +14,6 @@ description: Use when adding a NEW endpoint to backend/ (Stage B). Follows the b
    needed); static paths before `/:param` paths; mount in `routes/index.ts`.
 5. Input validation the way the existing code does it (manual checks -> `AppError(..., 400)`).
 6. Tests `backend/tests/integration/<feature>.<action>.test.ts`: success, 400, 401, 403 per role, 404, each rule.
-7. Run `npm run test:backend`, `npm run lint`, `npm run typecheck`. Files < 1000 lines.
+7. While working run only these tests: `npm run test:backend -- <feature>`; `npm run lint`, `npm run typecheck`.
+   The full suite runs once in module-workflow step 5. Files < 1000 lines.
 8. Update `docs/backend-features.md` (section + Endpoints row).

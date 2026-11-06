@@ -14,6 +14,7 @@ description: Use when adding a page, tab or dialog to frontend/ (Next.js). Build
 7. Dialogs: AppModal + useModal; useConfirm; useDeleteConfirm.
 8. Check 360 / 768 / 1280 px.
 9. Component tests in `__tests__/`, Playwright `e2e/<feature>.spec.ts` (desktop + mobile).
-10. Run `npm run lint`, `npm run typecheck`, `npm run test:frontend`, `npm run test:e2e`. Then test-engineer and
-    code-reviewer; fix findings.
+10. While working run only these tests: `npm run test:frontend -- <ComponentNames>`, `npm run test:e2e -- <spec>`,
+    plus `npm run lint` and `npm run typecheck`. The full suite and the review agents run ONCE at the end
+    (module-workflow steps 5-6).
 11. Update `docs/frontend-features.md` (section + Screens row).

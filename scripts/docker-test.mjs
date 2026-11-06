@@ -3,7 +3,9 @@
 // Each test stack runs in its own Docker project and is removed afterwards, even when tests fail.
 //
 //   node scripts/docker-test.mjs backend    (npm run test:backend)   Vitest + Supertest against mongo-test
+//   node scripts/docker-test.mjs backend coupons promos               only test files whose path contains a name
 //   node scripts/docker-test.mjs frontend   (npm run test:frontend)  Vitest + React Testing Library + MSW
+//   node scripts/docker-test.mjs frontend PromoBanner                 only matching test files (same filter)
 //   node scripts/docker-test.mjs e2e        (npm run test:e2e)       Playwright, desktop + mobile
 //   node scripts/docker-test.mjs e2e public browse                    only e2e/public.spec.ts + browse.spec.ts
 //   node scripts/docker-test.mjs build      (npm run docker:build)   backend production image builds
@@ -81,6 +83,28 @@ function specPaths() {
   });
 }
 
+/**
+ * Vitest file filters after the target (`npm run test:backend -- coupons`): a test file runs when its path
+ * contains one of the names. Used while building a feature; check:feature still runs every test.
+ */
+function unitFilters() {
+  const names = process.argv.slice(3);
+  for (const name of names) {
+    // Plain names only: they are put into a shell command inside the container
+    if (!/^[a-z0-9._-]+$/i.test(name)) {
+      console.error(`Not a test file filter: ${name} (use e.g. "coupons" or "PromoBanner")`);
+      process.exit(2);
+    }
+  }
+  return names;
+}
+
+/** Backend or frontend tests: all, or only the files matching the filters. */
+function unitTests(service, filters) {
+  if (filters.length === 0) return testService(service);
+  return testService(service, [], ['sh', '-c', `npm ci && npm test -- ${filters.join(' ')}`]);
+}
+
 /** Playwright: every spec, or only the named ones. */
 const PROMO_SPEC = 'e2e/promos.spec.ts';
 const MAIN_PROJECTS = ['--project=desktop', '--project=mobile'];
@@ -130,16 +154,16 @@ const FAST_CHECKS = [
 ];
 
 const STEPS = {
-  backend: () => testService('backend-test'),
-  frontend: () => testService('frontend-test'),
+  backend: () => unitTests('backend-test', unitFilters()),
+  frontend: () => unitTests('frontend-test', unitFilters()),
   e2e: () => e2e(specPaths()),
   build: buildImages,
   // Fast checks first, then the test suites, then the production build
   check: () =>
     runSteps('check', [
       ...FAST_CHECKS,
-      ['test:backend', STEPS.backend],
-      ['test:frontend', STEPS.frontend],
+      ['test:backend', () => testService('backend-test')],
+      ['test:frontend', () => testService('frontend-test')],
       ['test:e2e', () => e2e([])],
       ['docker:build', buildImages],
     ]),
@@ -154,8 +178,8 @@ const STEPS = {
     }
     return runSteps('check:feature', [
       ...FAST_CHECKS,
-      ['test:backend', STEPS.backend],
-      ['test:frontend', STEPS.frontend],
+      ['test:backend', () => testService('backend-test')],
+      ['test:frontend', () => testService('frontend-test')],
       [`test:e2e (${specs.join(', ')})`, () => e2e(specs)],
     ]);
   },
