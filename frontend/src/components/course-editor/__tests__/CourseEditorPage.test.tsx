@@ -119,6 +119,7 @@ describe('CourseEditorPage (create)', () => {
     renderEditor();
     const user = userEvent.setup();
 
+    await user.click(await screen.findByRole('tab', { name: 'Pricing' }));
     await user.click(await screen.findByRole('combobox', { name: /Pricing/ }));
     await user.click(await screen.findByRole('option', { name: 'Paid' }));
     await user.type(screen.getByLabelText(/List Price/), '500');
@@ -142,14 +143,17 @@ describe('CourseEditorPage (edit)', () => {
   it('shows the saved course and publishes it', async () => {
     let updated: Record<string, string> = {};
     let status: unknown;
+    // Like the real server: after publishing, the course reads as Published (the editor reloads it after saving)
+    let saved = makeCourse();
     server.use(
-      http.get(`*/api/courses/${COURSE_ID}`, () => ok(makeCourse())),
+      http.get(`*/api/courses/${COURSE_ID}`, () => ok(saved)),
       http.put(`*/api/courses/${COURSE_ID}`, async ({ request }) => {
         updated = await formEntries(request);
         return ok({ _id: COURSE_ID, status: 'Draft' });
       }),
       http.patch(`*/api/courses/${COURSE_ID}/status`, async ({ request }) => {
         status = await request.json();
+        saved = { ...saved, status: 'Published', publishedAt: '2026-10-30T10:00:00.000Z' };
         return ok({ _id: COURSE_ID, status: 'Published', publishedAt: '2026-10-30T10:00:00.000Z' });
       }),
     );

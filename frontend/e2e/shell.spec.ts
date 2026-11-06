@@ -9,7 +9,7 @@ test.describe('Signed-in shell', () => {
 
     await openMenu(page);
     const menu = page.getByRole('navigation', { name: 'Main menu' }).filter({ visible: true });
-    for (const item of ['Dashboard', 'Courses', 'User List', 'Performance']) {
+    for (const item of ['Dashboard', 'Courses', 'User List', 'Performance', 'Revenue', 'Promos']) {
       await expect(menu.getByRole('link', { name: item })).toBeVisible();
     }
     await expect(menu.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
@@ -25,7 +25,8 @@ test.describe('Signed-in shell', () => {
     await openMenu(page);
     const menu = page.getByRole('navigation', { name: 'Main menu' }).filter({ visible: true });
     await expect(menu.getByRole('link', { name: 'Courses' })).toBeVisible();
-    for (const item of ['Dashboard', 'User List', 'Performance']) {
+    await expect(menu.getByRole('link', { name: 'Announcements' })).toBeVisible();
+    for (const item of ['Dashboard', 'User List', 'Performance', 'Revenue', 'Promos']) {
       await expect(menu.getByRole('link', { name: item })).toHaveCount(0);
     }
   });
@@ -34,7 +35,7 @@ test.describe('Signed-in shell', () => {
     page,
   }) => {
     await signIn(page, ACCOUNTS.student.email);
-    await expect(page).toHaveURL(/\/student\/dashboard$/);
+    await expect(page).toHaveURL(/\/student\/courses$/);
     await expectNoHorizontalScroll(page);
 
     if (isPhone(page)) {
@@ -48,7 +49,7 @@ test.describe('Signed-in shell', () => {
     }
     const menu = page.getByRole('navigation', { name: 'Main menu' }).filter({ visible: true });
     await expect(menu.getByRole('link', { name: 'My Courses' })).toBeVisible();
-    // The signed-in name in the sidebar footer (the dashboard greeting in <main> shows it too)
+    // The signed-in name in the sidebar footer
     await expect(
       page
         .locator('.MuiDrawer-paper')
@@ -69,7 +70,7 @@ test.describe('Pages outside the shell', () => {
   });
 
   test('every page is served with the security headers', async ({ page }) => {
-    const response = await page.goto('/auth/login');
+    const response = await page.goto('/');
     const headers = response?.headers() ?? {};
 
     expect(headers['content-security-policy']).toMatch(/'nonce-[^']+' 'strict-dynamic'/);

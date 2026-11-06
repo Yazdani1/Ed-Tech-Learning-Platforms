@@ -57,7 +57,7 @@ describe('PricingPage', () => {
     const card = await planCard('Premium');
     expect(await within(card).findByRole('link', { name: 'Get Started' })).toHaveAttribute(
       'href',
-      '/auth/login?next=%2Fpricing',
+      '/pricing?auth=login&next=%2Fpricing',
     );
     expect(
       await screen.findByRole('heading', { name: 'Already have an account?' }),

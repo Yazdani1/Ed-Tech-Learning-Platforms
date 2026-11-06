@@ -2,6 +2,8 @@
 
 import Box from '@mui/material/Box';
 
+import { LIGHT_CARD_SHADOW } from '../detail-styles';
+
 import { SectionAccordion } from './SectionAccordion';
 
 import type { CourseLecture, CourseSection } from '@/schemas/browse.schema';
@@ -21,7 +23,16 @@ export const RecordedLectureList: FC<RecordedLectureListProps> = ({
   onToggle,
   onPreview,
 }) => (
-  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+  <Box
+    sx={{
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 2,
+      overflow: 'hidden',
+      bgcolor: 'common.white',
+      boxShadow: LIGHT_CARD_SHADOW,
+    }}
+  >
     {sections.map((section, index) => (
       <SectionAccordion
         key={section._id}

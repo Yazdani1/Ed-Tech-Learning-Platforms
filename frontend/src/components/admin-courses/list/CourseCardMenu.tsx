@@ -3,8 +3,6 @@
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
-import PublishIcon from '@mui/icons-material/Publish';
-import UnpublishedOutlinedIcon from '@mui/icons-material/UnpublishedOutlined';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
@@ -15,24 +13,20 @@ import type { FC } from 'react';
 
 interface CourseCardMenuProps {
   course: AdminCourse;
-  /** Super Admin / Admin: publish, unpublish and delete (the backend allows nobody else) */
+  /** Super Admin / Admin: delete (the backend allows nobody else) */
   canManage: boolean;
   busy: boolean;
-  onToggleStatus: (course: AdminCourse) => void;
   onDelete: (course: AdminCourse) => void;
 }
 
-/** "⋮" menu of a course card: details, enrolments and (managers) publish / unpublish / delete. */
-export const CourseCardMenu: FC<CourseCardMenuProps> = ({
-  course,
-  canManage,
-  busy,
-  onToggleStatus,
-  onDelete,
-}) => {
+/**
+ * "⋮" menu of a course card: details, enrolments and (managers) delete — only for a course that was never
+ * published. Publishing and unpublishing are in the course editor (header and Settings).
+ */
+export const CourseCardMenu: FC<CourseCardMenuProps> = ({ course, canManage, busy, onDelete }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const published = course.status === 'Published';
+  const everPublished = course.status === 'Published' || Boolean(course.firstPublishedAt);
 
   return (
     <ActionMenu
@@ -53,26 +47,13 @@ export const CourseCardMenu: FC<CourseCardMenuProps> = ({
           },
         },
         {
-          label: t(published ? 'adminCourses.list.unpublish' : 'adminCourses.list.publish'),
-          icon: published ? (
-            <UnpublishedOutlinedIcon fontSize="small" />
-          ) : (
-            <PublishIcon fontSize="small" />
-          ),
-          onClick: () => {
-            onToggleStatus(course);
-          },
-          visible: canManage,
-          disabled: busy,
-        },
-        {
           label: t('adminCourses.list.delete'),
           icon: <DeleteOutlinedIcon fontSize="small" />,
           onClick: () => {
             onDelete(course);
           },
           danger: true,
-          visible: canManage,
+          visible: canManage && !everPublished,
           disabled: busy,
         },
       ]}

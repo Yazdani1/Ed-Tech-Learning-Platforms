@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { Announcement } from '../models/Announcement.model';
+import { AnnouncementView } from '../models/AnnouncementView.model';
 import { Course } from '../models/Course.model';
 import { Teacher } from '../models/Teacher.model';
 import { AppError } from '../utils/AppError';
@@ -21,6 +22,19 @@ export const getCourseAnnouncements = asyncHandler(async (req: Request, res: Res
   const announcements = await Announcement.find({ course: req.params.courseId })
     .populate('postedBy', 'name avatar role')
     .sort({ createdAt: -1 });
+  // A student opening the list has seen these announcements (the "seen by" count of the Announcements page)
+  if (req.user.role === 'Student' && announcements.length > 0) {
+    await AnnouncementView.bulkWrite(
+      announcements.map((item) => ({
+        updateOne: {
+          filter: { announcement: item._id, student: req.user._id },
+          update: { $setOnInsert: { announcement: item._id, broadcast: item.broadcast, student: req.user._id } },
+          upsert: true,
+        },
+      })),
+      { ordered: false },
+    );
+  }
   res.status(200).json({ success: true, data: announcements, total: announcements.length });
 });
 

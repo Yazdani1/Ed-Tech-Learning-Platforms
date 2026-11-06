@@ -1,0 +1,104 @@
+{
+  "title": "Revenue",
+  "subtitle": "Course sales of every course: daily, weekly and monthly, and every order with its full details.",
+  "cards": "Sales per period",
+  "periodOrders": "{{count}} orders ({{paid}} paid)",
+  "chart": {
+    "range": "Chart period",
+    "ranges": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+    "title": {
+      "daily": "Revenue per day (last 30 days)",
+      "weekly": "Revenue per week (last 12 weeks)",
+      "monthly": "Revenue per month (last 12 months)"
+    },
+    "weekOf": "Week of {{date}}",
+    "revenue": "Revenue"
+  },
+  "typeTabs": "Order type",
+  "types": {
+    "all": "All",
+    "paid": "Paid",
+    "free": "Free",
+    "subscription": "Subscription"
+  },
+  "ordersLabel": "Orders",
+  "empty": "No orders match these filters.",
+  "selectOrder": "Select order {{id}}",
+  "selectPage": "Select this page",
+  "unselectPage": "Unselect this page",
+  "selected": "{{count}} selected",
+  "exportCsv": "Export CSV",
+  "printPdf": "Print students (PDF)",
+  "deletedStudent": "Deleted account",
+  "deletedCourse": "Deleted course",
+  "method": {
+    "bkash": "bKash",
+    "other": "Other",
+    "none": "Not recorded"
+  },
+  "columns": {
+    "orderId": "Order ID",
+    "date": "Date",
+    "course": "Course",
+    "batch": "Batch",
+    "student": "Student",
+    "studentNumber": "Student ID",
+    "email": "Email",
+    "phone": "Phone",
+    "type": "Type",
+    "listPrice": "List price",
+    "discount": "Discount",
+    "discountPercent": "Discount %",
+    "amountPaid": "Amount paid",
+    "currency": "Currency",
+    "coupon": "Coupon",
+    "paymentMethod": "Payment method"
+  },
+  "details": {
+    "title": "Purchase details",
+    "student": "Student",
+    "studentNumber": "Student ID",
+    "email": "Email",
+    "phone": "Phone",
+    "course": "Course",
+    "courseTitle": "Course",
+    "batch": "Batch",
+    "payment": "Payment",
+    "type": "Type",
+    "listPrice": "List price",
+    "discount": "Discount",
+    "amountPaid": "Amount paid",
+    "coupon": "Coupon code",
+    "couponSource": "Coupon from",
+    "paymentMethod": "Payment method",
+    "currency": "Currency",
+    "order": "Order",
+    "date": "Date",
+    "orderId": "Order ID"
+  },
+  "pdf": {
+    "title": "Print students (save as PDF)",
+    "download": "Print",
+    "fieldsLabel": "What to print",
+    "fields": {
+      "name": "Name",
+      "studentNumber": "Student ID",
+      "email": "Email",
+      "phone": "Phone",
+      "course": "Course"
+    },
+    "scopeLabel": "Whose details",
+    "scopeSelected": "The selected orders ({{count}})",
+    "scopeFilter": "Every order of: {{filter}}",
+    "subtitle": "{{count}} students, printed {{date}}",
+    "selectedTitle": "Selected students",
+    "latinNote": "A print page opens in a new tab. In the print dialog choose \"Save as PDF\" to download the file.",
+    "done": "Print page opened",
+    "preparing": "Preparing the print page…",
+    "blocked": "The browser blocked the print tab. Allow pop-ups for this site and try again."
+  }
+}

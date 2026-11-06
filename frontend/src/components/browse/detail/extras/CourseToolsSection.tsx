@@ -59,6 +59,7 @@ export const CourseToolsSection: FC<CourseToolsSectionProps> = ({ section }) => 
       id="course-tools"
       title={section.title || t('browse.extras.toolsTitle')}
       description={section.description}
+      plain
     >
       <Box component="ul" sx={ROW_SX}>
         {section.tools.map((tool, index) => (
@@ -66,6 +67,7 @@ export const CourseToolsSection: FC<CourseToolsSectionProps> = ({ section }) => 
             key={tool._id}
             index={index}
             width={CARD_WIDTH}
+            elevated
             sx={{ pt: 3.5, pb: 2.5, px: 1, textAlign: 'center' }}
           >
             <Box sx={LOGO_TILE_SX}>

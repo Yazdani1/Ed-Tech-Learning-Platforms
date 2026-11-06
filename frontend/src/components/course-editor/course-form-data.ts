@@ -1,4 +1,4 @@
-import { fromLocalInput, toDateInput } from '@/utils/dateTime';
+import { fromLocalInput, toDateInput, toDateTimeInput } from '@/utils/dateTime';
 
 import type { CourseDetailsForm } from '@/schemas/course-editor.schema';
 import type { Course } from '@/schemas/browse.schema';
@@ -19,10 +19,16 @@ export const toFormValues = (course: Course): CourseDetailsForm => {
     startDate: toDateInput(course.startDate),
     endDate: toDateInput(course.endDate),
     teachers: course.teachers.flatMap((teacher) => (teacher ? [teacher._id] : [])),
+    batchNumber: course.batchNumber ?? '',
+    liveClassSchedule: course.liveClassSchedule ?? '',
+    supportClassSchedule: course.supportClassSchedule ?? '',
     visibility: course.visibility,
     pricing: course.pricing,
     listPrice: isPaid ? priceText(course.listPrice ?? course.price) : '',
     discountPrice: isPaid ? priceText(course.discountPrice ?? course.price) : '',
+    discountCode: course.discountCode ?? '',
+    discountStartsAt: toDateTimeInput(course.discountStartsAt),
+    discountEndsAt: toDateTimeInput(course.discountEndsAt),
     includedInSubscription: course.includedInSubscription,
     allowedSubscriptionPlans: course.allowedSubscriptionPlans,
     description: course.description,
@@ -63,6 +69,9 @@ export const buildDetailsFormData = (
   if (values.courseType) body.append('courseType', values.courseType);
   body.append('startDate', fromLocalInput(values.startDate) ?? '');
   body.append('endDate', fromLocalInput(values.endDate) ?? '');
+  if (values.batchNumber) body.append('batchNumber', values.batchNumber);
+  body.append('liveClassSchedule', values.liveClassSchedule.trim());
+  body.append('supportClassSchedule', values.supportClassSchedule.trim());
   body.append('visibility', values.visibility);
   body.append('pricing', values.pricing);
   if (values.pricing === 'Paid') {
@@ -70,6 +79,9 @@ export const buildDetailsFormData = (
     body.append('listPrice', values.listPrice);
     body.append('discountPrice', finalPrice);
     body.append('price', finalPrice);
+    body.append('discountCode', values.discountCode.trim().toUpperCase());
+    body.append('discountStartsAt', fromLocalInput(values.discountStartsAt) ?? '');
+    body.append('discountEndsAt', fromLocalInput(values.discountEndsAt) ?? '');
   }
   body.append('includedInSubscription', String(values.includedInSubscription));
   body.append('teachers', JSON.stringify(values.teachers));

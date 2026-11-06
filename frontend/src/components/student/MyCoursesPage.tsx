@@ -15,14 +15,12 @@ import { CourseCardSkeletons } from './CourseCardSkeletons';
 import { EnrolledCourseSection } from './EnrolledCourseSection';
 import { filterByTitle } from './enrolledCourse.utils';
 import { useMyCoursesSearch } from './useMyCoursesSearch';
-import { useRemoveEnrollment } from './useRemoveEnrollment';
 
 /** /student/courses: the student's enrolments in two groups (free & paid, subscription). */
 export const MyCoursesPage = () => {
   const { t } = useTranslation();
   const { urlSearch, search, setSearch, saveSearch } = useMyCoursesSearch();
   const query = useMyEnrollments();
-  const { onRemove, removingId } = useRemoveEnrollment();
 
   const courses = query.data ?? [];
   const filtered = filterByTitle(courses, search);
@@ -53,8 +51,6 @@ export const MyCoursesPage = () => {
             title={t('student.directSection')}
             courses={filtered.filter((course) => course.enrollmentType !== 'subscription')}
             emptyText={t('student.directEmpty')}
-            onRemove={onRemove}
-            removingId={removingId}
           />
           <EnrolledCourseSection
             title={t('student.subscriptionSection')}
@@ -62,8 +58,6 @@ export const MyCoursesPage = () => {
             countColor={SUBSCRIPTION_COLOR}
             courses={filtered.filter((course) => course.enrollmentType === 'subscription')}
             emptyText={t('student.subscriptionEmpty')}
-            onRemove={onRemove}
-            removingId={removingId}
           />
           {filtered.length === 0 && term !== '' && (
             <Typography color="text.secondary" sx={{ textAlign: 'center' }}>

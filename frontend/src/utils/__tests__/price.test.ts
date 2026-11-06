@@ -64,3 +64,38 @@ describe('localizeDigits', () => {
     expect(localizeDigits('৳1,250', 'en')).toBe('৳1,250');
   });
 });
+
+describe('getCoursePriceInfo with the running offer', () => {
+  const PAID = { pricing: 'Paid', price: 1000, listPrice: 1000, discountPrice: 1000 } as const;
+
+  it('uses the offer price when the public response carries one', () => {
+    const info = getCoursePriceInfo(
+      { ...PAID, offer: { price: 700, endsAt: '2026-12-01T00:00:00Z' } },
+      NOW,
+    );
+    expect(info).toMatchObject({
+      listPrice: 1000,
+      discountPrice: 700,
+      discountAmount: 300,
+      discountPercent: 30,
+      hasDiscount: true,
+    });
+  });
+
+  it('an offer without an end date keeps running', () => {
+    expect(getCoursePriceInfo({ ...PAID, offer: { price: 900 } }, NOW).discountPrice).toBe(900);
+  });
+
+  it('an ended offer counts as none', () => {
+    const info = getCoursePriceInfo(
+      { ...PAID, offer: { price: 700, endsAt: '2026-10-01T00:00:00Z' } },
+      NOW,
+    );
+    expect(info).toMatchObject({ discountPrice: 1000, hasDiscount: false });
+  });
+
+  it('a null offer means no discount, whatever the discount fields say', () => {
+    const info = getCoursePriceInfo({ ...PAID, discountPrice: 600, offer: null }, NOW);
+    expect(info).toMatchObject({ discountPrice: 1000, hasDiscount: false });
+  });
+});

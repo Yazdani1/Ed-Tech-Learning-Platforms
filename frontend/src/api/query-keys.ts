@@ -16,7 +16,6 @@ export const queryKeys = {
     all: ['public'] as const,
     siteLogo: ['public', 'site-logo'] as const,
     heroPosts: ['public', 'hero-posts'] as const,
-    activeDiscount: ['public', 'active-discount'] as const,
     siteSettings: ['public', 'site-settings'] as const,
     tools: ['public', 'tools'] as const,
     teachers: ['public', 'teachers'] as const,
@@ -67,6 +66,30 @@ export const queryKeys = {
     enrollmentStats: (courseId: string) => ['admin-courses', 'enrollment-stats', courseId] as const,
     enrollments: (courseId: string, type: string) =>
       ['admin-courses', 'enrollments', courseId, type] as const,
+  },
+  /** Course coupons and the batch number suggestion (coupons.api.ts) */
+  coupons: {
+    course: (courseId: string) => ['coupons', 'course', courseId] as const,
+    batchSuggestion: ['coupons', 'batch-suggestion'] as const,
+  },
+  /** Promos (promos.api.ts): admin list and the public running promos */
+  promos: {
+    all: ['promos'] as const,
+    list: (params: Record<string, string | number>) => ['promos', 'list', params] as const,
+    active: ['promos', 'active'] as const,
+    activeCourses: ['promos', 'active-courses'] as const,
+  },
+  /** Revenue page (revenue.api.ts) */
+  revenue: {
+    all: ['revenue'] as const,
+    summary: (params: Record<string, string>) => ['revenue', 'summary', params] as const,
+    orders: (params: Record<string, string | number>) => ['revenue', 'orders', params] as const,
+  },
+  /** Announcements page: one announcement sent to several courses (announcements.api.ts) */
+  broadcasts: {
+    all: ['broadcasts'] as const,
+    list: (params: Record<string, string | number>) => ['broadcasts', 'list', params] as const,
+    detail: (id: string) => ['broadcasts', 'detail', id] as const,
   },
   /** Quiz sections and banks of a course (quiz.api.ts), shared by the course editor and the player */
   quiz: {

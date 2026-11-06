@@ -33,9 +33,3 @@ export const postLoginPath = (role: UserRole, next: string | null): string => {
   const safe = safeRedirectPath(next);
   return safe && canOpenPath(role, safe) ? safe : ROLE_HOME[role];
 };
-
-/** The other auth page, keeping a safe ?next= so switching between them does not lose the way back. */
-export const authSwitchHref = (target: string, next: string | null): string => {
-  const safe = safeRedirectPath(next);
-  return safe ? `${target}?next=${encodeURIComponent(safe)}` : target;
-};

@@ -26,6 +26,9 @@ import studyScheduleRouter from './studySchedule.routes';
 import siteSettingRouter from './siteSetting.routes';
 import toolRouter from './tool.routes';
 import studentRouter from './student.routes';
+import couponRouter from './coupon.routes';
+import promoRouter from './promo.routes';
+import revenueRouter from './revenue.routes';
 
 const router = Router();
 
@@ -56,5 +59,8 @@ router.use('/study-schedules', studyScheduleRouter);
 router.use('/site-settings', siteSettingRouter);
 router.use('/tools', toolRouter);
 router.use('/students', studentRouter);
+router.use('/coupons', couponRouter);
+router.use('/promos', promoRouter);
+router.use('/revenue', revenueRouter);
 
 export default router;

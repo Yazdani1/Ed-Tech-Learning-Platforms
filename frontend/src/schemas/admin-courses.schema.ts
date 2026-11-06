@@ -1,11 +1,9 @@
 import { z } from 'zod';
 
 import { categoryRefSchema, coursePricingSchema, courseTypeRefSchema } from './browse.schema';
-import { enrollmentTypeSchema } from './catalog.schema';
-import { enrolledStudentSchema } from './enrollment.schema';
 
 // Staff course list and enrolment shapes: GET /api/courses (staff view), the course enrolment endpoints and
-// the bulk edit / bulk discount bodies. A populated reference whose document was deleted comes back as null.
+// the bulk edit body. A populated reference whose document was deleted comes back as null.
 
 export const COURSE_STATUSES = ['Published', 'Draft'] as const;
 export const COURSE_VISIBILITIES = ['Public', 'Private'] as const;
@@ -44,8 +42,13 @@ export const adminCourseSchema = z.object({
   listPrice: z.number().nullish(),
   discountPrice: z.number().nullish(),
   discountEndsAt: z.string().nullish(),
+  discountStartsAt: z.string().nullish(),
   includedInSubscription: z.boolean().catch(false),
   publishedAt: z.string().nullish(),
+  firstPublishedAt: z.string().nullish(),
+  batchNumber: z.string().nullish(),
+  /** Course page visits (one per visitor per day) */
+  viewCount: z.number().catch(0),
   updatedAt: z.string().nullish(),
   enrollmentStats: courseEnrollmentStatsSchema.nullish(),
 });
@@ -63,19 +66,6 @@ export const enrollmentStatsSchema = z.object({
 });
 export type EnrollmentStats = z.infer<typeof enrollmentStatsSchema>;
 
-/** GET /api/enrollments/admin/course/:courseId items (Super Admin, Admin): with the price snapshot. */
-export const adminEnrollmentSchema = z.object({
-  _id: z.string(),
-  student: enrolledStudentSchema,
-  enrollmentType: enrollmentTypeSchema,
-  listPrice: z.number().catch(0),
-  paidPrice: z.number().catch(0),
-  discountAmount: z.number().catch(0),
-  discountPercent: z.number().catch(0),
-  createdAt: z.string(),
-});
-export type AdminEnrollment = z.infer<typeof adminEnrollmentSchema>;
-
 /** PATCH /api/courses/bulk `updates`: only the fields the admin filled in. */
 export interface BulkCourseUpdates {
   courseType?: string | null;
@@ -91,17 +81,8 @@ export interface BulkCourseUpdates {
   endDate?: string | null;
 }
 
-/** PATCH /api/courses/bulk body (fields and/or one announcement posted to every course). */
+/** PATCH /api/courses/bulk body: the fields to set on every selected course. */
 export interface BulkUpdateRequest {
   courseIds: string[];
   updates?: BulkCourseUpdates;
-  announcement?: { title: string; description: string };
-}
-
-/** PATCH /api/courses/bulk/discount body. */
-export interface BulkDiscountRequest {
-  courseIds: string[];
-  discountPercent: number;
-  /** UTC ISO date-time in the future */
-  discountEndsAt: string;
 }

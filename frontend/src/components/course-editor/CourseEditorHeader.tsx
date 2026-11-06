@@ -22,6 +22,7 @@ interface CourseEditorHeaderProps {
   isSaving: boolean;
   onSaveDraft: () => void;
   onPublish: () => void;
+  onSave: () => void;
 }
 
 const ROW_SX = {

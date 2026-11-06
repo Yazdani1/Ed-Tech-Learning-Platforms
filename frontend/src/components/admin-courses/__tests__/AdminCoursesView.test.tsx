@@ -128,7 +128,6 @@ describe('AdminCoursesView', () => {
 
     await openMenu('React Basics');
     expect(screen.getByRole('menuitem', { name: 'Enrollments' })).toBeInTheDocument();
-    expect(screen.queryByRole('menuitem', { name: 'Unpublish' })).not.toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument();
   });
 
@@ -148,56 +147,64 @@ describe('AdminCoursesView', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 
-  it('publishes a draft', async () => {
-    let body: unknown;
-    server.use(
-      http.get('*/api/courses', () => ok([DRAFT])),
-      http.patch(`*/api/courses/${DRAFT._id}/status`, async ({ request }) => {
-        body = await request.json();
-        return ok(DRAFT);
-      }),
-    );
-    renderView('Admin');
-
-    await openMenu('Node Advanced');
-    await userEvent.setup().click(screen.getByRole('menuitem', { name: 'Publish' }));
-
-    expect(await screen.findByText('"Node Advanced" is now published')).toBeInTheDocument();
-    expect(body).toEqual({ status: 'Published' });
-  });
-
-  it('asks before unpublishing', async () => {
-    let body: unknown;
-    server.use(
-      http.get('*/api/courses', () => ok([PUBLISHED])),
-      http.patch(`*/api/courses/${PUBLISHED._id}/status`, async ({ request }) => {
-        body = await request.json();
-        return ok(PUBLISHED);
-      }),
-    );
+  it('has no publish or unpublish in the menu and offers Delete only for a never-published course', async () => {
+    server.use(http.get('*/api/courses', () => ok([PUBLISHED, DRAFT])));
     renderView('Admin');
     const user = userEvent.setup();
 
     await openMenu('React Basics');
-    await user.click(screen.getByRole('menuitem', { name: 'Unpublish' }));
-    const dialog = await screen.findByRole('dialog');
-    await user.click(within(dialog).getByRole('button', { name: 'Unpublish' }));
+    expect(screen.queryByRole('menuitem', { name: 'Publish' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Unpublish' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument();
+    await user.keyboard('{Escape}');
 
-    expect(await screen.findByText('"React Basics" is now a draft')).toBeInTheDocument();
-    expect(body).toEqual({ status: 'Draft' });
+    await openMenu('Node Advanced');
+    expect(screen.queryByRole('menuitem', { name: 'Publish' })).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument();
+  });
+
+  it('hides Delete for a draft that was published before', async () => {
+    server.use(
+      http.get('*/api/courses', () =>
+        ok([
+          makeCourse('003', {
+            title: 'Old Draft',
+            status: 'Draft',
+            firstPublishedAt: '2026-09-01T10:00:00.000Z',
+          }),
+        ]),
+      ),
+    );
+    renderView('Admin');
+
+    await openMenu('Old Draft');
+    expect(screen.getByRole('menuitem', { name: 'Enrollments' })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument();
+  });
+
+  it('shows the total views of a course', async () => {
+    server.use(
+      http.get('*/api/courses', () =>
+        ok([makeCourse('004', { title: 'Viewed', viewCount: 1234 })]),
+      ),
+    );
+    renderView('Admin');
+
+    expect(await screen.findByText('Total views')).toBeInTheDocument();
+    expect(screen.getByText('1,234')).toBeInTheDocument();
   });
 
   it('shows the backend message when a course with enrolments cannot be deleted', async () => {
     server.use(
-      http.get('*/api/courses', () => ok([PUBLISHED])),
-      http.delete(`*/api/courses/${PUBLISHED._id}`, () =>
+      http.get('*/api/courses', () => ok([DRAFT])),
+      http.delete(`*/api/courses/${DRAFT._id}`, () =>
         fail(400, 'This course has 4 enrolment(s); unpublish it instead of deleting'),
       ),
     );
     renderView('Admin');
     const user = userEvent.setup();
 
-    await openMenu('React Basics');
+    await openMenu('Node Advanced');
     await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
     await user.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }),

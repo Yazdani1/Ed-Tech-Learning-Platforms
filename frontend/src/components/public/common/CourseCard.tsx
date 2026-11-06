@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
+import { BatchNumberChip } from '@/components/course-card/BatchNumberChip';
 import { CourseCover } from '@/components/course-card/CourseCover';
 
 import { COURSE_CARD_SX } from './course-card-styles';
@@ -45,7 +46,7 @@ const DETAILS_SX = {
   background: 'linear-gradient(100deg, #0b4fc4 0%, #2563eb 50%, #0b4fc4 100%)',
 } as const;
 
-/** Home / pricing course card: cover, start date, title, price with its saving and "See Details". */
+/** Home / pricing course card: cover, batch number and start date, title, price with its saving and "See Details". */
 export const CourseCard: FC<CourseCardProps> = ({ course, isEnrolled = false }) => {
   const { t } = useTranslation();
   const href = `/courses/${course._id}`;
@@ -60,7 +61,10 @@ export const CourseCard: FC<CourseCardProps> = ({ course, isEnrolled = false }) 
           <CourseCover src={course.coverImage} alt="" height={COVER_HEIGHT} sizes={COVER_SIZES} />
         </Box>
         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', flexGrow: 1, gap: 1.5 }}>
-          <CourseStartDay startDate={course.startDate} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <BatchNumberChip batchNumber={course.batchNumber} />
+            <CourseStartDay startDate={course.startDate} />
+          </Box>
           <Typography component="h3" sx={TITLE_SX}>
             {course.title}
           </Typography>

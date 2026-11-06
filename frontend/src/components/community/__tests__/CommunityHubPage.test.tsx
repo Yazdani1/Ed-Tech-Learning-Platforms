@@ -33,7 +33,7 @@ describe('CommunityHubPage', () => {
     expect(screen.getByText(/limited guest preview/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Sign in to participate' })).toHaveAttribute(
       'href',
-      '/auth/login?next=%2Fcommunity-hub',
+      '/community-hub?auth=login&next=%2Fcommunity-hub',
     );
     expect(screen.queryByRole('button', { name: 'New Discussion' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Community Settings' })).not.toBeInTheDocument();

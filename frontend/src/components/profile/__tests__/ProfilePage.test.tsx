@@ -89,7 +89,20 @@ describe('ProfilePage', () => {
 
     expect(await screen.findByText('Subscription cancelled')).toBeInTheDocument();
     expect(cancelled).toBe(true);
-    expect(await screen.findByText('You do not have an active subscription.')).toBeInTheDocument();
+    // The subscription box is only shown with an active plan, so it is gone after cancelling
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Cancel Subscription' })).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText('You do not have an active subscription.')).not.toBeInTheDocument();
+  });
+
+  it('shows no subscription box to a student without an active plan', async () => {
+    server.use(profileReturns(makeProfile('Student')), enrollmentsReturn([]));
+    renderPage();
+
+    expect(await screen.findByText('Test Student')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Subscription' })).not.toBeInTheDocument();
+    expect(screen.queryByText('You do not have an active subscription.')).not.toBeInTheDocument();
   });
 
   it('shows a teacher their assigned courses and no subscription card', async () => {

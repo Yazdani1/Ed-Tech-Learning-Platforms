@@ -50,11 +50,40 @@ describe('SidebarContent', () => {
     expect(groupOf('Analytics').getByRole('link', { name: 'Performance' })).toBeInTheDocument();
   });
 
-  it('shows an Admin the manager groups but no Analytics heading', async () => {
+  it('shows an Admin the manager groups; Analytics holds Revenue but not Performance', async () => {
     const menu = await renderAdminMenu('Admin');
     expect(within(menu).getByText('Users & Students')).toBeInTheDocument();
     expect(within(menu).getByText('Website')).toBeInTheDocument();
-    expect(within(menu).queryByText('Analytics')).not.toBeInTheDocument();
+    expect(within(menu).getByText('Analytics')).toBeInTheDocument();
+    expect(within(menu).getByRole('link', { name: 'Revenue' })).toHaveAttribute(
+      'href',
+      '/admin/revenue',
+    );
+    expect(within(menu).getByRole('link', { name: 'Promos' })).toHaveAttribute(
+      'href',
+      '/admin/promos',
+    );
+    expect(within(menu).getByRole('link', { name: 'Announcements' })).toHaveAttribute(
+      'href',
+      '/admin/announcements',
+    );
+    expect(within(menu).queryByRole('link', { name: 'Performance' })).not.toBeInTheDocument();
+  });
+
+  it('gives a Moderator Announcements but not Revenue or Promos', async () => {
+    const menu = await renderAdminMenu('Moderator');
+    expect(within(menu).getByRole('link', { name: 'Announcements' })).toBeInTheDocument();
+    expect(within(menu).queryByRole('link', { name: 'Revenue' })).not.toBeInTheDocument();
+    expect(within(menu).queryByRole('link', { name: 'Promos' })).not.toBeInTheDocument();
+  });
+
+  it('has no Pricing or Dashboard link in the student menu', async () => {
+    server.use(signedInAs(makeUser('Student')));
+    renderWithProviders(<SidebarContent navItems={STUDENT_NAV} collapsed={false} />);
+    const menu = await screen.findByRole('navigation', { name: 'Main menu' });
+    expect(within(menu).getByRole('link', { name: 'My Courses' })).toBeInTheDocument();
+    expect(within(menu).queryByRole('link', { name: 'Pricing' })).not.toBeInTheDocument();
+    expect(within(menu).queryByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
   });
 
   it('student menus have no group headings', async () => {

@@ -18,7 +18,7 @@ import { NameField } from './NameField';
 import { PasswordField } from './PasswordField';
 import { PhoneField } from './PhoneField';
 
-/** Student sign-up form. On success GuestGate sees the new user and opens the student dashboard. */
+/** Student sign-up form (in the auth panel). On success AuthDrawer sees the new user and opens their page. */
 export const RegisterForm = () => {
   const { t } = useTranslation();
   const fieldError = useFieldError();
@@ -75,7 +75,7 @@ export const RegisterForm = () => {
       <AuthSwitchLink
         question={t('auth.hasAccount')}
         linkText={t('auth.signInLink')}
-        href="/auth/login"
+        mode="login"
       />
     </Stack>
   );

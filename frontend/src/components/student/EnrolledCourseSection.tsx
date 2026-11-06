@@ -20,8 +20,6 @@ interface EnrolledCourseSectionProps {
   countColor?: string;
   courses: EnrolledCourse[];
   emptyText: string;
-  onRemove: (course: EnrolledCourse) => void;
-  removingId?: string;
 }
 
 /** A labelled group of enrolled courses with its count. */
@@ -31,8 +29,6 @@ export const EnrolledCourseSection: FC<EnrolledCourseSectionProps> = ({
   countColor,
   courses,
   emptyText,
-  onRemove,
-  removingId,
 }) => {
   const headingId = useId();
   return (
@@ -57,11 +53,7 @@ export const EnrolledCourseSection: FC<EnrolledCourseSectionProps> = ({
         <Grid container spacing={3}>
           {courses.map((course) => (
             <Grid key={course._id} size={COURSE_GRID_SIZE}>
-              <EnrolledCourseCard
-                course={course}
-                onRemove={onRemove}
-                removing={removingId === course._id}
-              />
+              <EnrolledCourseCard course={course} />
             </Grid>
           ))}
         </Grid>

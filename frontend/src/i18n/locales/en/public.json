@@ -72,7 +72,8 @@
     "startTba": "To be announced",
     "registrationOpen": "Registration open",
     "save": "Save {{amount}}",
-    "startDateLabel": "Course Start Date:"
+    "startDateLabel": "Course Start Date:",
+    "batch": "Batch {{number}}"
   },
   "instructors": {
     "title": "Our Instructors",

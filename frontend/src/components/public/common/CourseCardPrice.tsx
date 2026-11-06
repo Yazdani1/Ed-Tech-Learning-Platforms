@@ -13,35 +13,33 @@ interface CourseCardPriceProps {
   course: PriceableCourse;
 }
 
-// Sizes follow the card's own width (container query units), so the row fits a phone card and a wide one
+// Sizes follow the card's own width (container query units on the wrapper), so the whole row fits one line
+const CONTAINER_SX = { containerType: 'inline-size', width: '100%' } as const;
 const ROW_SX = {
-  containerType: 'inline-size',
   display: 'flex',
   alignItems: 'center',
   flexWrap: 'nowrap',
-  gap: '1.6cqi',
+  gap: '2cqi',
   minWidth: 0,
   whiteSpace: 'nowrap',
 } as const;
 const PRICE_SX = {
   fontFamily: DISPLAY_FONT,
   fontWeight: 700,
-  fontSize: 'clamp(1.05rem, 8cqi, 1.75rem)',
+  fontSize: 'clamp(0.95rem, 6.4cqi, 1.45rem)',
   lineHeight: 1.1,
   flexShrink: 0,
 } as const;
 const OLD_PRICE_SX = {
   color: '#64748b',
-  fontSize: 'clamp(0.68rem, 3.6cqi, 0.9rem)',
-  minWidth: 0,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
+  fontSize: 'clamp(0.62rem, 3.6cqi, 0.88rem)',
+  flexShrink: 0,
 } as const;
 const CHIP_SX = {
-  px: '1.6cqi',
+  px: '1.8cqi',
   py: 0.25,
   borderRadius: '6px',
-  fontSize: 'clamp(0.6rem, 3cqi, 0.75rem)',
+  fontSize: 'clamp(0.58rem, 3.1cqi, 0.75rem)',
   fontWeight: 700,
   flexShrink: 0,
 } as const;
@@ -54,30 +52,31 @@ export const CourseCardPrice: FC<CourseCardPriceProps> = ({ course }) => {
   const price = getCoursePriceInfo(course);
   const money = (value: number): string => localizeDigits(formatBdt(value), i18n.language);
   return (
-    <Box sx={ROW_SX}>
-      <Typography
-        component="span"
-        sx={{ ...PRICE_SX, color: price.isFree ? '#047857' : 'text.primary' }}
-      >
-        {price.isFree ? t('common.free') : money(price.discountPrice)}
-      </Typography>
-      {price.hasDiscount && (
-        <>
-          <Typography component="s" sx={OLD_PRICE_SX}>
-            {money(price.listPrice)}
-          </Typography>
-          <Box sx={{ flexGrow: 1 }} />
-          <Box component="span" sx={DARK_CHIP_SX}>
-            {localizeDigits(
-              t('common.percentOff', { percent: price.discountPercent }),
-              i18n.language,
-            )}
-          </Box>
-          <Box component="span" sx={LIGHT_CHIP_SX}>
-            {t('public.courses.save', { amount: money(price.discountAmount) })}
-          </Box>
-        </>
-      )}
+    <Box sx={CONTAINER_SX}>
+      <Box sx={ROW_SX}>
+        <Typography
+          component="span"
+          sx={{ ...PRICE_SX, color: price.isFree ? '#047857' : 'text.primary' }}
+        >
+          {price.isFree ? t('common.free') : money(price.discountPrice)}
+        </Typography>
+        {price.hasDiscount && (
+          <>
+            <Typography component="s" sx={OLD_PRICE_SX}>
+              {money(price.listPrice)}
+            </Typography>
+            <Box component="span" sx={{ ...DARK_CHIP_SX, ml: 'auto' }}>
+              {localizeDigits(
+                t('common.percentOff', { percent: price.discountPercent }),
+                i18n.language,
+              )}
+            </Box>
+            <Box component="span" sx={LIGHT_CHIP_SX}>
+              {t('public.courses.save', { amount: money(price.discountAmount) })}
+            </Box>
+          </>
+        )}
+      </Box>
     </Box>
   );
 };

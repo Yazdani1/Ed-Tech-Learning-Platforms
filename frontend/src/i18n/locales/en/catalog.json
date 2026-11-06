@@ -11,7 +11,10 @@
     "projects": "Projects",
     "audience": "Who This Course Is For",
     "successStories": "Success Stories",
-    "faq": "FAQ"
+    "faq": "FAQ",
+    "pricing": "Pricing",
+    "coupons": "Coupons",
+    "settings": "Settings"
   },
   "editor": {
     "back": "Back to Courses",
@@ -34,7 +37,8 @@
     "needTaxonomy": "Please select a category and course type first",
     "fixErrors": "Please fix the highlighted fields",
     "saveFirst": "Save the course first (Save Draft) to use this section.",
-    "notFound": "Course not found."
+    "notFound": "Course not found.",
+    "saveChanges": "Save changes"
   },
   "basic": {
     "title": "Course Title",
@@ -59,7 +63,13 @@
     "finalPrice": "Final buying price (empty = list price)",
     "includedInSubscription": "Included in Subscription",
     "allowedPlans": "Allowed Subscription Plans",
-    "noPlans": "No subscription plans yet."
+    "noPlans": "No subscription plans yet.",
+    "batchNumber": "Batch number",
+    "batchHelp": "4 digits, unique for every course. A free number is suggested.",
+    "batchSuggest": "Suggest another batch number",
+    "liveClassSchedule": "Live class schedule",
+    "supportClassSchedule": "Support class schedule",
+    "schedulePlaceholder": "e.g. Saturday and Monday, 9:00 - 11:00 PM"
   },
   "media": {
     "title": "Cover Image",
@@ -217,7 +227,9 @@
     "discountAboveList": "The discount price cannot be higher than the list price",
     "endBeforeStart": "The end date cannot be before the start date",
     "url": "Enter a full web address (https://...)",
-    "oneClass": "Add at least one class"
+    "oneClass": "Add at least one class",
+    "batchNumber": "Enter exactly 4 digits",
+    "scheduleLong": "At most 200 characters"
   },
   "extras": {
     "saved": "Section saved",
@@ -290,5 +302,23 @@
       "answer": "Answer"
     },
     "uploadFailed": "The picture could not be uploaded. Please try again."
+  },
+  "pricing": {
+    "couponTitle": "Discount coupon",
+    "couponHelp": "The discount works as this course's coupon: the course and payment pages fill in its code and show the time left until it ends. Without the code, buyers pay the list price.",
+    "couponCode": "Coupon code",
+    "couponCodeHelp": "Leave empty to get a code suggested.",
+    "noDiscountHelp": "Set a discount price below the list price to create the course's discount coupon. More coupons: the Coupons page."
+  },
+  "settings": {
+    "visibilityTitle": "Who can find the course",
+    "publishedTitle": "The course is published",
+    "draftTitle": "The course is not published",
+    "unpublishHelp": "Unpublishing removes the course from the home page and the course list. Students who are already enrolled keep it in their courses and can go on learning.",
+    "publishHelp": "Publishing shows the course on the home page and in the course list, so students can enrol.",
+    "unpublish": "Unpublish course",
+    "unpublishTitle": "Unpublish course?",
+    "unpublishMessage": "\"{{title}}\" leaves the home page and the course list. Enrolled students keep their access.",
+    "neverDeleted": "This course was published before, so it can never be deleted. Unpublish it to hide it."
   }
 }

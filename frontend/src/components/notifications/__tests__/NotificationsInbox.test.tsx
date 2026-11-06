@@ -48,7 +48,7 @@ describe('NotificationsPage (inbox)', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('High')).toBeInTheDocument();
     expect(screen.getByText('Unread')).toBeInTheDocument();
-    expect(screen.getByText('Showing 1-2 of 2')).toBeInTheDocument();
+    expect(screen.queryByText(/^Showing /)).not.toBeInTheDocument();
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
   });
 

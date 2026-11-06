@@ -102,7 +102,7 @@ flowchart LR
     Payment[Payment details page] -- "course, live classes, enrolment check" --> BrowseApi
     Payment -- "paid enrolment" --> CatalogApi
     Browse -- "quiz preview (public tree)" --> QuizApi[quiz.api]
-    Student[Student area: dashboard, My Courses] -- "enrolments, unenrol" --> CatalogApi[catalog.api]
+    Student[Student area: My Courses] -- "enrolments" --> CatalogApi[catalog.api]
     Profile[Profile] -- "me, update, teacher course count" --> ProfileApi[profile.api]
     Setup[Course setup] -- "create, edit, delete" --> SetupApi[setup.api]
     Showcase[Homepage showcase] -- "hero posts, logo" --> ShowcaseApi[showcase.api]
@@ -181,6 +181,21 @@ flowchart LR
     SiteApi --> BeSite[Site settings]
     ToolsApi --> BeTools[Tools]
     ExtrasApi --> BeCourses
+    Enrollments -- "couponCode: price check" --> Offer{{courseOffer: course discount · coupon · promo}}
+    Offer -- "running promos" --> Promos[Promos]
+    Offer -- "course coupons" --> Coupons[Coupons]
+    Courses -- "offer on public reads" --> Offer
+    Editor -- "coupons, batch number" --> CouponsApi[coupons.api]
+    CouponsApi --> Coupons
+    PromoUi[Promos page · banner · pop-up · /promo] -- "promos, active promos" --> PromosApi[promos.api]
+    PromosApi --> Promos
+    PayUi[Course page + payment page coupon field] -- "check code, enrol with code" --> CouponsApi
+    RevenueUi[Revenue page] -- "summary, orders, export" --> RevenueApi[revenue.api]
+    RevenueApi --> Revenue[Revenue] -- "orders" --> Enrollments
+    BroadcastUi[Announcements page] -- "send to many courses" --> BroadcastApi[announcements.api]
+    BroadcastApi --> Broadcasts[Announcement broadcasts] -- "one announcement per course" --> Content
+    Browse -- "one view per visitor per day" --> Views[Course views]
+    AuthPanel[Auth panel ?auth=login] -- "sign in, register" --> Auth
 ```
 
 ## Key flows
@@ -209,19 +224,44 @@ sequenceDiagram
   U->>W: open /admin/performance, tick courses, pick "Custom range"
   W->>W: keep courses, range, from, to in the URL
   W->>A: GET /api/performance/overview?courseIds=a,b&dateRange=custom&from=…&to=…&tz=Asia/Dhaka
-  A->>A: enrolments of a, b → revenue (paidPrice, else course price)
+  A->>A: enrolments of a, b → revenue (a saved order's paidPrice, 0 after a 100% coupon; older ones the course price)
   A->>A: periods (today, 7 days, month, all) + chosen range, buckets per hour / day / month
   A-->>W: periods, selected, granularity, chartData
   W-->>U: coloured period cards, range line, chart (labels in the viewer's language)
+```
+
+### Buying a course with a coupon (one coupon per order)
+
+```mermaid
+sequenceDiagram
+  actor S as Student
+  participant W as Course / payment page
+  participant A as API
+  participant M as MongoDB
+  W->>A: GET /api/courses/:id
+  A->>M: course + running promos
+  A-->>W: course with offer (lowest of its own discount and the promos)
+  W-->>S: price with the pre-filled code and the time left
+  S->>W: remove the code (list price) or type another code
+  W->>A: GET /api/coupons/check?course&code
+  A-->>W: the new price (or one 400 message for every invalid code)
+  S->>W: Complete payment
+  W->>A: POST /api/enrollments/:id { enrollmentType: paid, couponCode, paymentMethod }
+  A->>M: resolve the code again; take one use of a limited coupon atomically
+  A->>M: enrolment with list price, paid price, discount, coupon, payment method
+  A-->>W: 201 Enrolled
 ```
 
 ### Signing in
 
 The sign-in form posts the email and password to `/api/auth/login` on the Next.js origin, which forwards
 them to the backend. The backend checks the password (after 10 wrong passwords for one email within 15 minutes it answers 429 until the window ends), sets the httpOnly `token` cookie (7 days) and returns
-the user. The app stores that user as the "me" query; `GuestGate` then opens the page from `?next=` if it is
-a safe same-site page the role may open, otherwise the role's home page (Super Admin: `/admin/dashboard`,
-Admin and Moderator: `/admin/courses`, Teacher: `/teacher/courses`, Student: `/student/dashboard`).
+the user. The form lives in a right-side panel on any page (`?auth=login|register`, `AuthDrawer` mounted in
+`app/providers.tsx`; `/auth/login` and `/auth/register` only redirect to it). The app stores that user as the
+"me" query; `AuthDrawer` then opens the page from `?next=` if it is a safe same-site page the role may open,
+otherwise the role's home page (Super Admin: `/admin/dashboard`, Admin and Moderator: `/admin/courses`, Teacher:
+`/teacher/courses`, Student: `/student/courses`). A signed-out visit to a signed-in page goes to
+`/?auth=login&next=<page>` (`proxy.ts`, `RequireRole`).
 
 ```mermaid
 sequenceDiagram
@@ -229,13 +269,13 @@ sequenceDiagram
     participant N as Next.js (browser + /api rewrite)
     participant B as Express backend
     participant M as MongoDB
-    U->>N: Email + password on /auth/login
+    U->>N: Email + password in the sign-in panel (?auth=login)
     N->>B: POST /api/auth/login
     B->>B: Email locked (10 failures / 15 min)? -> 429
     B->>M: Find user, compare bcrypt hash
     M-->>B: User
     B-->>N: Set-Cookie token (httpOnly) + { success, data: user }
-    N->>N: Cache user as "me"; GuestGate picks the next page
+    N->>N: Cache user as "me"; AuthDrawer picks the next page
     N-->>U: Role home page (or the safe ?next= page)
     Note over N,B: Every later /api call carries the cookie automatically
 ```
@@ -243,8 +283,8 @@ sequenceDiagram
 ### Signing out
 
 The sidebar's sign-out button posts `/api/auth/logout`; the backend clears the cookie. Only then does the
-app mark the user as signed out and drop every cached query; `RequireRole` sends the user to `/auth/login`
-(without `?next=`, so the next person on a shared computer does not land on the previous user's page). If the
+app mark the user as signed out and drop every cached query; `RequireRole` sends the user to the home page
+with the sign-in panel (without `?next=`, so the next person on a shared computer does not land on the previous user's page). If the
 request fails, the user stays signed in and sees "Could not sign out".
 
 ### Opening course content

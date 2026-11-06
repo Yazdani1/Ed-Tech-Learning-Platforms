@@ -60,7 +60,7 @@ export const CourseContentTabs: FC<CourseContentTabsProps> = ({
   const unit = tabs.view === 'recorded' ? 'Sections' : 'Weeks';
 
   return (
-    <DetailSection id="course-curriculum" title={t('browse.content.title')}>
+    <DetailSection id="course-curriculum" title={t('browse.content.title')} plain>
       <ContentViewButtons views={tabs.views} view={tabs.view} onChange={tabs.setView} />
       <Box sx={HEADER_SX}>
         <Typography variant="body2" color="text.secondary">

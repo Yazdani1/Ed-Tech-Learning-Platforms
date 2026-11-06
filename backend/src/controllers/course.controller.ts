@@ -19,9 +19,22 @@ import type { IUser } from '../models/User.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { escapeRegex } from '../utils/escapeRegex';
-import { isStaff, isCourseTeacher, canAccessCourseContent } from '../utils/courseAccess';
+import { isStaff, canAccessCourseContent } from '../utils/courseAccess';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 import type { CourseStatus, SubscriptionPlan } from '../types/index';
+import { attachOffers } from '../utils/courseOffer';
+import { parseCourseInfoFields, parseDiscountFields, withoutNulls } from '../utils/courseFields';
+import { uniqueBatchNumber } from '../utils/batchNumber';
+import { ensureVisitorCookie } from '../utils/visitorCookie';
+
+/** A paid enrolment from before orders were saved (same rule as utils/revenue.ts enrollmentRevenue). */
+const LEGACY_PAID = {
+	$and: [
+		{ $eq: ['$enrollmentType', 'paid'] },
+		{ $not: [{ $gt: [{ $ifNull: ['$listPrice', 0] }, 0] }] },
+		{ $not: [{ $gt: [{ $ifNull: ['$paidPrice', 0] }, 0] }] },
+	],
+};
 
 // Lists (catalog, home, staff list) leave out the course page sections; only GET /api/courses/:id sends them
 const COURSE_PAGE_SECTIONS_EXCLUDED = '-toolsSection -benefitsSection -projects -audience -successStories -faqs';
@@ -90,7 +103,7 @@ const expireExpiredCourseDiscounts = async () => {
 	const expiredCourses = await Course.find({
 		pricing: 'Paid',
 		discountEndsAt: { $lte: now },
-		discountPercent: { $gt: 0 },
+		$expr: { $lt: ['$discountPrice', '$listPrice'] },
 	}).select('price listPrice');
 
 	if (expiredCourses.length === 0) return;
@@ -107,7 +120,7 @@ const expireExpiredCourseDiscounts = async () => {
 							discountPrice: listPrice,
 							discountPercent: 0,
 						},
-						$unset: { discountEndsAt: '' },
+						$unset: { discountEndsAt: '', discountStartsAt: '', discountCode: '' },
 					},
 				},
 			};
@@ -151,7 +164,7 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 		.sort({ createdAt: -1 });
 
 	if (!staff) {
-		res.status(200).json({ success: true, data: courses, total: courses.length });
+		res.status(200).json({ success: true, data: await attachOffers(courses), total: courses.length });
 		return;
 	}
 
@@ -171,6 +184,9 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 			previousMonthCount: number;
 			previousMonthPaidEnrollments: number;
 			previousMonthEarned: number;
+			legacyPaid: number;
+			thisMonthLegacyPaid: number;
+			previousMonthLegacyPaid: number;
 		}>([
 			{ $match: { course: { $in: courseIds } } },
 			{
@@ -249,6 +265,26 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 							],
 						},
 					},
+					// Old paid enrolments without a saved order (no list price, no paid price) earn the course price
+					legacyPaid: { $sum: { $cond: [LEGACY_PAID, 1, 0] } },
+					thisMonthLegacyPaid: {
+						$sum: { $cond: [{ $and: [LEGACY_PAID, { $gte: ['$createdAt', startOfMonth] }] }, 1, 0] },
+					},
+					previousMonthLegacyPaid: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										LEGACY_PAID,
+										{ $gte: ['$createdAt', startOfPreviousMonth] },
+										{ $lt: ['$createdAt', startOfMonth] },
+									],
+								},
+								1,
+								0,
+							],
+						},
+					},
 					previousMonthEarned: {
 						$sum: {
 							$cond: [
@@ -277,11 +313,11 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 			...courseObject,
 			enrollmentStats: {
 				totalEnrollments: stat?.totalEnrollments ?? 0,
-				lifetimeEarned: stat?.lifetimeEarned || (stat?.paidEnrollments ?? 0) * fallbackPrice,
+				lifetimeEarned: (stat?.lifetimeEarned ?? 0) + (stat?.legacyPaid ?? 0) * fallbackPrice,
 				thisMonthCount: stat?.thisMonthCount ?? 0,
-				thisMonthEarned: stat?.thisMonthEarned || (stat?.thisMonthPaidEnrollments ?? 0) * fallbackPrice,
+				thisMonthEarned: (stat?.thisMonthEarned ?? 0) + (stat?.thisMonthLegacyPaid ?? 0) * fallbackPrice,
 				previousMonthCount: stat?.previousMonthCount ?? 0,
-				previousMonthEarned: stat?.previousMonthEarned || (stat?.previousMonthPaidEnrollments ?? 0) * fallbackPrice,
+				previousMonthEarned: (stat?.previousMonthEarned ?? 0) + (stat?.previousMonthLegacyPaid ?? 0) * fallbackPrice,
 			},
 		};
 	});
@@ -423,7 +459,7 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 
 	if (!shouldPaginate) {
 		const courses = await query;
-		res.status(200).json({ success: true, data: courses, total: courses.length, filterCounts });
+		res.status(200).json({ success: true, data: await attachOffers(courses), total: courses.length, filterCounts });
 		return;
 	}
 
@@ -437,7 +473,7 @@ export const browseCourses = asyncHandler(async (req: Request, res: Response) =>
 
 	res.status(200).json({
 		success: true,
-		data: courses,
+		data: await attachOffers(courses),
 		total,
 		filterCounts,
 		pagination: {
@@ -471,63 +507,24 @@ export const getCourseById = asyncHandler(
 		const teacherIds = (course.populated('teachers') as Types.ObjectId[] | undefined) ?? course.teachers;
 		const accessCheck = { _id: course._id, teachers: teacherIds };
 		if (course.status !== 'Published' || course.visibility !== 'Public') {
-			const canSee = user && (isStaff(user) || (await isCourseTeacher(user, accessCheck)));
+			// Enrolled students keep their course after it was unpublished (they can go on learning)
+			const canSee = user && (isStaff(user) || (await canAccessCourseContent(user, accessCheck)));
 			if (!canSee) throw new AppError('Course not found', 404);
 		}
 		if (!user || !(await canAccessCourseContent(user, accessCheck))) {
 			for (const section of course.sections as unknown as { lectures: { isPreview?: boolean; videoUrl?: string }[] }[])
 				section.lectures.forEach(hideLockedVideo);
 		}
-		res.status(200).json({ success: true, data: course });
+		const [data] = await attachOffers([course]);
+		// Guests get their anonymous visitor cookie here, so the page's view request counts (once a day)
+		if (course.status === 'Published' && course.visibility === 'Public') ensureVisitorCookie(req, res);
+		res.status(200).json({ success: true, data });
 	},
 );
 
-export const getActiveDiscountSummary = asyncHandler(async (_req: Request, res: Response) => {
-	await expireExpiredCourseDiscounts();
-	const now = new Date();
-	const groups = await Course.aggregate<{
-		_id: null;
-		courseCount: number;
-		discountPercent: number;
-		discountEndsAt: Date;
-		maxListPrice: number;
-		minDiscountPrice: number;
-	}>([
-		{
-			$match: {
-				status: 'Published',
-				visibility: 'Public',
-				pricing: 'Paid',
-				discountPercent: { $gt: 0 },
-				discountEndsAt: { $gt: now },
-			},
-		},
-		{
-			$group: {
-				_id: null,
-				courseCount: { $sum: 1 },
-				discountPercent: { $max: '$discountPercent' },
-				discountEndsAt: { $min: '$discountEndsAt' },
-				maxListPrice: { $max: '$listPrice' },
-				minDiscountPrice: { $min: '$discountPrice' },
-			},
-		},
-		{ $limit: 1 },
-	]);
-
-	const active = groups[0];
-	res.status(200).json({
-		success: true,
-		data: active
-			? {
-					courseCount: active.courseCount,
-					discountPercent: active.discountPercent,
-					discountEndsAt: active.discountEndsAt,
-					maxListPrice: active.maxListPrice,
-					minDiscountPrice: active.minDiscountPrice,
-				}
-			: null,
-	});
+/** A free 4-digit batch number for the course form (Basic info). */
+export const suggestBatchNumber = asyncHandler(async (_req: Request, res: Response) => {
+	res.status(200).json({ success: true, data: { batchNumber: await uniqueBatchNumber() } });
 });
 
 export const createCourse = asyncHandler(
@@ -559,6 +556,17 @@ export const createCourse = asyncHandler(
 			? (parseJsonList(body.allowedSubscriptionPlans, 'allowedSubscriptionPlans') as SubscriptionPlan[])
 			: [];
 
+		const pricing = (body.pricing ?? 'Free') as 'Free' | 'Paid';
+		const prices = normalizeCoursePrices(
+			pricing,
+			body.listPrice ? Number(body.listPrice) : body.price ? Number(body.price) : undefined,
+			body.discountPrice ? Number(body.discountPrice) : body.price ? Number(body.price) : undefined,
+		);
+		// Every check before the cover goes to Cloudinary (no orphan image after a 400 / 409)
+		const extraFields = withoutNulls({
+			...(await parseCourseInfoFields(body)),
+			...(await parseDiscountFields(body, prices.discountPrice < prices.listPrice)),
+		});
 		let coverImage: string | undefined;
 		let coverImagePublicId: string | undefined;
 
@@ -571,12 +579,6 @@ export const createCourse = asyncHandler(
 			coverImagePublicId = result.publicId;
 		}
 
-		const pricing = (body.pricing ?? 'Free') as 'Free' | 'Paid';
-		const prices = normalizeCoursePrices(
-			pricing,
-			body.listPrice ? Number(body.listPrice) : body.price ? Number(body.price) : undefined,
-			body.discountPrice ? Number(body.discountPrice) : body.price ? Number(body.price) : undefined,
-		);
 
 		const course = await Course.create({
 			title: body.title,
@@ -591,6 +593,7 @@ export const createCourse = asyncHandler(
 			...prices,
 			includedInSubscription: body.includedInSubscription === 'true',
 			allowedSubscriptionPlans,
+			...extraFields,
 			status: 'Draft',
 			createdBy: new Types.ObjectId(String(req.user._id)),
 			coverImage,
@@ -619,6 +622,25 @@ export const updateCourse = asyncHandler(
 		const whatYouWillLearn = body.whatYouWillLearn ? parseJsonList(body.whatYouWillLearn, 'whatYouWillLearn') : undefined;
 		const whatYouWillGet = body.whatYouWillGet ? parseJsonList(body.whatYouWillGet, 'whatYouWillGet') : undefined;
 		const requirements = body.requirements ? parseJsonList(body.requirements, 'requirements') : undefined;
+		// The prices this update leads to (same rule as below), so the new fields are checked before any upload
+		const nextPricing = (body.pricing ?? course.pricing) as 'Free' | 'Paid';
+		const nextPrices = normalizeCoursePrices(
+			nextPricing,
+			body.listPrice !== undefined ? Number(body.listPrice) : course.listPrice ?? course.price,
+			body.discountPrice !== undefined
+				? Number(body.discountPrice)
+				: body.price !== undefined
+					? Number(body.price)
+					: course.discountPrice ?? course.price,
+		);
+		const pricingTouched = ['pricing', 'price', 'listPrice', 'discountPrice', 'discountCode', 'discountStartsAt', 'discountEndsAt']
+			.some((key) => body[key] !== undefined);
+		const extraFields = {
+			...(await parseCourseInfoFields(body, course)),
+			...(pricingTouched
+				? await parseDiscountFields(body, nextPrices.discountPrice < nextPrices.listPrice, course)
+				: {}),
+		};
 
 		if (req.file) {
 			if (course.coverImagePublicId)
@@ -665,6 +687,7 @@ export const updateCourse = asyncHandler(
 			course.discountPrice = prices.discountPrice;
 			course.price = prices.price;
 		}
+		course.set(extraFields);
 		if (body.includedInSubscription !== undefined)
 			course.includedInSubscription = body.includedInSubscription === 'true';
 		if (teachers) course.teachers = teachers;
@@ -686,15 +709,13 @@ export const updateCourseStatus = asyncHandler(
 		if (!['Draft', 'Published'].includes(status))
 			throw new AppError('Invalid status', 400);
 
-		const course = await Course.findByIdAndUpdate(
-			req.params.id,
-			{
-				status,
-				publishedAt: status === 'Published' ? new Date() : null,
-			},
-			{ new: true },
-		);
+		const course = await Course.findById(req.params.id);
 		if (!course) throw new AppError('Course not found', 404);
+		course.status = status;
+		course.publishedAt = status === 'Published' ? new Date() : (null as unknown as Date);
+		// Once published, always remembered: such a course can be unpublished but never deleted
+		if (status === 'Published' && !course.firstPublishedAt) course.firstPublishedAt = new Date();
+		await course.save();
 
 		res
 			.status(200)
@@ -710,6 +731,8 @@ export const deleteCourse = asyncHandler(
 	async (req: Request, res: Response) => {
 		const course = await Course.findById(req.params.id).select('+coverImagePublicId');
 		if (!course) throw new AppError('Course not found', 404);
+		if (course.firstPublishedAt || course.status === 'Published')
+			throw new AppError('A course that was ever published cannot be deleted; unpublish it instead', 400);
 		// Enrolments are revenue and learning history (dashboard, reports): never delete them with the course.
 		const enrollmentCount = await Enrollment.countDocuments({ course: course._id });
 		if (enrollmentCount > 0)
@@ -753,30 +776,19 @@ export const bulkUpdateCourses = asyncHandler(
 				allowedSubscriptionPlans?: SubscriptionPlan[];
 				teachers?: string[];
 			};
-			announcement?: { title: string; description: string };
 		};
 
-		const { courseIds, updates, announcement } = body;
+		const { courseIds, updates } = body;
 
 		if (!Array.isArray(courseIds) || courseIds.length === 0)
 			throw new AppError('courseIds must be a non-empty array', 400);
 
-		if (!updates && !announcement)
-			throw new AppError('Provide at least one field to update or an announcement', 400);
+		if (!updates) throw new AppError('Provide at least one field to update', 400);
 
 		const invalidId = courseIds.find((id) => typeof id !== 'string' || !Types.ObjectId.isValid(id));
 		if (invalidId !== undefined) throw new AppError(`Invalid course ID: ${String(invalidId)}`, 400);
 
 		// ── Validate everything before any write (all or nothing) ──────
-		if (announcement !== undefined) {
-			if (typeof announcement !== 'object' || announcement === null)
-				throw new AppError('Announcement title is required', 400);
-			const { title, description } = announcement;
-			if (typeof title !== 'string' || !title.trim()) throw new AppError('Announcement title is required', 400);
-			if (typeof description !== 'string' || !description.trim())
-				throw new AppError('Announcement description is required', 400);
-		}
-
 		const $set: Record<string, unknown> = {};
 		// A price sent without a pricing change only applies to the Paid courses.
 		const paidOnlySet: Record<string, unknown> = {};
@@ -857,21 +869,13 @@ export const bulkUpdateCourses = asyncHandler(
 		// ── Field updates ──────────────────────────────────────────────
 		if (Object.keys($set).length > 0)
 			await Course.updateMany({ _id: { $in: objectIds } }, { $set });
+		if ($set.status === 'Published')
+			await Course.updateMany(
+				{ _id: { $in: objectIds }, firstPublishedAt: { $exists: false } },
+				{ $set: { firstPublishedAt: new Date() } },
+			);
 		if (Object.keys(paidOnlySet).length > 0)
 			await Course.updateMany({ _id: { $in: objectIds }, pricing: 'Paid' }, { $set: paidOnlySet });
-
-		// ── Bulk announcement ──────────────────────────────────────────
-		if (announcement) {
-			const { title, description } = announcement;
-			await Announcement.insertMany(
-				objectIds.map((courseId) => ({
-					course: courseId,
-					title: title.trim(),
-					description: description.trim(),
-					postedBy: req.user._id,
-				})),
-			);
-		}
 
 		res.status(200).json({
 			success: true,
@@ -880,70 +884,3 @@ export const bulkUpdateCourses = asyncHandler(
 		});
 	},
 );
-
-export const bulkApplyCourseDiscount = asyncHandler(async (req: Request, res: Response) => {
-	const body = req.body as {
-		courseIds: string[];
-		discountPercent: number;
-		discountEndsAt: string;
-	};
-	const { courseIds, discountPercent, discountEndsAt } = body;
-
-	if (!Array.isArray(courseIds) || courseIds.length === 0)
-		throw new AppError('courseIds must be a non-empty array', 400);
-
-	const invalidId = courseIds.find((id) => !Types.ObjectId.isValid(id));
-	if (invalidId) throw new AppError(`Invalid course ID: ${invalidId}`, 400);
-
-	const percent = Number(discountPercent);
-	if (!Number.isFinite(percent) || percent <= 0 || percent >= 100)
-		throw new AppError('Discount percentage must be between 1 and 99', 400);
-
-	const endsAt = new Date(discountEndsAt);
-	if (Number.isNaN(endsAt.getTime()) || endsAt <= new Date())
-		throw new AppError('Discount end date and time must be in the future', 400);
-
-	const objectIds = courseIds.map((id) => new Types.ObjectId(id));
-	const courses = await Course.find({ _id: { $in: objectIds } }).select(
-		'price listPrice pricing',
-	);
-
-	if (courses.length !== courseIds.length)
-		throw new AppError('One or more courses were not found', 404);
-
-	const writes = courses.map((course) => {
-		const listPrice = Math.max(course.listPrice ?? course.price ?? 0, 0);
-		if (listPrice <= 0) {
-			throw new AppError('All selected courses must have a positive list price', 400);
-		}
-		const discountPrice = Math.round(listPrice * (1 - percent / 100) * 100) / 100;
-		return {
-			updateOne: {
-				filter: { _id: course._id },
-				update: {
-					$set: {
-						pricing: 'Paid' as const,
-						listPrice,
-						discountPrice,
-						price: discountPrice,
-						discountPercent: percent,
-						discountEndsAt: endsAt,
-					},
-				},
-			},
-		};
-	});
-
-	if (writes.length > 0) await Course.bulkWrite(writes);
-
-	res.status(200).json({
-		success: true,
-		message: `Discount applied to ${writes.length} course${writes.length !== 1 ? 's' : ''}`,
-		updatedCount: writes.length,
-		data: {
-			courseCount: writes.length,
-			discountPercent: percent,
-			discountEndsAt: endsAt,
-		},
-	});
-});

@@ -1,0 +1,104 @@
+{
+  "title": "আয়",
+  "subtitle": "সব কোর্সের বিক্রি: দৈনিক, সাপ্তাহিক ও মাসিক, এবং প্রতিটি অর্ডারের সম্পূর্ণ বিবরণ।",
+  "cards": "সময় অনুযায়ী বিক্রি",
+  "periodOrders": "{{count}}টি অর্ডার ({{paid}}টি পেইড)",
+  "chart": {
+    "range": "চার্টের সময়কাল",
+    "ranges": {
+      "daily": "দৈনিক",
+      "weekly": "সাপ্তাহিক",
+      "monthly": "মাসিক"
+    },
+    "title": {
+      "daily": "প্রতিদিনের আয় (গত ৩০ দিন)",
+      "weekly": "প্রতি সপ্তাহের আয় (গত ১২ সপ্তাহ)",
+      "monthly": "প্রতি মাসের আয় (গত ১২ মাস)"
+    },
+    "weekOf": "{{date}} এর সপ্তাহ",
+    "revenue": "আয়"
+  },
+  "typeTabs": "অর্ডারের ধরন",
+  "types": {
+    "all": "সব",
+    "paid": "পেইড",
+    "free": "ফ্রি",
+    "subscription": "সাবস্ক্রিপশন"
+  },
+  "ordersLabel": "অর্ডার",
+  "empty": "এই ফিল্টারে কোনো অর্ডার নেই।",
+  "selectOrder": "অর্ডার {{id}} নির্বাচন করুন",
+  "selectPage": "এই পেজ নির্বাচন করুন",
+  "unselectPage": "এই পেজের নির্বাচন বাদ দিন",
+  "selected": "{{count}}টি নির্বাচিত",
+  "exportCsv": "CSV এক্সপোর্ট",
+  "printPdf": "শিক্ষার্থী প্রিন্ট (PDF)",
+  "deletedStudent": "মুছে ফেলা অ্যাকাউন্ট",
+  "deletedCourse": "মুছে ফেলা কোর্স",
+  "method": {
+    "bkash": "বিকাশ",
+    "other": "অন্যান্য",
+    "none": "রেকর্ড নেই"
+  },
+  "columns": {
+    "orderId": "অর্ডার আইডি",
+    "date": "তারিখ",
+    "course": "কোর্স",
+    "batch": "ব্যাচ",
+    "student": "শিক্ষার্থী",
+    "studentNumber": "শিক্ষার্থী আইডি",
+    "email": "ইমেইল",
+    "phone": "ফোন",
+    "type": "ধরন",
+    "listPrice": "তালিকা মূল্য",
+    "discount": "ডিসকাউন্ট",
+    "discountPercent": "ডিসকাউন্ট %",
+    "amountPaid": "পরিশোধিত",
+    "currency": "মুদ্রা",
+    "coupon": "কুপন",
+    "paymentMethod": "পেমেন্ট মাধ্যম"
+  },
+  "details": {
+    "title": "ক্রয়ের বিবরণ",
+    "student": "শিক্ষার্থী",
+    "studentNumber": "শিক্ষার্থী আইডি",
+    "email": "ইমেইল",
+    "phone": "ফোন",
+    "course": "কোর্স",
+    "courseTitle": "কোর্স",
+    "batch": "ব্যাচ",
+    "payment": "পেমেন্ট",
+    "type": "ধরন",
+    "listPrice": "তালিকা মূল্য",
+    "discount": "ডিসকাউন্ট",
+    "amountPaid": "পরিশোধিত",
+    "coupon": "কুপন কোড",
+    "couponSource": "কুপনের উৎস",
+    "paymentMethod": "পেমেন্ট মাধ্যম",
+    "currency": "মুদ্রা",
+    "order": "অর্ডার",
+    "date": "তারিখ",
+    "orderId": "অর্ডার আইডি"
+  },
+  "pdf": {
+    "title": "শিক্ষার্থী প্রিন্ট (PDF হিসেবে সংরক্ষণ)",
+    "download": "প্রিন্ট",
+    "fieldsLabel": "কী প্রিন্ট হবে",
+    "fields": {
+      "name": "নাম",
+      "studentNumber": "শিক্ষার্থী আইডি",
+      "email": "ইমেইল",
+      "phone": "ফোন",
+      "course": "কোর্স"
+    },
+    "scopeLabel": "কাদের বিবরণ",
+    "scopeSelected": "নির্বাচিত অর্ডার ({{count}})",
+    "scopeFilter": "সব অর্ডার: {{filter}}",
+    "subtitle": "{{count}} জন শিক্ষার্থী, প্রিন্ট {{date}}",
+    "selectedTitle": "নির্বাচিত শিক্ষার্থী",
+    "latinNote": "নতুন ট্যাবে একটি প্রিন্ট পেজ খুলবে। ফাইল ডাউনলোড করতে প্রিন্ট ডায়ালগে \"Save as PDF\" বেছে নিন।",
+    "done": "প্রিন্ট পেজ খোলা হয়েছে",
+    "preparing": "প্রিন্ট পেজ তৈরি হচ্ছে…",
+    "blocked": "ব্রাউজার প্রিন্ট ট্যাবটি আটকে দিয়েছে। এই সাইটের জন্য পপ-আপ চালু করে আবার চেষ্টা করুন।"
+  }
+}

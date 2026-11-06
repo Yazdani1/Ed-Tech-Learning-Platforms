@@ -4,12 +4,10 @@ import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react
 import { z } from 'zod';
 
 import {
-  activeDiscountSchema,
   coursePageSchema,
   heroPostSchema,
   siteLogoSchema,
   adminTeacherSchema,
-  type ActiveDiscount,
   type CoursePage,
   type CourseSectionSource,
   type HeroPost,
@@ -38,9 +36,6 @@ export const getSiteLogo = (): Promise<SiteLogo> =>
 
 export const getHeroPosts = (): Promise<HeroPost[]> =>
   http.get('/api/home-hero-posts/public', z.array(heroPostSchema));
-
-export const getActiveDiscount = (): Promise<ActiveDiscount> =>
-  http.get('/api/courses/discounts/active', activeDiscountSchema);
 
 /** Every teacher profile (Super Admin / Admin also receive `userId` and `createdAt`). */
 export const getTeachers = (): Promise<AdminTeacher[]> =>
@@ -103,13 +98,6 @@ export const useSiteLogo = (): UseQueryResult<SiteLogo, ApiError> =>
 
 export const useHeroPosts = (): UseQueryResult<HeroPost[], ApiError> =>
   useQuery({ queryKey: queryKeys.public.heroPosts, queryFn: getHeroPosts });
-
-export const useActiveDiscount = (): UseQueryResult<ActiveDiscount, ApiError> =>
-  useQuery({
-    queryKey: queryKeys.public.activeDiscount,
-    queryFn: getActiveDiscount,
-    staleTime: CHROME_STALE_MS,
-  });
 
 export const useTeachers = (): UseQueryResult<AdminTeacher[], ApiError> =>
   useQuery({ queryKey: queryKeys.public.teachers, queryFn: getTeachers });

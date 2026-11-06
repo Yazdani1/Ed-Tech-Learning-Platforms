@@ -69,7 +69,7 @@ test.describe('Support chat', () => {
     const name = `E2E Widget ${testInfo.project.name} ${Date.now()}`;
     await registerStudent(page, name, uniqueEmail(testInfo));
 
-    await page.goto('/student/dashboard');
+    await page.goto('/student/courses');
     await page.getByRole('button', { name: 'Open support chat' }).click();
     const chat = page.getByRole('dialog', { name: 'Support Chat' });
     await expect(chat.getByText('Welcome to Support Chat! 👋')).toBeVisible();

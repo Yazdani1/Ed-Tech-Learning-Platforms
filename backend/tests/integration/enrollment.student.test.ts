@@ -43,7 +43,7 @@ describe('POST /api/enrollments/:courseId', () => {
     expect(res.status).toBe(201);
   });
 
-  it('takes the price from the database for a paid course', async () => {
+  it('charges the list price of a paid course (a course discount only applies with its code)', async () => {
     const student = await createUser('Student');
     const course = await createCourse({
       pricing: 'Paid',
@@ -59,11 +59,12 @@ describe('POST /api/enrollments/:courseId', () => {
     expect(saved).toMatchObject({
       enrollmentType: 'paid',
       listPrice: 1000,
-      paidPrice: 750,
-      discountAmount: 250,
-      discountPercent: 25,
+      paidPrice: 1000,
+      discountAmount: 0,
+      discountPercent: 0,
       currency: 'BDT',
     });
+    expect(saved?.couponCode).toBeUndefined();
   });
 
   it('ignores prices and types sent by the client', async () => {
@@ -194,50 +195,16 @@ describe('POST /api/enrollments/:courseId', () => {
   });
 });
 
-describe('DELETE /api/enrollments/:courseId', () => {
-  it('removes only the caller enrolment', async () => {
+describe('DELETE /api/enrollments/:courseId (removed)', () => {
+  it('404 and the enrolment stays: students cannot remove an enrolment', async () => {
     const student = await createUser('Student');
-    const other = await createUser('Student');
     const course = await createCourse();
     await enrol(student, course);
-    await enrol(other, course);
-    const res = await request(app)
-      .delete(`/api/enrollments/${course._id}`)
-      .set('Cookie', authCookie(student));
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ success: true, message: 'Unenrolled successfully' });
-    expect(await Enrollment.countDocuments({ student: student._id, course: course._id })).toBe(0);
-    expect(await Enrollment.countDocuments({ student: other._id, course: course._id })).toBe(1);
-  });
-
-  it('404 when not enrolled', async () => {
-    const student = await createUser('Student');
-    const course = await createCourse();
     const res = await request(app)
       .delete(`/api/enrollments/${course._id}`)
       .set('Cookie', authCookie(student));
     expect(res.status).toBe(404);
-    expect(res.body.message).toBe('Enrollment not found');
-  });
-
-  it('400 for a malformed course id', async () => {
-    const student = await createUser('Student');
-    const res = await request(app)
-      .delete('/api/enrollments/not-an-id')
-      .set('Cookie', authCookie(student));
-    expect(res.status).toBe(400);
-  });
-
-  it('401 without a token', async () => {
-    expect((await request(app).delete(`/api/enrollments/${missingId()}`)).status).toBe(401);
-  });
-
-  it.each(NON_STUDENT_ROLES)('403 for %s', async (role) => {
-    const users = await createUsersForAllRoles();
-    const res = await request(app)
-      .delete(`/api/enrollments/${missingId()}`)
-      .set('Cookie', authCookie(users[role]));
-    expect(res.status).toBe(403);
+    expect(await Enrollment.countDocuments({ student: student._id, course: course._id })).toBe(1);
   });
 });
 

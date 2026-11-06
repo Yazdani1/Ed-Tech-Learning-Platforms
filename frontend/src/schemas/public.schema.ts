@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { courseOfferSchema } from './coupon.schema';
+
 // Shapes of the public-site endpoints (home, teachers, pricing, site chrome), as the backend sends them.
 // Only the fields the pages use; unknown fields are dropped. Categories, course types, plans and
 // subscriptions are in catalog.schema.ts (shared with the other screens).
@@ -25,16 +27,6 @@ export const siteLogoSchema = z
   })
   .nullable();
 export type SiteLogo = z.infer<typeof siteLogoSchema>;
-
-/** GET /api/courses/discounts/active: summary of running course discounts, or null. */
-export const activeDiscountSchema = z
-  .object({
-    courseCount: z.number(),
-    discountPercent: z.number(),
-    discountEndsAt: z.string(),
-  })
-  .nullable();
-export type ActiveDiscount = z.infer<typeof activeDiscountSchema>;
 
 /** GET /api/teachers items (public teacher profiles). */
 export const teacherProfileSchema = z.object({
@@ -73,6 +65,8 @@ export const courseCardSchema = z.object({
   listPrice: z.number().nullish(),
   discountPrice: z.number().nullish(),
   discountEndsAt: z.string().nullish(),
+  offer: courseOfferSchema.nullish(),
+  batchNumber: z.string().nullish(),
   category: namedRefSchema.nullish(),
   courseType: namedRefSchema.nullish(),
   /** First class day (shown on the home page cards) */

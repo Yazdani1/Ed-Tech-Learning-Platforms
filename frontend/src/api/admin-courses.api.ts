@@ -8,15 +8,11 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { z } from 'zod';
 
 import {
   adminCourseSchema,
-  adminEnrollmentSchema,
   enrollmentStatsSchema,
   type AdminCourse,
-  type AdminEnrollment,
-  type BulkDiscountRequest,
   type BulkUpdateRequest,
   type CourseStatus,
   type EnrollmentStats,
@@ -26,7 +22,7 @@ import { http, type ApiError } from '@/services/http.service';
 import { refreshCourseLists } from './course-cache';
 import { queryKeys } from './query-keys';
 
-// Staff course list (GET /api/courses with filters), publish/unpublish, delete, bulk edit, bulk discount and
+// Staff course list (GET /api/courses with filters), publish/unpublish, delete, bulk edit and
 // the enrolments of one course (enrolled students: enrollment.api.ts). Categories, course types and plans: catalog.api.ts; teachers: public.api.ts.
 
 /** GET /api/courses filters as the backend takes them (empty values are left out). */
@@ -54,17 +50,8 @@ export const bulkUpdateCourses = async (body: BulkUpdateRequest): Promise<void> 
   await http.send('PATCH', '/api/courses/bulk', body);
 };
 
-export const bulkDiscountCourses = async (body: BulkDiscountRequest): Promise<void> => {
-  await http.send('PATCH', '/api/courses/bulk/discount', body);
-};
-
 export const getEnrollmentStats = (courseId: string): Promise<EnrollmentStats> =>
   http.get(`${adminEnrollmentsUrl(courseId)}/stats`, enrollmentStatsSchema);
-
-export const getPaidEnrollments = (courseId: string): Promise<AdminEnrollment[]> =>
-  http.get(adminEnrollmentsUrl(courseId), z.array(adminEnrollmentSchema), {
-    params: { type: 'paid' },
-  });
 
 // ---- Hooks ----
 
@@ -106,14 +93,6 @@ export const useBulkUpdateCourses = (): UseMutationResult<void, ApiError, BulkUp
   });
 };
 
-export const useBulkDiscount = (): UseMutationResult<void, ApiError, BulkDiscountRequest> => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: bulkDiscountCourses,
-    onSuccess: () => refreshCourseLists(queryClient),
-  });
-};
-
 /** `enabled` false for Moderators (the stats endpoint is Super Admin + Admin only). */
 export const useEnrollmentStats = (
   courseId: string,
@@ -122,15 +101,5 @@ export const useEnrollmentStats = (
   useQuery({
     queryKey: queryKeys.adminCourses.enrollmentStats(courseId),
     queryFn: () => getEnrollmentStats(courseId),
-    enabled,
-  });
-
-export const usePaidEnrollments = (
-  courseId: string,
-  enabled: boolean,
-): UseQueryResult<AdminEnrollment[], ApiError> =>
-  useQuery({
-    queryKey: queryKeys.adminCourses.enrollments(courseId, 'paid'),
-    queryFn: () => getPaidEnrollments(courseId),
     enabled,
   });

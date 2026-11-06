@@ -72,7 +72,8 @@
     "startTba": "শীঘ্রই জানানো হবে",
     "registrationOpen": "রেজিস্ট্রেশন চলমান",
     "save": "সাশ্রয় {{amount}}",
-    "startDateLabel": "কোর্স শুরুর তারিখ:"
+    "startDateLabel": "কোর্স শুরুর তারিখ:",
+    "batch": "ব্যাচ {{number}}"
   },
   "instructors": {
     "title": "আমাদের শিক্ষকগণ",

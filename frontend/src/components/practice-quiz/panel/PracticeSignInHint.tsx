@@ -5,7 +5,9 @@ import Button from '@mui/material/Button';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
-const SIGN_IN_HREF = `/auth/login?next=${encodeURIComponent('/practice-quiz')}`;
+import { withAuthPanel } from '@/utils/auth-drawer';
+
+const SIGN_IN_HREF = withAuthPanel('/practice-quiz', '', 'login', '/practice-quiz');
 
 /** Guests: answers are only checked, not saved, until they sign in. */
 export const PracticeSignInHint = () => {

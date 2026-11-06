@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { signInRedirect } from './utils/auth-drawer';
 import { buildCsp } from './utils/csp';
 
 /** The backend's httpOnly session cookie (backend/src/utils/jwt.ts). */
@@ -11,7 +12,8 @@ const IS_DEV = process.env.NODE_ENV === 'development';
 
 /**
  * Runs before every page:
- * 1. Optimistic sign-in check: no session cookie on /admin, /student or /teacher -> /auth/login?next=<page>.
+ * 1. Optimistic sign-in check: no session cookie on /admin, /student or /teacher -> the home page with the
+ *    sign-in panel (?auth=login&next=<page>).
  *    The backend still verifies the token on every API call and RequireRole checks the role; this is not
  *    the security boundary.
  * 2. A fresh CSP nonce per request (Next.js adds it to its own scripts during rendering).
@@ -19,9 +21,7 @@ const IS_DEV = process.env.NODE_ENV === 'development';
 export const proxy = (request: NextRequest): NextResponse => {
   const { pathname, search } = request.nextUrl;
   if (SIGNED_IN_AREA.test(pathname) && !request.cookies.has(SESSION_COOKIE)) {
-    const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('next', `${pathname}${search}`);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL(signInRedirect(`${pathname}${search}`), request.url));
   }
 
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');

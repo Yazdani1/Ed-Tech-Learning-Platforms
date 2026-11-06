@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { queryKeys } from '@/api/query-keys';
 import { fail, makeUser, ok } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
+import { router, setLocation } from '@/test/next-navigation';
 import { renderWithProviders } from '@/test/render';
 
 import { LoginForm } from '../LoginForm';
@@ -86,12 +87,16 @@ describe('LoginForm', () => {
     ).not.toContain('jwt-in-body');
   });
 
-  it('links to the register page', () => {
+  it('switches the panel to the create-account form and keeps the way back', async () => {
+    window.history.replaceState(null, '', '/pricing?auth=login&next=%2Fstudent%2Fcourses');
+    setLocation('/pricing', '?auth=login&next=%2Fstudent%2Fcourses');
     renderWithProviders(<LoginForm />);
 
-    expect(screen.getByRole('link', { name: 'Create an account' })).toHaveAttribute(
-      'href',
-      '/auth/register',
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Create an account' }));
+
+    expect(router.push).toHaveBeenCalledWith(
+      '/pricing?auth=register&next=%2Fstudent%2Fcourses',
+      expect.anything(),
     );
   });
 });

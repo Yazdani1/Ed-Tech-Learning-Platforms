@@ -1,6 +1,12 @@
 'use client';
 
-import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@tanstack/react-query';
 import { z } from 'zod';
 
 import {
@@ -53,6 +59,14 @@ export const checkEnrollment = (courseId: string): Promise<EnrollmentCheck> =>
  * True for "this course does not exist or is not visible to you" (the page shows "Course not found"):
  * 404, and 400 which the backend answers for a malformed id.
  */
+/**
+ * Counts a visit of a public course page (once per visitor per day on the server; anonymous visitors get a
+ * cookie). Fire-and-forget: a failure never bothers the visitor.
+ */
+export const recordCourseView = async (courseId: string): Promise<void> => {
+  await http.send('POST', `/api/courses/${encodeURIComponent(courseId)}/view`);
+};
+
 export const isNotFoundError = (error: unknown): boolean =>
   isApiError(error, HTTP_NOT_FOUND) || isApiError(error, HTTP_BAD_REQUEST);
 
@@ -110,3 +124,7 @@ export const useEnrollmentCheck = (
     queryFn: () => checkEnrollment(courseId),
     enabled,
   });
+
+/** Counts one visit of a public course page (fire-and-forget: a failure never bothers the visitor). */
+export const useRecordCourseView = (): UseMutationResult<void, ApiError, string> =>
+  useMutation({ mutationFn: recordCourseView });

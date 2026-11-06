@@ -24,5 +24,11 @@ export const setupItemRequestSchema = z.object({
     .max(SETUP_NAME_MAX, 'showcase.setup.nameTooLong')
     .regex(/[\p{L}\p{N}]/u, 'showcase.setup.nameNeedsLetters'),
   description: z.string().trim().max(SETUP_DESCRIPTION_MAX, 'showcase.setup.descriptionTooLong'),
+  /** Course types only (the form shows it there): empty, or a whole number 1-999 (same rule as the backend) */
+  position: z
+    .string()
+    .trim()
+    .regex(/^([1-9]\d{0,2})?$/, 'showcase.setup.positionInvalid')
+    .optional(),
 });
 export type SetupItemRequest = z.infer<typeof setupItemRequestSchema>;

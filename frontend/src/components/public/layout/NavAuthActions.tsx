@@ -5,9 +5,11 @@ import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
 import Tooltip from '@mui/material/Tooltip';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/hooks/useAuth';
+import { withAuthPanel } from '@/utils/auth-drawer';
 import { ROLE_HOME } from '@/utils/roles';
 
 /** Hidden on the smallest phones: the menu drawer has the same buttons there. */
@@ -18,10 +20,11 @@ const FROM_SM = {
 } as const;
 const AVATAR_SIZE = 36;
 
-/** Right side of the navbar: dashboard link + avatar when signed in, otherwise Sign In / Sign Up. */
+/** Right side of the navbar: dashboard link + avatar when signed in, otherwise Sign In / Sign Up (the auth panel). */
 export const NavAuthActions = () => {
   const { t } = useTranslation();
   const { user, isLoading } = useAuth();
+  const pathname = usePathname();
 
   if (isLoading) {
     return <Skeleton variant="circular" width={AVATAR_SIZE} height={AVATAR_SIZE} />;
@@ -47,10 +50,22 @@ export const NavAuthActions = () => {
 
   return (
     <>
-      <Button component={Link} href="/auth/login" variant="outlined" sx={FROM_SM}>
+      <Button
+        component={Link}
+        href={withAuthPanel(pathname, '', 'login')}
+        scroll={false}
+        variant="outlined"
+        sx={FROM_SM}
+      >
         {t('public.nav.signIn')}
       </Button>
-      <Button component={Link} href="/auth/register" variant="contained" sx={FROM_SM}>
+      <Button
+        component={Link}
+        href={withAuthPanel(pathname, '', 'register')}
+        scroll={false}
+        variant="contained"
+        sx={FROM_SM}
+      >
         {t('public.nav.signUp')}
       </Button>
     </>

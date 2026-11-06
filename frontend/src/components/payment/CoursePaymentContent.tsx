@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useEnrollmentCheck } from '@/api/browse.api';
+import { useAppliedCoupon } from '@/components/coupon-field/useAppliedCoupon';
 import { useAuth } from '@/hooks/useAuth';
 import { DISPLAY_FONT } from '@/theme/fonts';
 import { getCoursePriceInfo } from '@/utils/price';
@@ -58,6 +59,7 @@ export const CoursePaymentContent: FC<CoursePaymentContentProps> = ({ course }) 
   const isStudent = hasRole(STUDENT_ROLES);
   const check = useEnrollmentCheck(course._id, isStudent);
   const [method, setMethod] = useState<PaymentMethodId>(DEFAULT_PAYMENT_METHOD);
+  const coupon = useAppliedCoupon(course);
 
   if (isLoading || (isStudent && check.isPending)) {
     return <Skeleton variant="rounded" height={480} sx={{ m: 3 }} aria-busy="true" />;
@@ -95,7 +97,7 @@ export const CoursePaymentContent: FC<CoursePaymentContentProps> = ({ course }) 
             <PaymentMethodCard method={method} onChange={setMethod} />
           </Grid>
           <Grid size={{ xs: 12, md: 5 }} sx={{ minWidth: 0 }}>
-            <PaymentOrderSummary course={course} />
+            <PaymentOrderSummary course={course} coupon={coupon} method={method} />
             <PaymentMentorCard teachers={course.teachers} />
           </Grid>
         </Grid>

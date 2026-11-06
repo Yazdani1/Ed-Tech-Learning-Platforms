@@ -12,6 +12,8 @@ export const taxonomySchema = z.object({
   name: z.string(),
   slug: z.string().default(''),
   description: z.string().nullish(),
+  /** Course types only: order on the home page (1 = first); null = after the numbered ones */
+  position: z.number().nullish(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });

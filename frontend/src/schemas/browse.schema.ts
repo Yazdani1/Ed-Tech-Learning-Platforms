@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { courseOfferSchema } from './coupon.schema';
+
 import { courseExtrasFields } from './course-extras.schema';
 import { postedBySchema } from './learn.schema';
 
@@ -80,6 +82,16 @@ export const courseSchema = z.object({
   listPrice: z.number().nullish(),
   discountPrice: z.number().nullish(),
   discountEndsAt: z.string().nullish(),
+  /** The course's own discount (its auto coupon): code and start; staff edit it on the Pricing page */
+  discountCode: z.string().nullish(),
+  discountStartsAt: z.string().nullish(),
+  /** Public responses: the code pre-filled on the course and payment pages (null = no running discount) */
+  offer: courseOfferSchema.nullish(),
+  batchNumber: z.string().nullish(),
+  liveClassSchedule: z.string().nullish(),
+  supportClassSchedule: z.string().nullish(),
+  /** Set once the course was ever published: it can then never be deleted */
+  firstPublishedAt: z.string().nullish(),
   includedInSubscription: z.boolean().default(false),
   allowedSubscriptionPlans: z.array(z.string()).default([]),
   whatYouWillLearn: z.array(z.string()).default([]),

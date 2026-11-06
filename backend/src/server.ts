@@ -5,6 +5,8 @@ import connectDB from './config/db';
 import { config } from './config/env';
 import { setupSocketIO } from './socket/index';
 import { assignMissingStudentNumbers } from './utils/studentNumber';
+import { backfillCourseFields } from './utils/batchNumber';
+import { assignMissingDiscountCodes } from './utils/couponCode';
 
 const startServer = async (): Promise<void> => {
 	await connectDB();
@@ -16,6 +18,12 @@ const startServer = async (): Promise<void> => {
 		assignMissingStudentNumbers().catch((err: Error) => {
 			console.error('Assigning student numbers failed:', err.message);
 		});
+		// Older courses get a batch number, and an older course discount becomes the course's auto coupon
+		backfillCourseFields()
+			.then(() => assignMissingDiscountCodes())
+			.catch((err: Error) => {
+				console.error('Backfilling course fields failed:', err.message);
+			});
 	});
 };
 

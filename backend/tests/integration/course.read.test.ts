@@ -224,7 +224,8 @@ describe('GET /api/courses (admin list)', () => {
     const row = (res.body.data as CourseRow[]).find((c) => String(c._id) === String(course._id));
     expect(row).toBeDefined();
     expect(row?.enrollmentStats).toMatchObject({ totalEnrollments: 3, thisMonthCount: 3 });
-    expect(row?.enrollmentStats?.lifetimeEarned).toBe(30);
+    // Same rule as the dashboard (utils/revenue.ts): 30 saved + an old paid enrolment without a saved order = course price 40
+    expect(row?.enrollmentStats?.lifetimeEarned).toBe(70);
     expect(
       res.body.data.find((c: { _id: string }) => c._id === String(course._id)).teachers[0],
     ).toMatchObject({
@@ -465,75 +466,9 @@ describe('GET /api/courses/:id', () => {
   });
 });
 
-describe('GET /api/courses/discounts/active', () => {
-  it('summarises active discounts of published public paid courses only', async () => {
-    await Course.deleteMany({});
-    const endsSoon = new Date(Date.now() + HOUR_MS);
-    const endsLater = new Date(Date.now() + 5 * HOUR_MS);
-    const paid = { pricing: 'Paid' as const, discountPercent: 10 };
-    await createCourse({
-      ...paid,
-      listPrice: 100,
-      discountPrice: 90,
-      price: 90,
-      discountEndsAt: endsLater,
-    });
-    await createCourse({
-      ...paid,
-      discountPercent: 30,
-      listPrice: 300,
-      discountPrice: 210,
-      price: 210,
-      discountEndsAt: endsSoon,
-    });
-    await createCourse({
-      ...paid,
-      status: 'Draft',
-      listPrice: 999,
-      discountPrice: 1,
-      discountEndsAt: endsSoon,
-    });
-    await createCourse({
-      ...paid,
-      visibility: 'Private',
-      listPrice: 999,
-      discountPrice: 1,
-      discountEndsAt: endsSoon,
-    });
-
+describe('removed discount summary route', () => {
+  it('GET /api/courses/discounts/active no longer exists', async () => {
     const res = await request(app).get('/api/courses/discounts/active');
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data).toMatchObject({
-      courseCount: 2,
-      discountPercent: 30,
-      maxListPrice: 300,
-      minDiscountPrice: 90,
-    });
-    expect(new Date(res.body.data.discountEndsAt).getTime()).toBe(endsSoon.getTime());
-  });
-
-  it('answers data null when no discount is running', async () => {
-    await Course.deleteMany({});
-    await createCourse({ pricing: 'Paid', listPrice: 10, price: 10 });
-    const res = await request(app).get('/api/courses/discounts/active');
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ success: true, data: null });
-  });
-
-  it('ignores expired discounts (and resets them)', async () => {
-    await Course.deleteMany({});
-    const course = await createCourse({
-      pricing: 'Paid',
-      listPrice: 100,
-      discountPrice: 50,
-      price: 50,
-      discountPercent: 50,
-      discountEndsAt: new Date(Date.now() - HOUR_MS),
-    });
-    const res = await request(app).get('/api/courses/discounts/active');
-    expect(res.body.data).toBeNull();
-    expect((await Course.findById(course._id))?.price).toBe(100);
+    expect(res.status).toBe(404);
   });
 });

@@ -15,16 +15,19 @@ interface CourseEditorActionsProps {
   isSaving: boolean;
   onSaveDraft: () => void;
   onPublish: () => void;
+  /** A published course: save without changing its status (Settings unpublishes it) */
+  onSave: () => void;
 }
 
 const BUTTON_SX = { minHeight: 44 };
 
-/** Preview / View Live (saved courses), Save Draft and Publish. */
+/** Preview / View Live (saved courses); Save Draft and Publish, or Save changes for a published course. */
 export const CourseEditorActions: FC<CourseEditorActionsProps> = ({
   course,
   isSaving,
   onSaveDraft,
   onPublish,
+  onSave,
 }) => {
   const { t } = useTranslation();
   const isPublished = course?.status === 'Published';
@@ -44,16 +47,28 @@ export const CourseEditorActions: FC<CourseEditorActionsProps> = ({
           {t(isPublished ? 'catalog.editor.viewLive' : 'catalog.editor.preview')}
         </Button>
       )}
-      <Button variant="outlined" onClick={onSaveDraft} disabled={isSaving} sx={BUTTON_SX}>
-        {isSaving ? (
-          <CircularProgress size={18} aria-label={t('common.saving')} />
-        ) : (
-          t('catalog.editor.saveDraft')
-        )}
-      </Button>
-      <Button variant="contained" onClick={onPublish} disabled={isSaving} sx={BUTTON_SX}>
-        {t('common.publish')}
-      </Button>
+      {isPublished ? (
+        <Button variant="contained" onClick={onSave} disabled={isSaving} sx={BUTTON_SX}>
+          {isSaving ? (
+            <CircularProgress size={18} aria-label={t('common.saving')} />
+          ) : (
+            t('catalog.editor.saveChanges')
+          )}
+        </Button>
+      ) : (
+        <>
+          <Button variant="outlined" onClick={onSaveDraft} disabled={isSaving} sx={BUTTON_SX}>
+            {isSaving ? (
+              <CircularProgress size={18} aria-label={t('common.saving')} />
+            ) : (
+              t('catalog.editor.saveDraft')
+            )}
+          </Button>
+          <Button variant="contained" onClick={onPublish} disabled={isSaving} sx={BUTTON_SX}>
+            {t('common.publish')}
+          </Button>
+        </>
+      )}
     </Box>
   );
 };

@@ -28,7 +28,7 @@ describe('RequireRole', () => {
 
     await waitFor(() => {
       expect(router.replace).toHaveBeenCalledWith(
-        `/auth/login?next=${encodeURIComponent('/admin/courses?page=3')}`,
+        `/?auth=login&next=${encodeURIComponent('/admin/courses?page=3')}`,
       );
     });
     expect(screen.queryByText('admin page')).not.toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('RequireRole', () => {
     renderWithProviders(<RequireRole roles={ADMIN_AREA_ROLES}>admin page</RequireRole>);
 
     await waitFor(() => {
-      expect(router.replace).toHaveBeenCalledWith('/student/dashboard');
+      expect(router.replace).toHaveBeenCalledWith('/student/courses');
     });
   });
 
@@ -56,8 +56,8 @@ describe('RequireRole', () => {
     });
   });
 
-  it('after sign-out goes to /auth/login WITHOUT ?next= (the next person must not land here)', async () => {
-    setLocation('/student/dashboard');
+  it('after sign-out opens the sign-in panel on the home page WITHOUT ?next= (the next person must not land here)', async () => {
+    setLocation('/student/courses');
     server.use(signedInAs(makeUser('Student')));
     const { queryClient } = renderWithProviders(
       <RequireRole roles={['Student']}>student page</RequireRole>,
@@ -69,7 +69,7 @@ describe('RequireRole', () => {
     });
 
     await waitFor(() => {
-      expect(router.replace).toHaveBeenCalledWith('/auth/login');
+      expect(router.replace).toHaveBeenCalledWith('/?auth=login');
     });
   });
 

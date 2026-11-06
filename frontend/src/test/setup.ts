@@ -40,7 +40,11 @@ afterEach(() => {
   server.resetHandlers();
   resetNavigation();
   // A test may change the address bar (RequireRole reads window.location.search); node-env tests have none
-  if (typeof window !== 'undefined') window.history.replaceState(null, '', '/');
+  if (typeof window !== 'undefined') {
+    window.history.replaceState(null, '', '/');
+    // The chosen coupon of a course is kept per browser tab: one test must not leak it into the next
+    window.sessionStorage.clear();
+  }
   void i18n.changeLanguage('en');
 });
 

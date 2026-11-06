@@ -1,4 +1,5 @@
 import BarChart from '@mui/icons-material/BarChart';
+import Campaign from '@mui/icons-material/Campaign';
 import Book from '@mui/icons-material/Book';
 import CardMembership from '@mui/icons-material/CardMembership';
 import Category from '@mui/icons-material/Category';
@@ -10,8 +11,10 @@ import EventNote from '@mui/icons-material/EventNote';
 import Face from '@mui/icons-material/Face';
 import Groups from '@mui/icons-material/Groups';
 import Home from '@mui/icons-material/Home';
+import LocalOffer from '@mui/icons-material/LocalOffer';
 import Notifications from '@mui/icons-material/Notifications';
 import People from '@mui/icons-material/People';
+import Payments from '@mui/icons-material/Payments';
 import Person from '@mui/icons-material/Person';
 import QuestionAnswer from '@mui/icons-material/QuestionAnswer';
 import School from '@mui/icons-material/School';
@@ -71,6 +74,13 @@ export const ADMIN_NAV: readonly NavItem[] = [
     section: 'courses',
   },
   {
+    labelKey: 'nav.promos',
+    href: '/admin/promos',
+    icon: LocalOffer,
+    roles: MANAGER_ROLES,
+    section: 'courses',
+  },
+  {
     labelKey: 'nav.courseQa',
     href: '/admin/course-qa',
     icon: QuestionAnswer,
@@ -104,6 +114,12 @@ export const ADMIN_NAV: readonly NavItem[] = [
     badge: 'chat',
     section: 'communication',
   },
+  {
+    labelKey: 'nav.announcements',
+    href: '/admin/announcements',
+    icon: Campaign,
+    section: 'communication',
+  },
   { labelKey: 'nav.groupChat', href: '/admin/group-chat', icon: Groups, section: 'communication' },
   {
     labelKey: 'nav.notifications',
@@ -134,6 +150,13 @@ export const ADMIN_NAV: readonly NavItem[] = [
     section: 'website',
   },
   {
+    labelKey: 'nav.revenue',
+    href: '/admin/revenue',
+    icon: Payments,
+    roles: MANAGER_ROLES,
+    section: 'analytics',
+  },
+  {
     labelKey: 'nav.performance',
     href: '/admin/performance',
     icon: BarChart,
@@ -145,10 +168,8 @@ export const ADMIN_NAV: readonly NavItem[] = [
 /** Student area menu, same items as the old StudentSidebar. */
 export const STUDENT_NAV: readonly NavItem[] = [
   { labelKey: 'nav.home', href: '/', icon: Home, exact: true },
-  { labelKey: 'nav.dashboard', href: '/student/dashboard', icon: Dashboard },
   { labelKey: 'nav.profile', href: '/student/profile', icon: Person },
   { labelKey: 'nav.myCourses', href: '/student/courses', icon: Book },
-  { labelKey: 'nav.pricing', href: '/pricing', icon: CardMembership },
   { labelKey: 'nav.supportChat', href: '/student/chat', icon: Chat, badge: 'chat' },
   { labelKey: 'nav.groupChat', href: '/student/group-chat', icon: Groups },
   { labelKey: 'nav.schedule', href: '/student/schedule', icon: EventNote },

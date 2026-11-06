@@ -1,37 +1,50 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { Course } from '../models/Course.model';
-import { Enrollment, type EnrollmentType } from '../models/Enrollment.model';
+import { Enrollment, PAYMENT_METHODS, type EnrollmentType, type PaymentMethod } from '../models/Enrollment.model';
 import { User } from '../models/User.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { isCourseTeacher } from '../utils/courseAccess';
+import { enrollmentRevenue } from '../utils/revenue';
+import { claimCouponUse, courseListPrice, releaseCouponUse, resolveCoupon, type CourseOffer } from '../utils/courseOffer';
 
 const money = (value: number) => Math.round(value * 100) / 100;
 
-const getCourseOrderSnapshot = (course: {
-	pricing: string;
-	price?: number;
-	listPrice?: number;
-	discountPrice?: number;
-}) => {
-	if (course.pricing !== 'Paid') {
-		return {
-			listPrice: 0,
-			paidPrice: 0,
-			discountAmount: 0,
-			discountPercent: 0,
-			currency: 'BDT',
-		};
-	}
+const FREE_SNAPSHOT = {
+	listPrice: 0,
+	paidPrice: 0,
+	discountAmount: 0,
+	discountPercent: 0,
+	currency: 'BDT',
+};
 
-	const listPrice = money(Math.max(course.listPrice ?? course.price ?? 0, 0));
-	const paidPrice = money(Math.max(course.discountPrice ?? course.price ?? listPrice, 0));
-	const discountAmount = money(Math.max(listPrice - paidPrice, 0));
-	const discountPercent =
-		listPrice > 0 ? money(Math.min((discountAmount / listPrice) * 100, 100)) : 0;
+/** The order of a paid enrolment: the list price, less the coupon the buyer applied (one per order). */
+const getCourseOrderSnapshot = (listPrice: number, offer: CourseOffer | null) => {
+	if (!offer) return { ...FREE_SNAPSHOT, listPrice, paidPrice: listPrice };
+	return {
+		listPrice,
+		paidPrice: offer.price,
+		discountAmount: offer.discountAmount,
+		discountPercent: money(Math.min((offer.discountAmount / (listPrice || 1)) * 100, 100)),
+		currency: 'BDT',
+		couponCode: offer.code,
+		couponSource: offer.source,
+	};
+};
 
-	return { listPrice, paidPrice, discountAmount, discountPercent, currency: 'BDT' };
+/** Optional payment method of a paid enrolment (only recorded: there is no gateway yet). */
+const parsePaymentMethod = (value: unknown): PaymentMethod | undefined => {
+	if (value === undefined || value === null || value === '') return undefined;
+	if (typeof value !== 'string' || !(PAYMENT_METHODS as readonly string[]).includes(value))
+		throw new AppError('Invalid payment method', 400);
+	return value as PaymentMethod;
+};
+
+const parseCouponCode = (value: unknown): string | undefined => {
+	if (value === undefined || value === null || value === '') return undefined;
+	if (typeof value !== 'string' || value.length > 40) throw new AppError('Invalid coupon code', 400);
+	return value;
 };
 
 export const enroll = asyncHandler(async (req: Request, res: Response) => {
@@ -71,37 +84,27 @@ export const enroll = asyncHandler(async (req: Request, res: Response) => {
 		}
 	}
 
-	const orderSnapshot = enrollmentType === 'paid'
-		? getCourseOrderSnapshot(course)
-		: {
-				listPrice: 0,
-				paidPrice: 0,
-				discountAmount: 0,
-				discountPercent: 0,
-				currency: 'BDT',
-			};
+	const paymentMethod = enrollmentType === 'paid' ? parsePaymentMethod(req.body?.paymentMethod) : undefined;
+	const couponCode = enrollmentType === 'paid' ? parseCouponCode(req.body?.couponCode) : undefined;
+	// The price always comes from the database: the list price, less a coupon that is valid right now
+	const offer = couponCode ? await resolveCoupon(course, couponCode) : null;
+	if (offer && !(await claimCouponUse(offer))) throw new AppError('This coupon code has no uses left', 400);
+	const orderSnapshot = enrollmentType === 'paid' ? getCourseOrderSnapshot(courseListPrice(course), offer) : FREE_SNAPSHOT;
 
-	await Enrollment.create({
-		student: new Types.ObjectId(studentId),
-		course: new Types.ObjectId(courseId),
-		enrollmentType,
-		...orderSnapshot,
-	});
+	try {
+		await Enrollment.create({
+			student: new Types.ObjectId(studentId),
+			course: new Types.ObjectId(courseId),
+			enrollmentType,
+			...orderSnapshot,
+			...(paymentMethod ? { paymentMethod } : {}),
+		});
+	} catch (err) {
+		if (offer) await releaseCouponUse(offer);
+		throw err;
+	}
 
 	res.status(201).json({ success: true, message: 'Enrolled successfully' });
-});
-
-export const unenroll = asyncHandler(async (req: Request, res: Response) => {
-	const courseId = String(req.params.courseId);
-	const studentId = String(req.user._id);
-
-	const enrollment = await Enrollment.findOneAndDelete({
-		student: studentId,
-		course: courseId,
-	});
-	if (!enrollment) throw new AppError('Enrollment not found', 404);
-
-	res.status(200).json({ success: true, message: 'Unenrolled successfully' });
 });
 
 export const getMyEnrollments = asyncHandler(
@@ -159,8 +162,8 @@ export const getCourseEnrollments = asyncHandler(
 		}
 
 		const enrollments = await Enrollment.find(filter)
-			.populate('student', 'name email avatar')
-			.populate('course', 'title price listPrice discountPrice pricing')
+			.populate('student', 'name email avatar phone studentNumber')
+			.populate('course', 'title price listPrice discountPrice pricing batchNumber')
 			.sort({ createdAt: -1 });
 
 		res
@@ -267,19 +270,9 @@ export const getCourseEnrollmentStats = asyncHandler(
 		]);
 
 		const thisMonthCount = thisMonth.length;
-		const lifetimeEarned = paidEnrollments.reduce((sum, e) => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const course = e.course as any;
-			return sum + (e.paidPrice || course?.price || 0);
-		}, 0);
-		const thisMonthEarned = thisMonth.reduce((sum, e) => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const course = e.course as any;
-			if (e.enrollmentType === 'paid') {
-				return sum + (e.paidPrice || course?.price || 0);
-			}
-			return sum;
-		}, 0);
+		// Same money rule as the reports: a saved order earns its paid price (0 after a 100% coupon)
+		const lifetimeEarned = paidEnrollments.reduce((sum, e) => sum + enrollmentRevenue(e), 0);
+		const thisMonthEarned = thisMonth.reduce((sum, e) => sum + enrollmentRevenue(e), 0);
 
 		res.status(200).json({
 			success: true,

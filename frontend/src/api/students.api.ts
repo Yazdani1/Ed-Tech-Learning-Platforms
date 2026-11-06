@@ -19,7 +19,7 @@ import type { ListResult } from '@/types';
 
 // Students page (Super Admin, Admin): the student list, its course filter and one student's details.
 
-export const STUDENTS_PAGE_SIZE = 20;
+export const STUDENTS_PAGE_SIZE = 10;
 
 export interface StudentFilters {
   page: number;

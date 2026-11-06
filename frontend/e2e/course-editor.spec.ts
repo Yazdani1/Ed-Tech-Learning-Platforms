@@ -96,6 +96,118 @@ test.describe('Course editor', () => {
     expect((await page.request.delete(`/api/courses/${courseId}`)).ok()).toBe(true);
   });
 
+  test('a new course starts with a batch number; Pricing and Coupons work', async ({
+    page,
+  }, testInfo) => {
+    const stamp = `${testInfo.project.name} ${Date.now()}`;
+    const category = `E2E Pricing Category ${stamp}`;
+    const courseType = `E2E Pricing Type ${stamp}`;
+    const title = `E2E Pricing Course ${stamp}`;
+    await signInByApi(page, ACCOUNTS.admin.email);
+    await createTaxonomy(page, '/api/categories', category);
+    await createTaxonomy(page, '/api/course-types', courseType);
+
+    await page.goto('/admin/courses/create');
+    await page.getByLabel(/Course Title/).fill(title);
+    await pickOption(page, /Category/, category);
+    await pickOption(page, /Course Type/, courseType);
+    // The batch number is suggested (4 digits); no price fields on Basic Info
+    await expect(page.getByLabel('Batch number', { exact: true })).toHaveValue(/^\d{4}$/);
+    await expect(page.getByLabel(/List Price/)).toHaveCount(0);
+    await page.getByLabel('Live class schedule').fill('Saturday 9 PM');
+    await page.getByLabel('Support class schedule').fill('Monday 8 PM');
+    await page.getByRole('button', { name: 'Save Draft' }).click();
+    await expect(page).toHaveURL(/\/admin\/courses\/[a-f\d]{24}\/edit$/);
+    const courseId = /courses\/([a-f\d]{24})\/edit/.exec(page.url())?.[1] ?? '';
+
+    // Pricing: Paid with a discount creates the course's own coupon
+    await page.getByRole('tab', { name: 'Pricing' }).click();
+    await pickOption(page, /Pricing/, 'Paid');
+    await page.getByLabel(/List Price/).fill('1000');
+    await page.getByLabel(/Discount Price/).fill('800');
+    await expect(page.getByText('Discount coupon')).toBeVisible();
+    await page.getByLabel('Coupon code').fill('abc');
+    await page.getByRole('button', { name: 'Save Draft' }).click();
+    await expect(page.getByText('Use 6-20 letters, digits or dashes')).toBeVisible();
+    const code = `E2E${Date.now().toString().slice(-8)}`;
+    await page.getByLabel('Coupon code').fill(code);
+    await page.getByRole('button', { name: 'Save Draft' }).click();
+    await expect(page.getByText('Course updated')).toBeVisible();
+    await expectNoHorizontalScroll(page);
+
+    // Coupons: the course discount is listed; add a coupon of its own
+    await page.getByRole('tab', { name: 'Coupons' }).click();
+    await expect(page.getByText(code, { exact: true })).toBeVisible();
+    await expect(page.getByText('Course discount')).toBeVisible();
+    await page.getByRole('button', { name: 'Add coupon' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add coupon' });
+    await expect(dialog.getByLabel(/Coupon code/)).not.toHaveValue('');
+    const coupon = `CPN${Date.now().toString().slice(-8)}`;
+    await dialog.getByLabel(/Coupon code/).fill(coupon);
+    await dialog.getByRole('textbox', { name: /^Discount/ }).fill('25');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Coupon created')).toBeVisible();
+    await expect(page.getByText(coupon, { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: `Actions for ${coupon}` }).click();
+    await page.getByRole('menuitem', { name: 'Switch off' }).click();
+    await expect(page.getByText('Coupon switched off')).toBeVisible();
+    await page.getByRole('button', { name: `Actions for ${coupon}` }).click();
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByText('Coupon deleted')).toBeVisible();
+
+    // Clean up (a course without enrolments can be deleted)
+    expect((await page.request.delete(`/api/courses/${courseId}`)).ok()).toBe(true);
+  });
+
+  test('Settings publishes and unpublishes a course; the header and the course list follow', async ({
+    page,
+  }, testInfo) => {
+    const stamp = `${testInfo.project.name} ${Date.now()}`;
+    const title = `E2E Settings Course ${stamp}`;
+    await signInByApi(page, ACCOUNTS.admin.email);
+    const category = await page.request.post('/api/categories', {
+      data: { name: `E2E Settings Category ${stamp}` },
+    });
+    const courseType = await page.request.post('/api/course-types', {
+      data: { name: `E2E Settings Type ${stamp}` },
+    });
+    const created = await page.request.post('/api/courses', {
+      data: {
+        title,
+        category: ((await category.json()) as { data: { _id: string } }).data._id,
+        courseType: ((await courseType.json()) as { data: { _id: string } }).data._id,
+        visibility: 'Public',
+        pricing: 'Free',
+      },
+    });
+    expect(created.ok()).toBe(true);
+    const courseId = ((await created.json()) as { data: { _id: string } }).data._id;
+
+    await page.goto(`/admin/courses/${courseId}/edit`);
+    await expect(page.getByRole('heading', { name: title })).toBeVisible();
+    // Settings: visibility and publish / unpublish; the header follows the status
+    await page.getByRole('tab', { name: 'Settings' }).click();
+    await expect(page.getByText('The course is not published')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save Draft' })).toBeVisible();
+    await page.getByRole('main').getByRole('button', { name: 'Publish' }).last().click();
+    await expect(page.getByText('Course published')).toBeVisible();
+    await expect(page.getByText('The course is published')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save Draft' })).toHaveCount(0);
+    await expect(page.getByText(/can never be deleted/)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Unpublish course' }).click();
+    const confirm = page.getByRole('dialog', { name: 'Unpublish course?' });
+    await confirm.getByRole('button', { name: 'Unpublish course' }).click();
+    await expect(page.getByText('The course is not published')).toBeVisible();
+
+    await page.goto(`/admin/courses?search=${encodeURIComponent(title)}`);
+    await page.getByRole('button', { name: `Actions for ${title}`, exact: true }).click();
+    await expect(page.getByRole('menuitem', { name: 'Enrollments' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Delete' })).toHaveCount(0);
+  });
+
   test('a Moderator cannot open the course editor', async ({ page }) => {
     await signIn(page, ACCOUNTS.moderator.email);
     await expect(page).toHaveURL(/\/admin\/courses$/);

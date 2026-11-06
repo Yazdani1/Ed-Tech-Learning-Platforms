@@ -3,10 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
-import { fail, makeUser, ok, signedInAs } from '@/test/msw/handlers';
+import { makeUser, ok, signedInAs } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
+import { lastOf } from '@/test/pick';
 import { renderWithProviders } from '@/test/render';
-import { toDateTimeInput } from '@/utils/dateTime';
 
 import { BulkEditModal } from '../bulk/BulkEditModal';
 
@@ -14,7 +14,6 @@ import { makeCourse, referenceHandlers } from './admin-courses-fixtures';
 
 const REACT = makeCourse('001', { title: 'React Basics' });
 const NODE = makeCourse('002', { title: 'Node Advanced', status: 'Draft', pricing: 'Free' });
-const DAY_MS = 86_400_000;
 
 const renderModal = () => {
   const onClose = vi.fn();
@@ -51,8 +50,7 @@ describe('BulkEditModal', () => {
     const dialog = await screen.findByRole('dialog', { name: /Bulk Edit Courses/ });
 
     await user.click(within(dialog).getByRole('checkbox', { name: 'React Basics' }));
-    const panel = within(dialog).getByRole('tabpanel');
-    await user.click(within(panel).getByRole('combobox', { name: 'Visibility' }));
+    await user.click(lastOf(within(dialog).getAllByRole('combobox', { name: 'Visibility' })));
     await user.click(await screen.findByRole('option', { name: 'Private' }));
     await user.click(within(dialog).getByRole('button', { name: 'Apply to 1 course' }));
 
@@ -68,45 +66,15 @@ describe('BulkEditModal', () => {
     await user.click(within(dialog).getByRole('checkbox', { name: 'React Basics' }));
     await user.click(within(dialog).getByRole('button', { name: 'Apply to 1 course' }));
     expect(await screen.findByText('Fill in at least one field to update')).toBeInTheDocument();
-
-    await user.click(within(dialog).getByRole('tab', { name: 'Post Announcement' }));
-    await user.click(within(dialog).getByRole('button', { name: 'Apply to 1 course' }));
-    expect(
-      await screen.findByText('Announcement title and description are required'),
-    ).toBeInTheDocument();
   });
 
-  it('applies a discount campaign and shows a backend error as is', async () => {
-    let body: { discountPercent?: number; courseIds?: string[] } = {};
-    let status = 400;
-    server.use(
-      http.patch('*/api/courses/bulk/discount', async ({ request }) => {
-        body = (await request.json()) as typeof body;
-        return status === 400 ? fail(400, 'Every course needs a list price above 0') : ok(null);
-      }),
-    );
-    const { user } = renderModal();
+  it('has only the fields to update (no tabs, discount or announcement)', async () => {
+    renderModal();
     const dialog = await screen.findByRole('dialog', { name: /Bulk Edit Courses/ });
 
-    await user.click(within(dialog).getByRole('checkbox', { name: 'React Basics' }));
-    await user.click(within(dialog).getByRole('tab', { name: 'Discount Campaign' }));
-    await user.click(within(dialog).getByRole('button', { name: 'Apply to 1 course' }));
-    expect(
-      await screen.findByText('Discount percentage must be between 1 and 99'),
-    ).toBeInTheDocument();
-
-    await user.type(within(dialog).getByLabelText('Discount Percentage'), '30');
-    await user.type(
-      within(dialog).getByLabelText('Discount Ends At'),
-      toDateTimeInput(new Date(Date.now() + DAY_MS)),
-    );
-    expect(within(dialog).getByText('1 selected course will get 30% off')).toBeInTheDocument();
-    await user.click(within(dialog).getByRole('button', { name: 'Apply to 1 course' }));
-    expect(await screen.findByText('Every course needs a list price above 0')).toBeInTheDocument();
-
-    status = 200;
-    await user.click(within(dialog).getByRole('button', { name: 'Apply to 1 course' }));
-    expect(await screen.findByText('Discount applied to 1 course')).toBeInTheDocument();
-    expect(body).toMatchObject({ courseIds: [REACT._id], discountPercent: 30 });
+    expect(within(dialog).getByRole('heading', { name: 'Update Fields' })).toBeInTheDocument();
+    expect(within(dialog).queryByRole('tab')).not.toBeInTheDocument();
+    expect(within(dialog).queryByText('Discount Campaign')).not.toBeInTheDocument();
+    expect(within(dialog).queryByText('Post Announcement')).not.toBeInTheDocument();
   });
 });

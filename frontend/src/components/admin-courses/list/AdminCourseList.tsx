@@ -52,7 +52,6 @@ export const AdminCourseList: FC<AdminCourseListProps> = ({
                   course={course}
                   canManage={canManage}
                   busy={actions.busyId === course._id}
-                  onToggleStatus={actions.toggleStatus}
                   onDelete={actions.remove}
                 />
               }

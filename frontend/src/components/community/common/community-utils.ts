@@ -5,6 +5,7 @@ import {
   type Reaction,
   type ReactionType,
 } from '@/schemas/community.schema';
+import { withAuthPanel } from '@/utils/auth-drawer';
 
 /** Counts above this show as "99+" (as in the old page). */
 const COUNT_CAP = 99;
@@ -54,4 +55,5 @@ export const communityPostHref = (postId: string): string =>
   `/community-hub/${encodeURIComponent(postId)}`;
 export const communityProfileHref = (userId: string): string =>
   `/community-hub/users/${encodeURIComponent(userId)}`;
-export const signInHref = (path: string): string => `/auth/login?next=${encodeURIComponent(path)}`;
+/** The sign-in panel on this page, coming back here after signing in. */
+export const signInHref = (path: string): string => withAuthPanel(path, '', 'login', path);

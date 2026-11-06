@@ -7,6 +7,7 @@ import { useCourseTypes } from '@/api/catalog.api';
 import { useCatalogCounts } from '@/api/public.api';
 import { QueryState } from '@/components/common/QueryState';
 
+import { CourseSectionSkeleton } from './CourseSectionSkeleton';
 import { CourseShowcaseSection } from './CourseShowcaseSection';
 
 import type { FC } from 'react';
@@ -19,7 +20,8 @@ interface CourseTypeSectionsProps {
 const FREE = { kind: 'free' } as const;
 
 /**
- * Home page and catalog: one box per course type that has paid courses (in the Course Setup order) with the
+ * Home page and catalog: one box per course type that has paid courses (by its home position from Course
+ * Setup, then name) with the
  * type's own name and description, then one box with every free course. Each box has its own category cards
  * and paging.
  */
@@ -32,15 +34,23 @@ export const CourseTypeSections: FC<CourseTypeSectionsProps> = ({ idPrefix }) =>
     (type) => (paidByType[type._id]?.total ?? 0) > 0,
   );
 
+  if (types.isPending || counts.isPending) {
+    return (
+      <>
+        <CourseSectionSkeleton />
+        <CourseSectionSkeleton />
+      </>
+    );
+  }
+
   return (
     <QueryState
-      isLoading={types.isPending || counts.isPending}
+      isLoading={false}
       error={types.error ?? counts.error}
       onRetry={() => {
         void types.refetch();
         void counts.refetch();
       }}
-      skeletonRows={6}
     >
       <Box>
         {typesWithCourses.map((type) => (

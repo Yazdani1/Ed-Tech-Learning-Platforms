@@ -19,7 +19,19 @@ export const useSetupColumns = (
 ): DataColumn<SetupItem>[] => {
   const { t } = useTranslation();
 
+  const positionColumn: DataColumn<SetupItem>[] =
+    kind === 'courseType'
+      ? [
+          {
+            key: 'position',
+            header: t('showcase.setup.position'),
+            render: (item) => item.position ?? t('showcase.setup.noPosition'),
+          },
+        ]
+      : [];
+
   return [
+    ...positionColumn,
     {
       key: 'name',
       header: t('showcase.setup.name'),

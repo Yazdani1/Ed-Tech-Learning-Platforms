@@ -4,7 +4,8 @@ import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import { useTranslation } from 'react-i18next';
 
-import { formatBdt, getCoursePriceInfo, localizeDigits } from '@/utils/price';
+import { CouponField } from '@/components/coupon-field/CouponField';
+import { formatBdt, localizeDigits } from '@/utils/price';
 
 import { PaymentCourseHeader } from './PaymentCourseHeader';
 import { PAYMENT_CARD_SX } from './payment-methods';
@@ -12,17 +13,22 @@ import { PaymentPayAction } from './PaymentPayAction';
 import { PaymentPriceRow } from './PaymentPriceRow';
 import { PaymentTotal } from './PaymentTotal';
 
+import type { PaymentMethodId } from './payment-methods';
+import type { AppliedCoupon } from '@/components/coupon-field/useAppliedCoupon';
 import type { Course } from '@/schemas/browse.schema';
 import type { FC } from 'react';
 
 interface PaymentOrderSummaryProps {
   course: Course;
+  /** The order's coupon (pre-filled from the course page; one per order) */
+  coupon: AppliedCoupon;
+  method: PaymentMethodId;
 }
 
-/** Right side of the payment page: the course, the price lines, the total and the pay button. */
-export const PaymentOrderSummary: FC<PaymentOrderSummaryProps> = ({ course }) => {
+/** Right side of the payment page: the course, the coupon, the price lines, the total and the pay button. */
+export const PaymentOrderSummary: FC<PaymentOrderSummaryProps> = ({ course, coupon, method }) => {
   const { t, i18n } = useTranslation();
-  const price = getCoursePriceInfo(course);
+  const { price } = coupon;
   const money = (value: number): string => localizeDigits(formatBdt(value), i18n.language);
 
   return (
@@ -33,6 +39,9 @@ export const PaymentOrderSummary: FC<PaymentOrderSummaryProps> = ({ course }) =>
     >
       <PaymentCourseHeader course={course} />
       <Divider sx={{ mb: 2 }} />
+      <Box sx={{ mb: 2 }}>
+        <CouponField coupon={coupon} />
+      </Box>
       <Box component="dl" sx={{ m: 0, display: 'grid', gap: 1.25, mb: 2 }}>
         <PaymentPriceRow label={t('payment.regularPrice')}>
           <Box component={price.hasDiscount ? 's' : 'span'} sx={{ color: '#475569' }}>
@@ -53,7 +62,7 @@ export const PaymentOrderSummary: FC<PaymentOrderSummaryProps> = ({ course }) =>
         </PaymentPriceRow>
       </Box>
       <PaymentTotal price={price} />
-      <PaymentPayAction course={course} />
+      <PaymentPayAction course={course} couponCode={coupon.applied?.code} method={method} />
     </Box>
   );
 };

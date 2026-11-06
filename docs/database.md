@@ -6,6 +6,12 @@
 erDiagram
   Course ||--o{ Announcement : "course"
   User ||--o{ Announcement : "postedBy"
+  AnnouncementBroadcast ||--o{ Announcement : "broadcast"
+  Course }o--o{ AnnouncementBroadcast : "courses"
+  User ||--o{ AnnouncementBroadcast : "postedBy"
+  Announcement ||--o{ AnnouncementView : "announcement"
+  AnnouncementBroadcast ||--o{ AnnouncementView : "broadcast"
+  User ||--o{ AnnouncementView : "student"
   Question ||--o{ Answer : "question"
   User ||--o{ Answer : "postedBy"
   User }o--o{ Answer : "upvotes"
@@ -28,12 +34,15 @@ erDiagram
   User ||--o{ CommunityReply : "author"
   User ||--o{ CommunityReply : "archivedBy"
   User ||--o{ CommunitySetting : "updatedBy"
+  Course ||--o{ Coupon : "course"
+  User ||--o{ Coupon : "createdBy"
   Category ||--o{ Course : "category"
   CourseType ||--o{ Course : "courseType"
   Teacher }o--o{ Course : "teachers"
   Section }o--o{ Course : "sections"
   Tool }o--o{ Course : "toolsSection.tools"
   User ||--o{ Course : "createdBy"
+  Course ||--o{ CourseView : "course"
   User ||--o{ Enrollment : "student"
   Course ||--o{ Enrollment : "course"
   User ||--o{ GroupChatChannel : "creator"
@@ -42,6 +51,8 @@ erDiagram
   User ||--o{ HomeHeroPost : "createdBy"
   Section ||--o{ Lecture : "section"
   User ||--o{ Notification : "sentBy"
+  Course }o--o{ Promo : "courses"
+  User ||--o{ Promo : "createdBy"
   Course ||--o{ Question : "course"
   User ||--o{ Question : "postedBy"
   User }o--o{ Question : "upvotes"
@@ -74,6 +85,27 @@ erDiagram
     String title "required"
     String description "required"
     ObjectId postedBy FK "required"
+    ObjectId broadcast FK
+    String image_url
+    ObjectId _id PK
+    Date createdAt
+    Date updatedAt
+  }
+  AnnouncementBroadcast {
+    String title "required"
+    String description "required"
+    String image_url
+    String image_publicId
+    Array courses FK
+    ObjectId postedBy FK "required"
+    ObjectId _id PK
+    Date createdAt
+    Date updatedAt
+  }
+  AnnouncementView {
+    ObjectId announcement FK "required"
+    ObjectId broadcast FK
+    ObjectId student FK "required"
     ObjectId _id PK
     Date createdAt
     Date updatedAt
@@ -208,6 +240,21 @@ erDiagram
     Date createdAt
     Date updatedAt
   }
+  Coupon {
+    ObjectId course FK "required"
+    String code "required, unique"
+    String discountType "required"
+    Number value "required"
+    Date startsAt
+    Date endsAt
+    Number usageLimit
+    Number usedCount
+    Boolean isActive
+    ObjectId createdBy FK "required"
+    ObjectId _id PK
+    Date createdAt
+    Date updatedAt
+  }
   Course {
     String title "required"
     String subtitle
@@ -226,10 +273,17 @@ erDiagram
     Number discountPrice
     Number discountPercent
     Date discountEndsAt
+    String discountCode
+    Date discountStartsAt
     Boolean includedInSubscription
     Array allowedSubscriptionPlans
     String status
     Date publishedAt
+    Date firstPublishedAt
+    String batchNumber
+    String liveClassSchedule
+    String supportClassSchedule
+    Number viewCount
     Array whatYouWillLearn
     Array whatYouWillGet
     Array requirements
@@ -253,9 +307,17 @@ erDiagram
     String name "required"
     String slug "required, unique"
     String description
+    Number position
     ObjectId _id PK
     Date createdAt
     Date updatedAt
+  }
+  CourseView {
+    ObjectId course FK "required"
+    String visitor "required"
+    String day "required"
+    Date createdAt
+    ObjectId _id PK
   }
   Enrollment {
     ObjectId student FK "required"
@@ -266,6 +328,9 @@ erDiagram
     Number discountAmount
     Number discountPercent
     String currency
+    String couponCode
+    String couponSource
+    String paymentMethod
     ObjectId _id PK
     Date createdAt
     Date updatedAt
@@ -332,6 +397,20 @@ erDiagram
     Array targetRoles "required"
     ObjectId sentBy FK "required"
     Array recipients
+    ObjectId _id PK
+    Date createdAt
+    Date updatedAt
+  }
+  Promo {
+    String title "required"
+    String code "required, unique"
+    String discountType "required"
+    Number value "required"
+    Date startsAt "required"
+    Date endsAt "required"
+    Array courses FK
+    Boolean isActive
+    ObjectId createdBy FK "required"
     ObjectId _id PK
     Date createdAt
     Date updatedAt

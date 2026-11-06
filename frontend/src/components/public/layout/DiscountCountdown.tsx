@@ -14,12 +14,35 @@ interface DiscountCountdownProps {
   endsAt: string;
   /** Called once when the time is up, so the banner can hide */
   onEnded: () => void;
+  /** "dark" on the red banner (default), "light" on white cards (coupon field) */
+  tone?: 'dark' | 'light';
 }
+
+const TONES = {
+  dark: {
+    box: {
+      bgcolor: 'rgba(17,24,39,0.82)',
+      border: '1px solid rgba(255,255,255,0.22)',
+      minWidth: 172,
+    },
+    label: '#fde68a',
+    value: 'inherit',
+  },
+  light: {
+    box: { bgcolor: '#fff7ed', border: '1px solid #fed7aa', display: 'inline-block' },
+    label: '#9a3412',
+    value: '#7c2d12',
+  },
+} as const;
 
 const TICK_MS = 1000;
 
 /** "ENDS IN 2d 3h 4m 5s", updated every second. */
-export const DiscountCountdown: FC<DiscountCountdownProps> = ({ endsAt, onEnded }) => {
+export const DiscountCountdown: FC<DiscountCountdownProps> = ({
+  endsAt,
+  onEnded,
+  tone = 'dark',
+}) => {
   const { t } = useTranslation();
   const [now, setNow] = useState(() => Date.now());
   const remaining = new Date(endsAt).getTime() - now;
@@ -45,16 +68,21 @@ export const DiscountCountdown: FC<DiscountCountdownProps> = ({ endsAt, onEnded 
         px: 1.5,
         py: 0.75,
         borderRadius: 1,
-        bgcolor: 'rgba(17,24,39,0.82)',
-        border: '1px solid rgba(255,255,255,0.22)',
-        minWidth: 172,
         textAlign: 'center',
+        ...TONES[tone].box,
       }}
     >
-      <Typography variant="caption" sx={{ display: 'block', color: '#fde68a', fontWeight: 900 }}>
+      <Typography
+        variant="caption"
+        sx={{ display: 'block', color: TONES[tone].label, fontWeight: 900 }}
+      >
         {t('public.banner.endsIn')}
       </Typography>
-      <Typography variant="h6" component="p" sx={{ fontWeight: 900, lineHeight: 1.15 }}>
+      <Typography
+        variant="h6"
+        component="p"
+        sx={{ fontWeight: 900, lineHeight: 1.15, color: TONES[tone].value }}
+      >
         {t(parts.days > 0 ? 'public.banner.remainingDays' : 'public.banner.remaining', {
           ...parts,
         })}

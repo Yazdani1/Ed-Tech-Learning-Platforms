@@ -18,6 +18,10 @@ import en_teacher from './locales/en/teacher.json';
 import en_adminCourses from './locales/en/adminCourses.json';
 import en_groupChat from './locales/en/groupChat.json';
 import en_payment from './locales/en/payment.json';
+import en_coupons from './locales/en/coupons.json';
+import en_promos from './locales/en/promos.json';
+import en_revenue from './locales/en/revenue.json';
+import en_announcements from './locales/en/announcements.json';
 import bnBase from './locales/bn.json';
 import bn_public from './locales/bn/public.json';
 import bn_browse from './locales/bn/browse.json';
@@ -36,6 +40,10 @@ import bn_teacher from './locales/bn/teacher.json';
 import bn_adminCourses from './locales/bn/adminCourses.json';
 import bn_groupChat from './locales/bn/groupChat.json';
 import bn_payment from './locales/bn/payment.json';
+import bn_coupons from './locales/bn/coupons.json';
+import bn_promos from './locales/bn/promos.json';
+import bn_revenue from './locales/bn/revenue.json';
+import bn_announcements from './locales/bn/announcements.json';
 
 export const en = {
   ...enBase,
@@ -56,6 +64,10 @@ export const en = {
   adminCourses: en_adminCourses,
   groupChat: en_groupChat,
   payment: en_payment,
+  coupons: en_coupons,
+  promos: en_promos,
+  revenue: en_revenue,
+  announcements: en_announcements,
 };
 
 export const bn = {
@@ -77,4 +89,8 @@ export const bn = {
   adminCourses: bn_adminCourses,
   groupChat: bn_groupChat,
   payment: bn_payment,
+  coupons: bn_coupons,
+  promos: bn_promos,
+  revenue: bn_revenue,
+  announcements: bn_announcements,
 };

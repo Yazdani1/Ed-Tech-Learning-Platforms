@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page, type TestInfo } from '@playwright/test';
 
-import { ACCOUNTS, E2E_PASSWORD, expectNoHorizontalScroll, uniqueEmail } from './helpers';
+import { ACCOUNTS, E2E_PASSWORD, expectNoHorizontalScroll, isPhone, uniqueEmail } from './helpers';
 
 interface Created {
   _id: string;
@@ -49,7 +49,7 @@ const enrolNewStudent = async (page: Page, testInfo: TestInfo, courseId: string)
 };
 
 test.describe('Student area', () => {
-  test('dashboard and My Courses list the enrolment; the student can remove it', async ({
+  test('My Courses lists the enrolment and has no way to remove it', async ({
     page,
     request,
   }, testInfo) => {
@@ -57,30 +57,72 @@ test.describe('Student area', () => {
     const courseId = await createFreeCourse(request, title);
     await enrolNewStudent(page, testInfo, courseId);
 
-    await page.goto('/student/dashboard');
-    await expect(page.getByText('Welcome back, E2E Learner.', { exact: false })).toBeVisible();
+    await page.goto('/student/courses');
+    await expect(page.getByRole('heading', { name: 'My Courses', level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: new RegExp(title) })).toHaveAttribute(
       'href',
       `/student/courses/${courseId}/learn`,
     );
-    await expectNoHorizontalScroll(page);
-
-    await page.getByRole('link', { name: 'All my courses' }).click();
-    await expect(page).toHaveURL(/\/student\/courses$/);
     const direct = page.getByRole('region', { name: 'Free & Paid Courses' });
     await expect(direct.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await expectNoHorizontalScroll(page);
+
+    await expect(page.getByRole('button', { name: /Remove .* from my courses/ })).toHaveCount(0);
 
     await page.getByLabel('Search courses...').fill('no-such-course-xyz');
     await expect(page.getByText('No courses match "no-such-course-xyz".')).toBeVisible();
     await expect(page).toHaveURL(/search=no-such-course-xyz/);
     await page.getByLabel('Search courses...').fill('');
+    await expect(direct.getByRole('heading', { name: title, exact: true })).toBeVisible();
+  });
 
-    await page.getByRole('button', { name: `Remove "${title}" from my courses` }).click();
-    const dialog = page.getByRole('dialog', { name: 'Remove Course' });
-    await dialog.getByRole('button', { name: 'Remove' }).click();
+  test('the course page has no "leave" button for an enrolled student', async ({
+    page,
+    request,
+  }, testInfo) => {
+    const title = `E2E Leave ${testInfo.project.name} ${Date.now()}`;
+    const courseId = await createFreeCourse(request, title);
+    await enrolNewStudent(page, testInfo, courseId);
 
-    await expect(page.getByText(`Removed from "${title}"`)).toBeVisible();
-    await expect(page.getByText("You haven't enrolled in any courses yet.")).toBeVisible();
+    await page.goto(`/courses/${courseId}`);
+
+    await expect(page.getByRole('link', { name: 'Go to this course' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Leave this course' })).toHaveCount(0);
+  });
+
+  test('the student menu has no Pricing and the old dashboard is gone', async ({
+    page,
+    request,
+  }, testInfo) => {
+    const courseId = await createFreeCourse(
+      request,
+      `E2E Menu ${testInfo.project.name} ${Date.now()}`,
+    );
+    await enrolNewStudent(page, testInfo, courseId);
+    await page.goto('/student/courses');
+
+    if (isPhone(page)) await page.getByRole('button', { name: 'Open menu' }).click();
+    const menu = page.getByRole('navigation', { name: 'Main menu' }).filter({ visible: true });
+    await expect(menu.getByRole('link', { name: 'My Courses' })).toBeVisible();
+    await expect(menu.getByRole('link', { name: 'Pricing' })).toHaveCount(0);
+    await expect(menu.getByRole('link', { name: 'Dashboard' })).toHaveCount(0);
+  });
+
+  test('the top bar shows the student with the avatar and the student ID', async ({
+    page,
+    request,
+  }, testInfo) => {
+    const courseId = await createFreeCourse(
+      request,
+      `E2E Top ${testInfo.project.name} ${Date.now()}`,
+    );
+    await enrolNewStudent(page, testInfo, courseId);
+    await page.goto('/student/courses');
+
+    const user = page.getByTestId('top-bar-user');
+    await expect(user).toBeVisible();
+    await expect(user.locator('.MuiAvatar-root')).toBeVisible();
+    await expect(user.getByText('E2E Learner')).toBeVisible();
+    await expect(user.getByText(/^Student ID: \d{3}-\d{3}-\d{3}$/)).toBeVisible();
   });
 });

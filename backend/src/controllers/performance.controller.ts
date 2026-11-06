@@ -105,7 +105,7 @@ export const getPerformanceOverview = asyncHandler(async (req: Request, res: Res
 
   // Every enrolment of the selected course(s), with the course price (revenue fallback)
   const allEnrollments = await Enrollment.find(courseFilter)
-    .select('course enrollmentType paidPrice createdAt')
+    .select('course enrollmentType listPrice paidPrice createdAt')
     .populate('course', 'price')
     .lean();
 

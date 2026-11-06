@@ -29,7 +29,8 @@
       "first": "First page",
       "last": "Last page",
       "next": "Next page",
-      "previous": "Previous page"
+      "previous": "Previous page",
+      "label": "Pages"
     },
     "all": "All",
     "filters": "Filters",
@@ -78,7 +79,10 @@
       "communication": "Communication",
       "website": "Website",
       "analytics": "Analytics"
-    }
+    },
+    "promos": "Promos",
+    "announcements": "Announcements",
+    "revenue": "Revenue"
   },
   "auth": {
     "login": "Login",
@@ -165,7 +169,8 @@
   "shell": {
     "openMenu": "Open menu",
     "collapseSidebar": "Collapse sidebar",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "studentNumber": "Student ID: {{number}}"
   },
   "pages": {
     "migrating": "This page is being moved to the new app. It will appear here soon.",

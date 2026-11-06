@@ -5,11 +5,18 @@ import { useTranslation } from 'react-i18next';
 
 import { useEnroll } from '@/api/catalog.api';
 
+import type { EnrollRequest } from '@/api/catalog.api';
 import type { Course } from '@/schemas/browse.schema';
 
 export interface EnrollAction {
-  /** `viaSubscription` false on a Paid course buys it directly (never silently through the plan) */
-  enroll: (viaSubscription: boolean) => void;
+  /**
+   * `viaSubscription` false on a Paid course buys it directly (never silently through the plan); `order` adds
+   * the coupon code and payment method of a direct purchase.
+   */
+  enroll: (
+    viaSubscription: boolean,
+    order?: Pick<EnrollRequest, 'couponCode' | 'paymentMethod'>,
+  ) => void;
   enrolling: boolean;
 }
 
@@ -19,9 +26,9 @@ export const useEnrollAction = (course: Course): EnrollAction => {
   const mutation = useEnroll(course._id);
   return {
     enrolling: mutation.isPending,
-    enroll: (viaSubscription) => {
-      const body =
-        course.pricing === 'Paid' && !viaSubscription ? { enrollmentType: 'paid' as const } : {};
+    enroll: (viaSubscription, order = {}) => {
+      const body: EnrollRequest =
+        course.pricing === 'Paid' && !viaSubscription ? { enrollmentType: 'paid', ...order } : {};
       // mutateAsync, not mutate(body, { onSuccess }): the enrolment refresh remounts the card, and per-call
       // callbacks of `mutate` are dropped once the component that called it is gone (the toast never showed)
       void mutation

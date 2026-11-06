@@ -1,7 +1,6 @@
 'use client';
 
 import Grid from '@mui/material/Grid';
-import Skeleton from '@mui/material/Skeleton';
 import { useTranslation } from 'react-i18next';
 
 import { useEnrolledCourseIds } from '@/api/catalog.api';
@@ -9,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { STUDENT_ROLES } from '@/utils/roles';
 
 import { CourseCard } from './CourseCard';
+import { HomeCourseCardSkeleton } from './HomeCourseCardSkeleton';
 
 import type { CourseCardData } from '@/schemas/public.schema';
 import type { FC } from 'react';
@@ -23,7 +23,6 @@ interface CourseGridProps {
 }
 
 const DEFAULT_SIZE = { xs: 12, sm: 6, md: 4 };
-const SKELETON_HEIGHT = 440;
 
 /** Grid of course cards; a signed-in Student sees "Continue Learning" on courses they are enrolled in. */
 export const CourseGrid: FC<CourseGridProps> = ({
@@ -41,7 +40,7 @@ export const CourseGrid: FC<CourseGridProps> = ({
       <Grid container spacing={3} aria-busy="true" aria-label={t('common.loading')}>
         {Array.from({ length: skeletons }, (_, index) => (
           <Grid key={index} size={size}>
-            <Skeleton variant="rounded" height={SKELETON_HEIGHT} />
+            <HomeCourseCardSkeleton />
           </Grid>
         ))}
       </Grid>

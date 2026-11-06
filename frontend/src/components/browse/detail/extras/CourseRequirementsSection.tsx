@@ -16,6 +16,8 @@ interface CourseRequirementsSectionProps {
   items: readonly string[];
 }
 
+/** Warm full-width background, different from the grey "What you'll learn" band */
+const REQUIREMENTS_BAND = '#fdf4e7';
 /** The first card starts on blue */
 const COLOR_OFFSET = 1;
 
@@ -24,7 +26,11 @@ export const CourseRequirementsSection: FC<CourseRequirementsSectionProps> = ({ 
   const { t } = useTranslation();
   if (items.length === 0) return null;
   return (
-    <DetailSection id="course-requirements" title={t('browse.detail.requirements')}>
+    <DetailSection
+      id="course-requirements"
+      title={t('browse.detail.requirements')}
+      band={REQUIREMENTS_BAND}
+    >
       <Box component="ul" sx={gridSx(2, 3)}>
         {items.map((item, index) => {
           const colors = pickByIndex(TILE_COLORS, index + COLOR_OFFSET);
@@ -32,6 +38,7 @@ export const CourseRequirementsSection: FC<CourseRequirementsSectionProps> = ({ 
             <TopBarCard
               key={`${index}-${item}`}
               index={index + COLOR_OFFSET}
+              elevated
               sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 2 }}
             >
               <Box sx={{ ...ICON_TILE_SX, bgcolor: colors.bg, color: colors.fg }}>

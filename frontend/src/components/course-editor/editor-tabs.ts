@@ -1,6 +1,7 @@
 /** The editor's sections, in menu order (labels: catalog.tabs.<id>). */
 export const EDITOR_TABS = [
   'basic',
+  'pricing',
   'media',
   'content',
   'tools',
@@ -12,6 +13,8 @@ export const EDITOR_TABS = [
   'curriculum',
   'liveClass',
   'quizBank',
+  'coupons',
+  'settings',
 ] as const;
 export type EditorTab = (typeof EDITOR_TABS)[number];
 
@@ -26,6 +29,8 @@ export const SAVED_COURSE_TABS: readonly EditorTab[] = [
   'curriculum',
   'liveClass',
   'quizBank',
+  'coupons',
+  'settings',
 ];
 
 export const tabId = (tab: EditorTab): string => `course-editor-tab-${tab}`;

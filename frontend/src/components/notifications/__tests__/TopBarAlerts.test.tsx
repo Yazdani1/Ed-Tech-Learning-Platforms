@@ -47,7 +47,7 @@ describe('TopBarAlerts', () => {
   });
 
   it('refreshes the badge when a notification arrives over the socket', async () => {
-    setLocation('/student/dashboard');
+    setLocation('/student/courses');
     let count = 0;
     const handlers = new Map<string, Handler>();
     const socket = {

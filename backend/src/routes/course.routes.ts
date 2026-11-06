@@ -7,10 +7,10 @@ import {
 	updateCourseStatus,
 	deleteCourse,
 	bulkUpdateCourses,
-	bulkApplyCourseDiscount,
 	browseCourses,
-	getActiveDiscountSummary,
+	suggestBatchNumber,
 } from '../controllers/course.controller';
+import { recordCourseView } from '../controllers/courseView.controller';
 import {
 	addSection,
 	updateSection,
@@ -30,10 +30,10 @@ const adminRoles = ['Super Admin', 'Admin'] as const;
 
 router.get('/', optionalProtect, getCourses);
 router.get('/browse', browseCourses);
-router.get('/discounts/active', getActiveDiscountSummary);
+router.get('/batch-number/suggest', protect, authorize(...adminRoles), suggestBatchNumber);
 router.patch('/bulk', protect, authorize(...adminRoles), bulkUpdateCourses);
-router.patch('/bulk/discount', protect, authorize(...adminRoles), bulkApplyCourseDiscount);
 router.get('/:id', optionalProtect, getCourseById);
+router.post('/:id/view', optionalProtect, recordCourseView);
 
 router.post(
 	'/',

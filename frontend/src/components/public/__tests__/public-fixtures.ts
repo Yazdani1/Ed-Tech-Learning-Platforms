@@ -95,5 +95,5 @@ export const browsePage = (
 /** Every public read the layout and home page make, answering with empty data unless overridden. */
 export const publicChromeHandlers = [
   http.get('*/api/home-hero-posts/logo/public', () => ok(null)),
-  http.get('*/api/courses/discounts/active', () => ok(null)),
+  http.get('*/api/promos/active', () => ok([])),
 ];

@@ -12,7 +12,13 @@ import { useTranslation } from 'react-i18next';
 
 import { SafeHtml } from '@/components/common/SafeHtml';
 
-import { CARD_RADIUS, SOFT_BG, SOFT_BORDER } from '../detail-styles';
+import {
+  CARD_RADIUS,
+  LIGHT_CARD_SHADOW,
+  pickByIndex,
+  SOFT_BORDER,
+  WEEK_COLORS,
+} from '../detail-styles';
 
 import { LiveClassItem } from './LiveClassItem';
 import { WeekTile } from './WeekTile';
@@ -28,10 +34,9 @@ interface LiveClassWeekCardProps {
 }
 
 const CARD_SX = {
-  border: `1px solid ${SOFT_BORDER}`,
   borderRadius: `${CARD_RADIUS} !important`,
   overflow: 'hidden',
-  boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
+  boxShadow: LIGHT_CARD_SHADOW,
   '&::before': { display: 'none' },
 } as const;
 const SUMMARY_SX = {
@@ -45,7 +50,7 @@ const COUNT_CHIP_SX = {
   display: { xs: 'none', sm: 'inline-flex' },
   flexShrink: 0,
   mr: 1,
-  bgcolor: SOFT_BG,
+  bgcolor: 'common.white',
   border: `1px solid ${SOFT_BORDER}`,
   '& .MuiChip-icon': { color: '#1d4ed8' },
 } as const;
@@ -65,6 +70,7 @@ export const LiveClassWeekCard: FC<LiveClassWeekCardProps> = ({
   onToggle,
 }) => {
   const { t } = useTranslation();
+  const colors = pickByIndex(WEEK_COLORS, index);
   return (
     <Accordion
       expanded={expanded}
@@ -73,7 +79,7 @@ export const LiveClassWeekCard: FC<LiveClassWeekCardProps> = ({
       }}
       elevation={0}
       disableGutters
-      sx={CARD_SX}
+      sx={{ ...CARD_SX, bgcolor: colors.bg, border: `1px solid ${colors.border}` }}
     >
       <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={SUMMARY_SX}>
         <WeekTile index={index} />

@@ -29,7 +29,8 @@
       "first": "প্রথম পৃষ্ঠা",
       "last": "শেষ পৃষ্ঠা",
       "next": "পরের পৃষ্ঠা",
-      "previous": "আগের পৃষ্ঠা"
+      "previous": "আগের পৃষ্ঠা",
+      "label": "পেজ"
     },
     "all": "সব",
     "filters": "ফিল্টার",
@@ -78,7 +79,10 @@
       "communication": "যোগাযোগ",
       "website": "ওয়েবসাইট",
       "analytics": "অ্যানালিটিক্স"
-    }
+    },
+    "promos": "প্রোমো",
+    "announcements": "ঘোষণা",
+    "revenue": "আয়"
   },
   "auth": {
     "login": "লগইন",
@@ -165,7 +169,8 @@
   "shell": {
     "openMenu": "মেনু খুলুন",
     "collapseSidebar": "সাইডবার ছোট করুন",
-    "expandSidebar": "সাইডবার বড় করুন"
+    "expandSidebar": "সাইডবার বড় করুন",
+    "studentNumber": "শিক্ষার্থী আইডি: {{number}}"
   },
   "pages": {
     "migrating": "এই পেজটি নতুন অ্যাপে আনা হচ্ছে। শীঘ্রই এখানে দেখা যাবে।",

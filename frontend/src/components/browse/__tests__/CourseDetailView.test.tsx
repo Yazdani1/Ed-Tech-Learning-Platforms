@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ConfirmProvider } from '@/context/ConfirmContext';
 import { fail, makeUser, ok, signedInAs } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
+import { setLocation } from '@/test/next-navigation';
 import { renderWithProviders } from '@/test/render';
 
 import { CourseDetailView } from '../detail/CourseDetailView';
@@ -73,6 +74,7 @@ const renderPage = () =>
 describe('CourseDetailView (/courses/[id])', () => {
   it('shows the course to a visitor with sign-up and sign-in links', async () => {
     server.use(...courseHandlers());
+    setLocation(`/courses/${course._id}`);
     renderPage();
 
     expect(
@@ -82,9 +84,12 @@ describe('CourseDetailView (/courses/[id])', () => {
     expect(screen.getByRole('heading', { name: 'Instructors & Mentors' })).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: 'Enroll Free' })).toHaveAttribute(
       'href',
-      '/auth/register',
+      `/courses/${course._id}?auth=register&next=${encodeURIComponent(`/courses/${course._id}`)}`,
     );
-    expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute('href', '/auth/login');
+    expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
+      'href',
+      `/courses/${course._id}?auth=login&next=${encodeURIComponent(`/courses/${course._id}`)}`,
+    );
     expect(screen.queryByRole('link', { name: 'Edit Course' })).not.toBeInTheDocument();
     // The banner shows no status and no "Created by" line
     expect(screen.queryByText('Published')).not.toBeInTheDocument();
@@ -407,27 +412,15 @@ describe('CourseDetailView (/courses/[id])', () => {
     );
   });
 
-  it('an enrolled student goes to the course player and can leave the course', async () => {
-    let deleted = false;
-    server.use(
-      ...courseHandlers(),
-      ...studentHandlers(true),
-      http.delete(`*/api/enrollments/${course._id}`, () => {
-        deleted = true;
-        return ok(undefined);
-      }),
-    );
+  it('an enrolled student goes to the course player and cannot remove the enrolment', async () => {
+    server.use(...courseHandlers(), ...studentHandlers(true));
     renderPage();
 
     expect(await screen.findByRole('link', { name: 'Go to this course' })).toHaveAttribute(
       'href',
       `/student/courses/${course._id}/learn`,
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Leave this course' }));
-    const dialog = await screen.findByRole('dialog');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Leave this course' }));
-    expect(await screen.findByText('You left the course')).toBeInTheDocument();
-    expect(deleted).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Leave this course' })).not.toBeInTheDocument();
   });
 
   it.each<[UserRole, boolean]>([

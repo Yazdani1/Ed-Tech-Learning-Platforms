@@ -6,8 +6,8 @@ Plain-language reference for every screen. Endpoints: [backend-features.md](back
 
 ```mermaid
 flowchart LR
-    V([Visitor]) --> L[Sign in<br/>/auth/login]
-    V --> R[Create account<br/>/auth/register]
+    V([Visitor]) --> L[Sign in panel<br/>?auth=login]
+    V --> R[Create account panel<br/>?auth=register]
     R -- "new student" --> S
     L -- student --> S[Student area<br/>/student]
     L -- teacher --> T[Teacher area<br/>/teacher]
@@ -18,8 +18,7 @@ flowchart LR
 
 | Route                                                                      | Screen                                                                                                                                  | Who can use it                                                            |
 | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `/auth/login`                                                              | Sign in                                                                                                                                 | Visitors who are not signed in                                            |
-| `/auth/register`                                                           | Create account                                                                                                                          | Visitors who are not signed in                                            |
+| any page `?auth=login` / `?auth=register`                                  | Sign in / Create account panel (right side); `/auth/login` and `/auth/register` redirect to it                                          | Visitors                                                                  |
 | `/admin/*`, `/student/*`, `/teacher/*`                                     | The area's roles                                                                                                                        | Signed-in shell (menu, user, sign out)                                    |
 | `/`                                                                        | Home                                                                                                                                    | Everyone                                                                  |
 | `/teachers`                                                                | Our Instructors                                                                                                                         | Everyone                                                                  |
@@ -28,7 +27,7 @@ flowchart LR
 | `/free-courses`                                                            | Free courses by course type                                                                                                             | Everyone                                                                  |
 | `/courses/[id]`                                                            | Course page (details, previews, enrolment)                                                                                              | Everyone; actions depend on the role                                      |
 | `/courses/[id]/payment`                                                    | Payment details of a paid course (methods, order summary)                                                                               | Everyone can see it; only students can complete it                        |
-| `/student/dashboard`                                                       | Student dashboard                                                                                                                       | Students                                                                  |
+| `/promo`                                                                   | Promo courses: every course of the running promo                                                                                        | Everyone                                                                  |
 | `/student/courses`                                                         | My Courses                                                                                                                              | Students                                                                  |
 | `/admin/profile`, `/student/profile`, `/teacher/profile`                   | My Profile                                                                                                                              | Everyone signed in (each in their own area)                               |
 | `/admin/categories`                                                        | Course setup: categories                                                                                                                | Super Admin, Admin                                                        |
@@ -39,9 +38,12 @@ flowchart LR
 | `/admin/company-contact`                                                   | Company Contact: phone, WhatsApp, email, address, social links                                                                          | Super Admin, Admin                                                        |
 | `/admin/courses`                                                           | Courses (staff list, filters, bulk edit)                                                                                                | Super Admin, Admin; Moderator (published courses, no manager tools)       |
 | `/admin/courses/[id]`                                                      | Course details (staff view of the course page)                                                                                          | Super Admin, Admin, Moderator                                             |
-| `/admin/enrollments/[courseId]`                                            | Course enrolments (students, revenue, CSV export)                                                                                       | Super Admin, Admin; Moderator (students + CSV only)                       |
+| `/admin/enrollments/[courseId]`                                            | Course enrolments (orders with prices and coupons, details panel, CSV export)                                                           | Super Admin, Admin; Moderator (students + CSV only)                       |
+| `/admin/revenue`                                                           | Revenue: sales cards and charts, every order, CSV and PDF                                                                               | Super Admin, Admin                                                        |
+| `/admin/promos`                                                            | Promos: discounts for chosen paid courses (banner, pop-up, promo page)                                                                  | Super Admin, Admin                                                        |
+| `/admin/announcements`                                                     | Announcements sent to several courses, with "seen by"                                                                                   | Super Admin, Admin, Moderator                                             |
 | `/admin/courses/create`                                                    | Create a new course (details, cover, learning content) as a Draft                                                                       | Super Admin, Admin                                                        |
-| `/admin/courses/[id]/edit`                                                 | Edit a course: details, cover, learning content, curriculum, live classes, quiz banks; publish                                          | Super Admin, Admin                                                        |
+| `/admin/courses/[id]/edit`                                                 | Edit a course: basic info, pricing, cover, content, curriculum, live classes, quiz banks, coupons, settings                             | Super Admin, Admin                                                        |
 | `/student/courses/[courseId]/learn`                                        | The course player: video lectures, live classes, announcements, study materials, Q&A and quiz practice (full screen, no sidebar)        | Student (enrolled, or with an active plan that covers the course)         |
 | `/teacher/courses/[courseId]/learn`                                        | The same player inside the teacher area; the teacher can also post announcements, study materials and live classes and see the students | Teacher of the course                                                     |
 | `/admin/courses/[id]/learn`                                                | The same player inside the admin area; staff manage the course content and can download the student list                                | Super Admin, Admin, Moderator                                             |
@@ -67,57 +69,43 @@ flowchart LR
 
 ## Screen details
 
-### Sign in
+### Sign in / Create account panel
 
-**Route:** `/auth/login` · **Menu:** none (public)
-
-**Who can use it:** visitors who are not signed in. A signed-in user who opens it is sent to their home page.
-
-**What it is for:** signing in with email and password.
-
-**How to use it:**
-
-1. Enter the email and password and press **Sign in**. Empty fields show "This field is required"; a badly
-   formed email shows "Enter a valid email address" (nothing is sent to the server).
-2. A wrong email or password shows the server's message ("Invalid credentials") above the form.
-3. On success a toast says "Logged in successfully" and the app opens the page that asked for sign-in
-   (`?next=`, only same-site pages the role may open) or the role's home page: Super Admin
-   `/admin/dashboard`, Admin and Moderator `/admin/courses`, Teacher `/teacher/courses`, Student
-   `/student/dashboard`.
-4. "Create an account" opens the register page.
-
-**On mobile:** the card fills the screen width; the illustrated left panel and the corner art are hidden.
-
-**API endpoints used:** `GET /api/auth/me`, `POST /api/auth/login`.
-
-**Code:** `frontend/src/app/auth/login/page.tsx`, `frontend/src/components/auth/` (`LoginForm`, `GuestGate`,
-`AuthLayout`), `frontend/src/api/auth.api.ts`, `frontend/src/utils/safe-redirect.ts`.
-
-**Tests:** `components/auth/__tests__/LoginForm.test.tsx`, `GuestGate.test.tsx`,
-`utils/__tests__/safe-redirect.test.ts`; Playwright `frontend/e2e/auth.spec.ts` (desktop + mobile).
-
-### Create account
-
-**Route:** `/auth/register` · **Menu:** none (public)
+**Route:** any page with `?auth=login` or `?auth=register` (and an optional `?next=`) · **Menu:** **Sign In** /
+**Sign Up** in the navbar and the phone menu. The old addresses `/auth/login` and `/auth/register` redirect to the
+home page with the panel open (a safe `?next=` is kept).
 
 **Who can use it:** visitors who are not signed in. The new account is always a Student.
 
-**What it is for:** a student signs up and is signed in at once.
+**What it is for:** signing in or creating an account without leaving the page: a panel slides in from the right.
 
 **How to use it:**
 
-1. Enter full name, email, an optional phone number (digits, spaces, dashes, optional leading +) and a
-   password of at least 6 characters, then press **Create account**.
-2. An email that already has an account shows "Email is already registered".
-3. On success a toast says "Account created successfully" and the student dashboard opens.
+1. **Sign In** (navbar) opens the panel on the current page; enter the email and password and press **Sign in**.
+   Empty fields show "This field is required"; a badly formed email shows "Enter a valid email address"; a wrong
+   email or password shows the server's message ("Invalid credentials").
+2. "Create an account" switches the same panel to the sign-up form (full name, email, optional phone, password of
+   at least 6 characters); "Sign in" switches back. `?next=` is kept.
+3. Buttons that need an account open the panel too: the course page's "Enroll Free" / "Sign In", the payment
+   page's sign-in, pricing, practice quiz and Community Hub. They come back to their page after signing in.
+4. Opening a signed-in page while signed out (for example `/admin/courses`) opens the home page with the panel
+   and `?next=<that page>` (`proxy.ts` and `RequireRole`).
+5. On success a toast confirms it and the panel (`AuthDrawer`, the one place that navigates after signing in)
+   opens the `?next=` page when it is a same-site page the role may open, else the role's home page: Super Admin
+   `/admin/dashboard`, Admin and Moderator `/admin/courses`, Teacher `/teacher/courses`, Student `/student/courses`.
+6. The close icon or Escape closes the panel (removes `?auth` from the address).
 
-**On mobile:** same as Sign in.
+**On mobile:** the panel is full width; fields are one column; buttons at least 44 px.
 
-**API endpoints used:** `GET /api/auth/me`, `POST /api/auth/register`.
+**API endpoints used:** `GET /api/auth/me`, `POST /api/auth/login`, `POST /api/auth/register`.
 
-**Code:** `frontend/src/app/auth/register/page.tsx`, `frontend/src/components/auth/RegisterForm.tsx`.
+**Code:** `frontend/src/components/auth/` (`AuthDrawer` (mounted in `app/providers.tsx`), `LoginForm`,
+`RegisterForm`, `AuthSwitchLink`), `frontend/src/utils/auth-drawer.ts` (`withAuthPanel`, `signInRedirect`),
+`frontend/src/hooks/useAuthPanel.ts`, `frontend/src/app/auth/{login,register}/page.tsx` (redirects),
+`frontend/src/utils/safe-redirect.ts`, `frontend/src/api/auth.api.ts`.
 
-**Tests:** `components/auth/__tests__/RegisterForm.test.tsx`; Playwright `frontend/e2e/auth.spec.ts`.
+**Tests:** `components/auth/__tests__/` (forms and the panel), `utils/__tests__/safe-redirect.test.ts`; Playwright
+`frontend/e2e/auth.spec.ts` (desktop + mobile).
 
 ### Signed-in shell (admin, student, teacher)
 
@@ -125,7 +113,7 @@ flowchart LR
 
 **Who can use it:** `/admin`: Super Admin, Admin, Moderator (`/admin/dashboard`: Super Admin only, others
 are sent to `/admin/courses`); `/student`: Students; `/teacher`: Teachers. Visitors who are not signed in
-are sent to `/auth/login?next=<page>`; other roles are sent to their own home page.
+get the sign-in panel (`/?auth=login&next=<page>`); other roles are sent to their own home page.
 
 **What it is for:** the frame around every signed-in page: the menu of the area, the signed-in user and the
 sign-out button.
@@ -140,18 +128,24 @@ sign-out button.
    role sees none of its items; the collapsed menu shows a line between the groups instead of the headings.
 2. The current page is highlighted. On desktop the arrow button collapses the menu to icons (tooltips show
    the names); course create/edit and course player pages start collapsed.
-3. **Logout** signs out and opens `/auth/login`. If the server cannot be reached, the user stays signed in and
+3. **Logout** signs out and opens the home page with the sign-in panel. If the server cannot be reached, the user stays signed in and
    sees "Could not sign out".
 4. Support Chat and Notifications carry a red unread count; screen readers hear it in the item's name (e.g.
    "Notifications (3 unread)"), and the collapsed menu's tooltip shows it too.
 
-**On mobile:** a top bar with a menu button replaces the sidebar; the menu slides in as a drawer and closes
-after choosing a page.
+5. A top bar on every page shows, at the top right, the signed-in user's picture (or initial), name and role;
+   students see their student number ("Student ID: 123-456-789") instead of the role.
+6. The admin menu also has **Promos** (Course Management), **Announcements** (Communication) and **Revenue**
+   (Analytics). The student menu has no Dashboard or Pricing any more (students land on My Courses).
+
+**On mobile:** the top bar also has the menu button, the app name and the chat / notification badges; the menu
+slides in as a drawer and closes after choosing a page; the user's name and role are hidden below 600 px (the
+picture stays).
 
 **API endpoints used:** `GET /api/auth/me`, `POST /api/auth/logout`.
 
 **Code:** `frontend/src/app/{admin,student/(shell),teacher}/layout.tsx`, `frontend/src/components/layout/`
-(`AppShell`, `SidebarContent`, `SidebarNavItem`, `nav-items.ts`; `AppShell` also mounts `ShellMessaging`, the
+(`AppShell`, `TopBar`, `TopBarUser`, `SidebarContent`, `SidebarNavItem`, `nav-items.ts`; `AppShell` also mounts `ShellMessaging`, the
 live chat and notification updates), `frontend/src/components/permissions/RequireRole.tsx`,
 `frontend/src/proxy.ts`, `frontend/src/context/SocketContext.tsx` (the one Socket.io connection).
 
@@ -183,9 +177,9 @@ later practice quiz and community hub) · **Menu:** the public navbar
    highlighted. A page a Super Admin switched off on the Site Pages screen has no link (navbar, menu drawer and
    footer), and its address shows "Page not found" (`PageVisibilityGate`; the community hub's discussion and
    profile pages too).
-4. Visitors see **Sign In** and **Sign Up**. A signed-in user sees **Dashboard** (their role's home page: Super
-   Admin `/admin/dashboard`, Admin and Moderator `/admin/courses`, Teacher `/teacher/courses`, Student
-   `/student/dashboard`) and their initial in a round avatar (name on hover).
+4. Visitors see **Sign In** and **Sign Up** (they open the auth panel on the page). A signed-in user sees
+   **Dashboard** (their role's home page: Super Admin `/admin/dashboard`, Admin and Moderator `/admin/courses`,
+   Teacher `/teacher/courses`, Student `/student/courses`) and their initial in a round avatar (name on hover).
 5. **Language switch** (left of the sign-in buttons, translate icon): shows the other language ("বাংলা" or
    "English") and switches the whole site between English and Bangla at once. The choice is remembered in
    this browser (same key as before, `i18nextLng`) and used again on the next visit.
@@ -205,7 +199,8 @@ menu button. The banner wraps
 onto several lines. Every button is at least 44 px high.
 
 **API endpoints used:** `GET /api/auth/me`, `GET /api/home-hero-posts/logo/public`,
-`GET /api/courses/discounts/active`.
+`GET /api/promos/active` (the banner: the newest running promo with its discount, title, code, course count,
+live countdown and **See offers** to `/promo`).
 
 **Code:** `frontend/src/app/(public)/layout.tsx`, `frontend/src/components/public/PublicLayout.tsx`,
 `frontend/src/components/public/layout/` (`PublicNavbar`, `PublicNavLinks`, `NavSearch`, `LanguageSwitcher`,
@@ -400,26 +395,37 @@ screen with the filters stacked above the courses.
 - **Step by step:**
   1. Top: three progress bars, the steps (**Select course** links back to the course page) and "Secured payment".
   2. Left: **Payment method** (radio cards, bKash chosen at the start). Right: the order summary: cover, course type,
-     title, weeks and live sessions from the plan, regular price, discount (the course's running discount; promo
-     codes are not built), total with the saving, the pay button and the promises. The prices come from the course.
+     title, weeks and live sessions from the plan, the **coupon** (one per order: the code chosen on the course page,
+     else the course's best running code: its own discount or a promo; the time left until it ends; **x** removes it
+     and the list price shows; another code can be typed and **Apply**ed, checked by the server), regular price,
+     discount, total with the saving, the pay button and the promises. **Complete payment** sends the coupon code
+     and the chosen payment method (`bkash` or `other`, recorded only); the server checks the code again and takes
+     the price from the database.
   3. Under them: the teacher card, three trust cards (the phone comes from the Company Contact page and is hidden
      without one), and a grey band (the support email also comes from there).
   4. After enrolling, or when already enrolled, the page says so with **Go to this course**. A free course says there
      is nothing to pay, with **View course**.
 - **Mobile behaviour:** one column: methods, then the summary, then the cards.
 - **API endpoints used:** `GET /api/courses/:id`, `GET /api/study-curricula/course/:id`,
-  `GET /api/site-settings/public`; Students: `GET /api/enrollments/:courseId/check`,
-  `POST /api/enrollments/:courseId`.
-- **Code:** `frontend/src/app/(public)/courses/[id]/payment/page.tsx`, `frontend/src/components/payment/*`.
+  `GET /api/site-settings/public`, `GET /api/coupons/check`; Students: `GET /api/enrollments/:courseId/check`,
+  `POST /api/enrollments/:courseId` (`couponCode`, `paymentMethod`).
+- **Code:** `frontend/src/app/(public)/courses/[id]/payment/page.tsx`, `frontend/src/components/payment/*`, the
+  shared coupon parts `frontend/src/components/coupon-field/` (`useAppliedCoupon`: the code chosen on the course
+  page is remembered for this tab in sessionStorage; `CouponField`, `AppliedCouponBox`).
 - **Tests:** `frontend/src/components/payment/__tests__/CoursePaymentView.test.tsx`, `e2e/payment.spec.ts`.
 
 ### Course page (`/courses/[id]`)
 
 - **Route:** `/courses/[id]`.
 - **Who can use it:** everyone for Published + Public courses. Drafts and private courses answer "Course not
-  found." except for staff and the course's teachers (the backend decides).
+  found." except for staff, the course's teachers and its enrolled students (the backend decides).
 - **What it is for:** everything about one course and how to get it.
-- **Step by step:**
+- **Step by step:** 0. Batch 5 layout: the banner shows the **batch number** left of the course type; **What you'll learn** sits on a
+  grey full-width band with white, shadowed item cards and shows four items, the rest behind **Show more** /
+  **Show less**; **Curriculum**, **Tools** and **FAQ** have no section card (their own cards carry a light
+  shadow; each live-class week has its own colour); **Course Requirements** sits on a warm full-width band with
+  white shadowed cards. The purchase card has the **coupon field** (see Payment details), pre-filled with the
+  course's best running code. Opening the page counts a view; while a promo runs its pop-up opens (see Promos).
   1. The dark navy banner shows the breadcrumb, the course type (a pill with a green dot), title, subtitle, price
      (gold; while a discount runs also the struck-through list price and "Save ৳X (N% OFF)"), "Subscription" for
      plan courses and, for those who can enrol, **Enroll Now**. Every Enroll Now button of the page (banner,
@@ -463,8 +469,7 @@ screen with the filters stacked above the courses.
        plans there are two choices: **Subscribe and save** (cheapest plan price; "Enroll with Subscription"
        when the student's running plan includes the course, "Upgrade Subscription" when it does not, otherwise
        a link to the plans) or **Buy this course** (always a direct, paid enrolment).
-     - **Student, enrolled:** "Go to this course" (`/student/courses/[id]/learn`), the enrolment date and
-       "Leave this course" (asks for confirmation).
+     - **Student, enrolled:** "Go to this course" (`/student/courses/[id]/learn`) and the enrolment date.
      - **Super Admin / Admin:** "Edit Course" and "Student View"; **Moderator:** "Student View" only.
      - **Teacher:** the price only.
        Under it: perks (certificate, any device, direct support) and **Share course** (the phone's share sheet, or
@@ -476,7 +481,8 @@ screen with the filters stacked above the courses.
   `GET /api/study-curricula/course/:id` (public fields for guests), `GET /api/quiz-bank/public/course/:id`,
   `GET /api/subscription-plans`, `GET /api/site-settings/public` (the "Call Now" number); Students:
   `GET /api/enrollments/:courseId/check`, `GET /api/subscriptions/my`, `POST /api/enrollments/:courseId`
-  (the free and subscription buttons; the paid one is on the payment details page), `DELETE /api/enrollments/:courseId`.
+  (the free and subscription buttons; the paid one is on the payment details page), `GET /api/coupons/check`,
+  `POST /api/courses/:id/view`, `GET /api/promos/active`.
 - **Security:** YouTube is the only embedded site (CSP `frame-src https://www.youtube.com
 https://www.youtube-nocookie.com`, thumbnails `img-src https://i.ytimg.com`); videos are embedded from the
   11-character id only, through the privacy-enhanced domain. Cover and teacher pictures are shown only from
@@ -490,44 +496,15 @@ https://www.youtube-nocookie.com`, thumbnails `img-src https://i.ytimg.com`); vi
   `frontend/src/components/browse/__tests__/course-utils.test.ts`, `frontend/src/utils/__tests__/csp.test.ts`,
   `e2e/browse.spec.ts`, `e2e/site-extras.spec.ts`.
 
-### Student dashboard
-
-**Route:** `/student/dashboard` · **Menu:** Dashboard (student menu)
-
-**Who can use it:** students. It is where a student lands after signing in.
-
-**What it is for:** a quick start: a welcome, how many courses the student is in, the running plan, and the
-newest courses to continue.
-
-**How to use it:**
-
-1. The header says "Welcome back, <name>. Continue your courses from the course page."
-2. Two cards show the number of **Enrolled courses** and the **Subscription** (plan name and "Expires
-   <date>", or "None / No active plan"). A plan whose end date has passed counts as none.
-3. Without a running plan a **View Plans** button opens `/pricing`.
-4. **Continue learning** lists the four newest enrolments (with "Free course", "Purchased course" or "Enrolled
-   with subscription"); a click opens the course player `/student/courses/<id>/learn`. **All my courses**
-   opens `/student/courses`. With no enrolments it says "You haven't enrolled in any courses yet." and offers
-   **Browse Courses** (`/courses`).
-5. Loading shows skeletons; a failed load shows the server message with **Try again**.
-
-**On mobile:** the two cards stack in one column; list rows are at least 56 px high.
-
-**API endpoints used:** `GET /api/auth/me`, `GET /api/enrollments`.
-
-**Code:** `frontend/src/app/student/(shell)/dashboard/page.tsx`, `frontend/src/components/student/`
-(`StudentDashboard`, `DashboardStatCard`, `ContinueLearning`), `frontend/src/api/catalog.api.ts`,
-`frontend/src/api/profile.api.ts`.
-
-**Tests:** `components/student/__tests__/StudentDashboard.test.tsx`; Playwright `frontend/e2e/student.spec.ts`.
-
 ### My Courses
 
 **Route:** `/student/courses` (`?search=` keeps the search box) · **Menu:** My Courses (student menu)
 
 **Who can use it:** students (only their own enrolments).
 
-**What it is for:** every course the student is enrolled in, opening the course player, and leaving a course.
+**What it is for:** every course the student is enrolled in and opening the course player. It is the student's
+home page after signing in. An enrolment cannot be removed (also when the course is unpublished later, the
+student keeps it).
 
 **How to use it:**
 
@@ -539,19 +516,15 @@ newest courses to continue.
    `/student/courses/<id>/learn`.
 3. **Search courses...** filters by title as you type; the address (`?search=`) follows once you stop typing; nothing found shows
    `No courses match "<text>".`
-4. The bin button on a card ("Remove from my courses") asks "Are you sure you want to remove "<title>" from
-   your courses?"; **Remove** deletes the enrolment, shows `Removed from "<title>"` and drops the card.
-   An error shows the server message as a toast.
-5. No enrolments at all: "You haven't enrolled in any courses yet."
+4. No enrolments at all: "You haven't enrolled in any courses yet."
 
-**On mobile:** one card per row (two on tablets, three to four on desktops); the search box is full width; the
-remove button is 44 px.
+**On mobile:** one card per row (two on tablets, three to four on desktops); the search box is full width.
 
-**API endpoints used:** `GET /api/enrollments`, `DELETE /api/enrollments/:courseId`.
+**API endpoints used:** `GET /api/enrollments`.
 
 **Code:** `frontend/src/app/student/(shell)/courses/page.tsx`, `frontend/src/components/student/`
 (`MyCoursesPage`, `EnrolledCourseSection`, `EnrolledCourseCard`, `CourseBadges`, `CourseCardSkeletons`,
-`useRemoveEnrollment`, `enrolledCourse.utils.ts`), the shared `CourseCover`, `CourseCardBody`, `CoursePrice`
+`enrolledCourse.utils.ts`), the shared `CourseCover`, `CourseCardBody`, `CoursePrice`
 and `CourseSearchField` in `frontend/src/components/course-card/`, `frontend/src/api/catalog.api.ts`,
 `frontend/src/schemas/catalog.schema.ts`, `frontend/src/schemas/student.schema.ts`.
 
@@ -574,7 +547,7 @@ password and (students only) email.
    email, phone number ("Not available" when none), role, joined and last-updated dates.
 2. Summary cards: **Enrolled courses** (students) or **Assigned courses** (teachers), **Purchased courses**,
    **Subscription** (plan and expiry) and **Profile status** (Complete with an avatar, otherwise Basic).
-3. Students also see the **Subscription** card: the running plan with start/expiry dates, the number of
+3. Students with a running plan also see the **Subscription** card (it is hidden without one): the running plan with start/expiry dates, the number of
    courses and features of the plan, **Change Plan** (`/pricing`) and **Cancel Subscription** (asks first,
    then "Subscription cancelled"); without a plan "You do not have an active subscription." and **View
    Plans**. Everyone sees **Role details** (role, kind of access, description).
@@ -619,7 +592,9 @@ the same request as Assigned courses),
 their own home page; the backend refuses their requests too (403).
 
 **What it is for:** keeping the two short lists that courses are filed under: categories (subject areas)
-and course types (live course, recorded course, seminar, ...). The public catalog filters use them.
+and course types (live course, recorded course, seminar, ...). The public catalog filters use them. A course type
+also has a **Home page position** (1 = first box on the home page and the catalog; empty = after the numbered
+ones, by name); the course types list shows it in its own column.
 
 **How to use it:**
 
@@ -783,44 +758,39 @@ private courses too) with this month's figures and the manager tools. A Moderato
 (as in the old client) and no manager tools; the backend refuses status, delete and bulk changes from them (403).
 
 **What it is for:** finding a course and acting on it: open its details, its enrolments, the course player
-(student view) or the editor; publish or unpublish it; delete it; change many courses at once.
+(student view) or the editor; delete a course that was never published; change many courses at once.
 
 **How to use it:**
 
 1. The page lists the courses as cards: cover with the course type badge, title (opens the course details),
    subtitle, status ("Published • date" or "Draft"), price, category, visibility, "Subscription" when the
    course is part of the subscription, and its teachers.
-2. Super Admin / Admin cards also show **Earned this month** and **Enrollments this month**; both open the
-   course's enrolments page.
+2. Super Admin / Admin cards also show, in one row, **Earned this month** and **Enrollments this month** (both open
+   the course's enrolments page) and **Total views** (course page visits, one per visitor per day). The card also
+   shows the batch number.
 3. **Filter courses** shows how many courses match. **Show filters** opens: search, course type, category,
    teacher, status (not for Moderators), pricing, visibility, subscription plan, enrolment activity (has / no
    students ever, this month, previous month) and earning activity (same choices). Filters are kept in the
    address (`?search=...&status=...`), so reloading or sharing the link keeps them. **Clear filters** resets all.
 4. Card buttons: **Student view** (eye, opens `/admin/courses/[id]/learn`) and **Edit course** (pencil, opens
    `/admin/courses/[id]/edit`) for Super Admin / Admin; a **View** button (student view) for Moderators.
-5. The ⋮ menu: **View details**, **Enrollments**, and for Super Admin / Admin **Publish** / **Unpublish**
-   (unpublishing asks first) and **Delete** (asks "Delete "<title>"? This cannot be undone."). A course that
-   has enrolments cannot be deleted: the server's message ("This course has N enrolment(s); unpublish it
-   instead of deleting") is shown as a toast.
+5. The ⋮ menu: **View details**, **Enrollments**, and for Super Admin / Admin **Delete** (asks "Delete "<title>"?
+   This cannot be undone.") only on a course that was never published; the server refuses others with its
+   message. Publishing and unpublishing are in the course editor (header **Publish**; **Settings** tab).
 6. **Create Course** opens `/admin/courses/create`.
 7. **Bulk Edit** (Super Admin / Admin) opens a dialog. Left: search and filters (status, visibility, pricing,
-   category, course type), **Select all**, and a checkbox per course of the list. Right, three tabs:
-   - **Update Fields**: course type (or "Clear course type"), category, status, visibility, pricing (+ price
-     for Paid), subscription (include + allowed plans; sent only when touched), teachers (replace), start and
-     end date. Every field starts at "No change"; only filled fields are sent.
-   - **Discount Campaign**: a percentage (1 to 99) off each selected course's list price until a future date
-     and time (entered in your own time zone).
-   - **Post Announcement**: one announcement (title + rich text, the same editor as the course player)
-     posted to every selected course.
-     **Apply to N courses** sends it; a toast confirms ("Updated N courses", "Discount applied to N courses")
-     or shows the reason (missing selection, invalid price or percentage, server message).
+   category, course type), **Select all**, and a checkbox per course of the list. Right, **Update Fields**:
+   course type (or "Clear course type"), category, status, visibility, pricing (+ price for Paid), subscription
+   (include + allowed plans; sent only when touched), teachers (replace), start and end date. Every field starts
+   at "No change"; only filled fields are sent. **Apply to N courses** sends it; a toast confirms ("Updated N
+   courses") or shows the reason. Discounts for many courses are on the **Promos** page, announcements to many
+   courses on the **Announcements** page.
 
 **On mobile:** cards stack one per row and hide the cover; the filters are one column; the bulk dialog opens
-full screen with the course picker on top of the tabs; every button is at least 44 px high.
+full screen with the course picker on top of the fields; every button is at least 44 px high.
 
 **API endpoints used:** `GET /api/courses` (staff view with filters and `enrollmentStats`),
-`PATCH /api/courses/:id/status`, `DELETE /api/courses/:id`, `PATCH /api/courses/bulk`,
-`PATCH /api/courses/bulk/discount`; dropdowns: `GET /api/categories`, `GET /api/course-types`,
+`DELETE /api/courses/:id`, `PATCH /api/courses/bulk`; dropdowns: `GET /api/categories`, `GET /api/course-types`,
 `GET /api/teachers`, `GET /api/subscription-plans`.
 
 **Code:** `frontend/src/app/admin/courses/page.tsx`, `frontend/src/components/admin-courses/list/`
@@ -830,7 +800,7 @@ full screen with the course picker on top of the tabs; every button is at least 
 `ManagerCourseButtons`, `CourseCardMenu`, `CourseListActions`, `useCourseActions`, `useReferenceOptions`),
 `frontend/src/components/admin-courses/bulk/` (`BulkEditModal`, `BulkCourseSelector`, `SelectAllBar`,
 `BulkCourseRow`, `BulkEditPanel`, `BulkFieldsForm`, `BulkChoiceFields`, `BulkSubscriptionField`,
-`BulkTeachersField`, `BulkDateFields`, `BulkDiscountForm`, `BulkAnnouncementForm`, `bulk-form.ts`,
+`BulkTeachersField`, `BulkDateFields`, `bulk-form.ts`,
 `useBulkEdit`, `useBulkSelection`), shared `components/common/FilterSelect.tsx`,
 `components/common/rich-text/`, `components/course-fields/` (`PlanMultiSelect`, `TeacherMultiSelect`, also
 used by the course editor), `frontend/src/api/admin-courses.api.ts` (lists refreshed through
@@ -884,12 +854,14 @@ export only (the statistics and revenue endpoints are Super Admin / Admin only o
    enrolled student (`course-<id>-students.csv`).
 2. Super Admin / Admin: a strip of figures: total students, free, paid, subscription, this month, lifetime
    earned (BDT).
-3. **Students** view: "Enrolled Students" with tabs All / Free / Paid / Subscription; each row shows the
-   student (avatar + name, or "Deleted account"), email, type, enrolment date and time (your own time zone)
-   and the enrolment id.
-4. **Revenue** view (Super Admin / Admin): every paid enrolment with list price, discount, amount paid, date
-   and id, and the total paid.
-5. A wrong or unknown course id shows "Course not found".
+3. Super Admin / Admin: "Enrolled Students" with tabs All / Free / Paid / Subscription (no separate Revenue view);
+   each row shows the student, student ID, type, list price, discount, amount paid, coupon, payment method and
+   date (your own time zone); the total paid of the tab is shown above. A row opens a panel on the right with
+   every detail of that purchase (student contact, course and batch, prices, coupon and where it came from,
+   payment method, date, order id).
+4. Moderator: the same tabs with student, email, type, date and id.
+5. 10 rows per page; the pagination shows only with more than 10.
+6. A wrong or unknown course id shows "Course not found".
 
 **On mobile:** the figures are two per row; each student / payment is a card instead of a table row (the
 enrolment id is left out); the tabs scroll sideways if needed.
@@ -897,12 +869,12 @@ enrolment id is left out); the tabs scroll sideways if needed.
 **API endpoints used:** `GET /api/courses/:id`, `GET /api/enrollments/course/:courseId/students`,
 `GET /api/enrollments/course/:courseId/students/export` (plain same-origin download link; the session
 cookie goes with it), `GET /api/enrollments/admin/course/:courseId/stats`,
-`GET /api/enrollments/admin/course/:courseId?type=paid`.
+`GET /api/enrollments/admin/course/:courseId` (every type, with student phone and student number).
 
 **Code:** `frontend/src/app/admin/enrollments/[courseId]/page.tsx`,
 `frontend/src/components/admin-courses/enrollments/` (`AdminEnrollmentsPage`, `EnrollmentCourseHeader`,
-`EnrollmentStatsStrip`, `StatPill`, `EnrollmentViewTabs`, `EnrolledStudentsPanel`, `RevenuePanel`,
-`useEnrollmentColumns` (revenue)), `components/admin-courses/BackToCoursesButton.tsx`; the student list is shared
+`EnrollmentStatsStrip`, `StatPill`, `CourseOrdersPanel`, `EnrolledStudentsPanel`), `components/orders/`
+(`useOrderColumns`, `order-columns`, `OrderDetailsDrawer`, `OrderPaymentDetails`, `OrderTypeTabs`), `components/admin-courses/BackToCoursesButton.tsx`; the student list is shared
 with the course player and the teacher dialog: `components/enrollments/` (`useCourseStudentColumns`,
 `StudentCell`, `enrollment-display.ts`), `frontend/src/api/enrollment.api.ts`, `schemas/enrollment.schema.ts`.
 
@@ -923,16 +895,21 @@ the outline (sections and lectures), weekly live classes and the quiz banks, the
 
 **How to use it:**
 
-1. The page has a menu with twelve tabs: **Basic Info**, **Media**, **Learning Content**, **Tools**, **What You
-   Get**, **Projects**, **Who This Course Is For**, **Success Stories**, **FAQ**, **Curriculum**, **Live
-   Class**, **Quiz Bank**. The header shows the title, the Draft / Published chip (with "Published on
-   ..."), **Preview** (draft) or **View Live** (published; opens `/courses/<id>` in a new tab), **Save Draft**
-   and **Publish**.
+1. The page has a menu with fifteen tabs: **Basic Info**, **Pricing**, **Media**, **Learning Content**, **Tools**,
+   **What You Get**, **Projects**, **Who This Course Is For**, **Success Stories**, **FAQ**, **Curriculum**,
+   **Live Class**, **Quiz Bank**, **Coupons**, **Settings**. The header shows the title, the Draft / Published
+   chip (with "Published on ..."), **Preview** (draft) or **View Live** (published), and **Save Draft** +
+   **Publish** for a draft or **Save changes** for a published course.
 2. **Basic Info:** title, subtitle, category and course type (a new course starts with the first of each),
-   optional start and end date (the end cannot be before the start), teachers (pick from the list, remove a
-   chip), visibility (Public / Private), pricing (Free / Paid). Paid shows **List Price** (required) and
-   **Discount Price** (the buying price; empty = the list price; it cannot be above the list price) with the
-   "% off" chip. **Included in Subscription** shows the plans to tick.
+   **Batch number** (4 digits, unique; a new course gets a free random one, the refresh button suggests another;
+   a taken number is refused by the server), optional start and end date (the end cannot be before the start),
+   **Live class schedule** and **Support class schedule** (plain text, e.g. "Saturday and Monday, 9-11 PM"), and
+   the teachers.
+   2a. **Pricing:** Free / Paid. Paid shows **List Price** (required) and **Discount Price** (the buying price; it
+   cannot be above the list price) with the "% off" chip. A discount is the course's own coupon: its **Coupon
+   code** (empty = a code is suggested; refresh button), **Starts** and **Ends** (date and time in your time zone,
+   both optional). The course and payment pages fill in this code and count down to its end. **Included in
+   Subscription** shows the plans to tick.
 3. **Media:** upload a PNG, JPEG, GIF or WEBP cover up to 5 MB (other files are refused with a message). On a
    new course it is uploaded with the first save; on an existing course it is uploaded at once and replaces
    the old cover.
@@ -972,6 +949,15 @@ the outline (sections and lectures), weekly live classes and the quiz banks, the
    - **Success Stories:** **Add success story** opens a dialog: profile picture, title, description, company
      name and company logo. Edit and Delete in the ⋮ menu.
    - **FAQ:** **Add question** opens a dialog with the question and the answer. Edit and Delete in the ⋮ menu.
+     9a. **Coupons** (saved paid course): every code of the course: its own discount ("Course discount", edited on
+     Pricing), its coupons and the promos it is in ("Promo", edited on the Promos page), with discount, dates,
+     "Students used it" (used / limit) and status (Active, Scheduled, Expired, Inactive, Used up). **Add coupon**
+     opens a dialog: code (a free one is filled in; refresh button), percent or amount, **Unlimited uses** or a use
+     limit, start and end. The ⋮ menu of a coupon: Edit, Switch off / on, Delete (refused once students used it).
+     10 per page.
+     9b. **Settings** (saved course): visibility (Public / Private) and **Publish** / **Unpublish course** (asks first).
+     An unpublished course leaves the home page and the course list but stays in its students' courses. A course
+     that was published once can never be deleted (the tab says so).
 10. **Quiz Bank:** quiz sections with their banks on the left. **+** adds a section; each section has a
     **Free** switch (free preview), a "⋮" menu (Rename, Delete: also deletes its banks) and **Add Quiz Bank**
     (title, description). Each bank has its own Free switch and "⋮" menu (Edit, Delete: also deletes student
@@ -991,16 +977,19 @@ full screen; all buttons are at least 44 px. In the Quiz Bank tab the list and t
 `POST /api/courses/:courseId/sections/:sectionId/lectures`,
 `PUT|DELETE /api/courses/:courseId/sections/:sectionId/lectures/:lectureId`,
 `PUT /api/courses/:courseId/sections/:sectionId/lectures/reorder`, `PATCH /api/courses/:id/extras`,
-`POST /api/courses/:id/images`, `GET /api/tools`, `GET|POST /api/study-curricula/course/:courseId`,
+`POST /api/courses/:id/images`, `GET /api/courses/batch-number/suggest`, `GET|POST /api/coupons`,
+`PATCH|DELETE /api/coupons/:id`, `GET /api/coupons/suggest`, `GET /api/tools`, `GET|POST /api/study-curricula/course/:courseId`,
 `PUT|DELETE /api/study-curricula/:id`, `GET /api/quiz-sections/course/:courseId`, `POST /api/quiz-sections`,
 `PUT|DELETE /api/quiz-sections/:id`, `GET /api/quiz-bank/course/:courseId`, `POST /api/quiz-bank`,
 `PUT|DELETE /api/quiz-bank/:id`, `POST /api/quiz-bank/:id/questions`, `PUT|DELETE /api/quiz-bank/:id/questions/:qId`.
 
 **Code:** `frontend/src/app/admin/courses/create/page.tsx`, `frontend/src/app/admin/courses/[id]/edit/page.tsx`,
-`frontend/src/components/course-editor/` (`CourseEditorPage`, `details/`, `extras/` (the six course page
+`frontend/src/components/course-editor/` (`CourseEditorPage`, `details/` (`BasicInfoTab`, `BatchNumberField`,
+`ScheduleFields`, `PricingTab`, `PriceFields`, `DiscountCouponFields`), `settings/SettingsTab`, `extras/` (the six course page
 section tabs, `ToolPickerDrawer`, `ProjectFormDrawer`, `SuccessStoryFormModal`, `FaqFormModal`), `curriculum/`,
 `live-class/` (tab and header), `quiz-bank/`), `frontend/src/api/course-extras.api.ts`,
-`frontend/src/schemas/course-extras.schema.ts`, shared `components/live-class/` (week cards and form, also in the course player),
+`frontend/src/schemas/course-extras.schema.ts`, `components/coupons/` (`CouponsTab`, `CouponFormModal`,
+`useCouponForm`, `useCouponColumns`, `CouponRowMenu`, `fields/`), `api/coupons.api.ts`, `schemas/coupon.schema.ts`, shared `components/live-class/` (week cards and form, also in the course player),
 `components/common/rich-text/` (the one TipTap editor, loaded by `next/dynamic`), `components/course-fields/`;
 data `frontend/src/api/course-editor.api.ts`, the course from `browse.api.ts` (`useCourse`), `quiz.api.ts`,
 `live-class.api.ts`; shapes `frontend/src/schemas/course-editor.schema.ts`, `browse.schema.ts`, `quiz.schema.ts`.
@@ -1929,6 +1918,141 @@ again retries).
 
 <!--
 TEMPLATE: one section per screen, in the order they were built or migrated.
+
+### Revenue (Super Admin, Admin)
+
+**Route:** `/admin/revenue` (filters in the address: `?type=&courses=&page=`) · **Menu:** Revenue (Analytics)
+
+**Who can use it:** Super Admin and Admin (the backend allows nobody else).
+
+**What it is for:** the sales of every course in one place and every order with its full details.
+
+**How to use it:**
+
+1. Four tinted cards: revenue today, last 7 days, this month and all time, each with its order count (paid ones).
+2. A chart of revenue with **Daily** (30 days), **Weekly** (12 weeks, "Week of <Monday>") and **Monthly** (12
+   months) switches (viewer's time zone).
+3. **All courses** opens the course list on the left (search, tick one, several or all, **Apply**); the cards, the
+   chart and the orders then follow the chosen courses. The tabs All / Paid / Free / Subscription filter by type.
+4. The order table (10 per page): course, student, student ID, type, list price, discount, amount paid, coupon,
+   payment method, date. A row opens the purchase details on the right (same panel as the course enrolments page).
+5. Tick boxes select orders (kept across pages; **Select this page**); the chip "N selected" clears them.
+   **Export CSV** downloads the full details of the selected orders (UTF-8, formula-safe cells).
+6. **Print students (PDF)** opens a dialog: what to print (name, student ID, email, phone, course; name and
+   student ID at the start) and whose (the selected orders, or every order of the current course / type filter).
+   **Print** opens a print page in a new tab (a plain table made by the browser, so Bangla names print correctly)
+   and its print dialog; "Save as PDF" there downloads the file. A blocked pop-up shows a message.
+
+**On mobile:** cards two per row then one; the table becomes cards; dialogs and panels are full screen.
+
+**API endpoints used:** `GET /api/revenue/summary`, `GET /api/revenue/orders`, `GET /api/revenue/orders/export`,
+`GET /api/students/courses` (the course list).
+
+**Code:** `frontend/src/app/admin/revenue/page.tsx`, `frontend/src/components/revenue/` (`RevenuePage`,
+`RevenueToolbar`, `RevenueCourseFilter`, `RevenueCoursePicker`, `RevenueOverview`, `RevenueChartCard`,
+`RevenueChart` (recharts, `next/dynamic`), `RevenueOrders`, `useOrderSelection`, `useRevenueParams`,
+`PrintStudentsModal`, `PdfFieldsGroup`, `useRevenuePrint`, `order-export.ts` (CSV and the print table)),
+`components/orders/`, `frontend/src/api/revenue.api.ts`, `schemas/revenue.schema.ts`, `utils/export-file.ts`,
+`utils/print-table.ts`.
+
+**Tests:** `components/revenue/__tests__/`; Playwright `frontend/e2e/revenue.spec.ts`.
+
+### Promos (Super Admin, Admin)
+
+**Route:** `/admin/promos` · **Menu:** Promos (Course Management)
+
+**Who can use it:** Super Admin and Admin.
+
+**What it is for:** running one discount (with a code, start and end) for all or chosen paid courses.
+
+**How to use it:**
+
+1. The list (10 per page): title and code, discount, dates, number of courses, students who used it, status
+   (Active, Scheduled, Expired, Inactive). A row (or ⋮ > Edit) opens the form; ⋮ > Switch off / on; ⋮ > Delete
+   (refused once students used it).
+2. **Create promo** opens a large dialog. Left: published paid courses with search, category and visibility
+   filters, **Select all shown** and a tick box per course (cover, title, batch). Right: title (shown on the banner
+   and pop-up), code (a free one is filled in; refresh button), percent or amount, start and end (both required).
+3. While it runs: a banner above the navbar on every public page, a centre pop-up each time the home page or a
+   course page opens (discount, title, code with a copy button, dates, **Enroll now**), and the course pages and
+   payment page pre-fill the code when it gives the lowest price (one code per order).
+
+**On mobile:** the dialog is full screen with the course list above the fields; the list becomes cards.
+
+**API endpoints used:** `GET /api/promos`, `POST /api/promos`, `PATCH /api/promos/:id`, `DELETE /api/promos/:id`,
+`GET /api/coupons/suggest`, `GET /api/courses?status=Published&pricing=Paid` (the course list).
+
+**Code:** `frontend/src/app/admin/promos/page.tsx`, `frontend/src/components/promos/` (`PromosPage`,
+`usePromoColumns`, `PromoFormModal`, `usePromoForm`, `PromoDetailsFields`), `components/course-select/`
+(`CourseMultiSelect`, `CourseSelectFilters`, `useCourseSelectFilters`, `CourseCheckList`, `CourseCheckRow`; shared
+with the Announcements page), `frontend/src/api/promos.api.ts`, `schemas/promo.schema.ts`.
+
+**Tests:** `components/promos/__tests__/`; Playwright `frontend/e2e/promos.spec.ts`.
+
+### Promo banner, pop-up and promo courses page (`/promo`)
+
+**Route:** every public page (banner), `/` and `/courses/[id]` (pop-up), `/promo` (page).
+
+**Who can use it:** everyone.
+
+**What it is for:** showing a running promo and the courses it discounts.
+
+**How to use it:** the banner (discount chip, title, "Use code ..." with the course count, live countdown, **See
+offers**) and the pop-up's **Enroll now** open `/promo`: the promo's title, "<discount> with the code <code>" and a
+course card per course (each with the discounted price; a click opens the course page). Closing the pop-up hides it
+until the next visit of the page. Without a running promo nothing shows and `/promo` says so.
+
+**On mobile:** the banner wraps onto several lines; the pop-up fits the screen with a 16 px margin.
+
+**API endpoints used:** `GET /api/promos/active`, `GET /api/promos/active/courses`.
+
+**Code:** `frontend/src/components/public/layout/DiscountBanner.tsx`, `frontend/src/components/promos/`
+(`PromoPopup`, `PromoCodeBox`, `PromoCoursesPage`, `promo-format.ts`), `frontend/src/app/(public)/promo/page.tsx`.
+
+**Tests:** `components/promos/__tests__/`, `components/public/__tests__/PublicLayout.test.tsx`; Playwright
+`frontend/e2e/promos.spec.ts`.
+
+### Announcements (multi-course)
+
+**Route:** `/admin/announcements` · **Menu:** Announcements (Communication)
+
+**Who can use it:** Super Admin, Admin and Moderator.
+
+**What it is for:** sending one announcement to several published courses at once and seeing who read it.
+
+**How to use it:**
+
+1. The list (10 per page, newest first): title, a short preview, who posted it and when, "N courses" and "Seen by N
+   students". A card opens a panel on the right: the full text, the picture, the poster, "Seen by" and every course
+   with "Seen by X of Y enrolled students".
+2. **New announcement** opens a large dialog. Left: published courses with search and category / visibility /
+   pricing filters, **Select all shown** and tick boxes. Right: title, the text (rich text editor) and an optional
+   picture (PNG, JPEG, GIF or WEBP, up to 5 MB). **Send announcement** posts it to each selected course; enrolled
+   students see it (with the picture) in the course player's Announcements tab.
+
+**On mobile:** cards one per row; the dialog and the panel are full screen.
+
+**API endpoints used:** `GET /api/announcements/broadcasts`, `GET /api/announcements/broadcasts/:id`,
+`POST /api/announcements/broadcasts` (multipart), `GET /api/courses?status=Published` (the course list).
+
+**Code:** `frontend/src/app/admin/announcements/page.tsx`, `frontend/src/components/announcements/`
+(`AnnouncementsPage`, `BroadcastCard`, `BroadcastDetailsDrawer`, `BroadcastCourseList`, `BroadcastFormModal`,
+`BroadcastFields`, `useBroadcastForm`), `components/course-select/`, `frontend/src/api/announcements.api.ts`,
+`schemas/announcement-broadcast.schema.ts`; the player shows the picture in `components/learn/common/PostList.tsx`.
+
+**Tests:** `components/announcements/__tests__/`; Playwright `frontend/e2e/announcements.spec.ts`.
+
+### Pagination and loading placeholders (shared)
+
+**Pagination** (`components/common/ListPagination.tsx` + `PaginationItem.tsx`): "Showing 11-20 of 57" and rounded
+page buttons (previous, numbers with gaps, next; 44 px), shown only when a list has more than one page. Lists the
+browser already has use `hooks/useClientPagination.ts` (10 per page, `PAGE_SIZE`); server lists send `page` and
+`limit` (10 on the new pages and the students page).
+
+**Loading placeholders** follow the real layouts: `components/public/common/HomeCourseCardSkeleton.tsx` (home /
+catalog / promo card), `CourseSectionSkeleton.tsx` (a course type box), `components/browse/detail/CourseDetailSkeleton.tsx`
+with `skeleton/` (banner, enrolment card, about, the grey "What you'll learn" band), `components/learn/LearnSkeleton.tsx`
+(full-height menu column).
 
 ### <Screen name>
 

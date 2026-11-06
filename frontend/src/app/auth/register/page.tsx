@@ -1,9 +1,15 @@
-import { RegisterForm } from '@/components/auth/RegisterForm';
+import { redirect } from 'next/navigation';
 
-import type { Metadata } from 'next';
+import { withAuthPanel } from '@/utils/auth-drawer';
 
-export const metadata: Metadata = { title: 'Create account' };
+interface RegisterRedirectProps {
+  searchParams: Promise<{ next?: string | string[] }>;
+}
 
-const RegisterPage = () => <RegisterForm />;
+/** Old address: sign-in and create account are a panel now; opens it on the home page (keeps a safe ?next=). */
+const RegisterRedirect = async ({ searchParams }: RegisterRedirectProps) => {
+  const { next } = await searchParams;
+  redirect(withAuthPanel('/', '', 'register', typeof next === 'string' ? next : null));
+};
 
-export default RegisterPage;
+export default RegisterRedirect;

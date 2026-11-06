@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -17,6 +17,14 @@ const course = makeCourse({
   listPrice: 1000,
   discountPrice: 800,
   teachers: [],
+  offer: {
+    code: 'SAVE20NOW',
+    source: 'course',
+    price: 800,
+    listPrice: 1000,
+    discountAmount: 200,
+    discountPercent: 20,
+  },
 });
 const free = makeCourse({ title: 'Free one' });
 
@@ -62,6 +70,98 @@ describe('CoursePaymentView (/courses/[id]/payment)', () => {
     );
   });
 
+  it('pre-fills the coupon of the course; removing it shows the list price and enrols without a code', async () => {
+    let body: unknown = null;
+    server.use(
+      ...courseHandlers(),
+      ...asStudent(false),
+      http.post(`*/api/enrollments/${course._id}`, async ({ request }) => {
+        body = await request.json();
+        return ok(undefined);
+      }),
+    );
+    renderWithProviders(<CoursePaymentView courseId={course._id} />);
+    const user = userEvent.setup();
+
+    const summary = await screen.findByRole('region', { name: 'Order summary' });
+    expect(within(summary).getByText('SAVE20NOW')).toBeInTheDocument();
+    expect(within(summary).getByText('SAVE20NOW applied: you save ৳200')).toBeInTheDocument();
+    await user.click(within(summary).getByRole('button', { name: 'Remove coupon' }));
+
+    expect(within(summary).queryByText('SAVE20NOW')).not.toBeInTheDocument();
+    expect(within(summary).getByText('No coupon: you pay the list price.')).toBeInTheDocument();
+    expect(within(summary).queryByText('- ৳200')).not.toBeInTheDocument();
+    await user.click(within(summary).getByRole('button', { name: 'Complete payment' }));
+    await waitFor(() => {
+      expect(body).toEqual({ enrollmentType: 'paid', paymentMethod: 'bkash' });
+    });
+  });
+
+  it('applies another code after checking it on the server, and sends it with the payment method', async () => {
+    let checked = '';
+    let body: unknown = null;
+    server.use(
+      ...courseHandlers(),
+      ...asStudent(false),
+      http.get('*/api/coupons/check', ({ request }) => {
+        const url = new URL(request.url);
+        checked = `${url.searchParams.get('course')}|${url.searchParams.get('code')}`;
+        return ok({
+          code: 'HALFPRICE50',
+          source: 'coupon',
+          price: 500,
+          listPrice: 1000,
+          discountAmount: 500,
+          discountPercent: 50,
+        });
+      }),
+      http.post(`*/api/enrollments/${course._id}`, async ({ request }) => {
+        body = await request.json();
+        return ok(undefined);
+      }),
+    );
+    renderWithProviders(<CoursePaymentView courseId={course._id} />);
+    const user = userEvent.setup();
+
+    const summary = await screen.findByRole('region', { name: 'Order summary' });
+    await user.click(within(summary).getByRole('button', { name: 'Remove coupon' }));
+    await user.type(within(summary).getByLabelText('Coupon code'), 'halfprice50');
+    await user.click(within(summary).getByRole('button', { name: 'Apply' }));
+
+    expect(
+      await within(summary).findByText('HALFPRICE50 applied: you save ৳500'),
+    ).toBeInTheDocument();
+    expect(checked).toBe(`${course._id}|halfprice50`);
+    expect(within(summary).getByText('- ৳500')).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /Cards & other/ }));
+    await user.click(within(summary).getByRole('button', { name: 'Complete payment' }));
+    await waitFor(() => {
+      expect(body).toEqual({
+        enrollmentType: 'paid',
+        couponCode: 'HALFPRICE50',
+        paymentMethod: 'other',
+      });
+    });
+  });
+
+  it('shows the server message for a code that is not valid and keeps the list price', async () => {
+    server.use(
+      ...courseHandlers(),
+      ...asStudent(false),
+      http.get('*/api/coupons/check', () => fail(400, 'This coupon has expired')),
+    );
+    renderWithProviders(<CoursePaymentView courseId={course._id} />);
+    const user = userEvent.setup();
+
+    const summary = await screen.findByRole('region', { name: 'Order summary' });
+    await user.click(within(summary).getByRole('button', { name: 'Remove coupon' }));
+    await user.type(within(summary).getByLabelText('Coupon code'), 'OLDCODE123');
+    await user.click(within(summary).getByRole('button', { name: 'Apply' }));
+
+    expect(await within(summary).findByText('This coupon has expired')).toBeInTheDocument();
+    expect(within(summary).queryByText(/applied: you save/)).not.toBeInTheDocument();
+  });
+
   it('switches the payment method', async () => {
     server.use(...courseHandlers(), ...asStudent(false));
     renderWithProviders(<CoursePaymentView courseId={course._id} />);
@@ -93,7 +193,11 @@ describe('CoursePaymentView (/courses/[id]/payment)', () => {
       'href',
       `/student/courses/${course._id}/learn`,
     );
-    expect(body).toEqual({ enrollmentType: 'paid' });
+    expect(body).toEqual({
+      enrollmentType: 'paid',
+      couponCode: 'SAVE20NOW',
+      paymentMethod: 'bkash',
+    });
   });
 
   it('keeps the form and shows the error when enrolling fails; the button waits meanwhile', async () => {
@@ -131,7 +235,7 @@ describe('CoursePaymentView (/courses/[id]/payment)', () => {
     const link = await screen.findByRole('link', { name: 'Sign in to continue' });
     expect(link).toHaveAttribute(
       'href',
-      `/auth/login?next=${encodeURIComponent(`/courses/${course._id}/payment`)}`,
+      `/courses/${course._id}/payment?auth=login&next=${encodeURIComponent(`/courses/${course._id}/payment`)}`,
     );
   });
 

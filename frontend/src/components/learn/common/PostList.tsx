@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import { CloudImage } from '@/components/common/CloudImage';
 import { SafeHtml } from '@/components/common/SafeHtml';
 import { isSafeHttpUrl } from '@/utils/urls';
 
@@ -46,6 +47,14 @@ export const PostList: FC<PostListProps> = ({ items, onEdit, onDelete }) => {
           <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
             {item.title}
           </Typography>
+          {item.image?.url && (
+            <CloudImage
+              url={item.image.url}
+              alt=""
+              sizes="(max-width: 900px) 100vw, 720px"
+              sx={{ height: { xs: 180, sm: 260 }, borderRadius: 1, my: 1 }}
+            />
+          )}
           <SafeHtml html={item.description} sx={{ fontSize: '0.875rem', lineHeight: 1.6 }} />
           {isSafeHttpUrl(item.fileUrl) && (
             <Link

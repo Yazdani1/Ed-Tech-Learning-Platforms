@@ -34,9 +34,9 @@ Plain-language reference for every backend endpoint. Screens that use them: [fro
 | POST   | `/api/categories`                                                | Super Admin, Admin                                                                       | Create a category (slug built from the name)                                                                                              |
 | PUT    | `/api/categories/:id`                                            | Super Admin, Admin                                                                       | Rename / describe a category                                                                                                              |
 | DELETE | `/api/categories/:id`                                            | Super Admin, Admin                                                                       | Delete a category                                                                                                                         |
-| GET    | `/api/course-types`                                              | Public                                                                                   | List all course types (sorted by name)                                                                                                    |
-| POST   | `/api/course-types`                                              | Super Admin, Admin                                                                       | Create a course type (name, optional description)                                                                                         |
-| PUT    | `/api/course-types/:id`                                          | Super Admin, Admin                                                                       | Update a course type (name, description)                                                                                                  |
+| GET    | `/api/course-types`                                              | Public                                                                                   | List all course types: numbered `position` first (home page order), then by name                                                          |
+| POST   | `/api/course-types`                                              | Super Admin, Admin                                                                       | Create a course type (name, optional description, optional home `position` 1-999)                                                         |
+| PUT    | `/api/course-types/:id`                                          | Super Admin, Admin                                                                       | Update a course type (name, description, `position`; empty clears it)                                                                     |
 | DELETE | `/api/course-types/:id`                                          | Super Admin, Admin                                                                       | Delete a course type                                                                                                                      |
 | GET    | `/api/teachers`                                                  | Public                                                                                   | List teacher profiles (sorted by name)                                                                                                    |
 | GET    | `/api/teachers/my-courses`                                       | Teacher                                                                                  | Courses the signed-in teacher teaches                                                                                                     |
@@ -45,15 +45,15 @@ Plain-language reference for every backend endpoint. Screens that use them: [fro
 | PUT    | `/api/teachers/:id`                                              | Super Admin, Admin                                                                       | Update a teacher profile                                                                                                                  |
 | DELETE | `/api/teachers/:id`                                              | Super Admin, Admin                                                                       | Delete a teacher profile and its photo                                                                                                    |
 | GET    | `/api/courses`                                                   | Public (staff see more)                                                                  | Course list; staff: every course + enrolment statistics                                                                                   |
-| GET    | `/api/courses/browse`                                            | Public                                                                                   | Public catalog: Published + Public courses, filters, counts (incl. paid courses per course type), paging                                  |
-| GET    | `/api/courses/discounts/active`                                  | Public                                                                                   | Summary of running discounts                                                                                                              |
+| GET    | `/api/courses/browse`                                            | Public                                                                                   | Public catalog: Published + Public courses (each with its running `offer`), filters, counts, paging                                       |
+| GET    | `/api/courses/batch-number/suggest`                              | Super Admin, Admin                                                                       | A free 4-digit batch number for the course form                                                                                           |
 | GET    | `/api/courses/:id`                                               | Public                                                                                   | One course with category, type, teachers, sections and lectures                                                                           |
+| POST   | `/api/courses/:id/view`                                          | Public (sign-in optional)                                                                | Counts a visit of a published public course page (once per visitor per UTC day)                                                           |
 | POST   | `/api/courses`                                                   | Super Admin, Admin                                                                       | Create a Draft course (optional cover image)                                                                                              |
 | PUT    | `/api/courses/:id`                                               | Super Admin, Admin                                                                       | Update a course                                                                                                                           |
 | PATCH  | `/api/courses/:id/status`                                        | Super Admin, Admin                                                                       | Publish or unpublish                                                                                                                      |
-| DELETE | `/api/courses/:id`                                               | Super Admin, Admin                                                                       | Delete a course and everything that belongs to it                                                                                         |
-| PATCH  | `/api/courses/bulk`                                              | Super Admin, Admin                                                                       | Update many courses and/or post one announcement to them                                                                                  |
-| PATCH  | `/api/courses/bulk/discount`                                     | Super Admin, Admin                                                                       | Apply a percentage discount with an end date to many courses                                                                              |
+| DELETE | `/api/courses/:id`                                               | Super Admin, Admin                                                                       | Delete a course that was never published and has no enrolments                                                                            |
+| PATCH  | `/api/courses/bulk`                                              | Super Admin, Admin                                                                       | Update fields of many courses (announcements: Announcements page)                                                                         |
 | POST   | `/api/courses/:courseId/sections`                                | Super Admin, Admin                                                                       | Add a section                                                                                                                             |
 | PUT    | `/api/courses/:courseId/sections/:sectionId`                     | Super Admin, Admin                                                                       | Rename a section                                                                                                                          |
 | DELETE | `/api/courses/:courseId/sections/:sectionId`                     | Super Admin, Admin                                                                       | Delete a section and its lectures                                                                                                         |
@@ -62,17 +62,34 @@ Plain-language reference for every backend endpoint. Screens that use them: [fro
 | PUT    | `/api/courses/:courseId/sections/:sectionId/lectures/:lectureId` | Super Admin, Admin                                                                       | Update a lecture                                                                                                                          |
 | DELETE | `/api/courses/:courseId/sections/:sectionId/lectures/:lectureId` | Super Admin, Admin                                                                       | Delete a lecture                                                                                                                          |
 | PUT    | `/api/courses/:courseId/sections/:sectionId/lectures/reorder`    | Super Admin, Admin                                                                       | Reorder lectures                                                                                                                          |
-| POST   | /api/enrollments/:courseId                                       | Student                                                                                  | Enrols the signed-in student in a published course (type and price decided by the server)                                                 |
-| DELETE | /api/enrollments/:courseId                                       | Student                                                                                  | Removes the student's own enrolment                                                                                                       |
+| POST   | /api/enrollments/:courseId                                       | Student                                                                                  | Enrols the student; a paid course costs its list price less the `couponCode` sent (checked on the server)                                 |
 | GET    | /api/enrollments                                                 | Student                                                                                  | The student's enrolled courses, newest first                                                                                              |
 | GET    | /api/enrollments/:courseId/check                                 | Student                                                                                  | Whether the student is enrolled in the course                                                                                             |
 | GET    | /api/enrollments/admin/course/:courseId                          | Super Admin, Admin                                                                       | Enrolments of a course (optional `?type=free\|paid\|subscription`)                                                                        |
 | GET    | /api/enrollments/admin/course/:courseId/stats                    | Super Admin, Admin                                                                       | Counts per type and earnings of a course                                                                                                  |
 | GET    | /api/enrollments/course/:courseId/students                       | Super Admin, Admin, Moderator, Teacher (own courses only)                                | Enrolled students (teachers do not get emails)                                                                                            |
 | GET    | /api/enrollments/course/:courseId/students/export                | Super Admin, Admin, Moderator                                                            | CSV of student names and emails                                                                                                           |
+| GET    | /api/coupons/check                                               | Public                                                                                   | What `?code=` gives on `?course=` right now (price preview; one message for every invalid code)                                           |
+| GET    | /api/coupons/suggest                                             | Super Admin, Admin                                                                       | A free random coupon code                                                                                                                 |
+| GET    | /api/coupons                                                     | Super Admin, Admin                                                                       | Every code of `?course=`: its own discount, its coupons, the promos it is in (status, uses)                                               |
+| POST   | /api/coupons                                                     | Super Admin, Admin                                                                       | Create a coupon for a paid course (percent or amount, limit, start/end)                                                                   |
+| PATCH  | /api/coupons/:id                                                 | Super Admin, Admin                                                                       | Change a coupon or switch it on / off                                                                                                     |
+| DELETE | /api/coupons/:id                                                 | Super Admin, Admin                                                                       | Delete a coupon nobody enrolled with                                                                                                      |
+| GET    | /api/promos/active                                               | Public                                                                                   | Running promos (home banner and pop-up), newest first                                                                                     |
+| GET    | /api/promos/active/courses                                       | Public                                                                                   | Published public courses of the running promos, with their `offer`                                                                        |
+| GET    | /api/promos                                                      | Super Admin, Admin                                                                       | Paged promos with status, course count and uses                                                                                           |
+| POST   | /api/promos                                                      | Super Admin, Admin                                                                       | Create a promo for published paid courses                                                                                                 |
+| PATCH  | /api/promos/:id                                                  | Super Admin, Admin                                                                       | Change a promo or switch it on / off                                                                                                      |
+| DELETE | /api/promos/:id                                                  | Super Admin, Admin                                                                       | Delete a promo nobody enrolled with                                                                                                       |
+| GET    | /api/revenue/summary                                             | Super Admin, Admin                                                                       | Course sales today / 7 days / month / all time and daily, weekly, monthly charts                                                          |
+| GET    | /api/revenue/orders                                              | Super Admin, Admin                                                                       | Every enrolment (order) of every course, paged, `type` and `courseIds` filters                                                            |
+| GET    | /api/revenue/orders/export                                       | Super Admin, Admin                                                                       | Every matching order (up to 5000) for CSV / PDF                                                                                           |
 | GET    | /api/enrollments/course/:courseId/count                          | Signed in                                                                                | Number of students enrolled in a course                                                                                                   |
 | GET    | /api/announcements/course/:courseId                              | Enrolled students, the course's teachers, Super Admin, Admin, Moderator                  | Announcements of a course, newest first                                                                                                   |
 | POST   | /api/announcements/course/:courseId                              | Super Admin, Admin, Moderator, Teacher                                                   | Posts an announcement (teachers: only their own courses)                                                                                  |
+| GET    | /api/announcements/broadcasts                                    | Super Admin, Admin, Moderator                                                            | Announcements sent to several courses, paged, with "seen by" counts                                                                       |
+| GET    | /api/announcements/broadcasts/:id                                | Super Admin, Admin, Moderator                                                            | One sent announcement: courses, students and seen counts per course, poster                                                               |
+| POST   | /api/announcements/broadcasts                                    | Super Admin, Admin, Moderator                                                            | Send one announcement (rich text, optional image) to several published courses                                                            |
 | PUT    | /api/announcements/:id                                           | Super Admin, Admin, Moderator, Teacher                                                   | Edits an announcement (author or staff admin)                                                                                             |
 | DELETE | /api/announcements/:id                                           | Super Admin, Admin, Moderator, Teacher                                                   | Deletes an announcement (author or staff admin)                                                                                           |
 | GET    | /api/study-curricula/course/:courseId                            | Public (full data only for users with course access)                                     | Live classes (weekly curriculum) of a course, oldest first                                                                                |
@@ -467,6 +484,10 @@ can read them (the public catalog filters use them).
    it (otherwise 400 `Category is used by N course(s)` / `Course type is used by N course(s)`).
 4. Each course type has its own box on the home page and the catalog (its name and description, its paid
    courses; see `filterCounts.paidByCourseType`). The old `isLive` flag and `liveOnly` filter were removed.
+5. A course type can have a home `position` (whole number 1-999; `''` or `null` clears it). `GET` lists the
+   numbered types first (1, 2, ...) and then the others, ties and unnumbered types by name; the home page and
+   the catalog show the boxes in this order. Another value answers 400
+   `Position must be a whole number from 1 to 999`. Tests: `course-type.position.test.ts`.
 
 **Endpoints:** see the first eight rows above.
 
@@ -583,7 +604,7 @@ loaded by update/delete to remove the old photo), expertise[], socialLinks, user
 
 ### Courses
 
-**What it does:** Admins create, edit, publish, discount and delete courses. Visitors browse the public catalog
+**What it does:** Admins create, edit, publish / unpublish and (only when never published) delete courses. Visitors browse the public catalog
 and open course pages.
 
 `GET /api/courses/:id` also returns the course page sections (see "Course
@@ -604,9 +625,12 @@ of each course type, and per category: the catalog (`/courses`) uses it to show 
    valid.
 2. `PUT` checks the sent fields the same way, then updates them, re-computes prices when pricing or prices are sent, and replaces the cover
    image (old one deleted from Cloudinary). Status can only change through `PATCH /:id/status`.
-3. `PATCH /:id/status` sets Published (with `publishedAt`) or Draft (clears it).
-4. `DELETE` first counts the course's enrolments: if there is at least one it answers 400 and deletes nothing
-   (enrolments are revenue and learning history; unpublish the course instead). Without enrolments it removes the
+3. `PATCH /:id/status` sets Published (with `publishedAt`) or Draft (clears it). The first publish also sets
+   `firstPublishedAt`, which is never cleared (bulk publishing sets it too).
+4. `DELETE` refuses a course that was ever published (`firstPublishedAt` set or status Published: 400
+   `A course that was ever published cannot be deleted; unpublish it instead`) and one with enrolments (400).
+   An unpublished course leaves the home page and the catalog, but its enrolled students keep it: they can still
+   open `GET /api/courses/:id` and its content. Otherwise it removes the
    cover, lectures, sections, study curricula, study materials, announcements, quiz sections, quiz banks, quiz
    attempts, Q&A questions with their answers, and the course.
 5. `GET /api/courses/browse` only ever returns Published + Public courses; supports `search`, `courseTypes`,
@@ -620,60 +644,49 @@ of each course type, and per category: the catalog (`/courses`) uses it to show 
    enrolment statistics (total, this month, last month, lifetime earned); everyone else (guests, students,
    teachers) gets only Published + Public courses without statistics. Filters: `category`, `courseType`, `teacher`, `status`, `pricing`, `visibility`,
    `subscriptionPlans`, `search`, `enrollmentFilter`, `earningFilter`.
-7. Before each read, discounts whose end time has passed are reset (price back to list price, percent 0).
-8. `GET /api/courses/:id` (sign-in optional): a Draft or Private course answers 404 unless the caller is staff
-   or one of the course's teachers. The video address of a lecture that is not a free preview is removed unless
+7. New fields: `batchNumber` (exactly 4 digits, unique; a free random one is set on create when none is sent;
+   400 bad format, 409 `This batch number is already used by another course`; older courses get one at start-up),
+   `liveClassSchedule` and `supportClassSchedule` (plain text up to 200 characters), and the course's own
+   discount as its auto coupon: `discountCode` (6-20 letters, digits, dashes; unique across course discounts,
+   coupons and promos: 409; suggested when a discount has none; cleared when there is no discount),
+   `discountStartsAt`, `discountEndsAt` (end after start). All are checked before the cover upload. At start-up a
+   discount set before coupons existed gets a code, and a published course gets `firstPublishedAt`.
+   `viewCount` counts course page visits (see "Course views").
+8. `GET /api/courses/:id` (sign-in optional): a Draft or Private course answers 404 unless the caller is staff,
+   one of the course's teachers or an enrolled student. The video address of a lecture that is not a free preview is removed unless
    the caller may watch the course (staff, the course's teachers, enrolled students).
-9. `GET /api/courses/discounts/active` summarises Published + Public Paid courses with a running discount.
-10. `PATCH /bulk` checks everything first (ids, enums, price a number >= 0, the announcement), then updates a
-    list of courses and/or posts an announcement to each (all or nothing). Pricing Paid sets price, list price and
-    discount price to the sent price; Free sets them to 0; a price sent without a pricing change only reprices
-    the Paid courses; `PATCH /bulk/discount` applies
-    a percentage (1 to 99) with a future end date to the list price of every selected course.
-
-**Workflow (bulk discount):**
-
-```mermaid
-flowchart TD
-  A[Admin sends courseIds, percent, end date] --> B{Valid ids, 1-99 percent, future date?}
-  B -- no --> E[400]
-  B -- yes --> C{All courses found?}
-  C -- no --> F[404]
-  C -- yes --> D{Every list price above 0?}
-  D -- no --> E
-  D -- yes --> G[bulkWrite: discountPrice = list x (1 - percent/100), price = discountPrice]
-  G --> H[200 updatedCount]
-```
+9. Public reads (`GET /api/courses` for non-staff, `/browse`, `/:id`) add `offer` to each course: the code the
+   course and payment pages fill in, i.e. the lowest price of the course's running own discount and the running
+   promos that include it (`{ code, source: course|promo, price, listPrice, discountAmount, discountPercent,
+startsAt, endsAt }`, or null). It is only a display: the enrolment checks the code again.
+10. `PATCH /bulk` checks everything first (ids, enums, price a number >= 0), then updates a list of courses (all
+    or nothing). Pricing Paid sets price, list price and discount price to the sent price; Free sets them to 0;
+    a price sent without a pricing change only reprices the Paid courses. The bulk announcement and the bulk
+    discount campaign were removed (Announcements page; Promos page).
 
 **Endpoints:** rows above.
 
 **Example:**
 
 ```http
-PATCH /api/courses/bulk/discount
-Cookie: token=...
-{ "courseIds": ["6720...a"], "discountPercent": 25, "discountEndsAt": "2026-12-01T00:00:00.000Z" }
+GET /api/courses/batch-number/suggest
 ```
 
 ```json
-{
-  "success": true,
-  "message": "Discount applied to 1 course",
-  "updatedCount": 1,
-  "data": { "courseCount": 1, "discountPercent": 25, "discountEndsAt": "2026-12-01T00:00:00.000Z" }
-}
+{ "success": true, "data": { "batchNumber": "4821" } }
 ```
 
 **Business rules:** write routes Super Admin and Admin only (also for teachers' own courses); a new course is
 always a Draft; the client cannot set status, owner or sections through create/update; prices come from the
-server; the discount is computed from the stored list price; bulk discount is all or nothing; a course with
-enrolments cannot be deleted; `GET /api/courses/:id` includes the teachers' linked login account (`userId`) only
+server; a course that was ever published, or has enrolments, cannot be deleted; batch numbers and discount
+codes are unique; `GET /api/courses/:id` includes the teachers' linked login account (`userId`) only
 for Super Admin and Admin; the cover's Cloudinary id (`coverImagePublicId`, `select: false`) is never sent by
 reads.
 
 **Data model:** `courses` (title, subtitle, description, cover, category, courseType, teachers[], visibility,
 pricing, price, listPrice, discountPrice, discountPercent, discountEndsAt, includedInSubscription,
-allowedSubscriptionPlans[], status, publishedAt, sections[], createdBy), `announcements` (bulk announcement).
+allowedSubscriptionPlans[], status, publishedAt, firstPublishedAt, batchNumber (unique when set), discountCode
+(unique when set), discountStartsAt, liveClassSchedule, supportClassSchedule, viewCount, sections[], createdBy).
 
 **Errors:** 400 missing fields / bad enum / bad ids / bad discount values; 401; 403; 404 `Course not found`,
 `One or more courses were not found`.
@@ -697,8 +710,11 @@ Delete answers 400 `This course has N enrolment(s); unpublish it instead of dele
 - `GET /api/courses/:id` no longer sends the teachers' `userId` to guests, students, teachers or Moderators.
 - `coverImagePublicId` is `select: false` (not sent by reads; update/delete select it to remove the old cover).
 
-**Tests:** `backend/tests/integration/course.read.test.ts` (browse, list, by id, active discounts),
-`course.create.test.ts` (create), `course.update.test.ts` (update, status, delete), `course.bulk.test.ts` (bulk update, bulk discount).
+**Tests:** `backend/tests/integration/course.read.test.ts` (browse, list, by id), `course.create.test.ts`
+(create), `course.update.test.ts` (update, status, delete), `course.bulk.test.ts` (bulk update),
+`course.fields.test.ts` (batch number, schedules, discount code; checks before the upload),
+`course.offer.test.ts` (`offer`), `course.lifecycle.test.ts` (never delete a published course, unpublished
+course for enrolled students).
 
 ---
 
@@ -764,13 +780,20 @@ duration, order, isPreview).
 
 ### Enrollments
 
-**What it does:** Students join a published course, leave it, and see their courses. Staff see who is enrolled, counts and earnings, and can export the student list as CSV.
+**What it does:** Students join a published course and see their courses (an enrolment is never removed by the student). Staff see who is enrolled, counts and earnings, and can export the student list as CSV.
 
 **How it works:**
 
 1. A student calls `POST /api/enrollments/:courseId`. The server loads the course (404 if missing, 400 if it is a draft or Private) and refuses a second enrolment (400).
-2. Free course: type `free`, prices 0. Paid course: if the student has an active, not expired subscription whose plan is in the course's allowed plans and the course is `includedInSubscription`, the type is `subscription` (prices 0); otherwise `paid` and the price snapshot (list price, paid price, discount amount and percent, currency BDT) is copied from the course in the database. The request body is not used for prices. There is no payment gateway yet, so a `paid` enrolment is created at once.
-3. `DELETE` removes the student's own enrolment. Lists and stats read the `enrollments` collection.
+2. Free course: type `free`, prices 0. Paid course: if the student has an active, not expired subscription whose plan is in the course's allowed plans and the course is `includedInSubscription`, the type is `subscription` (prices 0); otherwise `paid`. A paid order costs the list price from the database, less the one coupon the buyer sends as
+   `couponCode` (the course's own discount code, an active course coupon with uses left, or a running promo that
+   includes the course; anything else: 400 `This coupon code is not valid for this course`). A limited coupon's
+   use is taken atomically (`This coupon code has no uses left` when two buyers race for the last one) and given
+   back when the enrolment cannot be saved. The snapshot keeps list price, paid price, discount, `couponCode`,
+   `couponSource` (course | coupon | promo) and the optional `paymentMethod` (`bkash` | `other`, recorded only).
+   There is no payment gateway yet, so a `paid` enrolment is created at once.
+3. There is no `DELETE` any more (user's decision 2026-11-06): once enrolled, the course stays in the student's
+   courses, also after it is unpublished. Lists and stats read the `enrollments` collection.
 4. Course content (lectures, materials, announcements, live classes, quizzes, Q&A): a `free` or `paid` enrolment
    always gives access; a `subscription` enrolment only while the student's `activeSubscription` has an end date
    in the future, the course is still `includedInSubscription`, and its `allowedSubscriptionPlans` is empty or
@@ -804,7 +827,7 @@ duration, order, isPreview).
 **Business rules:** one enrolment per student and course (unique index); only Published, Public courses; price and type come from the database; students see only their own enrolments; a Teacher sees the student list only for courses they teach (403 otherwise) and without emails; CSV values are quoted, quotes doubled, and a value starting with `=`, `+`, `-`, `@`, tab or carriage return gets a leading `'` so spreadsheets do not run it as a formula; `?type=` accepts only free, paid, subscription (anything else is ignored).
 Known issue (Stage B): students can enrol in paid courses without paying (no payment gateway yet).
 
-**Data model:** `Enrollment` { student, course, enrollmentType free|paid|subscription, listPrice, paidPrice, discountAmount, discountPercent, currency, timestamps }, unique index (student, course).
+**Data model:** `Enrollment` { student, course, enrollmentType free|paid|subscription, listPrice, paidPrice, discountAmount, discountPercent, currency, couponCode, couponSource, paymentMethod, timestamps }, unique index (student, course), indexes couponCode and createdAt.
 
 **Errors:** 400 already enrolled / course not published or Private / malformed id; 401 not signed in; 403 wrong role, teacher of another course; 404 course or enrolment not found.
 
@@ -816,7 +839,11 @@ Known issue (Stage B): students can enrol in paid courses without paying (no pay
 - A `subscription` enrolment stops giving course content access when the plan expires or the course leaves the
   plan (was: access forever).
 
-**Tests:** `backend/tests/integration/enrollment.student.test.ts`, `enrollment.admin.test.ts`.
+Revenue rule (`utils/revenue.ts`): a paid enrolment with a saved order (list price above 0) earns its
+`paidPrice`, also 0 after a 100% coupon; an older one without a saved order earns the course price.
+
+**Tests:** `backend/tests/integration/enrollment.student.test.ts`, `enrollment.admin.test.ts`,
+`enrollment.coupon.test.ts`.
 
 ### Announcements
 
@@ -852,7 +879,9 @@ Known issue (Stage B): students can enrol in paid courses without paying (no pay
 
 **Business rules:** teachers post only to courses they are assigned to; only the author (while still a teacher of the course) or a staff admin edits/deletes; list is newest first.
 
-**Data model:** `Announcement` { course, title, description, postedBy, timestamps }, index (course, createdAt desc).
+**Data model:** `Announcement` { course, title, description, postedBy, broadcast?, image?, timestamps }, index
+(course, createdAt desc), index broadcast. `AnnouncementView` { announcement, broadcast?, student, timestamps },
+unique (announcement, student): written when a student loads `GET /api/announcements/course/:courseId`.
 
 **Errors:** 400 missing/blank/non-text title or description, malformed id; 401; 403 wrong role, other teacher, not the author, no access to the course; 404 course or announcement not found.
 
@@ -1989,6 +2018,224 @@ other way round.
 update`), 401, 403.
 
 **Tests:** `backend/tests/integration/siteSetting.manage.test.ts`.
+
+### Coupons (course discount, course coupons, check)
+
+**What it does:** A paid course can be bought with one coupon per order. Three kinds of codes exist: the
+course's own discount (its "auto coupon", set on the Pricing page), coupons of one course (Coupons page) and
+promos for several courses (see "Promos"). The course and payment pages fill in the best running code; the
+buyer can remove it (list price) or type another one.
+
+**How it works:**
+
+1. Every code is unique across course discounts, coupons and promos (`utils/couponCode.ts`, 409 `This coupon
+code is already in use`). Codes are 6-20 letters, digits or dashes (long enough not to be guessed easily; per-IP rate limiting is an open
+   decision), stored in capitals; `GET /suggest` gives a
+   free random one (no 0/O or 1/I).
+2. `POST /api/coupons` { course, code, discountType percent|amount, value, usageLimit (null = unlimited),
+   startsAt?, endsAt?, isActive? } for a paid course only. A percent is 1-100; an amount must be below the list
+   price. `PATCH /:id` changes any field (an empty date clears it); `DELETE /:id` only when nobody enrolled with
+   the code (else 400: switch it off instead).
+3. `GET /api/coupons?course=` lists the course's own discount (`kind: auto`), its coupons (`kind: coupon`) and
+   the promos it is in (`kind: promo`), each with `status` (active, scheduled, expired, inactive, used-up) and
+   `usedCount` (enrolments with that code on this course).
+4. `GET /api/coupons/check?course=&code=` (public; Published + Public courses) answers what the code gives now
+   (`utils/courseOffer.ts` `resolveCoupon`). Every invalid reason (unknown, expired, not started, switched off,
+   used up, other course) gives the same 400 `This coupon code is not valid for this course`, so codes cannot be
+   probed by their message.
+5. At enrolment the code is checked again; the price always comes from the database.
+
+```mermaid
+flowchart TD
+  A[Buyer sends couponCode] --> B{Course discount code and running?}
+  B -- yes --> P[Price = discountPrice]
+  B -- no --> C{Active course coupon in dates with uses left?}
+  C -- yes --> Q[Price = list price less percent or amount; use taken atomically]
+  C -- no --> D{Running promo that includes the course?}
+  D -- yes --> R[Price = list price less promo discount]
+  D -- no --> E[400 not valid]
+```
+
+**Example:** `GET /api/coupons/check?course=6720...a&code=SAVE-7KQ2M9XA`
+
+```json
+{
+  "success": true,
+  "data": {
+    "code": "SAVE-7KQ2M9XA",
+    "source": "course",
+    "price": 3600,
+    "listPrice": 5000,
+    "discountAmount": 1400,
+    "discountPercent": 28,
+    "startsAt": null,
+    "endsAt": "2026-12-22T18:00:00.000Z"
+  }
+}
+```
+
+**Business rules:** one coupon per order; never below 0; an amount coupon or promo that is no longer below the
+list price (the price was lowered after saving it) is not valid; a limited coupon can never be used more than its
+limit (atomic `$inc` with a condition); used coupons cannot be deleted.
+
+**Data model:** `Coupon` { course, code (unique), discountType, value, startsAt?, endsAt?, usageLimit, usedCount,
+isActive, createdBy, timestamps }, index course. The course's own discount lives on `Course` (`discountCode`,
+`discountPrice`, `discountStartsAt`, `discountEndsAt`).
+
+**Errors:** 400 bad id / code / value / dates / not a paid course / used coupon on delete / invalid code on
+check; 401; 403 (Student, Teacher, Moderator on the admin routes); 404 course or coupon; 409 code in use.
+
+**Fixed issues:** none (new).
+
+**Tests:** `backend/tests/integration/coupon.manage.test.ts`, `coupon.check.test.ts`, `enrollment.coupon.test.ts`.
+
+### Promos
+
+**What it does:** Super Admin and Admin run a discount (percent or amount) with a code, start and end for
+chosen published paid courses. While it runs the home page shows a banner and a pop-up, and `/promo` lists its
+courses.
+
+**How it works:**
+
+1. `POST /api/promos` { title, code, discountType, value, startsAt, endsAt, courseIds[] } (all required; at most
+   500 courses, all Published and Paid; an amount below every course's list price; end after start).
+2. `PATCH /:id` changes fields or `isActive`; `DELETE /:id` only when nobody enrolled with the code.
+3. `GET /api/promos/active` (public) returns the running promos (active, now between start and end), newest
+   first; `GET /api/promos/active/courses` returns their Published + Public paid courses with `offer`.
+4. A running promo is one of the codes `offer` and `resolveCoupon` consider (see "Coupons").
+
+**Example:** `GET /api/promos/active`
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "...",
+      "title": "Eid offer",
+      "code": "EID-2026",
+      "discountType": "percent",
+      "value": 30,
+      "startsAt": "2026-11-06T00:00:00.000Z",
+      "endsAt": "2026-11-20T00:00:00.000Z",
+      "courseCount": 8
+    }
+  ],
+  "total": 1
+}
+```
+
+**Business rules:** promo codes are unique with every other code; only published paid courses; used promos
+cannot be deleted (switch them off).
+
+**Data model:** `Promo` { title, code (unique), discountType, value, startsAt, endsAt, courses[], isActive,
+createdBy, timestamps }, index (isActive, startsAt, endsAt).
+
+**Errors:** 400 missing / bad fields, unpublished or free course, amount not below a list price, used promo on
+delete; 401; 403; 404 promo or course; 409 code in use.
+
+**Tests:** `backend/tests/integration/promo.manage.test.ts`, `promo.public.test.ts`.
+
+### Revenue
+
+**What it does:** The Revenue page (Super Admin, Admin): course sales per period and every enrolment (order)
+of every course with its full details.
+
+**How it works:**
+
+1. `GET /api/revenue/summary?tz=&type=&courseIds=` sums the orders' revenue (the rule of `utils/revenue.ts`)
+   for today, the last 7 days, this month and all time, and returns three charts: per day (30 days), per week
+   (12 Monday-based weeks, keyed by the Monday) and per month (12 months), in the viewer's time zone.
+2. `GET /api/revenue/orders?type=all|paid|free|subscription&courseIds=a,b&page=&limit=` (limit max 100, default 10) returns orders newest first with the student (name, email, phone, student number, avatar), the course
+   (title, batch, cover), prices, coupon and payment method.
+3. `GET /api/revenue/orders/export` returns every matching order (up to 5000) for the CSV / PDF of a filter.
+
+**Example:** `GET /api/revenue/orders?type=paid&page=1&limit=10`
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "...",
+      "student": {
+        "_id": "...",
+        "name": "Rahim",
+        "email": "r@x.com",
+        "studentNumber": "123-456-789"
+      },
+      "course": { "_id": "...", "title": "Full stack", "batchNumber": "4821" },
+      "enrollmentType": "paid",
+      "listPrice": 5000,
+      "paidPrice": 3600,
+      "discountAmount": 1400,
+      "discountPercent": 28,
+      "couponCode": "SAVE-7KQ2M9XA",
+      "couponSource": "course",
+      "paymentMethod": "bkash",
+      "createdAt": "..."
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 10
+}
+```
+
+**Business rules:** bad `type` or course ids (more than 200, not ObjectIds) answer 400; bad `tz` 400.
+
+**Data model:** reads `enrollments` (index createdAt), `users`, `courses`.
+
+**Errors:** 400 bad filters / time zone; 401; 403 (Moderator, Teacher, Student).
+
+**Tests:** `backend/tests/integration/revenue.report.test.ts`.
+
+### Course views
+
+**What it does:** Counts how often each course page is visited; the admin course cards show the total.
+
+**How it works:**
+
+1. The course page calls `POST /api/courses/:id/view` once when it opens (only Published + Public courses; 404
+   otherwise, 400 bad id).
+2. The visitor is the signed-in user, or a guest identified by an anonymous random `vid` cookie (httpOnly, one
+   year). A guest's first request only sets the cookie (`counted: false`), so scripts that never send cookies
+   back cannot inflate the count.
+3. A `CourseView` row (course, visitor, UTC day) with a unique index makes a visitor count once per day; the
+   first one increments `Course.viewCount`. The rows are deleted after two days (TTL index).
+
+**Example:** `{ "success": true, "data": { "counted": true } }` (`false` for a repeat the same day).
+
+**Data model:** `CourseView` { course, visitor, day, createdAt (TTL 2 days) }, unique (course, visitor, day);
+`Course.viewCount`.
+
+**Tests:** `backend/tests/integration/course.view.test.ts`.
+
+### Announcements to several courses (Announcements page)
+
+**What it does:** Staff of the admin area send one announcement (title, rich text, optional picture) to several
+published courses at once; each course shows it in its announcements. The list shows how many students saw it.
+
+**How it works:**
+
+1. `POST /api/announcements/broadcasts` (multipart: title up to 200, description, `courseIds` JSON list of up to
+   500 published courses, optional `image` checked by content and uploaded to Cloudinary) saves an
+   `AnnouncementBroadcast` and one `Announcement` per course (linked by `broadcast`, with the image URL).
+2. A student who loads a course's announcements is recorded in `AnnouncementView` (one row per announcement and
+   student); `seenCount` counts distinct students per broadcast.
+3. `GET /api/announcements/broadcasts` (paged, newest first) and `GET /:id` (courses with their enrolled and
+   seen counts, poster). The image's Cloudinary id is never sent.
+
+**Example:** `POST` answers `201 { "success": true, "message": "Announcement sent to 3 courses", "data": { ... "courseCount": 3, "seenCount": 0 } }`.
+
+**Business rules:** published courses only; Super Admin, Admin and Moderator.
+
+**Data model:** `AnnouncementBroadcast` { title, description, image { url, publicId (not selected) }, courses[],
+postedBy, timestamps }; `AnnouncementView` (see "Announcements").
+
+**Errors:** 400 missing title / description, bad or unpublished courses, not an image; 401; 403; 404 unknown id.
+
+**Tests:** `backend/tests/integration/announcement.broadcast.test.ts`.
 
 <!--
 TEMPLATE: one section per feature (module), in a stable order.

@@ -1,0 +1,30 @@
+{
+  "title": "Announcements",
+  "subtitle": "Send one announcement to several published courses. Each course shows it in its announcements for its enrolled students.",
+  "add": "New announcement",
+  "send": "Send announcement",
+  "sent_one": "Announcement sent to {{count}} course",
+  "sent_other": "Announcement sent to {{count}} courses",
+  "empty": "No announcements sent from here yet.",
+  "listLabel": "Sent announcements",
+  "openDetails": "Open details of {{title}}",
+  "coursesTitle": "Send to these courses",
+  "courseCount_one": "{{count}} course",
+  "courseCount_other": "{{count}} courses",
+  "seenBy_one": "Seen by {{count}} student",
+  "seenBy_other": "Seen by {{count}} students",
+  "fields": {
+    "title": "Title",
+    "description": "Announcement",
+    "image": "Picture (optional)"
+  },
+  "validation": {
+    "titleLong": "At most 200 characters"
+  },
+  "details": {
+    "title": "Announcement details",
+    "courses_one": "Sent to {{count}} course",
+    "courses_other": "Sent to {{count}} courses",
+    "courseSeen": "Seen by {{seen}} of {{total}} enrolled students"
+  }
+}

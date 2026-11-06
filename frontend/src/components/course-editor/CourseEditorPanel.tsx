@@ -3,10 +3,13 @@
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import { CouponsTab } from '@/components/coupons/CouponsTab';
+
 import { CurriculumBuilder } from './curriculum/CurriculumBuilder';
 import { BasicInfoTab } from './details/BasicInfoTab';
 import { LearningContentTab } from './details/LearningContentTab';
 import { MediaTab } from './details/MediaTab';
+import { PricingTab } from './details/PricingTab';
 import { AudienceTab } from './extras/AudienceTab';
 import { BenefitsTab } from './extras/BenefitsTab';
 import { FaqTab } from './extras/FaqTab';
@@ -16,6 +19,7 @@ import { ToolsTab } from './extras/ToolsTab';
 import { SAVED_COURSE_TABS, type EditorTab } from './editor-tabs';
 import { LiveClassTab } from './live-class/LiveClassTab';
 import { QuizBankTab } from './quiz-bank/QuizBankTab';
+import { SettingsTab } from './settings/SettingsTab';
 
 import type { CourseDetailsEditor } from './useCourseDetailsForm';
 import type { FC } from 'react';
@@ -39,7 +43,9 @@ export const CourseEditorPanel: FC<CourseEditorPanelProps> = ({ tab, course, det
   }
   switch (tab) {
     case 'basic':
-      return <BasicInfoTab form={details.form} />;
+      return <BasicInfoTab form={details.form} isNew={course === undefined} />;
+    case 'pricing':
+      return <PricingTab form={details.form} />;
     case 'media':
       return (
         <MediaTab
@@ -69,5 +75,9 @@ export const CourseEditorPanel: FC<CourseEditorPanelProps> = ({ tab, course, det
       return course ? <LiveClassTab courseId={course._id} /> : null;
     case 'quizBank':
       return course ? <QuizBankTab courseId={course._id} /> : null;
+    case 'coupons':
+      return course ? <CouponsTab course={course} /> : null;
+    case 'settings':
+      return course ? <SettingsTab course={course} details={details} /> : null;
   }
 };

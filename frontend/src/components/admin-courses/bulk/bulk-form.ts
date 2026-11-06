@@ -1,19 +1,12 @@
-import { fromLocalInput } from '@/utils/dateTime';
-import { hasVisibleText } from '@/utils/html-text';
-
 import type {
   BulkCourseUpdates,
-  BulkDiscountRequest,
   BulkUpdateRequest,
   CourseStatus,
   CourseVisibility,
 } from '@/schemas/admin-courses.schema';
 
-// Bulk edit form state and the pure rules that turn it into a request (kept out of the components so they
-// are easy to test). Error results are i18n keys under adminCourses.bulk.errors.
-
-export type BulkTab = 'fields' | 'discount' | 'announcement';
-export const BULK_TABS: readonly BulkTab[] = ['fields', 'discount', 'announcement'];
+// Bulk edit form state and the pure rule that turns it into a request (kept out of the components so it is
+// easy to test). Error results are i18n keys under adminCourses.bulk.errors.
 
 /** Course type value meaning "remove the course type from every selected course". */
 export const CLEAR_COURSE_TYPE = '__clear__';
@@ -34,17 +27,6 @@ export interface BulkFieldsState {
   endDate: string;
 }
 
-export interface BulkDiscountState {
-  discountPercent: string;
-  /** datetime-local value in the viewer's time zone */
-  discountEndsAt: string;
-}
-
-export interface BulkAnnouncementState {
-  title: string;
-  description: string;
-}
-
 export const emptyFields = (): BulkFieldsState => ({
   courseType: '',
   category: '',
@@ -60,31 +42,7 @@ export const emptyFields = (): BulkFieldsState => ({
   endDate: '',
 });
 
-export const emptyDiscount = (): BulkDiscountState => ({ discountPercent: '', discountEndsAt: '' });
-export const emptyAnnouncement = (): BulkAnnouncementState => ({ title: '', description: '' });
-
 export type BuildResult<T> = { ok: true; body: T } | { ok: false; error: string };
-
-const MIN_PERCENT = 1;
-const MAX_PERCENT = 99;
-
-export const buildDiscountRequest = (
-  courseIds: string[],
-  form: BulkDiscountState,
-  now: number = Date.now(),
-): BuildResult<BulkDiscountRequest> => {
-  const percent = Number(form.discountPercent);
-  if (
-    form.discountPercent.trim() === '' ||
-    !Number.isInteger(percent) ||
-    percent < MIN_PERCENT ||
-    percent > MAX_PERCENT
-  )
-    return { ok: false, error: 'percent' };
-  const endsAt = fromLocalInput(form.discountEndsAt);
-  if (!endsAt || new Date(endsAt).getTime() <= now) return { ok: false, error: 'endsAt' };
-  return { ok: true, body: { courseIds, discountPercent: percent, discountEndsAt: endsAt } };
-};
 
 /** Only the fields the admin filled in; 'price' when a Paid price is missing or invalid. */
 const buildUpdates = (form: BulkFieldsState): BulkCourseUpdates | 'price' => {
@@ -113,33 +71,15 @@ const buildUpdates = (form: BulkFieldsState): BulkCourseUpdates | 'price' => {
   return updates;
 };
 
-/**
- * Fields tab: the filled fields (plus an announcement if one was written). Announcement tab: the
- * announcement is required (filled fields from the first tab still go with it, as in the old client).
- */
+/** The filled fields of the bulk form ('nothing' when none was filled in). */
 export const buildUpdateRequest = (
   courseIds: string[],
   fields: BulkFieldsState,
-  announcement: BulkAnnouncementState,
-  tab: BulkTab,
 ): BuildResult<BulkUpdateRequest> => {
   const updates = buildUpdates(fields);
   if (updates === 'price') return { ok: false, error: 'price' };
-  const hasUpdates = Object.keys(updates).length > 0;
-  const title = announcement.title.trim();
-  // Rich text from the editor ('' when empty), shown through SafeHtml in the course player
-  const { description } = announcement;
-  const hasAnnouncement = title !== '' && hasVisibleText(description);
-  if (tab === 'announcement' && !hasAnnouncement) return { ok: false, error: 'announcement' };
-  if (!hasUpdates && !hasAnnouncement) return { ok: false, error: 'nothing' };
-  return {
-    ok: true,
-    body: {
-      courseIds,
-      ...(hasUpdates && { updates }),
-      ...(hasAnnouncement && { announcement: { title, description } }),
-    },
-  };
+  if (Object.keys(updates).length === 0) return { ok: false, error: 'nothing' };
+  return { ok: true, body: { courseIds, updates } };
 };
 
 /** Two columns from 600 px, one on phones (bulk form layout). */

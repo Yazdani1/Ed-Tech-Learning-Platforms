@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { postLoginPath, safeRedirectPath, authSwitchHref } from '../safe-redirect';
+import { postLoginPath, safeRedirectPath } from '../safe-redirect';
 
 describe('safeRedirectPath', () => {
   it.each([
@@ -37,12 +37,12 @@ describe('postLoginPath', () => {
   });
 
   it("sends the user to their own home when ?next= is another role's area", () => {
-    expect(postLoginPath('Student', '/admin/users')).toBe('/student/dashboard');
-    expect(postLoginPath('Teacher', '/student/dashboard')).toBe('/teacher/courses');
+    expect(postLoginPath('Student', '/admin/users')).toBe('/student/courses');
+    expect(postLoginPath('Teacher', '/student/courses')).toBe('/teacher/courses');
   });
 
   it('checks the area after normalising "..", so traversal cannot sneak into /admin', () => {
-    expect(postLoginPath('Student', '/student/../admin/users')).toBe('/student/dashboard');
+    expect(postLoginPath('Student', '/student/../admin/users')).toBe('/student/courses');
   });
 
   it('never returns to the sign-in pages', () => {
@@ -54,18 +54,8 @@ describe('postLoginPath', () => {
     ['Admin', '/admin/courses'],
     ['Moderator', '/admin/courses'],
     ['Teacher', '/teacher/courses'],
-    ['Student', '/student/dashboard'],
+    ['Student', '/student/courses'],
   ] as const)('sends %s home (%s) when ?next= is unsafe', (role, home) => {
     expect(postLoginPath(role, '/\t/evil.example')).toBe(home);
-  });
-});
-
-describe('authSwitchHref', () => {
-  it('keeps a safe next and drops an unsafe one', () => {
-    expect(authSwitchHref('/auth/register', '/courses/1/payment')).toBe(
-      '/auth/register?next=%2Fcourses%2F1%2Fpayment',
-    );
-    expect(authSwitchHref('/auth/register', 'https://evil.example')).toBe('/auth/register');
-    expect(authSwitchHref('/auth/login', null)).toBe('/auth/login');
   });
 });

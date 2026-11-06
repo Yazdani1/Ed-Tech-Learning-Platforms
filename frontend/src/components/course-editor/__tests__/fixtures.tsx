@@ -106,6 +106,7 @@ export const BANK: QuizBank = quizBankSchema.parse({
 
 /** The catalog reads the details form needs. */
 export const catalogHandlers = [
+  http.get('*/api/courses/batch-number/suggest', () => ok({ batchNumber: '4821' })),
   http.get('*/api/categories', () => ok([CATEGORY])),
   http.get('*/api/course-types', () => ok([COURSE_TYPE])),
   http.get('*/api/teachers', () => ok([TEACHER])),

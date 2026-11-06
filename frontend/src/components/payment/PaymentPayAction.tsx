@@ -14,11 +14,16 @@ import { STUDENT_ROLES } from '@/utils/roles';
 
 import { PaymentPromises } from './PaymentPromises';
 
+import type { PaymentMethodId } from './payment-methods';
 import type { Course } from '@/schemas/browse.schema';
+import { withAuthPanel } from '@/utils/auth-drawer';
 import type { FC } from 'react';
 
 interface PaymentPayActionProps {
   course: Course;
+  /** The applied coupon (none = list price) */
+  couponCode: string | undefined;
+  method: PaymentMethodId;
 }
 
 const PAY_SX = {
@@ -36,7 +41,7 @@ const PAY_SX = {
  * CLAUDE.md, so no money is taken here), a visitor signs in first and comes back here; staff and teachers
  * cannot buy.
  */
-export const PaymentPayAction: FC<PaymentPayActionProps> = ({ course }) => {
+export const PaymentPayAction: FC<PaymentPayActionProps> = ({ course, couponCode, method }) => {
   const { t } = useTranslation();
   const { user, hasRole, isLoading } = useAuth();
   const { enroll, enrolling } = useEnrollAction(course);
@@ -47,7 +52,8 @@ export const PaymentPayAction: FC<PaymentPayActionProps> = ({ course }) => {
       <>
         <Button
           component={Link}
-          href={`/auth/login?next=${encodeURIComponent(paymentHref(course._id))}`}
+          href={withAuthPanel(paymentHref(course._id), '', 'login', paymentHref(course._id))}
+          scroll={false}
           fullWidth
           variant="contained"
           endIcon={<ArrowForwardIcon />}
@@ -66,7 +72,7 @@ export const PaymentPayAction: FC<PaymentPayActionProps> = ({ course }) => {
         variant="contained"
         disabled={isLoading || !isStudent || enrolling}
         onClick={() => {
-          enroll(false);
+          enroll(false, { couponCode, paymentMethod: method });
         }}
         endIcon={enrolling ? undefined : <ArrowForwardIcon />}
         sx={PAY_SX}

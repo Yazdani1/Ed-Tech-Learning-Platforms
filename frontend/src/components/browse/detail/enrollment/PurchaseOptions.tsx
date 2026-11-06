@@ -1,5 +1,7 @@
 'use client';
 
+import { CouponField } from '@/components/coupon-field/CouponField';
+import { useAppliedCoupon } from '@/components/coupon-field/useAppliedCoupon';
 import { getCoursePriceInfo } from '@/utils/price';
 
 import { DirectPriceHeader } from './DirectPriceHeader';
@@ -19,7 +21,7 @@ interface PurchaseOptionsProps {
   isSignedIn: boolean;
 }
 
-/** Guests and students not yet enrolled: get the course with a subscription plan, or directly. */
+/** Guests and students not yet enrolled: get the course with a subscription plan, or directly (with a coupon). */
 export const PurchaseOptions: FC<PurchaseOptionsProps> = ({
   course,
   subscription,
@@ -27,7 +29,11 @@ export const PurchaseOptions: FC<PurchaseOptionsProps> = ({
   isSignedIn,
 }) => {
   const { enroll, enrolling } = useEnrollAction(course);
-  const price = getCoursePriceInfo(course);
+  const coupon = useAppliedCoupon(course);
+  const base = getCoursePriceInfo(course);
+  // A paid course shows the price with the applied coupon (one per order; removing it shows the list price)
+  const price = base.isFree ? base : coupon.price;
+  const couponField = base.isFree ? null : <CouponField coupon={coupon} />;
   const shared = { isStudent, isSignedIn, enrolling };
   const direct = (
     <DirectPurchaseActions
@@ -44,6 +50,7 @@ export const PurchaseOptions: FC<PurchaseOptionsProps> = ({
     return (
       <>
         <DirectPriceHeader price={price} />
+        {couponField}
         {direct}
       </>
     );
@@ -52,7 +59,12 @@ export const PurchaseOptions: FC<PurchaseOptionsProps> = ({
     <PurchaseChoice
       lowestPrice={subscription.lowestPrice}
       price={price}
-      direct={direct}
+      direct={
+        <>
+          {couponField}
+          {direct}
+        </>
+      }
       subscription={
         <SubscriptionDetails
           allowedPlans={course.allowedSubscriptionPlans}

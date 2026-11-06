@@ -24,7 +24,7 @@ interface QaQuestionListProps {
   onOpen: (questionId: string) => void;
 }
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 10;
 
 /** Questions of the course with filters, paging and "Ask a Question" (everyone with access may ask). */
 export const QaQuestionList: FC<QaQuestionListProps> = ({ courseId, onOpen }) => {

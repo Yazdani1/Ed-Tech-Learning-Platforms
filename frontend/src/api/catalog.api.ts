@@ -43,6 +43,10 @@ export const TAXONOMY_KEYS = {
 /** POST /api/enrollments/:courseId body: `paid` buys the course even when a subscription covers it. */
 export interface EnrollRequest {
   enrollmentType?: 'paid';
+  /** One coupon per order; the server checks it and takes the price from the database */
+  couponCode?: string;
+  /** Payment page choice (recorded only: no gateway yet) */
+  paymentMethod?: 'bkash' | 'other';
 }
 
 /** POST /api/subscriptions/subscribe body (the price is always taken from the plan on the server). */
@@ -70,10 +74,6 @@ export const getMySubscription = (): Promise<Subscription | null> =>
 
 export const enroll = async (courseId: string, body: EnrollRequest): Promise<void> => {
   await http.send('POST', courseUrl(courseId), body);
-};
-
-export const unenroll = async (courseId: string): Promise<void> => {
-  await http.send('DELETE', courseUrl(courseId));
 };
 
 /** Activates the plan at once (no payment gateway yet); the price comes from the plan on the server. */
@@ -161,20 +161,6 @@ export const useEnroll = (courseId: string): UseMutationResult<void, ApiError, E
   return useMutation({
     mutationFn: (body) => enroll(courseId, body),
     onSuccess: () => refreshEnrollments(queryClient),
-  });
-};
-
-/** Removes the student's own enrolment (variables: the course id); the course leaves My Courses at once. */
-export const useUnenroll = (): UseMutationResult<void, ApiError, string> => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: unenroll,
-    onSuccess: (_data, courseId) => {
-      queryClient.setQueryData<EnrolledCourse[]>(queryKeys.catalog.myEnrollments, (current) =>
-        current?.filter((course) => course._id !== courseId),
-      );
-      return refreshEnrollments(queryClient);
-    },
   });
 };
 

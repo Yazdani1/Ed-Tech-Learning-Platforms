@@ -300,7 +300,7 @@ describe('DELETE /api/courses/:id', () => {
     async (role) => {
       const cloud = mockCloudinary();
       const admin = await createUser(role);
-      const course = await createCourse({ coverImagePublicId: 'cover/to-delete' });
+      const course = await createCourse({ status: 'Draft', coverImagePublicId: 'cover/to-delete' });
       const section = await createSection(course);
       const lecture = await createLecture(section);
       await StudyCurriculum.create({
@@ -327,7 +327,7 @@ describe('DELETE /api/courses/:id', () => {
 
   it('also removes the course announcements when nobody is enrolled (no orphans)', async () => {
     const admin = await createUser('Admin');
-    const course = await createCourse();
+    const course = await createCourse({ status: 'Draft' });
     await Announcement.create({
       course: course._id,
       title: 't',
@@ -344,7 +344,7 @@ describe('DELETE /api/courses/:id', () => {
   it('400 when the course has enrolments: nothing is deleted (enrolments are revenue/history)', async () => {
     const cloud = mockCloudinary();
     const admin = await createUser('Admin');
-    const course = await createCourse({ coverImagePublicId: 'cover/keep' });
+    const course = await createCourse({ status: 'Draft', coverImagePublicId: 'cover/keep' });
     const section = await createSection(course);
     await Announcement.create({
       course: course._id,
@@ -371,7 +371,7 @@ describe('DELETE /api/courses/:id', () => {
 
   it('also removes study materials, quizzes, quiz attempts and Q&A of the course, not of others', async () => {
     const admin = await createUser('Admin');
-    const course = await createCourse();
+    const course = await createCourse({ status: 'Draft' });
     const other = await createCourse();
     const { connection, Types } = await import('mongoose');
     const db = connection.db;

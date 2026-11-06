@@ -10,14 +10,15 @@ const request = (path: string, cookie?: string): NextRequest =>
   });
 
 describe('proxy', () => {
-  it.each(['/admin/courses', '/student/dashboard', '/teacher', '/admin'])(
+  it.each(['/admin/courses', '/student/courses', '/teacher', '/admin'])(
     'sends a visitor without the session cookie from %s to sign in',
     (path) => {
       const response = proxy(request(`${path}?tab=2`));
 
       expect(response.status).toBe(307);
       const location = new URL(response.headers.get('location') ?? '');
-      expect(location.pathname).toBe('/auth/login');
+      expect(location.pathname).toBe('/');
+      expect(location.searchParams.get('auth')).toBe('login');
       expect(location.searchParams.get('next')).toBe(`${path}?tab=2`);
     },
   );

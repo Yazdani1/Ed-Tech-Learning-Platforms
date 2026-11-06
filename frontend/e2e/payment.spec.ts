@@ -1,6 +1,12 @@
 import { expect, request, test, type APIRequestContext } from '@playwright/test';
 
-import { ACCOUNTS, E2E_PASSWORD, expectNoHorizontalScroll, uniqueEmail } from './helpers';
+import {
+  ACCOUNTS,
+  E2E_PASSWORD,
+  expectNoHorizontalScroll,
+  fillSignIn,
+  uniqueEmail,
+} from './helpers';
 
 // Each test builds its own paid public course through the API (as the E2E Admin).
 
@@ -9,7 +15,7 @@ const dataOf = async <T>(response: Awaited<ReturnType<APIRequestContext['post']>
   return ((await response.json()) as { data: T }).data;
 };
 
-const createPaidCourse = async (baseURL: string, tag: string) => {
+const createPaidCourse = async (baseURL: string, tag: string, discounted = true) => {
   const admin = await request.newContext({ baseURL });
   await dataOf(
     await admin.post('/api/auth/login', {
@@ -32,9 +38,9 @@ const createPaidCourse = async (baseURL: string, tag: string) => {
         courseType: courseType._id,
         visibility: 'Public',
         pricing: 'Paid',
-        price: 800,
+        price: discounted ? 800 : 1000,
         listPrice: 1000,
-        discountPrice: 800,
+        discountPrice: discounted ? 800 : 1000,
       },
     }),
   );
@@ -42,6 +48,22 @@ const createPaidCourse = async (baseURL: string, tag: string) => {
     await admin.patch(`/api/courses/${course._id}/status`, { data: { status: 'Published' } }),
   );
   return { id: course._id, title };
+};
+
+/** A 50% coupon with a code of its own on the course (as the E2E Admin). */
+const createCoupon = async (baseURL: string, courseId: string, code: string): Promise<void> => {
+  const admin = await request.newContext({ baseURL });
+  await dataOf(
+    await admin.post('/api/auth/login', {
+      data: { email: ACCOUNTS.admin.email, password: E2E_PASSWORD },
+    }),
+  );
+  await dataOf(
+    await admin.post('/api/coupons', {
+      data: { course: courseId, code, discountType: 'percent', value: 50 },
+    }),
+  );
+  await admin.dispose();
 };
 
 test.describe('Payment details page', () => {
@@ -72,12 +94,8 @@ test.describe('Payment details page', () => {
     await expectNoHorizontalScroll(page);
 
     await page.getByRole('link', { name: 'Sign in to continue' }).click();
-    await page.getByLabel(/email/i).fill(email);
-    await page
-      .getByLabel(/password/i)
-      .first()
-      .fill(E2E_PASSWORD);
-    await page.getByRole('button', { name: /sign in/i }).click();
+    await expect(page).toHaveURL(/\?auth=login&next=/);
+    await fillSignIn(page, email);
     await expect(page).toHaveURL(new RegExp(`/courses/${course.id}/payment$`));
 
     await page.getByRole('button', { name: 'Complete payment' }).click();
@@ -102,5 +120,89 @@ test.describe('Payment details page', () => {
     await page.goto(`/courses/${course.id}/payment`);
     await expect(page.getByText('Only student accounts can enrol in a course.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Complete payment' })).toBeDisabled();
+  });
+
+  test('a student applies a coupon, removes it and pays with the chosen code and method', async ({
+    page,
+    baseURL,
+  }, testInfo) => {
+    const course = await createPaidCourse(baseURL ?? '', `coupon ${testInfo.project.name}`, false);
+    const code = `E2E${Date.now().toString().slice(-8)}`;
+    await createCoupon(baseURL ?? '', course.id, code);
+    const registered = await page.request.post('/api/auth/register', {
+      data: { name: 'E2E Coupon Student', email: uniqueEmail(testInfo), password: E2E_PASSWORD },
+    });
+    expect(registered.ok()).toBe(true);
+
+    await page.goto(`/courses/${course.id}/payment`);
+    const summary = page.getByRole('region', { name: 'Order summary' });
+    await expect(summary).toBeVisible();
+    await expectNoHorizontalScroll(page);
+
+    await summary.getByLabel('Coupon code').fill(code.toLowerCase());
+    await summary.getByRole('button', { name: 'Apply' }).click();
+    await expect(summary.getByText(`${code} applied: you save ৳500`)).toBeVisible();
+    await expect(summary.getByText('- ৳500')).toBeVisible();
+
+    await summary.getByRole('button', { name: 'Remove coupon' }).click();
+    await expect(summary.getByText('No coupon: you pay the list price.')).toBeVisible();
+    await expect(summary.getByText(/applied: you save/)).toHaveCount(0);
+
+    await summary.getByLabel('Coupon code').fill('WRONGCODE99');
+    await summary.getByRole('button', { name: 'Apply' }).click();
+    await expect(
+      summary.getByRole('alert').or(summary.locator('.Mui-error').first()),
+    ).toBeVisible();
+
+    await summary.getByLabel('Coupon code').fill(code);
+    await summary.getByRole('button', { name: 'Apply' }).click();
+    await expect(summary.getByText(`${code} applied: you save ৳500`)).toBeVisible();
+    await page.getByRole('radio', { name: /Cards & other/ }).check();
+    await summary.getByRole('button', { name: 'Complete payment' }).click();
+    await expect(page.getByRole('link', { name: 'Go to this course' })).toBeVisible();
+
+    const mine = await page.request.get('/api/enrollments');
+    expect(mine.ok()).toBe(true);
+  });
+
+  test('the coupon chosen on the course page is kept on the payment page', async ({
+    page,
+    baseURL,
+  }, testInfo) => {
+    const course = await createPaidCourse(baseURL ?? '', `keep ${testInfo.project.name}`, false);
+    const code = `KEEP${Date.now().toString().slice(-8)}`;
+    await createCoupon(baseURL ?? '', course.id, code);
+
+    await page.goto(`/courses/${course.id}`);
+    const card = page.getByRole('complementary').first();
+    await card.getByLabel('Coupon code').fill(code);
+    await card.getByRole('button', { name: 'Apply' }).click();
+    await expect(card.getByText(`${code} applied: you save ৳500`)).toBeVisible();
+
+    await card.getByRole('link', { name: 'Enroll Now' }).click();
+    await expect(page).toHaveURL(new RegExp(`/courses/${course.id}/payment$`));
+    const summary = page.getByRole('region', { name: 'Order summary' });
+    await expect(summary.getByText(`${code} applied: you save ৳500`)).toBeVisible();
+  });
+
+  test('the course discount code is pre-filled on the payment page and can be removed', async ({
+    page,
+    baseURL,
+  }, testInfo) => {
+    const course = await createPaidCourse(baseURL ?? '', `auto ${testInfo.project.name}`);
+    const registered = await page.request.post('/api/auth/register', {
+      data: { name: 'E2E Auto Student', email: uniqueEmail(testInfo), password: E2E_PASSWORD },
+    });
+    expect(registered.ok()).toBe(true);
+
+    await page.goto(`/courses/${course.id}/payment`);
+    const summary = page.getByRole('region', { name: 'Order summary' });
+    await expect(summary.getByText(/applied: you save ৳200/)).toBeVisible();
+    await expect(summary.getByText('Saving ৳200 (20% off)')).toBeVisible();
+
+    await summary.getByRole('button', { name: 'Remove coupon' }).click();
+    await expect(summary.getByText('No coupon: you pay the list price.')).toBeVisible();
+    await expect(summary.getByText('Saving ৳200 (20% off)')).toHaveCount(0);
+    await expectNoHorizontalScroll(page);
   });
 });

@@ -64,10 +64,22 @@ export interface ICourse extends Document {
   discountPrice?: number;
   discountPercent?: number;
   discountEndsAt?: Date;
+  /** The course's own discount works as its auto coupon: this code is pre-filled on the course and payment pages */
+  discountCode?: string;
+  discountStartsAt?: Date;
   includedInSubscription: boolean;
   allowedSubscriptionPlans: SubscriptionPlan[];
   status: CourseStatus;
   publishedAt?: Date;
+  /** Set the first time the course is published and never cleared: such a course can never be deleted */
+  firstPublishedAt?: Date;
+  /** 4 digits, unique across all courses */
+  batchNumber?: string;
+  /** Plain text, e.g. "Sat and Mon, 9-11 PM" */
+  liveClassSchedule?: string;
+  supportClassSchedule?: string;
+  /** Course page visits (one per visitor per day) */
+  viewCount: number;
   whatYouWillLearn: string[];
   whatYouWillGet: string[];
   requirements: string[];
@@ -107,10 +119,17 @@ const courseSchema = new Schema<ICourse>(
     discountPrice: { type: Number, min: 0 },
     discountPercent: { type: Number, min: 0, max: 100 },
     discountEndsAt: { type: Date },
+    discountCode: { type: String, uppercase: true, trim: true },
+    discountStartsAt: { type: Date },
     includedInSubscription: { type: Boolean, default: false },
     allowedSubscriptionPlans: [{ type: String, trim: true }],
     status: { type: String, enum: ['Draft', 'Published'], default: 'Draft' },
     publishedAt: { type: Date },
+    firstPublishedAt: { type: Date },
+    batchNumber: { type: String, trim: true },
+    liveClassSchedule: { type: String, trim: true, maxlength: 200 },
+    supportClassSchedule: { type: String, trim: true, maxlength: 200 },
+    viewCount: { type: Number, default: 0, min: 0 },
     whatYouWillLearn: [String],
     whatYouWillGet: [String],
     requirements: [String],
@@ -150,5 +169,9 @@ const courseSchema = new Schema<ICourse>(
   },
   { timestamps: true }
 );
+
+// Unique when set (older courses get a batch number at start-up)
+courseSchema.index({ batchNumber: 1 }, { unique: true, partialFilterExpression: { batchNumber: { $type: 'string' } } });
+courseSchema.index({ discountCode: 1 }, { unique: true, partialFilterExpression: { discountCode: { $type: 'string' } } });
 
 export const Course = model<ICourse>('Course', courseSchema);

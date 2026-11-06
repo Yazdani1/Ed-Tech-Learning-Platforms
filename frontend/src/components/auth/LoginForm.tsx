@@ -16,7 +16,7 @@ import { AuthSwitchLink } from './AuthSwitchLink';
 import { EmailField } from './EmailField';
 import { PasswordField } from './PasswordField';
 
-/** Sign-in form. On success GuestGate sees the signed-in user and opens their page. */
+/** Sign-in form (in the auth panel). On success AuthDrawer sees the signed-in user and opens their page. */
 export const LoginForm = () => {
   const { t } = useTranslation();
   const fieldError = useFieldError();
@@ -60,7 +60,7 @@ export const LoginForm = () => {
       <AuthSwitchLink
         question={t('auth.noAccount')}
         linkText={t('auth.createAccountLink')}
-        href="/auth/register"
+        mode="register"
       />
     </Stack>
   );

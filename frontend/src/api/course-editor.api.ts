@@ -135,10 +135,16 @@ export const useUpdateCourse = (
               ...current,
               status: saved.status,
               publishedAt: saved.publishedAt,
+              firstPublishedAt: saved.firstPublishedAt ?? current.firstPublishedAt,
               coverImage: saved.coverImage,
             }
           : current,
       );
+      // The other tabs (Coupons needs pricing; batch, discount code, schedules) read the saved course again;
+      // the form keeps its own values, so a refetch never overwrites typing
+      void queryClient.invalidateQueries({ queryKey: queryKeys.browse.course(id) });
+      // The course's own discount is listed on its Coupons page
+      void queryClient.invalidateQueries({ queryKey: queryKeys.coupons.course(id) });
       return refreshCourseLists(queryClient, id);
     },
   });

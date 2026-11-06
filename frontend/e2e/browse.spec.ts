@@ -85,7 +85,7 @@ test.describe('Course catalog', () => {
     await expect(page.getByRole('heading', { level: 1, name: course.title })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Enroll Free' })).toHaveAttribute(
       'href',
-      '/auth/register',
+      new RegExp(`^/courses/${course.id}\\?auth=register&next=`),
     );
     await expectNoHorizontalScroll(page);
   });

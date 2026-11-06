@@ -2,11 +2,11 @@ import { http } from 'msw';
 
 import {
   adminCourseSchema,
-  adminEnrollmentSchema,
   enrollmentStatsSchema,
   type AdminCourse,
 } from '@/schemas/admin-courses.schema';
 import { courseStudentSchema } from '@/schemas/enrollment.schema';
+import { orderSchema } from '@/schemas/revenue.schema';
 import { ok } from '@/test/msw/handlers';
 
 export const CATEGORY = {
@@ -95,16 +95,34 @@ export const STUDENTS = [
   }),
 ];
 
-export const PAID = [
-  adminEnrollmentSchema.parse({
+/** The orders (price snapshots) of the course, as the Super Admin / Admin endpoint returns them. */
+export const ORDERS = [
+  orderSchema.parse({
     _id: 'enr1',
-    student: { _id: 'stu1', name: 'Karim Ahmed', email: 'karim@example.com' },
+    student: {
+      _id: 'stu1',
+      name: 'Karim Ahmed',
+      email: 'karim@example.com',
+      phone: '01700000000',
+      studentNumber: '123-456-789',
+    },
+    course: { _id: '64b7f0c2a1b2c3d4e5f6a001', title: 'React Basics', batchNumber: 'B-7' },
     enrollmentType: 'paid',
     listPrice: 1500,
     paidPrice: 1200,
     discountAmount: 300,
     discountPercent: 20,
+    couponCode: 'SAVE20NOW',
+    couponSource: 'coupon',
+    paymentMethod: 'bkash',
     createdAt: '2026-10-02T09:00:00.000Z',
+  }),
+  orderSchema.parse({
+    _id: 'enr2',
+    student: { _id: 'stu2', name: 'Nadia Islam', email: 'nadia@example.com' },
+    course: { _id: '64b7f0c2a1b2c3d4e5f6a001', title: 'React Basics' },
+    enrollmentType: 'free',
+    createdAt: '2026-10-03T09:00:00.000Z',
   }),
 ];
 

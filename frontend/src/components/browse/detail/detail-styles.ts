@@ -46,3 +46,16 @@ export const SIDE_CARD_SX = {
   overflow: 'hidden',
   borderColor: SOFT_BORDER,
 } as const;
+
+/** Live-class week cards: each week a different soft tint, accent border and number-tile gradient. */
+export const WEEK_COLORS = [
+  { bg: '#eff6ff', border: '#bfdbfe', tile: 'linear-gradient(145deg, #1d4ed8, #4338ca)' },
+  { bg: '#ecfdf5', border: '#a7f3d0', tile: 'linear-gradient(145deg, #047857, #0f766e)' },
+  { bg: '#fff7ed', border: '#fed7aa', tile: 'linear-gradient(145deg, #b45309, #c2410c)' },
+  { bg: '#f5f3ff', border: '#ddd6fe', tile: 'linear-gradient(145deg, #6d28d9, #a21caf)' },
+  { bg: '#fff1f2', border: '#fecdd3', tile: 'linear-gradient(145deg, #be123c, #b91c1c)' },
+  { bg: '#ecfeff', border: '#a5f3fc', tile: 'linear-gradient(145deg, #0e7490, #1d4ed8)' },
+] as const;
+
+/** Light shadow of the cards of a section without a section card */
+export const LIGHT_CARD_SHADOW = '0 6px 18px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.05)';

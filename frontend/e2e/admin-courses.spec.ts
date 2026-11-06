@@ -52,7 +52,9 @@ const openCourseMenu = async (page: Page, title: string): Promise<void> => {
 };
 
 test.describe('Admin course list', () => {
-  test('an Admin publishes, bulk edits and deletes a course', async ({ page }, testInfo) => {
+  test('an Admin bulk edits a draft and deletes it (never published)', async ({
+    page,
+  }, testInfo) => {
     await signInByApi(page, ACCOUNTS.admin.email);
     const title = uniqueTitle(testInfo.project.name);
     await createCourse(page, title, false);
@@ -63,17 +65,20 @@ test.describe('Admin course list', () => {
       .filter({ has: page.getByRole('heading', { name: title }) });
     await expect(card).toBeVisible();
     await expect(card.getByText('Draft', { exact: true })).toBeVisible();
+    await expect(card.getByText('Total views')).toBeVisible();
     await expectNoHorizontalScroll(page);
 
+    // No publish / unpublish in the menu (the editor does that)
     await openCourseMenu(page, title);
-    await page.getByRole('menuitem', { name: 'Publish' }).click();
-    await expect(page.getByText(`"${title}" is now published`)).toBeVisible();
-    await expect(card.getByText(/^Published • /)).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Publish' })).toHaveCount(0);
+    await expect(page.getByRole('menuitem', { name: 'Unpublish' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
 
     await page.getByRole('button', { name: 'Bulk Edit' }).click();
     const dialog = page.getByRole('dialog', { name: /Bulk Edit Courses/ });
+    await expect(dialog.getByRole('tab')).toHaveCount(0);
     await dialog.getByRole('checkbox', { name: title, exact: true }).check();
-    await dialog.getByRole('tabpanel').getByRole('combobox', { name: 'Visibility' }).click();
+    await dialog.getByRole('combobox', { name: 'Visibility' }).last().click();
     await page.getByRole('option', { name: 'Private', exact: true }).click();
     await dialog.getByRole('button', { name: 'Apply to 1 course' }).click();
     await expect(page.getByText('Updated 1 course')).toBeVisible();
@@ -86,7 +91,7 @@ test.describe('Admin course list', () => {
     await expect(card).toHaveCount(0);
   });
 
-  test('an Admin sees who enrolled and cannot delete a course with enrolments', async ({
+  test('an Admin sees the orders of a course and cannot delete a published course', async ({
     page,
     baseURL,
   }, testInfo) => {
@@ -105,7 +110,8 @@ test.describe('Admin course list', () => {
     await page.goto(`/admin/enrollments/${courseId}`);
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
     await expect(page.getByRole('list', { name: 'Enrollment statistics' })).toBeVisible();
-    await expect(page.getByText(ACCOUNTS.student.name, { exact: true })).toBeVisible();
+    await expect(page.getByText(ACCOUNTS.student.name, { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Free' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Export CSV' })).toHaveAttribute(
       'href',
       `/api/enrollments/course/${courseId}/students/export`,
@@ -116,9 +122,8 @@ test.describe('Admin course list', () => {
     await expect(page).toHaveURL(/\/admin\/courses$/);
     await page.goto(`/admin/courses?search=${encodeURIComponent(title)}`);
     await openCourseMenu(page, title);
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
-    await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
-    await expect(page.getByText(/This course has 1 enrolment\(s\)/)).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Enrollments' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Delete' })).toHaveCount(0);
   });
 
   test('a Moderator sees published courses without the manager actions', async ({

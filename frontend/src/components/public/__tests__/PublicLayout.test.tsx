@@ -155,9 +155,12 @@ describe('PublicLayout', () => {
 
     expect(await screen.findByRole('link', { name: 'Sign In' })).toHaveAttribute(
       'href',
-      '/auth/login',
+      '/?auth=login',
     );
-    expect(screen.getByRole('link', { name: 'Sign Up' })).toHaveAttribute('href', '/auth/register');
+    expect(screen.getByRole('link', { name: 'Sign Up' })).toHaveAttribute(
+      'href',
+      '/?auth=register',
+    );
     expect(screen.queryByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
   });
 
@@ -189,28 +192,35 @@ describe('PublicLayout', () => {
     expect(within(home).getByText('MedhaBee')).toBeInTheDocument();
   });
 
-  it('shows the discount banner with a countdown while an offer runs', async () => {
-    server.use(...publicChromeHandlers);
+  it('shows the promo banner with the code, a countdown and the link to the promo page', async () => {
     server.use(
-      http.get('*/api/courses/discounts/active', () =>
-        ok({
-          courseCount: 3,
-          discountPercent: 40,
-          discountEndsAt: new Date(Date.now() + IN_TWO_DAYS_MS).toISOString(),
-        }),
+      http.get('*/api/promos/active', () =>
+        ok([
+          {
+            _id: 'p1',
+            title: 'Eid offer',
+            code: 'EIDSALE40',
+            discountType: 'percent',
+            value: 40,
+            startsAt: new Date(Date.now() - IN_TWO_DAYS_MS).toISOString(),
+            endsAt: new Date(Date.now() + IN_TWO_DAYS_MS).toISOString(),
+            courseCount: 3,
+          },
+        ]),
       ),
+      ...publicChromeHandlers,
     );
     renderWithProviders(<PublicLayout>page</PublicLayout>);
 
-    const banner = await screen.findByRole('complementary', {
-      name: 'Limited-time course discount is live',
-    });
-    expect(within(banner).getByText('Up to 40% off')).toBeInTheDocument();
-    expect(within(banner).getByText('3 courses included in this offer')).toBeInTheDocument();
+    const banner = await screen.findByRole('complementary', { name: 'Running promo' });
+    expect(within(banner).getByText('40% OFF')).toBeInTheDocument();
+    expect(within(banner).getByText('Eid offer')).toBeInTheDocument();
+    expect(within(banner).getByText('EIDSALE40')).toBeInTheDocument();
+    expect(within(banner).getByText(/3 courses included in this offer/)).toBeInTheDocument();
     expect(within(banner).getByRole('timer')).toHaveTextContent(/1d 23h/);
     expect(within(banner).getByRole('link', { name: 'View discounted courses' })).toHaveAttribute(
       'href',
-      '/courses',
+      '/promo',
     );
   });
 

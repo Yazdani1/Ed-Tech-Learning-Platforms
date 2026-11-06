@@ -1,0 +1,56 @@
+{
+  "title": "Promos",
+  "subtitle": "Run a discount for all or chosen paid courses. While it runs, the home page shows a banner and a pop-up with the code.",
+  "add": "Create promo",
+  "edit": "Edit promo",
+  "launch": "Save promo",
+  "created": "Promo saved",
+  "updated": "Promo updated",
+  "deleted": "Promo deleted",
+  "stop": "Stop promo",
+  "resume": "Start again",
+  "stopped": "Promo stopped",
+  "resumed": "Promo started again",
+  "empty": "No promos yet.",
+  "coursesHeader": "Courses",
+  "actionsFor": "Actions for {{title}}",
+  "fields": {
+    "title": "Promo title",
+    "titleHelp": "Shown on the banner and the pop-up, e.g. \"Eid offer\".",
+    "bannerNote": "Between the start and the end, every visitor sees the banner on top, a pop-up on the home and course pages, and the promo page with these courses. Buyers enter the code at payment (it is filled in for them)."
+  },
+  "courses": {
+    "title": "Courses in this promo",
+    "label": "Published courses",
+    "search": "Search courses",
+    "category": "Category",
+    "visibility": "Visibility",
+    "pricing": "Pricing",
+    "selected": "{{count}} selected",
+    "selectShown": "Select all shown",
+    "unselectShown": "Unselect all shown",
+    "empty": "No published course matches these filters."
+  },
+  "validation": {
+    "titleLong": "At most 120 characters",
+    "courses": "Select at least one course"
+  },
+  "banner": {
+    "label": "Running promo",
+    "useCode": "Use code",
+    "percentOff": "{{value}}% OFF",
+    "amountOff": "{{amount}} OFF"
+  },
+  "popup": {
+    "copy": "Copy code {{code}}",
+    "copied": "Code copied",
+    "copyFailed": "Could not copy the code",
+    "dates": "From {{start}} to {{end}}",
+    "enrollNow": "Enroll now"
+  },
+  "page": {
+    "title": "Promo courses",
+    "subtitle": "{{discount}} with the code {{code}} on every course below.",
+    "none": "No promo is running right now."
+  }
+}

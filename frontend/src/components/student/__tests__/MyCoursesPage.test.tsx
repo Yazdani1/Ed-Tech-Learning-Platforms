@@ -4,7 +4,7 @@ import { http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { ConfirmProvider } from '@/context/ConfirmContext';
-import { fail, makeUser, ok, signedInAs } from '@/test/msw/handlers';
+import { fail, makeUser, signedInAs } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { router, setLocation } from '@/test/next-navigation';
 import { renderWithProviders } from '@/test/render';
@@ -91,71 +91,11 @@ describe('MyCoursesPage', () => {
     expect(await screen.findByText('No courses match "zzz".')).toBeInTheDocument();
   });
 
-  it('removes a course after confirmation', async () => {
-    let deleted = '';
-    server.use(
-      http.get('*/api/enrollments', () =>
-        ok([algebra, physics].filter((course) => course._id !== deleted)),
-      ),
-      http.delete('*/api/enrollments/:courseId', ({ params }) => {
-        deleted = String(params.courseId);
-        return ok(undefined);
-      }),
-    );
+  it('has no way to remove an enrolment', async () => {
+    server.use(signedInAs(makeUser('Student')), enrollmentsReturn([algebra]));
     renderPage();
-    const user = userEvent.setup();
-    await user.click(
-      await screen.findByRole('button', { name: 'Remove "Algebra Basics" from my courses' }),
-    );
-    const dialog = await screen.findByRole('dialog', { name: 'Remove Course' });
-    await user.click(within(dialog).getByRole('button', { name: 'Remove' }));
 
-    expect(await screen.findByText('Removed from "Algebra Basics"')).toBeInTheDocument();
-    expect(deleted).toBe(algebra._id);
-    await waitFor(() => {
-      expect(screen.queryByRole('link', { name: /Algebra Basics/ })).not.toBeInTheDocument();
-    });
-  });
-
-  it('keeps the course and shows the error when removing fails', async () => {
-    server.use(
-      enrollmentsReturn([algebra]),
-      http.delete('*/api/enrollments/:courseId', () => fail(404, 'Enrollment not found')),
-    );
-    renderPage();
-    const user = userEvent.setup();
-    await user.click(
-      await screen.findByRole('button', { name: 'Remove "Algebra Basics" from my courses' }),
-    );
-    await user.click(
-      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Remove' }),
-    );
-
-    expect(await screen.findByText('Enrollment not found')).toBeInTheDocument();
-    expect(screen.getByText('Algebra Basics')).toBeInTheDocument();
-  });
-
-  it('does nothing when the confirmation is cancelled', async () => {
-    let called = false;
-    server.use(
-      enrollmentsReturn([algebra]),
-      http.delete('*/api/enrollments/:courseId', () => {
-        called = true;
-        return ok(undefined);
-      }),
-    );
-    renderPage();
-    const user = userEvent.setup();
-    await user.click(
-      await screen.findByRole('button', { name: 'Remove "Algebra Basics" from my courses' }),
-    );
-    await user.click(
-      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Cancel' }),
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    });
-    expect(called).toBe(false);
+    expect(await screen.findByText('Algebra Basics')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Remove/ })).not.toBeInTheDocument();
   });
 });

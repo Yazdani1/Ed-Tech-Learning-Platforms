@@ -74,7 +74,7 @@ export const useLogout = (): UseMutationResult<void, ApiError, void> => {
   return useMutation({
     mutationFn: logout,
     // Only after the backend cleared the cookie: mark the user signed out (RequireRole then opens
-    // /auth/login) and drop every other cached query, so no data from this session stays in memory.
+    // the sign-in panel) and drop every other cached query, so no data from this session stays in memory.
     // The "me" query itself is kept, not removed, so its observers see the change.
     // If the request fails the user stays signed in (the cookie is still valid) and the caller shows an
     // error instead of pretending the sign-out worked.

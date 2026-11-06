@@ -41,6 +41,9 @@ export const CourseEditorScreen: FC<CourseEditorScreenProps> = ({ course }) => {
         onPublish={() => {
           details.save('Published');
         }}
+        onSave={() => {
+          details.save();
+        }}
       />
       <Box
         sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 4 } }}

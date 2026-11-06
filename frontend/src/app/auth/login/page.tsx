@@ -1,9 +1,15 @@
-import { LoginForm } from '@/components/auth/LoginForm';
+import { redirect } from 'next/navigation';
 
-import type { Metadata } from 'next';
+import { withAuthPanel } from '@/utils/auth-drawer';
 
-export const metadata: Metadata = { title: 'Sign in' };
+interface LoginRedirectProps {
+  searchParams: Promise<{ next?: string | string[] }>;
+}
 
-const LoginPage = () => <LoginForm />;
+/** Old address: sign-in and create account are a panel now; opens it on the home page (keeps a safe ?next=). */
+const LoginRedirect = async ({ searchParams }: LoginRedirectProps) => {
+  const { next } = await searchParams;
+  redirect(withAuthPanel('/', '', 'login', typeof next === 'string' ? next : null));
+};
 
-export default LoginPage;
+export default LoginRedirect;

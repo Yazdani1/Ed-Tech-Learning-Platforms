@@ -21,7 +21,9 @@ test.describe('Profile', () => {
 
     await page.goto('/student/profile');
     await expect(page.getByRole('heading', { name: 'E2E Profile Student' })).toBeVisible();
-    await expect(page.getByText('You do not have an active subscription.')).toBeVisible();
+    // The subscription box is only shown with an active plan
+    await expect(page.getByRole('heading', { name: 'Subscription' })).toHaveCount(0);
+    await expect(page.getByText('You do not have an active subscription.')).toHaveCount(0);
     await expectNoHorizontalScroll(page);
 
     await page.getByRole('button', { name: 'Edit Profile' }).click();
@@ -41,7 +43,7 @@ test.describe('Profile', () => {
     await expect(page.getByRole('heading', { name: 'E2E Renamed Student' })).toBeVisible();
     await signOut(page);
     await signIn(page, email, NEW_PASSWORD);
-    await expect(page).toHaveURL(/\/student\/dashboard$/);
+    await expect(page).toHaveURL(/\/student\/courses$/);
   });
 
   test('a wrong current password is refused with the server message', async ({

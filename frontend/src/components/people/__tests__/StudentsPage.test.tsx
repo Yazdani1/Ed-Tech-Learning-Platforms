@@ -142,7 +142,7 @@ describe('StudentsPage (/admin/students)', () => {
       expect(seen[0]?.get('courseIds')).toBe(COURSE_A);
     });
     expect(seen[0]?.get('search')).toBe('asha');
-    expect(seen[0]?.get('limit')).toBe('20');
+    expect(seen[0]?.get('limit')).toBe('10');
   });
 
   it('opens a right side panel with contact details, courses bought, subscriptions and totals', async () => {

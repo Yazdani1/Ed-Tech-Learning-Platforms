@@ -73,7 +73,7 @@ describe('DiscussionDetailPage', () => {
     );
     expect(screen.getByRole('link', { name: 'Sign in to reply' })).toHaveAttribute(
       'href',
-      '/auth/login?next=%2Fcommunity-hub%2Fp1',
+      '/community-hub/p1?auth=login&next=%2Fcommunity-hub%2Fp1',
     );
   });
 

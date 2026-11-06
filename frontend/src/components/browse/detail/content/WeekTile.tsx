@@ -4,6 +4,8 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import { pickByIndex, WEEK_COLORS } from '../detail-styles';
+
 import type { FC } from 'react';
 
 interface WeekTileProps {
@@ -15,7 +17,6 @@ const TILE_SX = {
   width: 68,
   height: 68,
   borderRadius: '14px',
-  background: 'linear-gradient(145deg, #b45309 0%, #c2410c 55%, #b91c1c 100%)',
   color: 'common.white',
   display: 'flex',
   flexDirection: 'column',
@@ -28,7 +29,7 @@ const TILE_SX = {
 export const WeekTile: FC<WeekTileProps> = ({ index }) => {
   const { t } = useTranslation();
   return (
-    <Box sx={TILE_SX}>
+    <Box sx={{ ...TILE_SX, background: pickByIndex(WEEK_COLORS, index).tile }}>
       <Typography
         component="span"
         sx={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase' }}

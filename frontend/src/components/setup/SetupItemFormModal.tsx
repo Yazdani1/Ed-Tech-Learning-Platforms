@@ -30,17 +30,23 @@ interface SetupItemFormModalProps {
 }
 
 const DESCRIPTION_ROWS = 3;
+const POSITION_SLOT = { htmlInput: { inputMode: 'numeric' } } as const;
 
 /** The form values for an item (empty for a new one). */
 const itemValues = (item: SetupItem | undefined): SetupItemRequest => ({
   name: item?.name ?? '',
   description: item?.description ?? '',
+  position: item?.position ? String(item.position) : '',
 });
 
-/** Add or edit a category / course type (name required, description optional). */
-export const SetupItemFormModal: FC<SetupItemFormModalProps> = ({ kind, open, item, onClose }) => {
+/** The form of one item: filled when the dialog opens, saved with a toast. */
+const useSetupItemForm = (
+  kind: SetupKind,
+  open: boolean,
+  item: SetupItem | undefined,
+  onClose: () => void,
+) => {
   const { t } = useTranslation();
-  const fieldError = useFieldError();
   const save = useSaveSetupItem(kind);
   const form = useForm<SetupItemRequest>({
     resolver: zodResolver(setupItemRequestSchema),
@@ -66,6 +72,14 @@ export const SetupItemFormModal: FC<SetupItemFormModalProps> = ({ kind, open, it
       },
     );
   });
+  return { form, save, onSave };
+};
+
+/** Add or edit a category / course type (name required, description optional; course types: home position). */
+export const SetupItemFormModal: FC<SetupItemFormModalProps> = ({ kind, open, item, onClose }) => {
+  const { t } = useTranslation();
+  const fieldError = useFieldError();
+  const { form, save, onSave } = useSetupItemForm(kind, open, item, onClose);
 
   return (
     <AppModal
@@ -94,6 +108,16 @@ export const SetupItemFormModal: FC<SetupItemFormModalProps> = ({ kind, open, it
           rows={DESCRIPTION_ROWS}
           {...fieldError(form.formState.errors.description)}
         />
+        {kind === 'courseType' && (
+          <TextField
+            {...form.register('position')}
+            label={t('showcase.setup.position')}
+            fullWidth
+            slotProps={POSITION_SLOT}
+            helperText={t('showcase.setup.positionHelp')}
+            {...fieldError(form.formState.errors.position)}
+          />
+        )}
       </Stack>
     </AppModal>
   );

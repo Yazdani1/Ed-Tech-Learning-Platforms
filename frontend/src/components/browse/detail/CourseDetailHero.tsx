@@ -16,6 +16,7 @@ import { HeroBreadcrumbs } from './HeroBreadcrumbs';
 import { HeroPrice } from './HeroPrice';
 
 import type { Course } from '@/schemas/browse.schema';
+import { BatchNumberChip } from '@/components/course-card/BatchNumberChip';
 import type { FC } from 'react';
 
 interface CourseDetailHeroProps {
@@ -50,7 +51,6 @@ const BADGE_SX = {
   gap: 1,
   px: 1.5,
   py: 0.5,
-  mb: 2,
   maxWidth: '100%',
   borderRadius: 99,
   bgcolor: 'rgba(37,99,235,0.3)',
@@ -92,12 +92,17 @@ export const CourseDetailHero: FC<CourseDetailHeroProps> = ({ course, enrollTarg
         <Grid container>
           <Grid size={{ xs: 12, md: 8 }} sx={{ pr: { md: 4 } }}>
             <HeroBreadcrumbs course={course} />
-            {course.courseType && (
-              <Box sx={BADGE_SX}>
-                <Box sx={DOT_SX} aria-hidden />
-                <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {course.courseType.name}
-                </Box>
+            {(course.courseType ?? course.batchNumber) && (
+              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                <BatchNumberChip batchNumber={course.batchNumber} tone="dark" />
+                {course.courseType && (
+                  <Box sx={BADGE_SX}>
+                    <Box sx={DOT_SX} aria-hidden />
+                    <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {course.courseType.name}
+                    </Box>
+                  </Box>
+                )}
               </Box>
             )}
             <Typography component="h1" sx={TITLE_SX}>

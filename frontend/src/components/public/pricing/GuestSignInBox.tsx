@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
-import { PRICING_SIGN_IN_HREF } from './PlanAction';
+import { PRICING_REGISTER_HREF, PRICING_SIGN_IN_HREF } from './PlanAction';
 
 /** Under the plans for visitors: sign in (back to /pricing) or create an account. */
 export const GuestSignInBox = () => {
@@ -38,7 +38,12 @@ export const GuestSignInBox = () => {
         >
           {t('public.pricing.signIn')}
         </Button>
-        <Button component={Link} href="/auth/register" variant="contained" sx={{ minHeight: 44 }}>
+        <Button
+          component={Link}
+          href={PRICING_REGISTER_HREF}
+          variant="contained"
+          sx={{ minHeight: 44 }}
+        >
           {t('public.pricing.createAccount')}
         </Button>
       </Box>

@@ -47,7 +47,7 @@ export const CourseFaqSection: FC<CourseFaqSectionProps> = ({ faqs }) => {
   const { t } = useTranslation();
   if (faqs.length === 0) return null;
   return (
-    <DetailSection id="course-faq" title={t('browse.extras.faqTitle')}>
+    <DetailSection id="course-faq" title={t('browse.extras.faqTitle')} plain>
       <Box sx={{ display: 'grid', gap: 2 }}>
         {faqs.map((faq, index) => (
           <Accordion

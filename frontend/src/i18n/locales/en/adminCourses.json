@@ -90,7 +90,8 @@
     "deleted": "Course deleted",
     "unpublishTitle": "Unpublish course?",
     "unpublishMessage": "\"{{title}}\" will be hidden from the catalog until you publish it again.",
-    "statsLink": "Open the enrollments of {{title}}"
+    "statsLink": "Open the enrollments of {{title}}",
+    "totalViews": "Total views"
   },
   "bulk": {
     "title": "Bulk Edit Courses",

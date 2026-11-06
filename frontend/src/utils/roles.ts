@@ -12,7 +12,7 @@ export const ROLE_HOME: Record<UserRole, string> = {
   Admin: '/admin/courses',
   Moderator: '/admin/courses',
   Teacher: '/teacher/courses',
-  Student: '/student/dashboard',
+  Student: '/student/courses',
 };
 
 /** True when the role is one of the allowed roles (same rule as the backend's authorize()). */

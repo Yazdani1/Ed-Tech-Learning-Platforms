@@ -2,8 +2,10 @@
 
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
+import { Suspense, useEffect } from 'react';
 
-import { useLiveClasses, usePublicQuizSections } from '@/api/browse.api';
+import { useLiveClasses, usePublicQuizSections, useRecordCourseView } from '@/api/browse.api';
+import { PromoPopup } from '@/components/promos/PromoPopup';
 import { useModal } from '@/hooks/useModal';
 
 import { countLectures, previewLectures } from '../course-utils';
@@ -28,13 +30,20 @@ const ENROLMENT_CARD_ID = 'course-enrollment-card';
 /**
  * The loaded course page: hero; schedule and "About this course" on the left with the enrolment card on the
  * right (first on phones, overlapping the hero on wider screens); then every other section at full width;
- * the buy bar.
+ * the buy bar and the running promo's pop-up. Each open of a public course page counts as a view.
  */
 export const CourseDetailContent: FC<CourseDetailContentProps> = ({ course }) => {
   const weeks = useLiveClasses(course._id).data ?? [];
   const quizSections = usePublicQuizSections(course._id).data ?? [];
   const preview = useModal<CourseLecture>();
   const lectureCount = countLectures(course);
+  const isPublic = course.status === 'Published' && course.visibility === 'Public';
+
+  const { mutate: recordView } = useRecordCourseView();
+
+  useEffect(() => {
+    if (isPublic) recordView(course._id);
+  }, [course._id, isPublic, recordView]);
 
   return (
     <>
@@ -69,6 +78,9 @@ export const CourseDetailContent: FC<CourseDetailContentProps> = ({ course }) =>
         onPreview={preview.openModal}
       />
       <CourseBuyBar course={course} targetId={ENROLMENT_CARD_ID} />
+      <Suspense fallback={null}>
+        <PromoPopup />
+      </Suspense>
       <CoursePreviewModal
         open={preview.open}
         lecture={preview.data}

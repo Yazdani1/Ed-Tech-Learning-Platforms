@@ -19,6 +19,8 @@ interface DetailSectionProps {
    * section is a white card in the page column.
    */
   band?: string;
+  /** No white card and no band: the content sits straight on the page (its items have their own cards) */
+  plain?: boolean;
   children: ReactNode;
 }
 
@@ -30,6 +32,15 @@ const CARD_SX = {
   boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
 } as const;
 const GAP_UNDER_HEADING = { xs: 2.5, md: 3.5 } as const;
+const HEADING_SX = {
+  fontFamily: DISPLAY_FONT,
+  fontWeight: 700,
+  fontSize: { xs: '1.5rem', md: '2rem' },
+  lineHeight: 1.25,
+  textAlign: 'center',
+} as const;
+const BAND_SX = { py: { xs: 4, md: 6 }, mb: SECTION_GAP } as const;
+const PLAIN_SX = { mb: SECTION_GAP, py: { xs: 1, md: 2 } } as const;
 
 /** A full-width block of the course page: centred heading, optional intro text, content. */
 export const DetailSection: FC<DetailSectionProps> = ({
@@ -37,6 +48,7 @@ export const DetailSection: FC<DetailSectionProps> = ({
   title,
   description,
   band,
+  plain = false,
   children,
 }) => {
   const body = (
@@ -44,14 +56,7 @@ export const DetailSection: FC<DetailSectionProps> = ({
       <Typography
         id={`${id}-heading`}
         component="h2"
-        sx={{
-          fontFamily: DISPLAY_FONT,
-          fontWeight: 700,
-          fontSize: { xs: '1.5rem', md: '2rem' },
-          lineHeight: 1.25,
-          textAlign: 'center',
-          mb: description ? 1 : GAP_UNDER_HEADING,
-        }}
+        sx={{ ...HEADING_SX, mb: description ? 1 : GAP_UNDER_HEADING }}
       >
         {title}
       </Typography>
@@ -68,13 +73,16 @@ export const DetailSection: FC<DetailSectionProps> = ({
   );
   if (band) {
     return (
-      <Box
-        component="section"
-        aria-labelledby={`${id}-heading`}
-        sx={{ bgcolor: band, py: { xs: 4, md: 6 }, mb: SECTION_GAP }}
-      >
+      <Box component="section" aria-labelledby={`${id}-heading`} sx={{ ...BAND_SX, bgcolor: band }}>
         <Container maxWidth="lg">{body}</Container>
       </Box>
+    );
+  }
+  if (plain) {
+    return (
+      <Container component="section" maxWidth="lg" aria-labelledby={`${id}-heading`} sx={PLAIN_SX}>
+        {body}
+      </Container>
     );
   }
   return (

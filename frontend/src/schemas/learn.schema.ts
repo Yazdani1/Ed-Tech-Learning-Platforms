@@ -24,6 +24,8 @@ export const announcementSchema = z.object({
   title: z.string(),
   description: z.string().default(''),
   postedBy: postedByField,
+  /** Announcements sent from the Announcements page may carry a picture */
+  image: z.object({ url: z.string() }).nullish(),
   createdAt: z.string(),
 });
 export type Announcement = z.infer<typeof announcementSchema>;

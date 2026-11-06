@@ -11,6 +11,12 @@ export interface PriceableCourse {
   listPrice?: number | null;
   discountPrice?: number | null;
   discountEndsAt?: string | null;
+  discountStartsAt?: string | null;
+  /**
+   * Public responses carry the running offer (course discount or promo, null = none): when the key is there it
+   * decides the price; staff lists without it use the course's own discount fields.
+   */
+  offer?: { price: number; endsAt?: string | null } | null;
 }
 
 export interface PriceInfo {
@@ -30,6 +36,21 @@ export const formatAmount = (value: number): string => value.toLocaleString(AMOU
 export const formatBdt = (value: number | null | undefined): string =>
   value === null || value === undefined ? '' : `৳${formatAmount(value)}`;
 
+/** The price info of a paid course from its list price and what it costs now. */
+export const priceInfo = (listPrice: number, price: number): PriceInfo => {
+  const discountPrice = Math.min(Math.max(price, 0), listPrice);
+  const discountAmount = Math.max(listPrice - discountPrice, 0);
+  const discountPercent = listPrice > 0 ? Math.round((discountAmount / listPrice) * PERCENT) : 0;
+  return {
+    isFree: false,
+    listPrice,
+    discountPrice,
+    discountAmount,
+    discountPercent,
+    hasDiscount: discountAmount > 0,
+  };
+};
+
 /** List price, current price and discount of a course (an ended discount counts as none). */
 export const getCoursePriceInfo = (
   course: PriceableCourse,
@@ -46,20 +67,18 @@ export const getCoursePriceInfo = (
     };
   }
   const listPrice = Math.max(course.listPrice ?? course.price ?? 0, 0);
-  const discountActive = !course.discountEndsAt || new Date(course.discountEndsAt).getTime() > now;
+  if (course.offer !== undefined) {
+    const { offer } = course;
+    const runs = offer !== null && (!offer.endsAt || new Date(offer.endsAt).getTime() > now);
+    return priceInfo(listPrice, runs ? offer.price : listPrice);
+  }
+  const started = !course.discountStartsAt || new Date(course.discountStartsAt).getTime() <= now;
+  const discountActive =
+    started && (!course.discountEndsAt || new Date(course.discountEndsAt).getTime() > now);
   const discountPrice = discountActive
     ? Math.max(course.discountPrice ?? course.price ?? listPrice, 0)
     : listPrice;
-  const discountAmount = Math.max(listPrice - discountPrice, 0);
-  const discountPercent = listPrice > 0 ? Math.round((discountAmount / listPrice) * PERCENT) : 0;
-  return {
-    isFree: false,
-    listPrice,
-    discountPrice,
-    discountAmount,
-    discountPercent,
-    hasDiscount: discountAmount > 0,
-  };
+  return priceInfo(listPrice, discountPrice);
 };
 
 const BANGLA_ZERO_CODE = 0x09e6;

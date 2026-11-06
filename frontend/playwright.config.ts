@@ -4,6 +4,8 @@ import { defineConfig, devices } from '@playwright/test';
 // In Docker (npm run test:e2e), BASE_URL points at the frontend-e2e container of the test stack.
 const baseURL = process.env.BASE_URL ?? 'http://localhost:3456';
 const isCI = Boolean(process.env.CI);
+const PROMO_SPECS = /promos\.spec\.ts/;
+const DESKTOP = { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } };
 
 export default defineConfig({
   testDir: './e2e',
@@ -23,13 +25,27 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
+  // A running promo shows a pop-up on the home and course pages of every visitor: the promo specs have their own
+  // projects, which scripts/docker-test.mjs runs as a second, separate run after every other spec
   projects: [
     {
       name: 'desktop',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
+      testIgnore: PROMO_SPECS,
+      use: { ...DESKTOP },
     },
     {
       name: 'mobile',
+      testIgnore: PROMO_SPECS,
+      use: { ...devices['Pixel 7'] },
+    },
+    {
+      name: 'desktop-promos',
+      testMatch: PROMO_SPECS,
+      use: { ...DESKTOP },
+    },
+    {
+      name: 'mobile-promos',
+      testMatch: PROMO_SPECS,
       use: { ...devices['Pixel 7'] },
     },
   ],

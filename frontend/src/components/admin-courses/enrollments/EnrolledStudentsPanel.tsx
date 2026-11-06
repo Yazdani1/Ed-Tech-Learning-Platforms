@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useCourseStudents } from '@/api/enrollment.api';
 import { ResponsiveDataView } from '@/components/common/ResponsiveDataView';
 import { useCourseStudentColumns } from '@/components/enrollments/useCourseStudentColumns';
+import { useClientPagination } from '@/hooks/useClientPagination';
 
 import type { EnrollmentType } from '@/schemas/catalog.schema';
 import type { FC } from 'react';
@@ -33,6 +34,7 @@ export const EnrolledStudentsPanel: FC<EnrolledStudentsPanelProps> = ({ courseId
     () => (students.data ?? []).filter((row) => filter === 'all' || row.enrollmentType === filter),
     [students.data, filter],
   );
+  const { pageRows, pagination } = useClientPagination(rows);
 
   return (
     <Box component="section" aria-labelledby={headingId}>
@@ -44,6 +46,7 @@ export const EnrolledStudentsPanel: FC<EnrolledStudentsPanelProps> = ({ courseId
           value={filter}
           onChange={(_event, value: TypeFilter) => {
             setFilter(value);
+            pagination.onPageChange(1);
           }}
           variant="scrollable"
           allowScrollButtonsMobile
@@ -60,10 +63,11 @@ export const EnrolledStudentsPanel: FC<EnrolledStudentsPanelProps> = ({ courseId
             error={students.error}
             onRetry={() => void students.refetch()}
             emptyText={t('adminCourses.enrollments.noStudents')}
-            rows={rows}
+            rows={pageRows}
             columns={columns}
             getRowId={(row) => row._id}
             label={t('adminCourses.enrollments.studentsLabel')}
+            pagination={pagination}
           />
         </Box>
       </Paper>

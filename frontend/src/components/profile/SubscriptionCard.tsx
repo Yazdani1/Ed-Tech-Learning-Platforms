@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useCancelSubscription, useSubscriptionPlans } from '@/api/catalog.api';
 import { useConfirm } from '@/hooks/useConfirm';
+import { toastError } from '@/utils/toast-error';
 
 import { ActivePlanDetails, PLAN_COLOR } from './ActivePlanDetails';
 import { getCurrentPlan } from './subscription.utils';
@@ -39,10 +40,8 @@ export const SubscriptionCard: FC<SubscriptionCardProps> = ({ profile }) => {
       destructive: true,
     });
     if (!confirmed) return;
-    cancel.mutate(undefined, {
-      onSuccess: () => toast.success(t('profile.cancelled')),
-      onError: (error) => toast.error(error.message),
-    });
+    // mutateAsync: the card unmounts once the plan is gone, and per-call `mutate` callbacks are dropped with it
+    await cancel.mutateAsync().then(() => toast.success(t('profile.cancelled')), toastError);
   };
 
   return (

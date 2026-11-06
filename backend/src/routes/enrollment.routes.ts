@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import {
   enroll,
-  unenroll,
   getMyEnrollments,
   checkEnrollment,
   getCourseEnrollments,
@@ -31,6 +30,6 @@ router.get('/course/:courseId/count', protect, getCourseEnrollmentCount);
 router.get('/', protect, authorize('Student'), getMyEnrollments);
 router.get('/:courseId/check', protect, authorize('Student'), checkEnrollment);
 router.post('/:courseId', protect, authorize('Student'), enroll);
-router.delete('/:courseId', protect, authorize('Student'), unenroll);
+// No DELETE: an enrolment is never removed by the student (user's decision 2026-11-06)
 
 export default router;

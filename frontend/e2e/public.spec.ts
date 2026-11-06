@@ -135,7 +135,8 @@ test.describe('Public site', () => {
     await expect(card.getByText('BDT 300')).toBeVisible();
     await expectNoHorizontalScroll(page);
     await card.getByRole('link', { name: 'Get Started' }).click();
-    await expect(page).toHaveURL(/\/auth\/login\?next=%2Fpricing$/);
+    await expect(page).toHaveURL(/\/pricing\?auth=login&next=%2Fpricing$/);
+    await expect(page.getByRole('dialog', { name: 'Sign In' })).toBeVisible();
 
     // A brand-new Student (the shared e2e student's subscription is left alone)
     const registered = await page.request.post('/api/auth/register', {

@@ -14,7 +14,7 @@ interface CourseCardStatsProps {
   course: AdminCourse;
 }
 
-/** This month's earnings and enrolments of a course (both open its enrolments page). */
+/** One row: this month's earnings and enrolments (both open its enrolments page) and the total page views. */
 export const CourseCardStats: FC<CourseCardStatsProps> = ({ course }) => {
   const { t } = useTranslation();
   const stats = course.enrollmentStats;
@@ -22,7 +22,12 @@ export const CourseCardStats: FC<CourseCardStatsProps> = ({ course }) => {
   const linkLabel = t('adminCourses.list.statsLink', { title: course.title });
   return (
     <Box
-      sx={{ mt: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.25 }}
+      sx={{
+        mt: 2,
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+        gap: 1.25,
+      }}
     >
       <CourseStatBox
         value={formatBdt(stats?.thisMonthEarned ?? 0)}
@@ -35,6 +40,10 @@ export const CourseCardStats: FC<CourseCardStatsProps> = ({ course }) => {
         label={t('adminCourses.list.enrollmentsThisMonth')}
         href={href}
         linkLabel={linkLabel}
+      />
+      <CourseStatBox
+        value={course.viewCount.toLocaleString('en-US')}
+        label={t('adminCourses.list.totalViews')}
       />
     </Box>
   );

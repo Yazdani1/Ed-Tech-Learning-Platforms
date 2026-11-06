@@ -28,7 +28,8 @@ export interface CourseDetailsEditor {
   isSaving: boolean;
   isAutoSaving: boolean;
   lastSaved: Date | null;
-  save: (status: CourseStatus) => void;
+  /** Saves the form; with a status also publishes or unpublishes */
+  save: (status?: CourseStatus) => void;
 }
 
 /** A new course starts with the first category and course type selected (as before). */
@@ -107,7 +108,7 @@ export const useCourseDetailsForm = (course: Course | undefined): CourseDetailsE
     if (await form.trigger()) await saver.save(form.getValues(), { quiet: true });
   });
 
-  const save = (status: CourseStatus): void => {
+  const save = (status?: CourseStatus): void => {
     autosave.cancel();
     void form.handleSubmit(
       (values) => saver.save(values, { status }),

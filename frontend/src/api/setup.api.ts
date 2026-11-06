@@ -28,13 +28,21 @@ export interface SaveSetupItemInput {
   body: SetupItemRequest;
 }
 
+/** The request body: course types send their position (null clears it); categories have none. */
+const toRequestBody = (kind: SetupKind, { position, ...rest }: SetupItemRequest) =>
+  kind === 'courseType' ? { ...rest, position: position ? Number(position) : null } : rest;
+
 export const saveSetupItem = (
   kind: SetupKind,
   { id, body }: SaveSetupItemInput,
 ): Promise<SetupItem> =>
   id
-    ? http.put(`${TAXONOMY_PATHS[kind]}/${encodeURIComponent(id)}`, body, setupItemSchema)
-    : http.post(TAXONOMY_PATHS[kind], body, setupItemSchema);
+    ? http.put(
+        `${TAXONOMY_PATHS[kind]}/${encodeURIComponent(id)}`,
+        toRequestBody(kind, body),
+        setupItemSchema,
+      )
+    : http.post(TAXONOMY_PATHS[kind], toRequestBody(kind, body), setupItemSchema);
 
 /** The backend refuses (400, with a message) to delete an item that courses still use. */
 export const deleteSetupItem = async (kind: SetupKind, id: string): Promise<void> => {

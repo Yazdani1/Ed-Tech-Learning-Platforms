@@ -8,11 +8,13 @@ import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/hooks/useAuth';
 import { STUDENT_ROLES } from '@/utils/roles';
+import { withAuthPanel } from '@/utils/auth-drawer';
 
 import type { FC } from 'react';
 
 /** Guests sign in and come straight back to the plans. */
-export const PRICING_SIGN_IN_HREF = `/auth/login?next=${encodeURIComponent('/pricing')}`;
+export const PRICING_SIGN_IN_HREF = withAuthPanel('/pricing', '', 'login', '/pricing');
+export const PRICING_REGISTER_HREF = withAuthPanel('/pricing', '', 'register', '/pricing');
 
 interface PlanActionProps {
   planName: string;

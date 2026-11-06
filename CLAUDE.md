@@ -53,7 +53,8 @@ Source of truth: the user's instructions (in conversation) and this file.
 - `src/routes/index.ts` mounts the feature route files under `/api` (health, auth, users, teachers,
   categories, course-types, courses, announcements, study-curricula, study-materials, subscriptions,
   subscription-plans, enrollments, performance, qa, dashboard, chat, notifications, quiz-bank, quiz-sections,
-  home-hero-posts, community, group-chat, study-schedules, site-settings, tools, students). Public health check: `GET /api/health`.
+  home-hero-posts, community, group-chat, study-schedules, site-settings, tools, students, coupons, promos, revenue).
+  Public health check: `GET /api/health`.
 - Controllers: `src/controllers/<feature>.controller.ts` (camelCase), every async handler wrapped in
   `asyncHandler()`, errors via `throw new AppError(message, statusCode)` (global errorHandler).
 - Models: `src/models/<Entity>.model.ts` (PascalCase), Mongoose schemas with timestamps and indexes.
@@ -81,7 +82,7 @@ Source of truth: the user's instructions (in conversation) and this file.
   shells, common/ = building blocks), hooks/, context/ (only real UI-wide state: chat socket, notifications),
   types/index.ts, utils/, theme/, i18n/. Tests in `__tests__/` next to the code.
 - Components never call axios and never need try/catch: they use the api hooks.
-- Same URLs as before: public pages, /auth/login, /auth/register, `/admin/*` (Super Admin, Admin, Moderator;
+- Same URLs as before: public pages, /auth/login, /auth/register (now redirects into the sign-in panel), `/admin/*` (Super Admin, Admin, Moderator;
   some pages narrower), `/student/*`, `/teacher/*`.
 - Auth: requests go to same-origin `/api/*` (next.config rewrites to the backend), so the httpOnly cookie is
   first-party and sent automatically; the token is never stored in localStorage or URLs. Socket.io connects
@@ -205,4 +206,15 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   one box per course type (`components/public/common/CourseTypeSections`) plus the free courses; Company Contact has
   social links (footer icons) and the email refuses mailto parameters; grouped admin menu (`NAV_SECTIONS`); course
   page bands for Instructors and Projects (`DetailSection band`), foldable About text, animated Enroll Now.
+- Stage B batch 5 (2026-11-06): coupons, one per order (`utils/courseOffer.ts`): the course's own discount is its
+  auto coupon (`Course.discountCode/StartsAt/EndsAt`, Pricing tab), course coupons (`/api/coupons`, Coupons tab),
+  promos for many courses (`/api/promos`, `/admin/promos`, home banner + pop-up, `/promo`); public course reads carry
+  `offer`; the enrolment price = list price less the code sent (`couponCode`, also `paymentMethod`). `/admin/revenue`
+  (`/api/revenue`: charts, orders, CSV, browser print-out saved as PDF), `/admin/announcements` (broadcasts to many courses, seen counts),
+  course views (`POST /api/courses/:id/view`, one per visitor per day), `CourseType.position`, `Course.batchNumber`
+  (4 digits, unique), schedules text, `firstPublishedAt` (a course published once is never deleted; unpublish moved to
+  the editor's Settings tab; enrolled students keep unpublished courses). Sign in / register are a right-side panel
+  (`?auth=login|register`, `components/auth/AuthDrawer`; `/auth/*` only redirect). Students: no dashboard (home
+  `/student/courses`), no unenrol (DELETE removed), no Pricing menu item. Dashboard top bar user (student ID for
+  students). Custom `ListPagination` (only with more than one page; 10 per page).
 - Reports of every phase: .claude/reports/ (git-ignored).

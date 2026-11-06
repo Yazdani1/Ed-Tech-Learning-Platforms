@@ -47,7 +47,11 @@
       "chooseLogo": "Choose logo",
       "changeLogo": "Change logo",
       "nameTooLong": "Tool name can be at most 60 characters."
-    }
+    },
+    "position": "Home page position",
+    "positionHelp": "1 shows first on the home page. Leave empty to show it after the numbered types.",
+    "positionInvalid": "Enter a whole number from 1 to 999",
+    "noPosition": "—"
   },
   "title": "Homepage Header Showcase",
   "subtitle": "Manage the public header logo and image-only homepage slider posts.",

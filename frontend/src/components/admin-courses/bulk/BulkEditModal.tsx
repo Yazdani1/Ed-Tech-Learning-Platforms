@@ -88,7 +88,7 @@ export const BulkEditModal: FC<BulkEditModalProps> = ({ open, courses, onClose }
         >
           <BulkCourseSelector selection={selection} options={options} />
         </Box>
-        <BulkEditPanel form={form} options={options} selectedCount={count} />
+        <BulkEditPanel form={form} options={options} />
       </Box>
     </AppModal>
   );

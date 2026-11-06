@@ -20,7 +20,7 @@ interface StudentsTabProps {
   courseTitle: string;
 }
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 10;
 
 /** Who is enrolled (staff and the course's teachers; emails and the CSV export are for staff admins). */
 export const StudentsTab: FC<StudentsTabProps> = ({ courseId, courseTitle }) => {

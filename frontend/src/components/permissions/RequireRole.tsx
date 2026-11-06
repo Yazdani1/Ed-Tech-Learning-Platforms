@@ -6,6 +6,7 @@ import { useEffect, useRef, type FC, type ReactNode } from 'react';
 import { FullPageLoader } from '@/components/common/FullPageLoader';
 import { ErrorView } from '@/components/errors/ErrorView';
 import { useAuth } from '@/hooks/useAuth';
+import { signInRedirect } from '@/utils/auth-drawer';
 import { ROLE_HOME } from '@/utils/roles';
 
 import type { UserRole } from '@/types';
@@ -19,8 +20,8 @@ interface RequireRoleProps {
 
 /**
  * Renders a page only for these roles. It is the ONE place that leaves a signed-in page:
- * - a visitor who opens the page signed out goes to /auth/login?next=<this page>;
- * - a user who signs out (or whose session ends) here goes to /auth/login without ?next=, so the next
+ * - a visitor who opens the page signed out goes to the home page with the sign-in panel and ?next=<this page>;
+ * - a user who signs out (or whose session ends) here goes there without ?next=, so the next
  *   person on a shared computer does not land on the previous user's page;
  * - other roles go to their home page.
  * This only shapes the UI; the backend's protect/authorize is the security boundary.
@@ -41,10 +42,10 @@ export const RequireRole: FC<RequireRoleProps> = ({ roles, children, fallbackPat
     if (user) {
       router.replace(fallbackPath ?? ROLE_HOME[user.role]);
     } else if (wasSignedIn.current) {
-      router.replace('/auth/login');
+      router.replace(signInRedirect());
     } else {
       const next = `${pathname}${window.location.search}`;
-      router.replace(`/auth/login?next=${encodeURIComponent(next)}`);
+      router.replace(signInRedirect(next));
     }
   }, [isLoading, allowed, error, user, router, pathname, fallbackPath]);
 

@@ -14,8 +14,14 @@ import { CourseSetupPage } from '../CourseSetupPage';
 
 import type { SetupKind } from '@/schemas/setup.schema';
 
-const makeItem = (id: string, name: string, description = ''): SetupItem =>
+const makeItem = (
+  id: string,
+  name: string,
+  description = '',
+  position: number | null = null,
+): SetupItem =>
   setupItemSchema.parse({
+    position,
     _id: `64b7f0c2a1b2c3d4e5f6a${id}`,
     name,
     slug: name.toLowerCase().replace(/\s+/g, '-'),
@@ -229,7 +235,68 @@ describe('CourseSetupPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Course type created')).toBeInTheDocument();
-    expect(body).toEqual({ name: 'Seminar', description: '' });
+    expect(body).toEqual({ name: 'Seminar', description: '', position: null });
+  });
+
+  it('shows the home position of each course type, and sends the one the admin types', async () => {
+    let body: unknown;
+    server.use(
+      http.get('*/api/course-types', () =>
+        ok([makeItem('003', 'Live Course', '', 2), makeItem('005', 'Recorded')]),
+      ),
+      http.post('*/api/course-types', async ({ request }) => {
+        body = await request.json();
+        return ok(makeItem('004', 'Seminar', '', 1));
+      }),
+    );
+    renderPage('courseType', 'Super Admin');
+    const user = userEvent.setup();
+
+    expect(await screen.findByText('Live Course')).toBeInTheDocument();
+    expect(screen.getAllByText('Home page position').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('2').length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('button', { name: 'Add Course Type' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add Course Type' });
+    await user.type(within(dialog).getByLabelText(/Name/), 'Seminar');
+    await user.type(within(dialog).getByLabelText('Home page position'), '1');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByText('Course type created')).toBeInTheDocument();
+    expect(body).toEqual({ name: 'Seminar', description: '', position: 1 });
+  });
+
+  it('refuses a home position that is not a whole number from 1 to 999', async () => {
+    let called = false;
+    server.use(
+      http.get('*/api/course-types', () => ok([])),
+      http.post('*/api/course-types', () => {
+        called = true;
+        return ok(makeItem('004', 'Seminar'));
+      }),
+    );
+    renderPage('courseType', 'Super Admin');
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'Add Course Type' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add Course Type' });
+    await user.type(within(dialog).getByLabelText(/Name/), 'Seminar');
+    await user.type(within(dialog).getByLabelText('Home page position'), '0');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    expect(
+      await within(dialog).findByText('Enter a whole number from 1 to 999'),
+    ).toBeInTheDocument();
+    expect(called).toBe(false);
+  });
+
+  it('categories have no home position field', async () => {
+    server.use(http.get('*/api/categories', () => ok([])));
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'Add Category' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).queryByLabelText('Home page position')).not.toBeInTheDocument();
   });
 
   it('course types have no live switch any more', async () => {

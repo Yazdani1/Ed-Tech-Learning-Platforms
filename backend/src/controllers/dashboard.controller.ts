@@ -135,7 +135,7 @@ export const getDashboardSummary = asyncHandler(
 				Question.countDocuments({ isResolved: false }),
 			]),
 			SubscriptionPlanConfig.find().select('plan price').lean(),
-			Enrollment.find().select('course enrollmentType paidPrice createdAt').populate('course', 'price').lean(),
+			Enrollment.find().select('course enrollmentType listPrice paidPrice createdAt').populate('course', 'price').lean(),
 			Subscription.find().select('plan pricePaid createdAt').lean(),
 		]);
 		const [users, students, newStudents, teachers, courses, publishedCourses, categories, activeSubscriptions, openQuestions] = counts;

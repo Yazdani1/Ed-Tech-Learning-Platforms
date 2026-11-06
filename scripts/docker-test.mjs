@@ -82,9 +82,32 @@ function specPaths() {
 }
 
 /** Playwright: every spec, or only the named ones. */
+const PROMO_SPEC = 'e2e/promos.spec.ts';
+const MAIN_PROJECTS = ['--project=desktop', '--project=mobile'];
+const PROMO_PROJECTS = ['--project=desktop-promos', '--project=mobile-promos'];
+
+/**
+ * Playwright in the test stack. A running promo shows a pop-up on every visitor's home and course pages, so the
+ * promo spec runs as a second, separate run after the others (it would cover their pages if run alongside).
+ */
 function e2e(specs) {
-  if (specs.length === 0) return testService('playwright', E2E);
-  return testService('playwright', E2E, ['npx', 'playwright', 'test', ...specs]);
+  const all = specs.length === 0;
+  const others = specs.filter((spec) => spec !== PROMO_SPEC);
+  const withPromos = all || specs.includes(PROMO_SPEC);
+  let status = 0;
+  if (all || others.length > 0) {
+    status = testService('playwright', E2E, [
+      'npx',
+      'playwright',
+      'test',
+      ...MAIN_PROJECTS,
+      ...others,
+    ]);
+  }
+  if (status === 0 && withPromos) {
+    status = testService('playwright', E2E, ['npx', 'playwright', 'test', ...PROMO_PROJECTS]);
+  }
+  return status;
 }
 
 /** Runs the steps in order and stops at the first failure. */

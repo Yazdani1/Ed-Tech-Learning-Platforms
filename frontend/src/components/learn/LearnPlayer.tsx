@@ -33,10 +33,19 @@ const NAV_SX = {
   borderRight: { md: 1 },
   borderBottom: { xs: 1, md: 0 },
   borderColor: 'divider',
+  minWidth: 0,
+} as const;
+const FRAME_SX = {
+  display: 'flex',
+  flexDirection: 'column',
+  bgcolor: 'background.default',
+} as const;
+/** Desktop: the menu stays in view while the page scrolls (the column itself runs the full height) */
+const NAV_INNER_SX = {
   position: { md: 'sticky' },
   top: { md: 0 },
-  alignSelf: { md: 'flex-start' },
-  minWidth: 0,
+  maxHeight: { md: '100dvh' },
+  overflowY: { md: 'auto' },
 } as const;
 
 /**
@@ -70,17 +79,17 @@ export const LearnPlayer: FC<LearnPlayerProps> = ({ courseId, area }) => {
   const openTab = tabs.includes(tab) ? tab : 'lectures';
 
   return (
-    <Box
-      sx={{ minHeight: area === 'student' ? '100dvh' : undefined, bgcolor: 'background.default' }}
-    >
+    <Box sx={{ ...FRAME_SX, minHeight: area === 'student' ? '100dvh' : undefined }}>
       <LearnTopBar
         title={course.data.title}
         subtitle={openTab === 'lectures' ? activeLecture?.title : undefined}
         backHref={backHref}
       />
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
         <Box component="nav" sx={NAV_SX}>
-          <LearnNav tabs={tabs} value={openTab} onChange={setTab} />
+          <Box sx={NAV_INNER_SX}>
+            <LearnNav tabs={tabs} value={openTab} onChange={setTab} />
+          </Box>
         </Box>
         <Box
           component="main"

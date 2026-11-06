@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { IconTextList } from '../IconTextList';
 
 import { SUBSCRIPTION_COLOR } from '@/components/course-card/course-card';
+import { withAuthPanel } from '@/utils/auth-drawer';
 import { SuccessNotice } from './SuccessNotice';
 
 import type { FC } from 'react';
@@ -52,7 +53,7 @@ export const SubscriptionPitch: FC<SubscriptionPitchProps> = ({
       <IconTextList items={lines} dense />
       <Button
         component={Link}
-        href={isSignedIn ? '/pricing' : '/auth/register'}
+        href={isSignedIn ? '/pricing' : withAuthPanel('/pricing', '', 'register', '/pricing')}
         fullWidth
         variant="contained"
         size="large"

@@ -5,6 +5,9 @@ export interface IAnnouncement extends Document {
   title: string;
   description: string;
   postedBy: Types.ObjectId;
+  /** Set when it was sent to several courses from the Announcements page */
+  broadcast?: Types.ObjectId;
+  image?: { url: string };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +18,8 @@ const announcementSchema = new Schema<IAnnouncement>(
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true },
     postedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    broadcast: { type: Schema.Types.ObjectId, ref: 'AnnouncementBroadcast', index: true },
+    image: { url: String },
   },
   { timestamps: true },
 );

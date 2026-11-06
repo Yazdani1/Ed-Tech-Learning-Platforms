@@ -119,13 +119,13 @@ test.describe('Students page', () => {
   });
 
   test('a new student can add a phone number when registering', async ({ page }, testInfo) => {
-    await page.goto('/auth/register');
+    await page.goto('/?auth=register');
     await page.getByLabel('Full Name').fill('E2E Phone Student');
     await page.getByLabel('Email Address').fill(uniqueEmail(testInfo));
     await page.getByLabel('Phone number').fill(PHONE);
     await page.getByLabel('Password', { exact: true }).fill(STUDENT_PASSWORD);
     await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page).toHaveURL(/\/student\/dashboard$/);
+    await expect(page).toHaveURL(/\/student\/courses$/);
     await page.goto('/student/profile');
     await expect(page.getByText(PHONE, { exact: true })).toBeVisible();
   });

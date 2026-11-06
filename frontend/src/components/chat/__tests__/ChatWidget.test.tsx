@@ -38,7 +38,7 @@ describe('ShellMessaging / ChatWidget', () => {
   });
 
   it('shows students a chat button with their unread count that opens the chat', async () => {
-    setLocation('/student/dashboard');
+    setLocation('/student/courses');
     server.use(signedInAs(STUDENT));
     const socket = new FakeSocket();
     renderWithSocket(<ShellMessaging />, socket);
@@ -59,7 +59,7 @@ describe('ShellMessaging / ChatWidget', () => {
   });
 
   it('moves the focus into the chat and back, and closes on Escape', async () => {
-    setLocation('/student/dashboard');
+    setLocation('/student/courses');
     server.use(signedInAs(STUDENT));
     renderWithSocket(<ShellMessaging />, new FakeSocket());
     const user = userEvent.setup();

@@ -4,7 +4,6 @@ import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { studentsExportUrl } from '@/api/enrollment.api';
@@ -14,11 +13,10 @@ import { MANAGER_ROLES } from '@/utils/roles';
 
 import { BackToCoursesButton } from '../BackToCoursesButton';
 
+import { CourseOrdersPanel } from './CourseOrdersPanel';
 import { EnrolledStudentsPanel } from './EnrolledStudentsPanel';
 import { EnrollmentCourseHeader } from './EnrollmentCourseHeader';
 import { EnrollmentStatsStrip } from './EnrollmentStatsStrip';
-import { EnrollmentViewTabs, type EnrollmentView } from './EnrollmentViewTabs';
-import { RevenuePanel } from './RevenuePanel';
 
 import type { FC } from 'react';
 
@@ -28,13 +26,12 @@ interface AdminEnrollmentsPageProps {
 
 /**
  * /admin/enrollments/[courseId]: who is enrolled, CSV export (all staff). Super Admin and Admin also see the
- * statistics and the revenue view (the backend gives those endpoints to them only).
+ * statistics and each enrolment's prices and coupon, with a details panel (the backend gives those to them only).
  */
 export const AdminEnrollmentsPage: FC<AdminEnrollmentsPageProps> = ({ courseId }) => {
   const { t } = useTranslation();
   const { hasRole } = useAuth();
   const canSeeRevenue = hasRole(MANAGER_ROLES);
-  const [view, setView] = useState<EnrollmentView>('students');
   const course = useCourse(courseId);
   const notFound = !isCourseId(courseId) || (course.isError && isNotFoundError(course.error));
 
@@ -67,9 +64,8 @@ export const AdminEnrollmentsPage: FC<AdminEnrollmentsPageProps> = ({ courseId }
         }
       />
       {canSeeRevenue && <EnrollmentStatsStrip courseId={courseId} />}
-      {canSeeRevenue && <EnrollmentViewTabs view={view} onChange={setView} />}
-      {view === 'revenue' && canSeeRevenue ? (
-        <RevenuePanel courseId={courseId} />
+      {canSeeRevenue ? (
+        <CourseOrdersPanel courseId={courseId} />
       ) : (
         <EnrolledStudentsPanel courseId={courseId} />
       )}

@@ -14,6 +14,7 @@ export const savedCourseSchema = z.object({
   coverImage: z.string().nullish(),
   status: courseStatusSchema.catch('Draft'),
   publishedAt: z.string().nullish(),
+  firstPublishedAt: z.string().nullish(),
 });
 export type SavedCourse = z.infer<typeof savedCourseSchema>;
 
@@ -23,6 +24,12 @@ export const createdItemSchema = z.object({ _id: z.string() });
 // ---- Course details form ----
 
 const PRICE_PATTERN = /^\d+(\.\d{1,2})?$/;
+
+const BATCH_PATTERN = /^(\d{4})?$/;
+const CODE_PATTERN = /^([A-Za-z0-9-]{6,20})?$/;
+const SCHEDULE_MAX = 200;
+
+const scheduleField = z.string().trim().max(SCHEDULE_MAX, 'catalog.validation.scheduleLong');
 
 const priceField = z
   .string()
@@ -38,10 +45,18 @@ export const courseDetailsFormSchema = z
     startDate: z.string(),
     endDate: z.string(),
     teachers: z.array(z.string()),
+    /** 4 digits, unique (the server checks); a new course gets a suggestion */
+    batchNumber: z.string().trim().regex(BATCH_PATTERN, 'catalog.validation.batchNumber'),
+    liveClassSchedule: scheduleField,
+    supportClassSchedule: scheduleField,
     visibility: courseVisibilitySchema,
     pricing: coursePricingSchema,
     listPrice: priceField,
     discountPrice: priceField,
+    /** The discount works as the course's auto coupon: its code (suggested when empty), start and end */
+    discountCode: z.string().trim().regex(CODE_PATTERN, 'coupons.validation.code'),
+    discountStartsAt: z.string(),
+    discountEndsAt: z.string(),
     includedInSubscription: z.boolean(),
     allowedSubscriptionPlans: z.array(z.string()),
     description: z.string(),
@@ -57,6 +72,16 @@ export const courseDetailsFormSchema = z
         message: 'catalog.validation.endBeforeStart',
       });
     if (values.pricing !== 'Paid') return;
+    if (
+      values.discountStartsAt &&
+      values.discountEndsAt &&
+      new Date(values.discountEndsAt) <= new Date(values.discountStartsAt)
+    )
+      ctx.addIssue({
+        code: 'custom',
+        path: ['discountEndsAt'],
+        message: 'coupons.validation.endAfterStart',
+      });
     if (values.listPrice === '')
       ctx.addIssue({ code: 'custom', path: ['listPrice'], message: 'validation.required' });
     else if (values.discountPrice !== '' && Number(values.discountPrice) > Number(values.listPrice))
@@ -76,10 +101,16 @@ export const EMPTY_COURSE_DETAILS: CourseDetailsForm = {
   startDate: '',
   endDate: '',
   teachers: [],
+  batchNumber: '',
+  liveClassSchedule: '',
+  supportClassSchedule: '',
   visibility: 'Private',
   pricing: 'Free',
   listPrice: '',
   discountPrice: '',
+  discountCode: '',
+  discountStartsAt: '',
+  discountEndsAt: '',
   includedInSubscription: false,
   allowedSubscriptionPlans: [],
   description: '',

@@ -7,8 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { useCategories, useCourseTypes } from '@/api/catalog.api';
 import { useFieldError } from '@/hooks/useFieldError';
 
-import { CourseAccessFields } from './CourseAccessFields';
+import { BatchNumberField } from './BatchNumberField';
 import { FormSelect } from './FormSelect';
+import { ScheduleFields } from './ScheduleFields';
 import { TeachersField } from './TeachersField';
 
 import type { CourseDetailsForm } from '@/schemas/course-editor.schema';
@@ -17,12 +18,17 @@ import type { UseFormReturn } from 'react-hook-form';
 
 interface BasicInfoTabProps {
   form: UseFormReturn<CourseDetailsForm>;
+  /** A new course gets a batch number suggestion */
+  isNew: boolean;
 }
 
 const FORM_MAX_WIDTH = 720;
 
-/** Title, subtitle, category, course type, dates, teachers, visibility, pricing and subscription. */
-export const BasicInfoTab: FC<BasicInfoTabProps> = ({ form }) => {
+/**
+ * Title, subtitle, category, course type, batch number, start and (optional) end date, the live class and
+ * support class schedules (plain text) and the teachers. Prices are on the Pricing page.
+ */
+export const BasicInfoTab: FC<BasicInfoTabProps> = ({ form, isNew }) => {
   const { t } = useTranslation();
   const fieldError = useFieldError();
   const categories = useCategories();
@@ -56,6 +62,7 @@ export const BasicInfoTab: FC<BasicInfoTabProps> = ({ form }) => {
         options={(courseTypes.data ?? []).map((item) => ({ value: item._id, label: item.name }))}
         helperText={noCourseTypes ? t('catalog.basic.noCourseTypes') : undefined}
       />
+      <BatchNumberField form={form} isNew={isNew} />
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
         <TextField
           {...register('startDate')}
@@ -76,8 +83,8 @@ export const BasicInfoTab: FC<BasicInfoTabProps> = ({ form }) => {
             : { helperText: t('common.optional') })}
         />
       </Stack>
+      <ScheduleFields form={form} />
       <TeachersField control={control} />
-      <CourseAccessFields form={form} />
     </Stack>
   );
 };

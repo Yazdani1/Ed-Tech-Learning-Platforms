@@ -24,7 +24,7 @@ export const SidebarUserFooter: FC<SidebarUserFooterProps> = ({ collapsed }) => 
   const { user } = useAuth();
   const logoutMutation = useLogout();
 
-  // RequireRole sees the signed-out user and opens /auth/login (it owns that navigation)
+  // RequireRole sees the signed-out user and opens the sign-in panel (it owns that navigation)
   const signOut = (): void => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => toast.success(t('auth.logoutSuccess')),

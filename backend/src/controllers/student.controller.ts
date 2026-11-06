@@ -38,7 +38,7 @@ const planPriceMap = async (): Promise<Map<string, number>> =>
 const spendingByStudent = async (studentIds: Types.ObjectId[]) => {
 	const [enrollments, subscriptions, planPrices] = await Promise.all([
 		Enrollment.find({ student: { $in: studentIds } })
-			.select('student course enrollmentType paidPrice')
+			.select('student course enrollmentType listPrice paidPrice')
 			.populate('course', 'price')
 			.lean(),
 		Subscription.find({ user: { $in: studentIds } }).select('user plan pricePaid').lean(),
