@@ -1,7 +1,6 @@
 'use client';
 
 import AllInclusiveIcon from '@mui/icons-material/AllInclusive';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ClassIcon from '@mui/icons-material/Class';
 import DevicesIcon from '@mui/icons-material/Devices';
 import EventIcon from '@mui/icons-material/Event';
@@ -18,7 +17,7 @@ const ICON_SX = { fontSize: 16 } as const;
 
 /**
  * Highlight lines of the enrolment card: lectures, lifetime access, devices, certificate, and (with
- * `withSchedule`) the course type and start / end dates.
+ * `withSchedule`) the course type and end date (the start date and class times are in CourseScheduleFacts).
  */
 export const useCourseHighlights = (
   course: Course,
@@ -40,12 +39,6 @@ export const useCourseHighlights = (
     items.push({
       icon: <ClassIcon sx={ICON_SX} />,
       text: t('browse.enroll.typeLabel', { name: course.courseType.name }),
-    });
-  }
-  if (course.startDate) {
-    items.push({
-      icon: <CalendarTodayIcon sx={ICON_SX} />,
-      text: t('browse.enroll.starts', { date: formatDate(course.startDate, i18n.language) }),
     });
   }
   if (course.endDate) {

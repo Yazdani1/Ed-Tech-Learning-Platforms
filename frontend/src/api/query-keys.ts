@@ -10,6 +10,7 @@ export const queryKeys = {
     courseTypes: ['catalog', 'course-types'] as const,
     plans: ['catalog', 'subscription-plans'] as const,
     myEnrollments: ['catalog', 'my-enrollments'] as const,
+    myPurchases: ['catalog', 'my-purchases'] as const,
     mySubscription: ['catalog', 'my-subscription'] as const,
   },
   public: {
@@ -17,6 +18,8 @@ export const queryKeys = {
     siteLogo: ['public', 'site-logo'] as const,
     heroPosts: ['public', 'hero-posts'] as const,
     siteSettings: ['public', 'site-settings'] as const,
+    /** Set up VAT page (Super Admin) */
+    vat: ['site-settings', 'vat'] as const,
     tools: ['public', 'tools'] as const,
     teachers: ['public', 'teachers'] as const,
     /** The catalog's section list (counts only) */
@@ -31,6 +34,7 @@ export const queryKeys = {
     courses: (params: Record<string, string | number>) => ['browse', 'courses', params] as const,
     freeCourses: ['browse', 'free-courses'] as const,
     course: (id: string) => ['browse', 'course', id] as const,
+    statusHistory: (id: string) => ['browse', 'course', id, 'status-history'] as const,
     liveClasses: (id: string) => ['browse', 'live-classes', id] as const,
     enrollment: (id: string) => ['browse', 'enrollment', id] as const,
   },
@@ -59,6 +63,7 @@ export const queryKeys = {
     subscriptionList: (params: Record<string, string | number>) =>
       ['people', 'subscriptions', params] as const,
     qaGroups: ['people', 'qa', 'groups'] as const,
+    userHistory: (userId: string) => ['people', 'users', 'history', userId] as const,
   },
   adminCourses: {
     all: ['admin-courses'] as const,
@@ -78,18 +83,23 @@ export const queryKeys = {
     list: (params: Record<string, string | number>) => ['promos', 'list', params] as const,
     active: ['promos', 'active'] as const,
     activeCourses: ['promos', 'active-courses'] as const,
+    design: ['promos', 'design'] as const,
+    history: (id: string) => ['promos', 'history', id] as const,
   },
   /** Revenue page (revenue.api.ts) */
   revenue: {
     all: ['revenue'] as const,
     summary: (params: Record<string, string>) => ['revenue', 'summary', params] as const,
     orders: (params: Record<string, string | number>) => ['revenue', 'orders', params] as const,
+    months: (tz: string) => ['revenue', 'months', tz] as const,
+    breakdown: (params: Record<string, string>) => ['revenue', 'breakdown', params] as const,
   },
   /** Announcements page: one announcement sent to several courses (announcements.api.ts) */
   broadcasts: {
     all: ['broadcasts'] as const,
     list: (params: Record<string, string | number>) => ['broadcasts', 'list', params] as const,
     detail: (id: string) => ['broadcasts', 'detail', id] as const,
+    history: (id: string) => ['broadcasts', 'history', id] as const,
   },
   /** Quiz sections and banks of a course (quiz.api.ts), shared by the course editor and the player */
   quiz: {

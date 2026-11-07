@@ -51,7 +51,17 @@ const nextConfig: NextConfig = {
     return Promise.resolve([{ source: '/api/:path*', destination: `${backendUrl}/api/:path*` }]);
   },
   headers() {
-    return Promise.resolve([{ source: '/:path*', headers: securityHeaders }]);
+    return Promise.resolve([
+      { source: '/:path*', headers: securityHeaders },
+      // The service worker is checked for updates on every visit
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+        ],
+      },
+    ]);
   },
 };
 

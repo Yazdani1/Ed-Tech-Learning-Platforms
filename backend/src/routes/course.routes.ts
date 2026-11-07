@@ -5,6 +5,7 @@ import {
 	createCourse,
 	updateCourse,
 	updateCourseStatus,
+	getCourseStatusHistory,
 	deleteCourse,
 	bulkUpdateCourses,
 	browseCourses,
@@ -55,6 +56,7 @@ router.patch(
 	authorize(...adminRoles),
 	updateCourseStatus,
 );
+router.get('/:id/status-history', protect, authorize(...adminRoles), getCourseStatusHistory);
 router.delete('/:id', protect, authorize(...adminRoles), deleteCourse);
 
 // Course page sections (tools, what you get, projects, audience, success stories, FAQ)

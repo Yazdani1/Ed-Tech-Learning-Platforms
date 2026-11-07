@@ -19,6 +19,9 @@ export interface IEnrollment extends Document {
   couponCode?: string;
   couponSource?: CouponSource;
   paymentMethod?: PaymentMethod;
+  /** VAT rate in force when bought, and the VAT included in paidPrice (internal) */
+  vatPercent: number;
+  vatAmount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +43,8 @@ const enrollmentSchema = new Schema<IEnrollment>(
     couponCode: { type: String, uppercase: true, trim: true },
     couponSource: { type: String, enum: ['course', 'coupon', 'promo'] },
     paymentMethod: { type: String, enum: PAYMENT_METHODS },
+    vatPercent: { type: Number, default: 0, min: 0, max: 100 },
+    vatAmount: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true },
 );

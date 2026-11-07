@@ -43,9 +43,8 @@ describe('SuperAdminDashboard', () => {
     expect(within(counts).getByText('Students')).toBeInTheDocument();
     expect(within(counts).getByText('2 new this month')).toBeInTheDocument();
     expect(within(counts).getByText('2 published, 1 draft')).toBeInTheDocument();
-    expect(
-      screen.getByText('Welcome back, Nadia. Here is how the platform is doing.'),
-    ).toBeInTheDocument();
+    // No subtitle under the title any more (same page header everywhere)
+    expect(screen.queryByText(/Welcome back, Nadia/)).not.toBeInTheDocument();
   });
 
   it('lists the top 5 courses with their revenue and enrolled students; no recent enrolments', async () => {

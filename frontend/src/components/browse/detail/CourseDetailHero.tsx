@@ -90,7 +90,8 @@ export const CourseDetailHero: FC<CourseDetailHeroProps> = ({ course, enrollTarg
     <Box sx={HERO_SX}>
       <Container maxWidth="lg">
         <Grid container>
-          <Grid size={{ xs: 12, md: 8 }} sx={{ pr: { md: 4 } }}>
+          {/* The title uses the free space on the right too; the rest stays left of the enrolment card */}
+          <Grid size={{ xs: 12, md: 11 }}>
             <HeroBreadcrumbs course={course} />
             {(course.courseType ?? course.batchNumber) && (
               <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
@@ -108,6 +109,8 @@ export const CourseDetailHero: FC<CourseDetailHeroProps> = ({ course, enrollTarg
             <Typography component="h1" sx={TITLE_SX}>
               {course.title}
             </Typography>
+          </Grid>
+          <Grid size={{ xs: 12, md: 8 }} sx={{ pr: { md: 4 } }}>
             {course.subtitle && (
               <Typography sx={{ color: '#cbd5e1', mb: 3, fontSize: { xs: '1rem', md: '1.15rem' } }}>
                 {course.subtitle}

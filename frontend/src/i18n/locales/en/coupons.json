@@ -16,7 +16,10 @@
   "codeHelp": "6-20 letters, digits or dashes. A free code is suggested; you can type your own.",
   "suggest": "Suggest a new code",
   "discountType": "Discount type",
-  "type": { "percent": "Percent (%)", "amount": "Amount (BDT)" },
+  "type": {
+    "percent": "Percent (%)",
+    "amount": "Amount (BDT)"
+  },
   "value": "Discount",
   "discount": "Discount",
   "percentOff": "{{value}}% off",
@@ -46,7 +49,11 @@
     "inactive": "Inactive",
     "used-up": "Used up"
   },
-  "kind": { "auto": "Course discount", "coupon": "Coupon", "promo": "Promo" },
+  "kind": {
+    "auto": "Course discount",
+    "coupon": "Coupon",
+    "promo": "Promo"
+  },
   "actionsFor": "Actions for {{code}}",
   "validation": {
     "code": "Use 6-20 letters, digits or dashes",
@@ -64,5 +71,18 @@
     "endsIn": "Ends in {{time}}",
     "noEnd": "No end date",
     "listPriceNow": "No coupon: you pay the list price."
-  }
+  },
+  "remaining": {
+    "header": "Time left",
+    "off": "Switched off",
+    "ended": "Ended",
+    "noEnd": "No end date",
+    "startsIn": "Starts in {{time}}",
+    "left": "{{time}} left",
+    "parts": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s"
+  },
+  "confirmOffTitle": "Switch off {{code}}?",
+  "confirmOnTitle": "Switch on {{code}}?",
+  "confirmOffMessage": "Students can no longer use this code.",
+  "confirmOnMessage": "The code works again between its start and end dates."
 }

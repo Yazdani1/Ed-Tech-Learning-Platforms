@@ -316,11 +316,14 @@ describe('Course editor: Coupons', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Actions for WELCOME500' }));
     await user.click(screen.getByRole('menuitem', { name: 'Switch off' }));
+    const confirm = await screen.findByRole('dialog', { name: 'Switch off WELCOME500?' });
+    await user.click(within(confirm).getByRole('button', { name: 'Switch off' }));
     expect(await screen.findByText('Coupon switched off')).toBeInTheDocument();
     expect(patched).toEqual({ isActive: false });
 
-    await user.click(screen.getByRole('button', { name: 'Actions for WELCOME500' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
+    // The confirmation closes first (the page is hidden from screen readers until then)
+    await user.click(await screen.findByRole('button', { name: 'Actions for WELCOME500' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
     await user.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }),
     );

@@ -7,7 +7,9 @@ import { Suspense, useState, type FC, type ReactNode } from 'react';
 import { Toaster } from 'react-hot-toast';
 
 import { createQueryClient } from '@/api/query-client';
+import { PortalTimeTracker } from '@/components/activity/PortalTimeTracker';
 import { AuthDrawer } from '@/components/auth/AuthDrawer';
+import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
 import { LanguageSync } from '@/components/i18n/LanguageSync';
 import { ConfirmProvider } from '@/context/ConfirmContext';
 import { SocketProvider } from '@/context/SocketContext';
@@ -29,6 +31,8 @@ export const Providers: FC<ProvidersProps> = ({ children }) => {
         <SocketProvider>
           <ConfirmProvider>
             {children}
+            <PortalTimeTracker />
+            <ServiceWorkerRegister />
             {/* Sign in / create account panel of every page (reads ?auth= from the URL) */}
             <Suspense fallback={null}>
               <AuthDrawer />

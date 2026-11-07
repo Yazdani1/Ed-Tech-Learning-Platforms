@@ -1,6 +1,7 @@
 'use client';
 
 import ListItemButton from '@mui/material/ListItemButton';
+import { alpha, type SxProps, type Theme } from '@mui/material/styles';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Tooltip from '@mui/material/Tooltip';
@@ -20,6 +21,33 @@ interface SidebarNavItemProps {
   collapsed: boolean;
   onNavigate?: () => void;
 }
+
+/** Menu row: the open page gets a tinted background, bold primary text and a bar on its left edge. */
+const itemSx = (collapsed: boolean): SxProps<Theme> => ({
+  mx: 1,
+  mb: 0.5,
+  minHeight: 44,
+  borderRadius: 2,
+  justifyContent: collapsed ? 'center' : 'initial',
+  px: collapsed ? 1.5 : 2,
+  position: 'relative',
+  // The open page: tinted background, bold primary text and a bar on the left edge
+  '&.Mui-selected, &.Mui-selected:hover': {
+    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
+    color: 'primary.main',
+    '& .MuiListItemText-primary': { fontWeight: 700 },
+  },
+  '&.Mui-selected::before': {
+    content: '""',
+    position: 'absolute',
+    left: 0,
+    top: 6,
+    bottom: 6,
+    width: 4,
+    borderRadius: 2,
+    bgcolor: 'primary.main',
+  },
+});
 
 export const SidebarNavItem: FC<SidebarNavItemProps> = ({
   item,
@@ -42,14 +70,7 @@ export const SidebarNavItem: FC<SidebarNavItemProps> = ({
         onClick={onNavigate}
         aria-current={active ? 'page' : undefined}
         aria-label={collapsed || unread > 0 ? fullLabel : undefined}
-        sx={{
-          mx: 1,
-          mb: 0.5,
-          minHeight: 44,
-          borderRadius: 2,
-          justifyContent: collapsed ? 'center' : 'initial',
-          px: collapsed ? 1.5 : 2,
-        }}
+        sx={itemSx(collapsed)}
       >
         <ListItemIcon
           sx={{ minWidth: 0, mr: collapsed ? 0 : 2, color: active ? 'primary.main' : 'inherit' }}

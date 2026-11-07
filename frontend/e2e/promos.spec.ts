@@ -6,6 +6,7 @@ import {
   createPaidCourse,
   dataOf,
   expectNoHorizontalScroll,
+  isPhone,
   signInAndWait,
 } from './helpers';
 
@@ -59,10 +60,11 @@ test.describe('Promos', () => {
       // A visitor sees it
       await page.context().clearCookies();
       await page.goto('/');
-      const banner = page.getByRole('complementary', { name: 'Running promo' });
+      // The pop-up opens on top and hides the page from screen readers, so the banner is found by its label
+      const banner = page.locator('aside[aria-label="Running promo"]');
       await expect(banner).toBeVisible();
       await expect(banner.getByText('30% OFF')).toBeVisible();
-      await expect(banner.getByRole('timer')).toBeVisible();
+      await expect(banner.locator('[role="timer"]')).toBeVisible();
       const popup = page.getByRole('dialog');
       await expect(popup.getByText('30% OFF')).toBeVisible();
       await expectNoHorizontalScroll(page);
@@ -111,5 +113,62 @@ test.describe('Promos', () => {
     await page.goto('/admin/promos');
 
     await expect(page).toHaveURL(/\/admin\/courses$/);
+  });
+
+  test('switching a promo off asks first and shows in its history; the Design tab has both pictures', async ({
+    page,
+    baseURL,
+  }, testInfo) => {
+    const course = await createPaidCourse(baseURL ?? '', 'promo toggle ' + testInfo.project.name);
+    const title = 'E2E Toggle ' + testInfo.project.name + ' ' + String(Date.now());
+    const admin = await apiAs(baseURL ?? '', ACCOUNTS.admin.email);
+    await dataOf(
+      await admin.post('/api/promos', {
+        data: {
+          title,
+          code: 'TGL' + String(Date.now()).slice(-9),
+          discountType: 'percent',
+          value: 10,
+          startsAt: new Date(Date.now() + DAY_MS).toISOString(),
+          endsAt: new Date(Date.now() + 2 * DAY_MS).toISOString(),
+          courseIds: [course.id],
+        },
+      }),
+    );
+    await admin.dispose();
+
+    await signInAndWait(page, ACCOUNTS.admin.email);
+    await page.goto('/admin/promos');
+    // The row menu of the desktop table (phones show cards; their menu is covered by the other promo tests)
+    if (!isPhone(page)) {
+      await page
+        .getByRole('button', { name: 'Actions for ' + title })
+        .filter({ visible: true })
+        .first()
+        .click();
+      await page.getByRole('menuitem', { name: 'Switch off' }).click();
+      await page
+        .getByRole('dialog', { name: 'Switch off "' + title + '"?' })
+        .getByRole('button', { name: 'Switch off' })
+        .click();
+      await expect(page.getByText('Promo stopped')).toBeVisible();
+
+      await page
+        .getByRole('button', { name: 'Actions for ' + title })
+        .filter({ visible: true })
+        .first()
+        .click();
+      await page.getByRole('menuitem', { name: 'History' }).click();
+      await expect(
+        page.getByRole('dialog', { name: 'History of ' + title }).getByText('Switched off'),
+      ).toBeVisible();
+      await page.keyboard.press('Escape');
+    }
+
+    await page.getByRole('tab', { name: 'Design' }).click();
+    await expect(page.getByText('Top banner picture')).toBeVisible();
+    await expect(page.getByText('Pop-up picture')).toBeVisible();
+    await expectNoHorizontalScroll(page);
+    await deletePromosTitled(baseURL ?? '', title);
   });
 });

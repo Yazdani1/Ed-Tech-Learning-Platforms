@@ -49,13 +49,19 @@ test.describe('Signed-in shell', () => {
     }
     const menu = page.getByRole('navigation', { name: 'Main menu' }).filter({ visible: true });
     await expect(menu.getByRole('link', { name: 'My Courses' })).toBeVisible();
-    // The signed-in name in the sidebar footer
+    // No user block at the bottom any more: only the red Logout row
+    await expect(
+      page
+        .locator('.MuiDrawer-paper')
+        .getByRole('button', { name: 'Logout' })
+        .filter({ visible: true }),
+    ).toBeVisible();
     await expect(
       page
         .locator('.MuiDrawer-paper')
         .getByText(ACCOUNTS.student.name, { exact: true })
         .filter({ visible: true }),
-    ).toBeVisible();
+    ).toHaveCount(0);
   });
 });
 

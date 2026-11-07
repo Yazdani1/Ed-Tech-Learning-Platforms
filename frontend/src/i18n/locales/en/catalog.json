@@ -319,6 +319,10 @@
     "unpublish": "Unpublish course",
     "unpublishTitle": "Unpublish course?",
     "unpublishMessage": "\"{{title}}\" leaves the home page and the course list. Enrolled students keep their access.",
-    "neverDeleted": "This course was published before, so it can never be deleted. Unpublish it to hide it."
+    "neverDeleted": "This course was published before, so it can never be deleted. Unpublish it to hide it.",
+    "archivedTitle": "This course is archived",
+    "historyTitle": "Publish history",
+    "historyPublished": "Published",
+    "historyUnpublished": "Unpublished (archived)"
   }
 }

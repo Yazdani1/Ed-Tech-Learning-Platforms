@@ -27,6 +27,8 @@ export const profileSchema = userSchema.extend({
   isCommunityProfilePrivate: z.boolean().catch(false),
   activeSubscription: activeSubscriptionSchema.nullish(),
   purchasedCourses: z.array(z.string()).catch([]),
+  /** Students: seconds spent on the portal */
+  timeSpentSeconds: z.number().catch(0),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });

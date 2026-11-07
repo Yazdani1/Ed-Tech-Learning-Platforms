@@ -1,0 +1,25 @@
+{
+  "title": "কেনাকাটা",
+  "count": "{{count}}টি কোর্স",
+  "totalsLabel": "কেনাকাটার মোট",
+  "empty": "আপনি এখনও কোনো কোর্সে ভর্তি হননি।",
+  "deletedCourse": "কোর্সটি আর নেই",
+  "batch": "ব্যাচ {{batch}}",
+  "totals": {
+    "courses": "কোর্স",
+    "paidCourses": "কেনা",
+    "totalSpent": "মোট খরচ",
+    "totalSaved": "মোট সাশ্রয়"
+  },
+  "columns": {
+    "course": "কোর্স",
+    "purchaseId": "পারচেজ আইডি",
+    "date": "তারিখ",
+    "type": "ধরন",
+    "listPrice": "তালিকা মূল্য",
+    "discount": "ছাড়",
+    "coupon": "কুপন",
+    "amountPaid": "পরিশোধ",
+    "paymentMethod": "পেমেন্ট পদ্ধতি"
+  }
+}

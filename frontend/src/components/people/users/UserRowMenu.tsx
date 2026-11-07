@@ -1,8 +1,10 @@
 'use client';
 
-import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
+import BlockIcon from '@mui/icons-material/Block';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import HistoryIcon from '@mui/icons-material/History';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -14,12 +16,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDeleteConfirm } from '@/hooks/useConfirm';
 import { SUPER_ADMIN_ROLES } from '@/utils/roles';
 
-import { canManageAccount } from './user-utils';
+import { canBlockAccount, canManageAccount } from './user-utils';
 
 import type { ManagedUser } from '@/schemas/people.schema';
 import type { FC } from 'react';
 
-export type UserAction = 'details' | 'edit' | 'role';
+export type UserAction = 'details' | 'edit' | 'block' | 'history';
 
 interface UserRowMenuProps {
   user: ManagedUser;
@@ -27,25 +29,31 @@ interface UserRowMenuProps {
 }
 
 /**
- * Row menu of a user. Details and Delete: Super Admin only. Edit / Change role: hidden for an Admin on an
- * Admin or Super Admin account (the backend refuses it).
+ * Row menu of a user. Details and Delete: Super Admin only. Edit (name, email, role, password): hidden for an
+ * Admin on an Admin or Super Admin account. Block / Unblock: Super Admin anyone, Admin Moderators, Teachers
+ * and Students (never yourself). History: role changes and blocks.
  */
-export const UserRowMenu: FC<UserRowMenuProps> = ({ user, onAction }) => {
+/** "Delete": asks first; the last Super Admin cannot be deleted (the backend's 400 message is shown). */
+const useUserDelete = (user: ManagedUser): (() => Promise<void>) => {
   const { t } = useTranslation();
-  const { user: viewer, hasRole } = useAuth();
   const confirmDelete = useDeleteConfirm();
   const deleteUser = useDeleteUser();
-  const isSuperAdmin = hasRole(SUPER_ADMIN_ROLES);
-  const canManage = canManageAccount(viewer?.role, user);
-
-  const handleDelete = async (): Promise<void> => {
+  return async () => {
     if (!(await confirmDelete(user.name))) return;
-    // The last Super Admin cannot be deleted: the backend's 400 message is shown
     void deleteUser
       .mutateAsync(user._id)
       .then(() => toast.success(t('people.users.deleted')))
       .catch(toastError);
   };
+};
+
+export const UserRowMenu: FC<UserRowMenuProps> = ({ user, onAction }) => {
+  const { t } = useTranslation();
+  const { user: viewer, hasRole } = useAuth();
+  const isSuperAdmin = hasRole(SUPER_ADMIN_ROLES);
+  const canManage = canManageAccount(viewer?.role, user);
+
+  const handleDelete = useUserDelete(user);
 
   return (
     <ActionMenu
@@ -68,11 +76,20 @@ export const UserRowMenu: FC<UserRowMenuProps> = ({ user, onAction }) => {
           },
         },
         {
-          label: t('people.users.changeRole'),
-          icon: <AdminPanelSettingsOutlinedIcon fontSize="small" />,
+          label: t(user.isBlocked ? 'people.users.block.unblock' : 'people.users.block.block'),
+          icon: user.isBlocked ? <LockOpenIcon fontSize="small" /> : <BlockIcon fontSize="small" />,
+          danger: !user.isBlocked,
+          visible: canBlockAccount(viewer, user),
+          onClick: () => {
+            onAction('block', user);
+          },
+        },
+        {
+          label: t('people.users.history.open'),
+          icon: <HistoryIcon fontSize="small" />,
           visible: canManage,
           onClick: () => {
-            onAction('role', user);
+            onAction('history', user);
           },
         },
         {

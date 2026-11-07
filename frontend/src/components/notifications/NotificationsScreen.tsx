@@ -44,14 +44,7 @@ export const NotificationsScreen = () => {
 
   return (
     <>
-      <PageHeader
-        title={t('messaging.notifications.title')}
-        subtitle={t(
-          canSend
-            ? 'messaging.notifications.subtitleSender'
-            : 'messaging.notifications.subtitleReader',
-        )}
-      />
+      <PageHeader title={t('messaging.notifications.title')} />
       {canSend && (
         <Paper elevation={0} sx={{ mb: 3, border: 1, borderColor: 'divider', borderRadius: 1 }}>
           <Tabs

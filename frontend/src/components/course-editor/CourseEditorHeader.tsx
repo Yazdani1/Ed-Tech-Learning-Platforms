@@ -8,6 +8,8 @@ import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
+import { PAGE_TITLE_SX } from '@/components/common/PageHeader';
+import { COURSE_STATUS_COLOR, courseStatusLabel } from '@/utils/course-status';
 import { formatDateTime } from '@/utils/dateTime';
 
 import { CourseEditorActions } from './CourseEditorActions';
@@ -33,7 +35,7 @@ const ROW_SX = {
   gap: 2,
 } as const;
 
-/** Back link, title, Draft/Published chips and the save actions. */
+/** Back link, title, Draft / Archived / Published chips and the save actions. */
 export const CourseEditorHeader: FC<CourseEditorHeaderProps> = ({ course, title, ...actions }) => {
   const { t, i18n } = useTranslation();
   const isPublished = course?.status === 'Published';
@@ -50,17 +52,15 @@ export const CourseEditorHeader: FC<CourseEditorHeaderProps> = ({ course, title,
       </Button>
       <Box sx={ROW_SX}>
         <Box sx={{ minWidth: 0 }}>
-          <Typography component="h1" variant="h4" sx={{ fontWeight: 700, wordBreak: 'break-word' }}>
+          <Typography component="h1" sx={{ ...PAGE_TITLE_SX, wordBreak: 'break-word' }}>
             {title}
           </Typography>
           {course && (
             <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mt: 0.75 }}>
               <Chip
-                label={t(
-                  isPublished ? 'catalog.editor.statusPublished' : 'catalog.editor.statusDraft',
-                )}
+                label={t(`adminCourses.values.${courseStatusLabel(course)}`)}
                 size="small"
-                color={isPublished ? 'success' : 'default'}
+                color={COURSE_STATUS_COLOR[courseStatusLabel(course)]}
                 sx={{ fontWeight: 800 }}
               />
               {isPublished && course.publishedAt && (

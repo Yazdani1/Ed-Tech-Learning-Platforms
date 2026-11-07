@@ -100,7 +100,41 @@
     "updatedAt": "হালনাগাদের সময়",
     "studentNumber": "শিক্ষার্থী নম্বর",
     "studentNumberShort": "নং {{number}}",
-    "phone": "ফোন নম্বর (ঐচ্ছিক)"
+    "phone": "ফোন নম্বর (ঐচ্ছিক)",
+    "accountStatus": "অ্যাকাউন্ট",
+    "allAccounts": "সব অ্যাকাউন্ট",
+    "selectUser": "{{name}} নির্বাচন করুন",
+    "exported": "{{count}} জন ব্যবহারকারী এক্সপোর্ট হয়েছে",
+    "exportSelected": "নির্বাচিত ব্যবহারকারী ({{count}})",
+    "exportFiltered": "বর্তমান ফিল্টারের সব ব্যবহারকারী ({{count}})",
+    "block": {
+      "block": "ব্লক",
+      "unblock": "আনব্লক",
+      "blockTitle": "{{name}}-কে ব্লক করবেন?",
+      "unblockTitle": "{{name}}-কে আনব্লক করবেন?",
+      "blockMessage": "{{name}} সব জায়গা থেকে সাথে সাথে সাইন আউট হবেন এবং আনব্লক না করা পর্যন্ত সাইন ইন করতে পারবেন না।",
+      "unblockMessage": "{{name}} আবার সাইন ইন করতে পারবেন।",
+      "reason": "কারণ (ঐচ্ছিক, ইতিহাসের জন্য)",
+      "currentReason": "ব্লকের কারণ: {{reason}}",
+      "blocked": "{{name}} ব্লক হয়েছেন",
+      "unblocked": "{{name}} আনব্লক হয়েছেন"
+    },
+    "history": {
+      "open": "ইতিহাস",
+      "title": "{{name}}-এর ইতিহাস",
+      "role": "ভূমিকা {{from}} থেকে {{to}} করা হয়েছে",
+      "blocked": "অ্যাকাউন্ট ব্লক করা হয়েছে",
+      "unblocked": "অ্যাকাউন্ট আনব্লক করা হয়েছে"
+    },
+    "csv": {
+      "name": "নাম",
+      "email": "ইমেইল",
+      "role": "ভূমিকা",
+      "studentNumber": "শিক্ষার্থী আইডি",
+      "phone": "ফোন",
+      "status": "অবস্থা",
+      "joined": "যোগদান"
+    }
   },
   "teachers": {
     "title": "শিক্ষকগণ",
@@ -286,10 +320,63 @@
     "deletedCourse": "মুছে ফেলা কোর্স",
     "enrolledOn": "এনরোল {{date}}",
     "subscriptionPeriod": "{{start}} – {{end}}",
-    "status": {
-      "Active": "সক্রিয়",
-      "Expired": "মেয়াদোত্তীর্ণ",
-      "Cancelled": "বাতিল"
+    "status": "অবস্থা",
+    "timeSpent": "পোর্টালে সময়",
+    "count": "{{count}} জন শিক্ষার্থী",
+    "selected": "{{count}}টি নির্বাচিত",
+    "selectStudent": "{{name}} নির্বাচন করুন",
+    "exportCsv": "CSV এক্সপোর্ট",
+    "exported": "{{count}} জন শিক্ষার্থী এক্সপোর্ট হয়েছে",
+    "exportSelected": "নির্বাচিত শিক্ষার্থী ({{count}})",
+    "exportFiltered": "বর্তমান ফিল্টারের সব শিক্ষার্থী ({{count}})",
+    "filters": {
+      "enrollment": "ভর্তি",
+      "enrollmentOptions": {
+        "any": "যেকোনো ভর্তি",
+        "paid": "কোর্স কিনেছে",
+        "free": "ফ্রি কোর্স",
+        "subscription": "সাবস্ক্রিপশন",
+        "none": "ভর্তি নেই"
+      },
+      "status": "অবস্থা",
+      "statusOptions": {
+        "any": "যেকোনো অবস্থা",
+        "active": "সক্রিয়",
+        "blocked": "ব্লক করা"
+      },
+      "phone": "ফোন",
+      "phoneOptions": {
+        "any": "যেকোনো",
+        "true": "ফোন আছে",
+        "false": "ফোন নেই"
+      },
+      "joinedFrom": "যোগদান শুরু",
+      "joinedTo": "যোগদান শেষ",
+      "sort": "সাজান",
+      "sortOptions": {
+        "newest": "নতুন আগে",
+        "oldest": "পুরোনো আগে",
+        "name": "নাম (ক–হ)",
+        "timeSpent": "পোর্টালে বেশি সময়",
+        "lastActive": "সম্প্রতি সক্রিয়"
+      },
+      "clear": "ফিল্টার মুছুন"
+    },
+    "csv": {
+      "name": "নাম",
+      "studentNumber": "শিক্ষার্থী আইডি",
+      "email": "ইমেইল",
+      "phone": "ফোন",
+      "courses": "ভর্তি কোর্স",
+      "spent": "মোট খরচ (টাকা)",
+      "timeSpent": "পোর্টালে সময়",
+      "status": "অবস্থা",
+      "joined": "যোগদান",
+      "lastActive": "সর্বশেষ সক্রিয়"
     }
+  },
+  "accountStatus": {
+    "active": "সক্রিয়",
+    "blocked": "ব্লক করা"
   }
 }

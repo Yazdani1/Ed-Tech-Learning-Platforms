@@ -1,12 +1,14 @@
 'use client';
 
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
 import { useTranslation } from 'react-i18next';
 
+import { ExportButtons } from '@/components/common/ExportButtons';
+import { InlineSelect } from '@/components/common/InlineSelect';
+import { SelectionChip } from '@/components/common/SelectionChip';
+import { ORDER_TYPES, type OrderType } from '@/schemas/revenue.schema';
+
+import { PeriodFilter } from './PeriodFilter';
 import { RevenueCourseFilter } from './RevenueCourseFilter';
 
 import type { FC } from 'react';
@@ -15,56 +17,57 @@ interface RevenueToolbarProps {
   courseLabel: string;
   courseIds: readonly string[];
   onApplyCourses: (ids: string[]) => void;
+  type: OrderType;
+  onTypeChange: (type: OrderType) => void;
+  /** All sales tab only: the period dropdown (a month's details have a fixed period) */
+  period?: {
+    period: string;
+    from: string;
+    to: string;
+    onChange: (changes: Record<string, string>) => void;
+  };
   selectedCount: number;
   onClearSelection: () => void;
   onExportCsv: () => void;
   onPrintPdf: () => void;
 }
 
-const BUTTON_SX = { minHeight: 44 } as const;
-const ROW_SX = { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 2 } as const;
+const ROW_SX = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: 1,
+  mb: 2,
+} as const;
 
-/** Course filter (opens the course list on the left), the selection count, CSV export and PDF print. */
-export const RevenueToolbar: FC<RevenueToolbarProps> = ({
-  courseLabel,
-  courseIds,
-  onApplyCourses,
-  selectedCount,
-  onClearSelection,
-  onExportCsv,
-  onPrintPdf,
-}) => {
+/** One row above the sales table, on the right: period, courses, type, selection, CSV export and PDF print. */
+export const RevenueToolbar: FC<RevenueToolbarProps> = (props) => {
   const { t } = useTranslation();
   return (
     <Box sx={ROW_SX}>
-      <RevenueCourseFilter courseIds={courseIds} label={courseLabel} onApply={onApplyCourses} />
-      <Box sx={{ flexGrow: 1 }} />
-      {selectedCount > 0 && (
-        <Chip
-          label={t('revenue.selected', { count: selectedCount })}
-          onDelete={onClearSelection}
-          color="primary"
-          variant="outlined"
-          sx={{ minHeight: 36 }}
+      <Box sx={{ mr: 'auto' }}>
+        <SelectionChip
+          count={props.selectedCount}
+          label={t('revenue.selected', { count: props.selectedCount })}
+          onClear={props.onClearSelection}
         />
-      )}
-      <Button
-        variant="outlined"
-        startIcon={<FileDownloadOutlinedIcon />}
-        onClick={onExportCsv}
-        disabled={selectedCount === 0}
-        sx={BUTTON_SX}
-      >
-        {t('revenue.exportCsv')}
-      </Button>
-      <Button
-        variant="outlined"
-        startIcon={<PictureAsPdfOutlinedIcon />}
-        onClick={onPrintPdf}
-        sx={BUTTON_SX}
-      >
-        {t('revenue.printPdf')}
-      </Button>
+      </Box>
+      {props.period && <PeriodFilter {...props.period} />}
+      <RevenueCourseFilter
+        courseIds={props.courseIds}
+        label={props.courseLabel}
+        onApply={props.onApplyCourses}
+      />
+      <InlineSelect
+        label={t('revenue.columns.type')}
+        value={props.type}
+        options={ORDER_TYPES.map((item) => ({ value: item, label: t(`revenue.types.${item}`) }))}
+        onChange={(value) => {
+          props.onTypeChange(value as OrderType);
+        }}
+      />
+      <ExportButtons onExportCsv={props.onExportCsv} onPrintPdf={props.onPrintPdf} />
     </Box>
   );
 };

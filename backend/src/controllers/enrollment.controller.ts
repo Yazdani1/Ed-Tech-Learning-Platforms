@@ -7,6 +7,7 @@ import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { isCourseTeacher } from '../utils/courseAccess';
 import { enrollmentRevenue } from '../utils/revenue';
+import { currentVatPercent, vatIncluded } from '../utils/vat';
 import { claimCouponUse, courseListPrice, releaseCouponUse, resolveCoupon, type CourseOffer } from '../utils/courseOffer';
 
 const money = (value: number) => Math.round(value * 100) / 100;
@@ -90,6 +91,9 @@ export const enroll = asyncHandler(async (req: Request, res: Response) => {
 	const offer = couponCode ? await resolveCoupon(course, couponCode) : null;
 	if (offer && !(await claimCouponUse(offer))) throw new AppError('This coupon code has no uses left', 400);
 	const orderSnapshot = enrollmentType === 'paid' ? getCourseOrderSnapshot(courseListPrice(course), offer) : FREE_SNAPSHOT;
+	// VAT is included in the price paid; the order keeps the rate in force now
+	const vatPercent = enrollmentType === 'paid' ? await currentVatPercent() : 0;
+	const vatAmount = vatIncluded(orderSnapshot.paidPrice, vatPercent);
 
 	try {
 		await Enrollment.create({
@@ -97,6 +101,8 @@ export const enroll = asyncHandler(async (req: Request, res: Response) => {
 			course: new Types.ObjectId(courseId),
 			enrollmentType,
 			...orderSnapshot,
+			vatPercent,
+			vatAmount,
 			...(paymentMethod ? { paymentMethod } : {}),
 		});
 	} catch (err) {
@@ -288,3 +294,28 @@ export const getCourseEnrollmentStats = asyncHandler(
 		});
 	},
 );
+
+// GET /api/enrollments/me/purchases — the signed-in student's course orders, newest first, with the totals
+// (VAT is internal and never sent to students).
+export const getMyPurchases = asyncHandler(async (req: Request, res: Response) => {
+	const orders = await Enrollment.find({ student: req.user._id })
+		.select('course enrollmentType listPrice paidPrice discountAmount discountPercent currency couponCode couponSource paymentMethod createdAt')
+		.populate('course', 'title coverImage batchNumber slug price')
+		.sort({ createdAt: -1 })
+		.lean();
+	const purchases = orders.map((order) => ({ ...order, amountPaid: money(enrollmentRevenue(order)) }));
+	const paid = purchases.filter((order) => order.enrollmentType === 'paid');
+	res.status(200).json({
+		success: true,
+		data: {
+			purchases,
+			totals: {
+				courses: purchases.length,
+				paidCourses: paid.length,
+				totalSpent: money(paid.reduce((sum, order) => sum + order.amountPaid, 0)),
+				totalSaved: money(paid.reduce((sum, order) => sum + (order.discountAmount ?? 0), 0)),
+			},
+		},
+		total: purchases.length,
+	});
+});

@@ -10,6 +10,11 @@ export interface IAnnouncementBroadcast extends Document {
   image?: { url: string; publicId: string };
   courses: Types.ObjectId[];
   postedBy: Types.ObjectId;
+  /** "Deleted": hidden from every page (students, admins), never removed from the database */
+  isArchived: boolean;
+  archivedAt?: Date;
+  archivedBy?: Types.ObjectId;
+  editedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,10 +26,14 @@ const broadcastSchema = new Schema<IAnnouncementBroadcast>(
     image: { url: String, publicId: { type: String, select: false } },
     courses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
     postedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    isArchived: { type: Boolean, default: false },
+    archivedAt: Date,
+    archivedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    editedAt: Date,
   },
   { timestamps: true },
 );
 
-broadcastSchema.index({ createdAt: -1 });
+broadcastSchema.index({ isArchived: 1, createdAt: -1 });
 
 export const AnnouncementBroadcast = model<IAnnouncementBroadcast>('AnnouncementBroadcast', broadcastSchema);

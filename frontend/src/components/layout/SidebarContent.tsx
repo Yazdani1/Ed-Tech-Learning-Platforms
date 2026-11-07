@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { isNavItemActive, NAV_SECTIONS, type NavItem } from './nav-items';
 import { SidebarHeader } from './SidebarHeader';
 import { SidebarNavItem } from './SidebarNavItem';
-import { SidebarUserFooter } from './SidebarUserFooter';
+import { SidebarLogoutButton } from './SidebarLogoutButton';
 
 import type { FC } from 'react';
 
@@ -25,7 +25,7 @@ interface SidebarContentProps {
   onNavigate?: () => void;
 }
 
-/** Brand, the role-filtered menu (grouped items under headings) and the user footer: shared by the desktop sidebar and the phone drawer. */
+/** Brand, the role-filtered menu (grouped items under headings) and the red sign-out row: shared by the desktop sidebar and the phone drawer. */
 export const SidebarContent: FC<SidebarContentProps> = ({
   navItems,
   collapsed,
@@ -75,7 +75,7 @@ export const SidebarContent: FC<SidebarContentProps> = ({
         })}
       </Box>
       <Divider />
-      <SidebarUserFooter collapsed={collapsed} />
+      <SidebarLogoutButton collapsed={collapsed} />
     </Box>
   );
 };

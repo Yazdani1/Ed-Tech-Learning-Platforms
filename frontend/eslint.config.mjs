@@ -20,6 +20,8 @@ export default tseslint.config(
       'test-results/**',
       'next-env.d.ts',
       '*.config.{js,mjs,cjs}',
+      // Plain browser script of the installed app (service worker), not part of the TypeScript project
+      'public/sw.js',
     ],
   },
   js.configs.recommended,

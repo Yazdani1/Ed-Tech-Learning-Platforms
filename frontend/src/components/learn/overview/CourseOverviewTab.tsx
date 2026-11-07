@@ -7,8 +7,10 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import { PAGE_TITLE_SX } from '@/components/common/PageHeader';
+
+import { CourseOverviewSections } from './CourseOverviewSections';
 import { OverviewStat } from './OverviewStat';
-import { OverviewTextSections } from './OverviewTextSections';
 import { useOverviewStats } from './useOverviewStats';
 
 import type { Course } from '@/schemas/browse.schema';
@@ -18,18 +20,18 @@ interface CourseOverviewTabProps {
   course: Course;
 }
 
-/** Title, numbers about the course (students, lectures, duration, content counts) and its description. */
+/**
+ * Title, numbers about the course (lectures, duration, content counts), then everything the public course page
+ * shows except the curriculum: schedule, about, what you learn, tools, projects, benefits, audience,
+ * requirements, success stories and FAQ.
+ */
 export const CourseOverviewTab: FC<CourseOverviewTabProps> = ({ course }) => {
   const { t } = useTranslation();
   const stats = useOverviewStats(course);
 
   return (
     <Box component="section" aria-label={t('learn.nav.overview')} sx={{ p: { xs: 2, md: 4 } }}>
-      <Typography
-        component="h2"
-        variant="h4"
-        sx={{ fontWeight: 800, mb: 0.75, wordBreak: 'break-word' }}
-      >
+      <Typography component="h2" sx={{ ...PAGE_TITLE_SX, mb: 0.75, wordBreak: 'break-word' }}>
         {course.title}
       </Typography>
       {course.subtitle && (
@@ -68,7 +70,7 @@ export const CourseOverviewTab: FC<CourseOverviewTabProps> = ({ course }) => {
         ))}
       </Box>
       <Divider sx={{ mb: 4 }} />
-      <OverviewTextSections course={course} />
+      <CourseOverviewSections course={course} />
     </Box>
   );
 };

@@ -66,7 +66,26 @@
     "rangeReversed": "The end date must be on or after the start date",
     "chooseDays": "Choose a start date and an end date to see the chart.",
     "selectedLine_one": "{{range}}: {{revenue}} · {{count}} enrollment ({{paid}} paid)",
-    "selectedLine_other": "{{range}}: {{revenue}} · {{count}} enrollments ({{paid}} paid)"
+    "selectedLine_other": "{{range}}: {{revenue}} · {{count}} enrollments ({{paid}} paid)",
+    "charts": {
+      "section": "Course sales",
+      "net": "Net sales",
+      "vat": "VAT",
+      "paid": "Paid",
+      "other": "Free and subscription",
+      "free": "Free",
+      "subscription": "Subscription",
+      "average": "Average paid",
+      "sales": "Sales",
+      "discount": "Discounts",
+      "salesVat": "Net sales and VAT per month",
+      "enrolments": "Enrolments per month",
+      "averageOrder": "Average order value per month",
+      "topCourses": "Top 5 courses by sales",
+      "types": "Enrolment types",
+      "listPrice": "Where the list price went",
+      "noEnrolments": "No enrolments yet."
+    }
   },
   "periods": {
     "today": "Today",

@@ -1,6 +1,5 @@
 'use client';
 
-import TagIcon from '@mui/icons-material/Tag';
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
 
@@ -42,7 +41,6 @@ export const BatchNumberChip: FC<BatchNumberChipProps> = ({ batchNumber, tone = 
   if (!batchNumber) return null;
   return (
     <Box component="span" sx={{ ...BASE_SX, ...TONES[tone] }}>
-      <TagIcon sx={{ fontSize: 15 }} aria-hidden />
       {localizeDigits(t('public.courses.batch', { number: batchNumber }), i18n.language)}
     </Box>
   );

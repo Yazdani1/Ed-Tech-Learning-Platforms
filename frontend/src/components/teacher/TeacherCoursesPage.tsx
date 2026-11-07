@@ -21,7 +21,7 @@ export const TeacherCoursesPage = () => {
 
   return (
     <Box>
-      <PageHeader title={t('teacher.title')} subtitle={t('teacher.subtitle')} />
+      <PageHeader title={t('teacher.title')} />
       <QueryState
         isLoading={courses.isPending}
         error={courses.error}

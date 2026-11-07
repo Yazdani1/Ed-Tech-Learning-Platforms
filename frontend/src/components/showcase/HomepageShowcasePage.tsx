@@ -16,7 +16,7 @@ export const HomepageShowcasePage = () => {
   return (
     <RequireRole roles={MANAGER_ROLES}>
       <Box>
-        <PageHeader title={t('showcase.title')} subtitle={t('showcase.subtitle')} />
+        <PageHeader title={t('showcase.title')} />
         <SiteLogoPanel />
         <HeroPostsPanel />
       </Box>

@@ -13,14 +13,16 @@ import type { BroadcastFormState } from './useBroadcastForm';
 import type { FC } from 'react';
 
 interface BroadcastFieldsProps {
-  state: BroadcastFormState;
+  state: Pick<BroadcastFormState, 'form' | 'image' | 'setImage'>;
+  /** Edit: the picture saved now (shown until a new one is chosen) */
+  currentImage?: string | null;
 }
 
 const IMAGE_PREVIEW = 120;
 const EDITOR_HEIGHT = 180;
 
 /** Right column of the send dialog: title, the text (rich text editor) and an optional picture. */
-export const BroadcastFields: FC<BroadcastFieldsProps> = ({ state }) => {
+export const BroadcastFields: FC<BroadcastFieldsProps> = ({ state, currentImage }) => {
   const { t } = useTranslation();
   const fieldError = useFieldError();
   const preview = useImagePreview(state.image);
@@ -42,7 +44,7 @@ export const BroadcastFields: FC<BroadcastFieldsProps> = ({ state }) => {
       />
       <ImagePickField
         label={t('announcements.fields.image')}
-        previewUrl={preview}
+        previewUrl={preview ?? currentImage}
         onFile={state.setImage}
         size={IMAGE_PREVIEW}
       />

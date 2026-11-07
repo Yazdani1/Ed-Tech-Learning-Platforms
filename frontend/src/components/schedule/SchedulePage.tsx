@@ -32,7 +32,7 @@ export const SchedulePage = () => {
 
   return (
     <Box>
-      <PageHeader title={t('schedule.title')} subtitle={t('schedule.subtitle')} />
+      <PageHeader title={t('schedule.title')} />
       <ReminderAlarmAlert title={alarms.alarmTitle} onClose={alarms.dismiss} />
       <Tabs
         value={tab}

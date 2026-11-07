@@ -137,7 +137,11 @@
     "support": "Direct instructor & TA support",
     "share": "Share course",
     "linkCopied": "Course link copied",
-    "copyFailed": "Could not copy the link"
+    "copyFailed": "Could not copy the link",
+    "classStart": "Class starts",
+    "liveSchedule": "Live class schedule",
+    "supportSchedule": "Support class schedule",
+    "scheduleLabel": "Class schedule"
   },
   "extras": {
     "toolsTitle": "Tech you will learn",

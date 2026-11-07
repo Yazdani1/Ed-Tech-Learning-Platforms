@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { protect } from '../middleware/auth.middleware';
+import { quizAnswerLimiter } from '../middleware/rateLimit.middleware';
 import {
   createQuizBank,
   getCourseQuizBanks,
@@ -24,7 +25,7 @@ const router = Router();
 // Public routes (no auth) — must be before /:id
 router.get('/public/courses', getPublicCoursesWithQuizzes);
 router.get('/public/course/:courseId', getPublicCourseQuizBanks);
-router.post('/public/:id/questions/:qId/check', checkPublicAnswer);
+router.post('/public/:id/questions/:qId/check', quizAnswerLimiter, checkPublicAnswer);
 
 router.get('/course/:courseId', protect, getCourseQuizBanks);
 router.get('/course/:courseId/my-attempts', protect, getCourseAttempts);
@@ -39,7 +40,7 @@ router.put('/:id/questions/:qId', protect, updateQuestion);
 router.delete('/:id/questions/:qId', protect, deleteQuestion);
 
 router.get('/:id/attempt', protect, getMyAttempt);
-router.post('/:id/attempt/answer', protect, submitAnswer);
+router.post('/:id/attempt/answer', protect, quizAnswerLimiter, submitAnswer);
 router.delete('/:id/attempt', protect, resetAttempt);
 
 export default router;

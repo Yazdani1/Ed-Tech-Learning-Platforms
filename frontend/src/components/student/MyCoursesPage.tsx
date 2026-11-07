@@ -52,13 +52,16 @@ export const MyCoursesPage = () => {
             courses={filtered.filter((course) => course.enrollmentType !== 'subscription')}
             emptyText={t('student.directEmpty')}
           />
-          <EnrolledCourseSection
-            title={t('student.subscriptionSection')}
-            icon={<CardMembership sx={{ color: SUBSCRIPTION_COLOR }} aria-hidden />}
-            countColor={SUBSCRIPTION_COLOR}
-            courses={filtered.filter((course) => course.enrollmentType === 'subscription')}
-            emptyText={t('student.subscriptionEmpty')}
-          />
+          {/* Only for students with at least one course from a subscription */}
+          {courses.some((course) => course.enrollmentType === 'subscription') && (
+            <EnrolledCourseSection
+              title={t('student.subscriptionSection')}
+              icon={<CardMembership sx={{ color: SUBSCRIPTION_COLOR }} aria-hidden />}
+              countColor={SUBSCRIPTION_COLOR}
+              courses={filtered.filter((course) => course.enrollmentType === 'subscription')}
+              emptyText={t('student.subscriptionEmpty')}
+            />
+          )}
           {filtered.length === 0 && term !== '' && (
             <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
               {t('student.noMatch', { search: term })}

@@ -13,11 +13,13 @@ import { PerformanceChartPanel } from './PerformanceChartPanel';
 import { PerformanceControls } from './PerformanceControls';
 import { PerformanceHeader } from './PerformanceHeader';
 import { PerformancePeriodCards } from './PerformancePeriodCards';
+import { PerformanceSalesInsights } from './PerformanceSalesInsights';
 import { usePerformanceParams } from './usePerformanceParams';
 
 /**
  * /admin/performance (Super Admin): revenue and enrolments of all courses or the chosen ones, today / last
- * 7 days / this month / all time, and a chart over a chosen range (including custom start and end days).
+ * 7 days / this month / all time, a chart over a chosen range (including custom start and end days), and the
+ * course sales charts (sales and VAT, enrolments, average order, types, top courses, list price split).
  */
 export const PerformancePage = () => {
   const { t } = useTranslation();
@@ -46,6 +48,7 @@ export const PerformancePage = () => {
           isReady={isReady}
         />
       </QueryState>
+      <PerformanceSalesInsights courseIds={courseIds} />
       <CoursePickerDrawer
         open={drawerOpen}
         onClose={() => {

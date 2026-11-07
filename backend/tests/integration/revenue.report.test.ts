@@ -95,10 +95,10 @@ describe('GET /api/revenue/summary', () => {
     const res = await summary(await createUser(role));
     expect(res.status).toBe(200);
     const { totals } = res.body.data as { totals: Record<string, Totals> };
-    expect(totals.today).toEqual({ revenue: 800, orders: 3, paidOrders: 1 });
-    expect(totals.week).toEqual({ revenue: 1300, orders: 4, paidOrders: 2 });
-    expect(totals.month).toEqual({ revenue: 1600, orders: 5, paidOrders: 3 });
-    expect(totals.lifetime).toEqual({ revenue: 1800, orders: 6, paidOrders: 4 });
+    expect(totals.today).toEqual({ revenue: 800, vat: 0, orders: 3, paidOrders: 1 });
+    expect(totals.week).toEqual({ revenue: 1300, vat: 0, orders: 4, paidOrders: 2 });
+    expect(totals.month).toEqual({ revenue: 1600, vat: 0, orders: 5, paidOrders: 3 });
+    expect(totals.lifetime).toEqual({ revenue: 1800, vat: 0, orders: 6, paidOrders: 4 });
   });
 
   it('charts 30 days, 12 weeks and 12 months with zero-filled gaps', async () => {
@@ -112,6 +112,7 @@ describe('GET /api/revenue/summary', () => {
     expect(daily.find((p) => p.date === '2030-06-01')).toEqual({
       date: '2030-06-01',
       revenue: 0,
+      vat: 0,
       orders: 0,
       paidOrders: 0,
     });
@@ -136,11 +137,22 @@ describe('GET /api/revenue/summary', () => {
     const lifetime = async (query: string) =>
       (await summary(admin, query)).body.data.totals.lifetime as Totals;
     expect(await lifetime('')).toMatchObject({ revenue: 1850, orders: 7 });
-    expect(await lifetime('?type=paid')).toEqual({ revenue: 1850, orders: 5, paidOrders: 5 });
-    expect(await lifetime('?type=free')).toEqual({ revenue: 0, orders: 1, paidOrders: 0 });
-    expect(await lifetime('?type=subscription')).toEqual({ revenue: 0, orders: 1, paidOrders: 0 });
+    expect(await lifetime('?type=paid')).toEqual({
+      revenue: 1850,
+      vat: 0,
+      orders: 5,
+      paidOrders: 5,
+    });
+    expect(await lifetime('?type=free')).toEqual({ revenue: 0, vat: 0, orders: 1, paidOrders: 0 });
+    expect(await lifetime('?type=subscription')).toEqual({
+      revenue: 0,
+      vat: 0,
+      orders: 1,
+      paidOrders: 0,
+    });
     expect(await lifetime(`?courseIds=${String(courseB._id)}`)).toEqual({
       revenue: 50,
+      vat: 0,
       orders: 1,
       paidOrders: 1,
     });
@@ -159,7 +171,12 @@ describe('GET /api/revenue/summary', () => {
     const utc = await summary(admin);
     expect(utc.body.data.totals.today.revenue).toBe(0);
     const dhaka = await summary(admin, `?tz=${DHAKA}`);
-    expect(dhaka.body.data.totals.today).toEqual({ revenue: 100, orders: 1, paidOrders: 1 });
+    expect(dhaka.body.data.totals.today).toEqual({
+      revenue: 100,
+      vat: 0,
+      orders: 1,
+      paidOrders: 1,
+    });
     expect(dhaka.body.data.daily.at(-1)).toMatchObject({ date: '2030-06-15', revenue: 100 });
   });
 
@@ -175,13 +192,13 @@ describe('GET /api/revenue/summary', () => {
       createdAt: at('2030-06-15T05:00:00Z'),
     });
     const res = await summary(admin, `?courseIds=${String(course._id)}`);
-    expect(res.body.data.totals.lifetime).toEqual({ revenue: 0, orders: 1, paidOrders: 1 });
+    expect(res.body.data.totals.lifetime).toEqual({ revenue: 0, vat: 0, orders: 1, paidOrders: 1 });
   });
 
   it('answers zeros when there are no orders', async () => {
     const res = await summary(admin);
     expect(res.status).toBe(200);
-    expect(res.body.data.totals.lifetime).toEqual({ revenue: 0, orders: 0, paidOrders: 0 });
+    expect(res.body.data.totals.lifetime).toEqual({ revenue: 0, vat: 0, orders: 0, paidOrders: 0 });
   });
 
   it('400 for a bad time zone, type or course ids', async () => {

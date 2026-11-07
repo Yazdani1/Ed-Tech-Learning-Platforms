@@ -224,6 +224,23 @@ Plain-language reference for every backend endpoint. Screens that use them: [fro
 | GET    | `/api/site-settings/public`                                      | Public                                                                                   | Hidden public pages and the company contact                                                                                               |
 | PUT    | `/api/site-settings/pages`                                       | Super Admin                                                                              | Set which public pages are hidden (`hiddenPages`)                                                                                         |
 | PUT    | `/api/site-settings/contact`                                     | Super Admin, Admin                                                                       | Set the company phone, WhatsApp, email, address, social links                                                                             |
+| POST   | `/api/auth/me/activity`                                          | Student                                                                                  | Add time spent on the portal (`seconds` 1-120; never more than the time since the last report)                                            |
+| GET    | `/api/users/:id/history`                                         | Super Admin, Admin                                                                       | Role changes and blocks of one user (who, when), newest first                                                                             |
+| PATCH  | `/api/users/:id/block`                                           | Super Admin (anyone), Admin (Moderator, Teacher, Student)                                | Block (optional reason) or unblock a user; a blocked user is signed out and cannot sign in                                                |
+| GET    | `/api/site-settings/vat`                                         | Super Admin                                                                              | The VAT % and its change history                                                                                                          |
+| PUT    | `/api/site-settings/vat`                                         | Super Admin                                                                              | Set the VAT % (0-100, 2 decimals); recorded in the history                                                                                |
+| GET    | `/api/revenue/months`                                            | Super Admin, Admin                                                                       | One row per month with orders (newest first): revenue, VAT, orders                                                                        |
+| GET    | `/api/revenue/breakdown`                                         | Super Admin, Admin                                                                       | Totals of the filtered orders (revenue, VAT, net, counts) and the top 5 courses                                                           |
+| GET    | `/api/students/export`                                           | Super Admin                                                                              | Every student of the filters (up to 5000) with contact details, spending and time on the portal                                           |
+| GET    | `/api/enrollments/me/purchases`                                  | Student                                                                                  | The student's own orders (no VAT) and totals                                                                                              |
+| PUT    | `/api/announcements/broadcasts/:id`                              | Super Admin, Admin, Moderator                                                            | Edit a sent announcement in every course (old text kept in its history)                                                                   |
+| DELETE | `/api/announcements/broadcasts/:id`                              | Super Admin, Admin, Moderator                                                            | "Delete" = archive: hidden everywhere, never removed from the database                                                                    |
+| GET    | `/api/announcements/broadcasts/:id/history`                      | Super Admin, Admin, Moderator                                                            | Every edit of an announcement (old and new text, who, when)                                                                               |
+| GET    | `/api/promos/design`                                             | Public                                                                                   | Custom banner and pop-up pictures of running promos (`''` = default design)                                                               |
+| PUT    | `/api/promos/design/:slot`                                       | Super Admin, Admin                                                                       | Upload the `banner` or `popup` picture (multipart `image`)                                                                                |
+| DELETE | `/api/promos/design/:slot`                                       | Super Admin, Admin                                                                       | Back to the default design for the banner or pop-up                                                                                       |
+| GET    | `/api/promos/:id/history`                                        | Super Admin, Admin                                                                       | Every switch on / off of a promo (who, when)                                                                                              |
+| GET    | `/api/courses/:id/status-history`                                | Super Admin, Admin                                                                       | Who published / unpublished (archived) the course and when                                                                                |
 
 ## Features
 
@@ -2236,6 +2253,166 @@ postedBy, timestamps }; `AnnouncementView` (see "Announcements").
 **Errors:** 400 missing title / description, bad or unpublished courses, not an image; 401; 403; 404 unknown id.
 
 **Tests:** `backend/tests/integration/announcement.broadcast.test.ts`.
+
+### VAT
+
+**What it does:** A Super Admin sets one VAT % for the company's own records. VAT is included in what a student
+pays (the price never changes for students and they never see it); each paid order records the rate in force and
+the VAT inside its price.
+
+**How it works:**
+
+1. `PUT /api/site-settings/vat { vatPercent }` saves the rate on the site settings and writes an audit entry
+   (before, after, who). `GET` returns the rate and that history.
+2. `POST /api/enrollments/:courseId` (paid) stores `vatPercent` (rate now) and
+   `vatAmount = paidPrice x rate / (100 + rate)` (1150 paid at 15% -> 150). Free and subscription orders: 0.
+3. Older orders keep their own rate (0 before VAT was set); changing the rate never rewrites them.
+4. The revenue summary, months, breakdown, order lists and exports carry the VAT (`vat`, `vatAmount`).
+
+**Example:** `PUT /api/site-settings/vat { "vatPercent": 15 }` ->
+`{ "success": true, "message": "VAT updated", "data": { "vatPercent": 15, "history": [{ "action": "vat.update", "before": { "vatPercent": 0 }, "after": { "vatPercent": 15 }, "actor": { "name": "..." }, "createdAt": "..." }] } }`
+
+**Business rules:** 0-100 with at most 2 decimals; the same rate again is refused; Super Admin only; students
+never receive VAT fields (purchases endpoint leaves them out).
+
+**Data model:** `SiteSetting.vatPercent`; `Enrollment.vatPercent`, `Enrollment.vatAmount`; `AuditLog`.
+
+**Errors:** 400 not a number / out of range / more decimals / unchanged; 401; 403.
+
+**Tests:** `backend/tests/integration/vat.setting.test.ts`.
+
+### Revenue months and breakdown
+
+**What it does:** The Revenue page's Monthly sales tab (one card per month) and the totals + top courses of any
+filter (a month, a custom range, courses, type).
+
+**How it works:**
+
+1. Every revenue endpoint (`summary`, `orders`, `orders/export`, `breakdown`) accepts `from` (included) and
+   `to` (excluded) as ISO date-times; the browser sends the month or the days the viewer chose, in their zone.
+2. `GET /api/revenue/months?tz=` groups orders by month in the viewer's zone (revenue, VAT, orders, paid
+   orders), newest first; this month is always included.
+3. `GET /api/revenue/breakdown` sums the filtered orders in one aggregation: orders by type, revenue, VAT, net,
+   list prices, discounts, and the 5 courses that earned the most.
+
+**Example:** `GET /api/revenue/breakdown?from=2026-11-01T00:00:00.000Z&to=2026-12-01T00:00:00.000Z` ->
+`{ "success": true, "data": { "orders": 4, "paidOrders": 3, "freeOrders": 1, "subscriptionOrders": 0, "revenue": 2725, "vat": 225, "netRevenue": 2500, "listTotal": 3300, "discountTotal": 575, "topCourses": [{ "courseId": "...", "title": "Course A", "batchNumber": "4821", "revenue": 2150, "orders": 2 }] } }`
+
+**Business rules:** the money rule of `utils/revenue.ts` (old orders without a saved list price earn the course
+price); bad dates or `from` after `to` answer 400.
+
+**Errors:** 400 bad dates / time zone / filters; 401; 403 (Moderator, Teacher, Student).
+
+**Tests:** `backend/tests/integration/revenue.months.test.ts`, `revenue.report.test.ts`.
+
+### Audit history (role changes, blocks, promo switches, unpublish, announcement edits)
+
+**What it does:** One `AuditLog` collection records who changed what and when; entries are never edited or
+deleted. Used by the VAT page, the users list (role changes, block / unblock), promos (switch on / off), the
+course settings (publish / unpublish, also from the bulk edit) and announcements (edit, archive).
+
+**Data model:** `AuditLog` { action, entityType, entity, actor, before, after, note, createdAt }; indexes
+(entityType, entity, createdAt) and (entityType, action, createdAt). `utils/audit.ts` writes and reads it (the
+newest 100, actor's name / email / role / avatar).
+
+### Blocking users
+
+**What it does:** A Super Admin can block anyone except themselves; an Admin can block Moderators, Teachers and
+Students. A blocked user is signed out at once (their sockets are closed) and cannot sign in until unblocked.
+
+**How it works:**
+
+1. `PATCH /api/users/:id/block { blocked, reason? }` sets `isBlocked`, `blockedAt`, `blockedBy`, `blockReason`
+   (or clears them) and writes an audit entry.
+2. `protect` answers 403 "Your account has been blocked" for a blocked user; `optionalProtect` treats them as a
+   guest; the socket handshake refuses them; login says so only after the right password (no account probing).
+3. Blocking also sets `passwordChangedAt`, so tokens issued before the block stay invalid after an unblock
+   (the user signs in again). A blocked Super Admin does not count as the Super Admin who must always remain.
+4. `GET /api/users?status=active|blocked` filters the list; `GET /api/users/:id/history` lists role changes
+   (from `PUT /:id` and `PUT /:id/role`) and blocks; only a Super Admin reads the history of Admin and Super Admin
+   accounts.
+
+**Errors:** 400 own account / unchanged / bad body / reason over 300; 401; 403 role not allowed; 404.
+
+**Tests:** `backend/tests/integration/user.block.test.ts`.
+
+### Students: filters, export, portal time and purchases
+
+**What it does:** More filters on the students page, a Super Admin export, the time each student spends on the
+portal, and each student's own purchase history.
+
+**How it works:**
+
+1. `GET /api/students` adds `enrollment` (any, none, paid, free, subscription), `status` (active, blocked),
+   `hasPhone`, `joinedFrom` / `joinedTo` and `sort` (newest, oldest, name, timeSpent, lastActive). Rows carry
+   `isBlocked`, `timeSpentSeconds`, `lastActiveAt`. `GET /api/students/export` (Super Admin) returns up to 5000.
+2. `POST /api/auth/me/activity { seconds }` (students, one report a minute while a tab is visible and in use)
+   adds no more than the seconds passed since `lastActiveAt`, so several tabs never count twice.
+3. `GET /api/enrollments/me/purchases` returns the student's orders (course, list price, discount, coupon,
+   amount paid, method, date) and totals (courses, paid courses, total spent, total saved), without VAT.
+
+**Errors:** 400 bad filters / seconds; 401; 403.
+
+**Tests:** `backend/tests/integration/student.activity.test.ts`.
+
+### Announcement edit and archive
+
+**What it does:** A sent announcement can be edited (title, text, picture) in every course it went to; its old
+text is kept in the history. "Delete" archives it: it disappears for students and every admin page but stays
+in the database.
+
+**How it works:** `PUT /api/announcements/broadcasts/:id` (multipart; `removeImage=true` takes the picture away)
+updates the broadcast and its per-course announcements and writes `announcement.update` with the old and new
+text. `DELETE` sets `isArchived` on both (and `archivedAt`, `archivedBy`). Lists, details and the course
+announcement lists skip archived ones; an archived one answers 404.
+
+**Errors:** 400 bad id / empty title or text / nothing changed / not an image; 401; 403; 404.
+
+**Tests:** `backend/tests/integration/announcement.edit.test.ts`.
+
+### Promo design pictures and switch history
+
+**What it does:** The Promos page's Design tab sets a custom top banner picture and a custom pop-up picture for
+running promos (the countdown and code are shown on them); each promo's switch on / off is recorded.
+
+**How it works:** `PUT /api/promos/design/banner|popup` uploads to Cloudinary (checked by content), replaces the
+old picture (deleted from Cloudinary) and stores it on the site settings; `DELETE` goes back to the default
+design; `GET /api/promos/design` is public. `PATCH /api/promos/:id` with a changed `isActive` writes
+`promo.toggle`; `GET /api/promos/:id/history` lists them.
+
+**Errors:** 400 unknown slot / no file / not an image / bad id; 401; 403; 404.
+
+**Tests:** `backend/tests/integration/promo.design.test.ts`.
+
+### Rate limits, Redis and security headers
+
+**What it does:** Limits how many requests a visitor (IP) or signed-in user can send, keeps the counters and the
+per-email login lock in Redis (shared by every backend instance), and sends security headers.
+
+**How it works:**
+
+1. `middleware/rateLimit.middleware.ts` (express-rate-limit, store `rate-limit-redis` when `REDIS_URL` is set,
+   memory otherwise; a Redis outage lets requests through): every `/api` call 1500 / 5 min per IP; login 30
+   failed / 15 min per IP; register 10 / hour; profile changes 20 / 15 min per user; coupon checks 60 / 10 min;
+   enrolments and subscriptions 30 / 10 min per user; quiz answers 60 / min; portal time 10 / min; uploads
+   (multipart) 100 / 15 min. Over the limit: `429 { success: false, message }` with `RateLimit` headers.
+2. The visitor's IP: the Next.js proxy passes it in `X-Client-IP` with `X-Proxy-Secret` (`PROXY_SHARED_SECRET`
+   on both apps); the backend trusts the header only with the right secret (timing-safe compare), otherwise it
+   uses `req.ip` (one proxy hop).
+3. The login lock (10 wrong passwords per email, 15 minutes) counts in Redis with one atomic `INCR`, so
+   parallel guesses cannot slip past it; memory fallback without Redis.
+4. Socket.io uses `@socket.io/redis-adapter` when Redis is set (chat and notification rooms across instances).
+5. `helmet` (API CSP `default-src 'none'`, nosniff, frameguard, ...), JSON / form bodies limited to 1 MB.
+6. Limits are off in automated tests (every test shares one IP); `RATE_LIMIT_IN_TESTS=true` turns them on.
+7. In production without `PROXY_SHARED_SECRET` every call would seem to come from Vercel's IP, so the per-IP
+   limits are switched off (a warning is logged at start-up); the per-email login lock and the per-user limits
+   stay on. Redis must answer within 10 s at start-up; the Render Key Value service uses `noeviction`.
+
+**Env:** `REDIS_URL` (optional; render.yaml adds a Render Key Value service), `PROXY_SHARED_SECRET` (optional,
+same value on Vercel and Render).
+
+**Tests:** `backend/tests/integration/security.rateLimit.test.ts` (real Redis in the test stack),
+`auth.login.test.ts`.
 
 <!--
 TEMPLATE: one section per feature (module), in a stable order.

@@ -8,7 +8,7 @@ import { ENROLLMENT_TYPE_COLOR } from '@/components/enrollments/enrollment-displ
 import { DetailItem } from '@/components/people/common/DetailItem';
 import { formatBdt } from '@/utils/price';
 
-import { discountText } from './order-columns';
+import { discountText, vatText } from './order-columns';
 import { couponLabel, paymentMethodLabel } from './order-format';
 
 import type { Order } from '@/schemas/revenue.schema';
@@ -44,6 +44,8 @@ export const OrderPaymentDetails: FC<OrderPaymentDetailsProps> = ({ order }) => 
       <DetailItem label={r('listPrice')} value={formatBdt(order.listPrice)} />
       <DetailItem label={r('discount')} value={discountText(order)} />
       <DetailItem label={r('amountPaid')} value={formatBdt(order.paidPrice)} />
+      <DetailItem label={r('vat')} value={vatText(order)} />
+      <DetailItem label={r('netAmount')} value={formatBdt(order.paidPrice - order.vatAmount)} />
       <DetailItem label={r('coupon')} value={couponLabel(order)} />
       <DetailItem label={r('couponSource')} value={source ? t(`coupons.kind.${source}`) : '—'} />
       <DetailItem label={r('paymentMethod')} value={paymentMethodLabel(t, order)} />

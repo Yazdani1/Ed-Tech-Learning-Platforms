@@ -145,4 +145,50 @@ test.describe('People administration', () => {
     await page.goto('/admin/users');
     await expect(page).toHaveURL(/\/admin\/courses$/);
   });
+
+  test('a Super Admin blocks a student, who then cannot sign in, and unblocks them', async ({
+    page,
+    browser,
+  }, testInfo) => {
+    const email = uniqueEmail(testInfo);
+    const name = uniqueName('E2E Blocked', testInfo.project.name);
+    const register = await page.request.post('/api/auth/register', {
+      data: { name, email, password: E2E_PASSWORD },
+    });
+    expect(register.ok()).toBe(true);
+    await page.request.post('/api/auth/logout');
+    await signInByApi(page, ACCOUNTS.superAdmin.email);
+
+    await page.goto('/admin/users?search=' + encodeURIComponent(email));
+    await expect(page.getByText(name, { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Actions for ' + name }).click();
+    await page.getByRole('menuitem', { name: 'Block' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Block ' + name + '?' });
+    await dialog.getByLabel(/Reason/).fill('E2E check');
+    await dialog.getByRole('button', { name: 'Block' }).click();
+    await expect(page.getByText(name + ' blocked')).toBeVisible();
+    await expect(page.getByText('Blocked', { exact: true }).first()).toBeVisible();
+
+    const other = await browser.newContext();
+    const login = await other.request.post(new URL('/api/auth/login', page.url()).toString(), {
+      data: { email, password: E2E_PASSWORD },
+    });
+    expect(login.status()).toBe(403);
+    await other.close();
+
+    await page.getByRole('button', { name: 'Actions for ' + name }).click();
+    await page.getByRole('menuitem', { name: 'History' }).click();
+    await expect(
+      page.getByRole('dialog', { name: 'History of ' + name }).getByText('Account blocked'),
+    ).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    await page.getByRole('button', { name: 'Actions for ' + name }).click();
+    await page.getByRole('menuitem', { name: 'Unblock' }).click();
+    await page
+      .getByRole('dialog', { name: 'Unblock ' + name + '?' })
+      .getByRole('button', { name: 'Unblock' })
+      .click();
+    await expect(page.getByText(name + ' unblocked')).toBeVisible();
+  });
 });

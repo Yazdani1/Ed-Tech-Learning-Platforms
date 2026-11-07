@@ -1,9 +1,6 @@
 'use client';
 
-import PublicIcon from '@mui/icons-material/Public';
-import PublicOffIcon from '@mui/icons-material/PublicOff';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -13,6 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { useConfirm } from '@/hooks/useConfirm';
 
 import { FormSelect } from '../details/FormSelect';
+
+import { CourseStatusHeading } from './CourseStatusHeading';
+import { CourseStatusHistoryCard } from './CourseStatusHistoryCard';
 
 import type { CourseDetailsEditor } from '../useCourseDetailsForm';
 import type { Course } from '@/schemas/browse.schema';
@@ -65,12 +65,7 @@ export const SettingsTab: FC<SettingsTabProps> = ({ course, details }) => {
         />
       </Paper>
       <Paper variant="outlined" sx={CARD_SX}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          {isPublished ? <PublicIcon color="success" /> : <PublicOffIcon color="disabled" />}
-          <Typography component="h3" sx={{ fontWeight: 700 }}>
-            {t(isPublished ? 'catalog.settings.publishedTitle' : 'catalog.settings.draftTitle')}
-          </Typography>
-        </Box>
+        <CourseStatusHeading course={course} />
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           {t(isPublished ? 'catalog.settings.unpublishHelp' : 'catalog.settings.publishHelp')}
         </Typography>
@@ -87,6 +82,7 @@ export const SettingsTab: FC<SettingsTabProps> = ({ course, details }) => {
       {course.firstPublishedAt && (
         <Alert severity="info">{t('catalog.settings.neverDeleted')}</Alert>
       )}
+      <CourseStatusHistoryCard courseId={course._id} />
     </Stack>
   );
 };

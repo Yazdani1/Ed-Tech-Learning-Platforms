@@ -9,11 +9,12 @@ import Link from 'next/link';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useActivePromos } from '@/api/promos.api';
+import { useActivePromos, usePromoDesign } from '@/api/promos.api';
 import { PROMO_PAGE, promoDiscountLabel } from '@/components/promos/promo-format';
 import { MONO_FONT } from '@/theme/fonts';
 
 import { DiscountCountdown } from './DiscountCountdown';
+import { DiscountImageBanner } from './DiscountImageBanner';
 
 const BANNER_GRADIENT =
   'linear-gradient(90deg, #7f1d1d 0%, #dc2626 28%, #f97316 58%, #facc15 100%)';
@@ -34,10 +35,14 @@ const CTA_SX = {
   '&:hover': { bgcolor: '#020617' },
 } as const;
 
-/** Banner above the navbar while a promo runs: discount, title, code, live countdown, link to the promo page. */
+/**
+ * Banner above the navbar while a promo runs: discount, title, code, live countdown, link to the promo page; or
+ * the admin's own banner picture with the countdown on it (Promos page, Design tab).
+ */
 export const DiscountBanner = () => {
   const { t } = useTranslation();
   const { data } = useActivePromos();
+  const design = usePromoDesign();
   const promo = data?.[0];
   const [endedAt, setEndedAt] = useState<string | null>(null);
   const handleEnded = useCallback(() => {
@@ -46,6 +51,9 @@ export const DiscountBanner = () => {
 
   // The backend only sends running promos; the countdown hides the banner when time is up
   if (!promo || endedAt === promo.endsAt) return null;
+  const bannerImage = design.data?.bannerImage;
+  if (bannerImage)
+    return <DiscountImageBanner promo={promo} imageUrl={bannerImage} onEnded={handleEnded} />;
 
   return (
     <Box

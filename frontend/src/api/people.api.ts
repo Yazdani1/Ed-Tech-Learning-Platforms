@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-query';
 import { z } from 'zod';
 
+import { auditHistorySchema, type AuditEntry } from '@/schemas/audit.schema';
 import { adminTeacherSchema, type AdminTeacher } from '@/schemas/public.schema';
 import {
   courseQuestionGroupSchema,
@@ -59,8 +60,23 @@ export const createUser = (body: UserCreateRequest): Promise<ManagedUser> =>
 export const updateUser = (userId: string, body: UserUpdateRequest): Promise<ManagedUser> =>
   http.put(`/api/users/${id(userId)}`, body, managedUserSchema);
 
-export const updateUserRole = (userId: string, role: UserRole): Promise<ManagedUser> =>
-  http.put(`/api/users/${id(userId)}/role`, { role }, managedUserSchema);
+export interface BlockRequest {
+  userId: string;
+  blocked: boolean;
+  reason?: string;
+}
+
+/** Super Admin: anyone; Admin: Moderators, Teachers and Students (the backend checks it). */
+export const setUserBlocked = ({ userId, blocked, reason }: BlockRequest): Promise<ManagedUser> =>
+  http.patch(
+    `/api/users/${id(userId)}/block`,
+    { blocked, ...(reason ? { reason } : {}) },
+    managedUserSchema,
+  );
+
+/** Role changes and blocks of one user, newest first. */
+export const getUserHistory = (userId: string): Promise<AuditEntry[]> =>
+  http.get(`/api/users/${id(userId)}/history`, auditHistorySchema);
 
 export const deleteUser = async (userId: string): Promise<void> => {
   await http.send('DELETE', `/api/users/${id(userId)}`);
@@ -138,15 +154,18 @@ export const useUpdateUser = (): UseMutationResult<
     [queryKeys.people.users, queryKeys.auth.me, queryKeys.students.all],
   );
 
-export const useUpdateUserRole = (): UseMutationResult<
-  void,
-  ApiError,
-  { userId: string; role: UserRole }
-> =>
-  useRefreshingMutation(
-    ({ userId, role }) => updateUserRole(userId, role),
-    [queryKeys.people.users, queryKeys.auth.me, queryKeys.students.all],
-  );
+export const useSetUserBlocked = (): UseMutationResult<void, ApiError, BlockRequest> =>
+  useRefreshingMutation(setUserBlocked, [queryKeys.people.users, queryKeys.students.all]);
+
+/** Loads while the history panel of a user is open. */
+export const useUserHistory = (
+  userId: string | undefined,
+): UseQueryResult<AuditEntry[], ApiError> =>
+  useQuery({
+    queryKey: queryKeys.people.userHistory(userId ?? ''),
+    queryFn: () => getUserHistory(userId ?? ''),
+    enabled: Boolean(userId),
+  });
 
 export const useDeleteUser = (): UseMutationResult<void, ApiError, string> =>
   useRefreshingMutation(deleteUser, [

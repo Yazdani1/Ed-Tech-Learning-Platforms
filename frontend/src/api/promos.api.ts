@@ -13,10 +13,14 @@ import { z } from 'zod';
 import {
   activePromoSchema,
   promoCourseCardSchema,
+  promoDesignSchema,
   promoSchema,
   type ActivePromo,
   type Promo,
+  type PromoDesign,
+  type PromoDesignSlot,
 } from '@/schemas/promo.schema';
+import { auditHistorySchema, type AuditEntry } from '@/schemas/audit.schema';
 import { http, type ApiError } from '@/services/http.service';
 
 import { queryKeys } from './query-keys';
@@ -103,3 +107,61 @@ const usePromoMutation = <Input, Output>(
 export const useSavePromo = () => usePromoMutation(savePromo);
 
 export const useDeletePromo = () => usePromoMutation(deletePromo);
+
+// ---- Promo design pictures and history ----
+
+/** Five minutes: the pictures change rarely */
+const DESIGN_STALE_MS = 300_000;
+
+export const getPromoDesign = (): Promise<PromoDesign> =>
+  http.get(`${PROMOS}/design`, promoDesignSchema);
+
+export const uploadPromoDesign = ({
+  slot,
+  file,
+}: {
+  slot: PromoDesignSlot;
+  file: File;
+}): Promise<PromoDesign> => {
+  const body = new FormData();
+  body.append('image', file);
+  return http.put(`${PROMOS}/design/${slot}`, body, promoDesignSchema);
+};
+
+export const deletePromoDesign = (slot: PromoDesignSlot): Promise<PromoDesign> =>
+  http.delete(`${PROMOS}/design/${slot}`, promoDesignSchema);
+
+export const getPromoHistory = (id: string): Promise<AuditEntry[]> =>
+  http.get(`${PROMOS}/${encodeURIComponent(id)}/history`, auditHistorySchema);
+
+/** The custom banner and pop-up pictures (public: home and course pages). */
+export const usePromoDesign = (): UseQueryResult<PromoDesign, ApiError> =>
+  useQuery({
+    queryKey: queryKeys.promos.design,
+    queryFn: getPromoDesign,
+    staleTime: DESIGN_STALE_MS,
+  });
+
+const useDesignMutation = <Input>(
+  mutationFn: (input: Input) => Promise<PromoDesign>,
+): UseMutationResult<PromoDesign, ApiError, Input> => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: (design) => {
+      queryClient.setQueryData(queryKeys.promos.design, design);
+    },
+  });
+};
+
+export const useUploadPromoDesign = () => useDesignMutation(uploadPromoDesign);
+
+export const useDeletePromoDesign = () => useDesignMutation(deletePromoDesign);
+
+/** Every switch on / off of one promo (loads while its history is open). */
+export const usePromoHistory = (id: string | undefined): UseQueryResult<AuditEntry[], ApiError> =>
+  useQuery({
+    queryKey: queryKeys.promos.history(id ?? ''),
+    queryFn: () => getPromoHistory(id ?? ''),
+    enabled: Boolean(id),
+  });

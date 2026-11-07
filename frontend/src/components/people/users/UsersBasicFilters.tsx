@@ -19,7 +19,7 @@ interface UsersBasicFiltersProps {
 
 const CELL = { xs: 12, sm: 6, lg: 3 } as const;
 
-/** Search (name or email) and role: the filters every manager has. */
+/** Search (name or email), role and account status: the filters every manager has. */
 export const UsersBasicFilters: FC<UsersBasicFiltersProps> = ({ params, onChange }) => {
   const { t } = useTranslation();
   const onSearch = useCallback(
@@ -50,6 +50,20 @@ export const UsersBasicFilters: FC<UsersBasicFiltersProps> = ({ params, onChange
           }))}
           onChange={(role) => {
             onChange({ role });
+          }}
+        />
+      </Grid>
+      <Grid size={CELL}>
+        <FilterSelect
+          label={t('people.users.accountStatus')}
+          value={params.status}
+          allLabel={t('people.users.allAccounts')}
+          options={(['active', 'blocked'] as const).map((status) => ({
+            value: status,
+            label: t(`people.accountStatus.${status}`),
+          }))}
+          onChange={(status) => {
+            onChange({ status });
           }}
         />
       </Grid>

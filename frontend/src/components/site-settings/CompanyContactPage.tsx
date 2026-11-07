@@ -19,7 +19,7 @@ export const CompanyContactPage = () => {
   return (
     <RequireRole roles={MANAGER_ROLES}>
       <Box>
-        <PageHeader title={t('showcase.contact.title')} subtitle={t('showcase.contact.subtitle')} />
+        <PageHeader title={t('showcase.contact.title')} />
         <QueryState
           isLoading={query.isPending}
           error={query.error}

@@ -15,7 +15,9 @@ import LocalOffer from '@mui/icons-material/LocalOffer';
 import Notifications from '@mui/icons-material/Notifications';
 import People from '@mui/icons-material/People';
 import Payments from '@mui/icons-material/Payments';
+import Percent from '@mui/icons-material/Percent';
 import Person from '@mui/icons-material/Person';
+import ReceiptLong from '@mui/icons-material/ReceiptLong';
 import QuestionAnswer from '@mui/icons-material/QuestionAnswer';
 import School from '@mui/icons-material/School';
 import ToggleOn from '@mui/icons-material/ToggleOn';
@@ -26,7 +28,7 @@ import type { UserRole } from '@/types';
 import type SvgIcon from '@mui/material/SvgIcon';
 
 /** Headings of the admin menu, in this order (i18n keys nav.group.<name>). */
-export const NAV_SECTIONS = ['courses', 'people', 'communication', 'website', 'analytics'] as const;
+export const NAV_SECTIONS = ['analytics', 'courses', 'people', 'communication', 'website'] as const;
 export type NavSection = (typeof NAV_SECTIONS)[number];
 
 export interface NavItem {
@@ -163,13 +165,21 @@ export const ADMIN_NAV: readonly NavItem[] = [
     roles: SUPER_ADMIN_ROLES,
     section: 'analytics',
   },
+  {
+    labelKey: 'nav.vat',
+    href: '/admin/vat',
+    icon: Percent,
+    roles: SUPER_ADMIN_ROLES,
+    section: 'analytics',
+  },
 ];
 
-/** Student area menu, same items as the old StudentSidebar. */
+/** Student area menu: Home, My Courses, Profile, Purchases, then the rest. */
 export const STUDENT_NAV: readonly NavItem[] = [
   { labelKey: 'nav.home', href: '/', icon: Home, exact: true },
-  { labelKey: 'nav.profile', href: '/student/profile', icon: Person },
   { labelKey: 'nav.myCourses', href: '/student/courses', icon: Book },
+  { labelKey: 'nav.profile', href: '/student/profile', icon: Person },
+  { labelKey: 'nav.purchases', href: '/student/purchases', icon: ReceiptLong },
   { labelKey: 'nav.supportChat', href: '/student/chat', icon: Chat, badge: 'chat' },
   { labelKey: 'nav.groupChat', href: '/student/group-chat', icon: Groups },
   { labelKey: 'nav.schedule', href: '/student/schedule', icon: EventNote },

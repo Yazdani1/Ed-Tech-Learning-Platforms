@@ -13,6 +13,8 @@ import {
   type CompanyContactForm,
   type SitePageKey,
   type SiteSettings,
+  type VatSetting,
+  vatSettingSchema,
 } from '@/schemas/site-settings.schema';
 import { http, type ApiError } from '@/services/http.service';
 
@@ -63,3 +65,24 @@ export const useUpdateCompanyContact = (): UseMutationResult<
   ApiError,
   CompanyContactForm
 > => useSettingsMutation(updateCompanyContact);
+
+export const getVatSetting = (): Promise<VatSetting> =>
+  http.get(`${SETTINGS}/vat`, vatSettingSchema);
+
+export const updateVatSetting = (vatPercent: number): Promise<VatSetting> =>
+  http.put(`${SETTINGS}/vat`, { vatPercent }, vatSettingSchema);
+
+/** The VAT rate and who changed it when (Super Admin). */
+export const useVatSetting = (): UseQueryResult<VatSetting, ApiError> =>
+  useQuery({ queryKey: queryKeys.public.vat, queryFn: getVatSetting });
+
+/** Saves a new VAT rate (only new enrolments use it); revenue numbers are read again afterwards. */
+export const useUpdateVat = (): UseMutationResult<VatSetting, ApiError, number> => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateVatSetting,
+    onSuccess: (setting) => {
+      queryClient.setQueryData(queryKeys.public.vat, setting);
+    },
+  });
+};

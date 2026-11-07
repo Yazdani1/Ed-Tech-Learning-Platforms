@@ -22,6 +22,7 @@ import en_coupons from './locales/en/coupons.json';
 import en_promos from './locales/en/promos.json';
 import en_revenue from './locales/en/revenue.json';
 import en_announcements from './locales/en/announcements.json';
+import en_purchases from './locales/en/purchases.json';
 import bnBase from './locales/bn.json';
 import bn_public from './locales/bn/public.json';
 import bn_browse from './locales/bn/browse.json';
@@ -44,6 +45,7 @@ import bn_coupons from './locales/bn/coupons.json';
 import bn_promos from './locales/bn/promos.json';
 import bn_revenue from './locales/bn/revenue.json';
 import bn_announcements from './locales/bn/announcements.json';
+import bn_purchases from './locales/bn/purchases.json';
 
 export const en = {
   ...enBase,
@@ -68,6 +70,7 @@ export const en = {
   promos: en_promos,
   revenue: en_revenue,
   announcements: en_announcements,
+  purchases: en_purchases,
 };
 
 export const bn = {
@@ -93,4 +96,5 @@ export const bn = {
   promos: bn_promos,
   revenue: bn_revenue,
   announcements: bn_announcements,
+  purchases: bn_purchases,
 };

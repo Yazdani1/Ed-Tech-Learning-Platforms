@@ -88,4 +88,50 @@ test.describe('Announcements access', () => {
     expect(denied.status()).toBe(403);
     await teacher.dispose();
   });
+
+  test('an Admin edits a sent announcement (history kept) and deletes it (it disappears)', async ({
+    page,
+    baseURL,
+  }, testInfo) => {
+    const course = await createPaidCourse(baseURL ?? '', 'announce edit ' + testInfo.project.name);
+    const subject = 'E2E Edit ' + testInfo.project.name + ' ' + String(Date.now());
+    const admin = await apiAs(baseURL ?? '', ACCOUNTS.admin.email);
+    await dataOf(
+      await admin.post('/api/announcements/broadcasts', {
+        multipart: {
+          title: subject,
+          description: '<p>First text</p>',
+          courseIds: JSON.stringify([course.id]),
+        },
+      }),
+    );
+    await admin.dispose();
+
+    await signInAndWait(page, ACCOUNTS.admin.email);
+    await page.goto('/admin/announcements');
+    await page.getByRole('button', { name: 'Open details of ' + subject }).click();
+    const drawer = page.getByRole('dialog', { name: 'Announcement details' });
+    await drawer.getByRole('button', { name: 'Edit' }).click();
+    const edit = page.getByRole('dialog', { name: 'Edit announcement' });
+    await edit.getByLabel(/^Title/).fill(subject + ' (updated)');
+    await edit.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Announcement updated')).toBeVisible();
+    await expect(drawer.getByText('Edited')).toBeVisible();
+
+    await drawer.getByRole('button', { name: 'History' }).click();
+    const history = page.getByRole('dialog', { name: /^Edit history of/ });
+    await expect(history.getByText(/Title: /)).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    await drawer.getByRole('button', { name: 'Delete' }).click();
+    await page
+      .getByRole('dialog', { name: 'Delete this announcement?' })
+      .getByRole('button', { name: 'Delete' })
+      .click();
+    await expect(page.getByText('Announcement deleted')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Open details of ' + subject + ' (updated)' }),
+    ).toHaveCount(0);
+    await expectNoHorizontalScroll(page);
+  });
 });

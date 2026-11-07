@@ -26,5 +26,25 @@
     "courses_one": "Sent to {{count}} course",
     "courses_other": "Sent to {{count}} courses",
     "courseSeen": "Seen by {{seen}} of {{total}} enrolled students"
+  },
+  "edit": {
+    "title": "Edit announcement",
+    "saved": "Announcement updated",
+    "info": "The change is shown in all {{count}} courses it was sent to. The old text is kept in the history.",
+    "removeImage": "Remove picture",
+    "editedChip": "Edited"
+  },
+  "delete": {
+    "title": "Delete this announcement?",
+    "message": "\"{{title}}\" disappears for students and every admin. It is kept in the records.",
+    "done": "Announcement deleted"
+  },
+  "history": {
+    "open": "History",
+    "title": "Edit history of {{title}}",
+    "edited": "Edited",
+    "titleChanged": "Title: \"{{from}}\" → \"{{to}}\"",
+    "textChanged": "Text changed (before: {{from}})",
+    "imageChanged": "Picture changed"
   }
 }

@@ -63,7 +63,8 @@
     "Public": "Public",
     "Private": "Private",
     "Free": "Free",
-    "Paid": "Paid"
+    "Paid": "Paid",
+    "Archived": "Archived"
   },
   "list": {
     "label": "Course list",
@@ -195,6 +196,28 @@
     },
     "studentsLabel": "Enrolled students",
     "revenueLabel": "Paid enrollments",
-    "notFound": "Course not found"
+    "notFound": "Course not found",
+    "tokens": "Student tokens (PDF)",
+    "tokensTitle": "Student tokens: 3 per row to cut out",
+    "shownRows": "every enrolment shown ({{count}})",
+    "totals": "{{count}} enrolments shown · Sales {{sales}} · VAT {{vat}}",
+    "filters": {
+      "search": "Search students",
+      "searchPlaceholder": "Name, student ID, phone or coupon",
+      "coupon": "Coupon",
+      "couponOptions": {
+        "any": "Any",
+        "with": "With coupon",
+        "without": "Without coupon"
+      },
+      "method": "Payment method",
+      "methodOptions": {
+        "any": "Any",
+        "bkash": "bKash",
+        "other": "Other",
+        "none": "Not recorded"
+      },
+      "clear": "Clear filters"
+    }
   }
 }

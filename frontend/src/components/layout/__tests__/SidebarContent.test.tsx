@@ -16,8 +16,13 @@ import type { UserRole } from '@/types';
 
 const renderAdminMenu = async (role: UserRole): Promise<HTMLElement> => {
   server.use(signedInAs(makeUser(role)));
-  renderWithProviders(<SidebarContent navItems={ADMIN_NAV} collapsed={false} />);
-  await screen.findByText(`Test ${role}`);
+  const { queryClient } = renderWithProviders(
+    <SidebarContent navItems={ADMIN_NAV} collapsed={false} />,
+  );
+  // Role-gated items appear once the signed-in user has loaded
+  await waitFor(() => {
+    expect(queryClient.getQueryData(queryKeys.auth.me)).toBeTruthy();
+  });
   return screen.getByRole('navigation', { name: 'Main menu' });
 };
 
@@ -68,6 +73,7 @@ describe('SidebarContent', () => {
       '/admin/announcements',
     );
     expect(within(menu).queryByRole('link', { name: 'Performance' })).not.toBeInTheDocument();
+    expect(within(menu).queryByRole('link', { name: 'Set up VAT' })).not.toBeInTheDocument();
   });
 
   it('gives a Moderator Announcements but not Revenue or Promos', async () => {
@@ -139,12 +145,34 @@ describe('SidebarContent', () => {
     expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
   });
 
-  it('shows the signed-in user and their translated role', async () => {
+  it('has a red Logout row instead of the user block (name and role are in the top bar)', async () => {
     server.use(signedInAs(makeUser('Teacher', { name: 'Karim' })));
     renderWithProviders(<SidebarContent navItems={STUDENT_NAV} collapsed={false} />);
 
-    expect(await screen.findByText('Karim')).toBeInTheDocument();
-    expect(screen.getByText('Teacher')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Logout' })).toHaveTextContent('Logout');
+    expect(screen.queryByText('Karim')).not.toBeInTheDocument();
+  });
+
+  it('orders the student menu Home, My Courses, Profile, Purchases', async () => {
+    server.use(signedInAs(makeUser('Student')));
+    renderWithProviders(<SidebarContent navItems={STUDENT_NAV} collapsed={false} />);
+    const menu = await screen.findByRole('navigation', { name: 'Main menu' });
+    const names = within(menu)
+      .getAllByRole('link')
+      .map((link) => link.textContent);
+    expect(names.slice(0, 4)).toEqual(['Home', 'My Courses', 'Profile', 'Purchases']);
+  });
+
+  it('puts the Analytics group first, with Set up VAT for a Super Admin only', async () => {
+    const menu = await renderAdminMenu('Super Admin');
+    const headings = within(menu)
+      .getAllByText(/^(Analytics|Course Management|Users & Students|Communication|Website)$/)
+      .map((node) => node.textContent);
+    expect(headings[0]).toBe('Analytics');
+    expect(within(menu).getByRole('link', { name: 'Set up VAT' })).toHaveAttribute(
+      'href',
+      '/admin/vat',
+    );
   });
 
   it('signs out: calls the backend, then marks the user signed out', async () => {
@@ -159,7 +187,9 @@ describe('SidebarContent', () => {
     const { queryClient } = renderWithProviders(
       <SidebarContent navItems={STUDENT_NAV} collapsed={false} />,
     );
-    await screen.findByText('Test Student');
+    await waitFor(() => {
+      expect(queryClient.getQueryData(queryKeys.auth.me)).toBeTruthy();
+    });
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Logout' }));
 
@@ -179,7 +209,9 @@ describe('SidebarContent', () => {
     const { queryClient } = renderWithProviders(
       <SidebarContent navItems={STUDENT_NAV} collapsed={false} />,
     );
-    await screen.findByText('Test Student');
+    await waitFor(() => {
+      expect(queryClient.getQueryData(queryKeys.auth.me)).toBeTruthy();
+    });
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Logout' }));
 

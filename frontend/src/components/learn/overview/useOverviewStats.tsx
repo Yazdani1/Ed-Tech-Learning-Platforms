@@ -5,7 +5,6 @@ import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
-import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined';
 import ViewListOutlinedIcon from '@mui/icons-material/ViewListOutlined';
@@ -13,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useLiveClasses } from '@/api/browse.api';
 import { useQuestions } from '@/api/learn-qa.api';
-import { useContentList, useEnrollmentCount } from '@/api/learn.api';
+import { useContentList } from '@/api/learn.api';
 import { countLectures, courseSections, splitDuration } from '@/components/browse/course-utils';
 
 import { totalSeconds } from '../learn.utils';
@@ -33,7 +32,6 @@ const NO_VALUE = '—';
 export const useOverviewStats = (course: Course): OverviewStatItem[] => {
   const { t, i18n } = useTranslation();
   const courseId = course._id;
-  const enrolled = useEnrollmentCount(courseId);
   const announcements = useContentList('announcements', courseId);
   const materials = useContentList('materials', courseId);
   const liveClasses = useLiveClasses(courseId);
@@ -43,7 +41,6 @@ export const useOverviewStats = (course: Course): OverviewStatItem[] => {
   const seconds = totalSeconds(course);
 
   return [
-    { key: 'students', icon: <PeopleOutlinedIcon />, value: number(enrolled.data) },
     { key: 'lectures', icon: <OndemandVideoIcon />, value: number(countLectures(course)) },
     {
       key: 'duration',

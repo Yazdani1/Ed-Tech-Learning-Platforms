@@ -11,6 +11,8 @@ import { CourseCover } from '@/components/course-card/CourseCover';
 import { formatBdt, getCoursePriceInfo } from '@/utils/price';
 
 import type { Course } from '@/schemas/browse.schema';
+import { PAGE_TITLE_SX } from '@/components/common/PageHeader';
+import { COURSE_STATUS_COLOR, courseStatusLabel } from '@/utils/course-status';
 import type { FC, ReactNode } from 'react';
 
 interface EnrollmentCourseHeaderProps {
@@ -57,22 +59,16 @@ export const EnrollmentCourseHeader: FC<EnrollmentCourseHeaderProps> = ({
         />
       </Box>
       <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
-        <Typography
-          component="h1"
-          variant="h5"
-          sx={{ fontWeight: 900, lineHeight: 1.2, overflowWrap: 'anywhere' }}
-        >
+        <Typography component="h1" sx={{ ...PAGE_TITLE_SX, overflowWrap: 'anywhere' }}>
           {isLoading ? <Skeleton width={TITLE_SKELETON_WIDTH} /> : (course?.title ?? '—')}
         </Typography>
         {course && (
           <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mt: 1 }}>
             <Chip label={priceLabel} size="small" variant="outlined" sx={{ fontWeight: 700 }} />
             <Chip
-              label={t(
-                `adminCourses.values.${course.status === 'Published' ? 'Published' : 'Draft'}`,
-              )}
+              label={t(`adminCourses.values.${courseStatusLabel(course)}`)}
               size="small"
-              color={course.status === 'Published' ? 'success' : 'default'}
+              color={COURSE_STATUS_COLOR[courseStatusLabel(course)]}
               sx={{ fontWeight: 700 }}
             />
           </Box>

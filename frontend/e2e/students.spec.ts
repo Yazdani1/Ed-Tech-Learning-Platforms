@@ -6,6 +6,7 @@ import {
   expectNoHorizontalScroll,
   openMenu,
   signIn,
+  signInAndWait,
   uniqueEmail,
 } from './helpers';
 
@@ -128,5 +129,26 @@ test.describe('Students page', () => {
     await expect(page).toHaveURL(/\/student\/courses$/);
     await page.goto('/student/profile');
     await expect(page.getByText(PHONE, { exact: true })).toBeVisible();
+  });
+
+  test('a Super Admin filters students, sees the count and exports a CSV', async ({
+    page,
+    baseURL,
+  }) => {
+    await createEnrolledStudent(baseURL ?? '', 'filters');
+    await signInAndWait(page, ACCOUNTS.superAdmin.email);
+
+    await page.goto('/admin/students?enrollment=paid&sort=timeSpent');
+    await expect(page.getByRole('heading', { level: 1, name: 'Students' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Enrolment' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Sort by' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Clear filters' })).toBeVisible();
+    await expectNoHorizontalScroll(page);
+
+    await page.getByRole('button', { name: 'Export CSV' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Export CSV' });
+    const download = page.waitForEvent('download');
+    await dialog.getByRole('button', { name: 'Download CSV' }).click();
+    expect((await download).suggestedFilename()).toMatch(/^students-\d{4}-\d{2}-\d{2}\.csv$/);
   });
 });

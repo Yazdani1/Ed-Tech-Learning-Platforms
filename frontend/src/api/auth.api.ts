@@ -20,15 +20,29 @@ import { queryKeys } from './query-keys';
 
 const AUTH = '/api/auth';
 const HTTP_UNAUTHORIZED = 401;
+/** /me answers 403 only for a blocked account */
+const HTTP_FORBIDDEN = 403;
 
 // ---- Requests (wrappers around the central http service) ----
 
-/** The signed-in user, or null when nobody is signed in (401). */
+/** Students: adds the seconds spent on the portal since the last report (see usePortalTimeTracker). */
+export const reportPortalActivity = async (seconds: number): Promise<void> => {
+  await http.send('POST', `${AUTH}/me/activity`, { seconds });
+};
+
+/**
+ * The signed-in user, or null when nobody is signed in (401). A blocked account (403) is signed out: its
+ * cookie is cleared so public pages work as for a guest.
+ */
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
     return await http.get(`${AUTH}/me`, userSchema);
   } catch (error) {
     if (isApiError(error, HTTP_UNAUTHORIZED)) return null;
+    if (isApiError(error, HTTP_FORBIDDEN)) {
+      await http.send('POST', `${AUTH}/logout`).catch(() => undefined);
+      return null;
+    }
     throw error;
   }
 };

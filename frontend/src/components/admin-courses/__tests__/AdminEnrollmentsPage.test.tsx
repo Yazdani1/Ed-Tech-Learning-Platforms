@@ -54,12 +54,10 @@ describe('AdminEnrollmentsPage', () => {
     expect(within(stats).getByText('৳2,400')).toBeInTheDocument();
     expect(await screen.findByText('Karim Ahmed')).toBeInTheDocument();
     expect(screen.getByText('Nadia Islam')).toBeInTheDocument();
-    expect(screen.getByText('Total: ৳1,200')).toBeInTheDocument();
+    expect(screen.getByText(/2 enrolments shown · Sales ৳1,200 · VAT ৳0/)).toBeInTheDocument();
     expect(screen.getByText('SAVE20NOW')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Export CSV' })).toHaveAttribute(
-      'href',
-      `/api/enrollments/course/${COURSE_ID}/students/export`,
-    );
+    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Student tokens (PDF)' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Back to Courses' })).toHaveAttribute(
       'href',
       '/admin/courses',
@@ -72,10 +70,11 @@ describe('AdminEnrollmentsPage', () => {
 
     // The order list replaces the plain student list once the role is known
     expect(await screen.findByText('SAVE20NOW')).toBeInTheDocument();
-    await user.click(screen.getByRole('tab', { name: 'Free' }));
+    await user.click(screen.getByRole('combobox', { name: 'Type' }));
+    await user.click(await screen.findByRole('option', { name: 'Free' }));
     expect(screen.getByText('Nadia Islam')).toBeInTheDocument();
     expect(screen.queryByText('Karim Ahmed')).not.toBeInTheDocument();
-    expect(screen.getByText('Total: ৳0')).toBeInTheDocument();
+    expect(screen.getByText(/1 enrolments shown · Sales ৳0/)).toBeInTheDocument();
   });
 
   it('opens the purchase details of a row on the right', async () => {

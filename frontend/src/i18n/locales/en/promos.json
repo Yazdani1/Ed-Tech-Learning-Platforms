@@ -39,7 +39,8 @@
     "label": "Running promo",
     "useCode": "Use code",
     "percentOff": "{{value}}% OFF",
-    "amountOff": "{{amount}} OFF"
+    "amountOff": "{{amount}} OFF",
+    "openPromo": "Open the promo: {{title}}"
   },
   "popup": {
     "copy": "Copy code {{code}}",
@@ -52,5 +53,39 @@
     "title": "Promo courses",
     "subtitle": "{{discount}} with the code {{code}} on every course below.",
     "none": "No promo is running right now."
+  },
+  "tabs": {
+    "label": "Promo sections",
+    "promos": "Promos",
+    "design": "Design"
+  },
+  "confirmOffTitle": "Switch off \"{{title}}\"?",
+  "confirmOnTitle": "Switch on \"{{title}}\"?",
+  "confirmOffMessage": "Students can no longer use this promo code, and the banner and pop-up disappear.",
+  "confirmOnMessage": "The promo code works again between its start and end dates.",
+  "history": {
+    "open": "History",
+    "title": "History of {{title}}",
+    "on": "Switched on",
+    "off": "Switched off"
+  },
+  "design": {
+    "info": "Optional pictures for a running promo. The countdown and code are shown on top of them; without a picture the default design is used.",
+    "banner": {
+      "title": "Top banner picture",
+      "hint": "Wide picture, about 1600 × 200 px (PNG, JPEG, GIF or WEBP, up to 5 MB)."
+    },
+    "popup": {
+      "title": "Pop-up picture",
+      "hint": "Tall picture, about 600 × 800 px, shown in the centre pop-up on the home and course pages."
+    },
+    "upload": "Upload picture",
+    "replace": "Replace picture",
+    "useDefault": "Use default design",
+    "defaultInUse": "Default design in use",
+    "saved": "Picture saved",
+    "removed": "Default design restored",
+    "removeTitle": "Remove this picture?",
+    "removeMessage": "The default design is shown again."
   }
 }

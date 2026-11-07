@@ -20,6 +20,11 @@ export interface ISiteSetting extends Document {
 	key: string;
 	hiddenPages: SitePageKey[];
 	contact: ICompanyContact;
+	/** Custom pictures of the running promo: the top banner and the centre pop-up (Promos page, Design tab) */
+	promoBannerImage?: { url: string; publicId: string };
+	promoPopupImage?: { url: string; publicId: string };
+	/** VAT % included in every paid course price (internal: never shown to students) */
+	vatPercent: number;
 	updatedBy?: Types.ObjectId;
 	createdAt: Date;
 	updatedAt: Date;
@@ -39,6 +44,9 @@ const siteSettingSchema = new Schema<ISiteSetting>(
 			linkedin: { type: String, trim: true },
 			instagram: { type: String, trim: true },
 		},
+		promoBannerImage: { url: String, publicId: String },
+		promoPopupImage: { url: String, publicId: String },
+		vatPercent: { type: Number, default: 0, min: 0, max: 100 },
 		updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
 	},
 	{ timestamps: true },

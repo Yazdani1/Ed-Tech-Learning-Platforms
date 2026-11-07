@@ -8,13 +8,14 @@ import {
   subscribeToPlan,
 } from '../controllers/subscription.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
+import { paymentLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
 router.use(protect);
 
 router.get('/my', getMySubscription);
-router.post('/subscribe', authorize('Student'), subscribeToPlan);
+router.post('/subscribe', authorize('Student'), paymentLimiter, subscribeToPlan);
 router.delete('/cancel-my', authorize('Student'), cancelMySubscription);
 router.get('/', authorize('Super Admin', 'Admin'), getAllSubscriptions);
 router.post('/assign', authorize('Super Admin', 'Admin'), assignSubscription);

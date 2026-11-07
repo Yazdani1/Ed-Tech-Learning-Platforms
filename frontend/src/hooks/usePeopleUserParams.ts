@@ -14,6 +14,8 @@ export const userListUrlSchema = z.object({
   page: z.coerce.number().int().min(1).catch(1),
   search: text,
   role: text,
+  /** '' every account, 'active' or 'blocked' */
+  status: text,
   subscriptionPlan: text,
   subscriptionStatus: text,
   enrollmentFilter: text,
@@ -29,7 +31,7 @@ export type UserListParams = z.infer<typeof userListUrlSchema>;
 export type UserFilterKey = Exclude<keyof UserListParams, 'page'>;
 
 /** Filters every manager can use; the rest are sent (and counted) only for a Super Admin. */
-export const BASIC_USER_FILTERS: readonly UserFilterKey[] = ['search', 'role'];
+export const BASIC_USER_FILTERS: readonly UserFilterKey[] = ['search', 'role', 'status'];
 
 export const ADVANCED_USER_FILTERS: readonly UserFilterKey[] = [
   'subscriptionPlan',

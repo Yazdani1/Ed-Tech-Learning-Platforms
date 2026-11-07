@@ -1,0 +1,25 @@
+{
+  "title": "Purchases",
+  "count": "{{count}} courses",
+  "totalsLabel": "Purchase totals",
+  "empty": "You have not enrolled in any course yet.",
+  "deletedCourse": "Course no longer available",
+  "batch": "Batch {{batch}}",
+  "totals": {
+    "courses": "Courses",
+    "paidCourses": "Bought",
+    "totalSpent": "Total spent",
+    "totalSaved": "Total saved"
+  },
+  "columns": {
+    "course": "Course",
+    "purchaseId": "Purchase ID",
+    "date": "Date",
+    "type": "Type",
+    "listPrice": "List price",
+    "discount": "Discount",
+    "coupon": "Coupon",
+    "amountPaid": "Amount paid",
+    "paymentMethod": "Payment method"
+  }
+}

@@ -12,6 +12,7 @@ import { ADMIN_AREA_ROLES, STUDENT_ROLES } from '@/utils/roles';
 
 import { findIntroVideoId } from '../../course-utils';
 
+import { CourseScheduleFacts } from './CourseScheduleFacts';
 import { CourseShareButton } from './CourseShareButton';
 import { EnrolledActions } from './EnrolledActions';
 import { EnrollmentMedia } from './EnrollmentMedia';
@@ -82,6 +83,7 @@ export const CourseEnrollmentCard: FC<CourseEnrollmentCardProps> = ({ course, le
           introVideoId={findIntroVideoId(course)}
         />
         <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          <CourseScheduleFacts course={course} />
           {renderBody()}
           <Divider sx={{ mt: 2.5, mb: 1 }} />
           <CourseShareButton title={course.title} />

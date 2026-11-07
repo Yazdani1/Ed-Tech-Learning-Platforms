@@ -30,13 +30,15 @@ const makeOrder = (id: string, overrides: Record<string, unknown> = {}): Order =
     },
     course: { _id: COURSE_A, title: 'Algebra 101', batchNumber: '1234' },
     enrollmentType: 'paid',
-    listPrice: 1000,
-    paidPrice: 800,
-    discountAmount: 200,
-    discountPercent: 20,
+    listPrice: 1150,
+    paidPrice: 1150,
+    discountAmount: 0,
+    discountPercent: 0,
     couponCode: 'SAVE20NOW',
     couponSource: 'coupon',
     paymentMethod: 'bkash',
+    vatPercent: 15,
+    vatAmount: 150,
     createdAt: '2026-10-02T09:00:00.000Z',
     ...overrides,
   });
@@ -47,40 +49,44 @@ const ORDERS = [
     enrollmentType: 'free',
     listPrice: 0,
     paidPrice: 0,
-    discountAmount: 0,
-    discountPercent: 0,
     couponCode: null,
     paymentMethod: null,
+    vatPercent: 0,
+    vatAmount: 0,
     course: { _id: COURSE_B, title: 'Physics Free' },
   }),
 ];
 
-const totals = (revenue: number, orders: number, paidOrders: number) => ({
-  revenue,
-  orders,
-  paidOrders,
-});
-const SUMMARY = {
-  totals: {
-    today: totals(800, 1, 1),
-    week: totals(2400, 3, 3),
-    month: totals(5000, 6, 5),
-    lifetime: totals(90000, 40, 30),
-  },
-  daily: [{ date: '2026-10-01', revenue: 800, orders: 1, paidOrders: 1 }],
-  weekly: [{ date: '2026-09-28', revenue: 2400, orders: 3, paidOrders: 3 }],
-  monthly: [{ date: '2026-10-01', revenue: 5000, orders: 6, paidOrders: 5 }],
+const MONTHS = [
+  { month: '2026-11', revenue: 2300, vat: 300, orders: 3, paidOrders: 2 },
+  { month: '2026-10', revenue: 1150, vat: 150, orders: 2, paidOrders: 1 },
+];
+
+const BREAKDOWN = {
+  orders: 2,
+  paidOrders: 1,
+  freeOrders: 1,
+  subscriptionOrders: 0,
+  revenue: 1150,
+  vat: 150,
+  netRevenue: 1000,
+  listTotal: 1150,
+  discountTotal: 0,
+  topCourses: [
+    { courseId: COURSE_A, title: 'Algebra 101', batchNumber: '1234', revenue: 1150, orders: 1 },
+  ],
 };
 
 interface Seen {
   orders: URLSearchParams[];
-  summary: URLSearchParams[];
+  breakdown: URLSearchParams[];
 }
 
-const revenueHandlers = (seen: Seen = { orders: [], summary: [] }) => [
-  http.get('*/api/revenue/summary', ({ request }) => {
-    seen.summary.push(new URL(request.url).searchParams);
-    return ok(SUMMARY);
+const revenueHandlers = (seen: Seen = { orders: [], breakdown: [] }) => [
+  http.get('*/api/revenue/months', () => ok(MONTHS)),
+  http.get('*/api/revenue/breakdown', ({ request }) => {
+    seen.breakdown.push(new URL(request.url).searchParams);
+    return ok(BREAKDOWN);
   }),
   http.get('*/api/revenue/orders', ({ request }) => {
     const params = new URL(request.url).searchParams;
@@ -124,80 +130,107 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('RevenuePage (/admin/revenue)', () => {
-  it('shows the sales of today, the last 7 days, this month and all time with the chart', async () => {
+describe('RevenuePage: Monthly sales (default tab)', () => {
+  it('shows only the title, the two tabs and one card per month with sales, enrolments and VAT', async () => {
     server.use(...revenueHandlers());
     renderPage('Super Admin');
 
-    const cards = await screen.findByRole('region', { name: 'Sales per period' });
-    const periods: [string, string, string][] = [
-      ['Today', '৳800', '1 orders (1 paid)'],
-      ['Last 7 days', '৳2,400', '3 orders (3 paid)'],
-      ['This month', '৳5,000', '6 orders (5 paid)'],
-      ['All time', '৳90,000', '40 orders (30 paid)'],
-    ];
-    for (const [label, amount, orders] of periods) {
-      expect(within(cards).getByText(label)).toBeInTheDocument();
-      expect(within(cards).getByText(amount)).toBeInTheDocument();
-      expect(within(cards).getByText(orders)).toBeInTheDocument();
-    }
-    expect(screen.getByRole('heading', { name: 'Revenue' })).toBeInTheDocument();
-    expect(await screen.findByText('Revenue per day (last 30 days)')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Revenue' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Monthly sales' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByRole('tab', { name: 'All sales' })).toBeInTheDocument();
+    const months = await screen.findByRole('region', { name: 'Sales per month' });
+    const november = within(months).getByRole('button', {
+      name: 'Open the sales of November 2026',
+    });
+    expect(within(november).getByText('৳2,300')).toBeInTheDocument();
+    expect(within(november).getByText('3 enrolments (2 paid)')).toBeInTheDocument();
+    expect(within(november).getByText('VAT ৳300')).toBeInTheDocument();
+    expect(within(november).getByText('Latest')).toBeInTheDocument();
+    expect(screen.queryByText('Revenue per day (last 30 days)')).not.toBeInTheDocument();
   });
 
-  it('switches the chart between daily, weekly and monthly', async () => {
+  it('opens a month through the address', async () => {
     server.use(...revenueHandlers());
     renderPage();
     const user = userEvent.setup();
 
-    await user.click(await screen.findByRole('button', { name: 'Weekly' }));
-    expect(screen.getByText('Revenue per week (last 12 weeks)')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Monthly' }));
-    expect(screen.getByText('Revenue per month (last 12 months)')).toBeInTheDocument();
-  });
+    await user.click(await screen.findByRole('button', { name: 'Open the sales of October 2026' }));
 
-  it('sends the viewer time zone with the summary', async () => {
-    const seen: Seen = { orders: [], summary: [] };
-    server.use(...revenueHandlers(seen));
-    renderPage();
-
-    await screen.findByRole('region', { name: 'Sales per period' });
-    expect(seen.summary[0]?.get('tz')).toBeTruthy();
-  });
-
-  it('lists every order with course, student, type, prices, coupon and method', async () => {
-    server.use(...revenueHandlers());
-    renderPage();
-
-    const table = await screen.findByRole('table', { name: 'Orders' });
-    expect(within(table).getByText('Student o1')).toBeInTheDocument();
-    expect(within(table).getByText('Algebra 101')).toBeInTheDocument();
-    expect(within(table).getByText('Physics Free')).toBeInTheDocument();
-    expect(within(table).getByText('SAVE20NOW')).toBeInTheDocument();
-    expect(within(table).getByText('bKash')).toBeInTheDocument();
-    expect(within(table).getByText('৳1,000')).toBeInTheDocument();
-    expect(within(table).getByText('৳200 (20%)')).toBeInTheDocument();
-    expect(within(table).getByText('Not recorded')).toBeInTheDocument();
-  });
-
-  it('filters the orders by type through the address', async () => {
-    const seen: Seen = { orders: [], summary: [] };
-    server.use(...revenueHandlers(seen));
-    renderPage();
-    const user = userEvent.setup();
-
-    await screen.findByRole('table', { name: 'Orders' });
-    await user.click(screen.getByRole('tab', { name: 'Free' }));
-
-    expect(router.replace).toHaveBeenLastCalledWith('/admin/revenue?type=free', {
+    expect(router.replace).toHaveBeenLastCalledWith('/admin/revenue?month=2026-10', {
       scroll: false,
     });
   });
 
-  it('reads the type, page and courses from the address and ignores bad ids', async () => {
-    const seen: Seen = { orders: [], summary: [] };
+  it('shows a month: top 5 courses, totals with VAT and only that month’s sales', async () => {
+    const seen: Seen = { orders: [], breakdown: [] };
     server.use(...revenueHandlers(seen));
-    renderPage('Admin', `?type=paid&courses=${COURSE_A},not-an-id&page=2`);
+    renderPage('Admin', '?month=2026-10');
+
+    expect(await screen.findByRole('heading', { name: 'October 2026' })).toBeInTheDocument();
+    expect(screen.getByText('Top 5 courses by sales')).toBeInTheDocument();
+    const totals = await screen.findByRole('region', { name: 'Totals of the filtered sales' });
+    expect(within(totals).getByText('৳1,150')).toBeInTheDocument();
+    expect(within(totals).getByText('৳150')).toBeInTheDocument();
+    expect(within(totals).getByText('৳1,000')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(seen.orders.length).toBeGreaterThan(0);
+    });
+    const from = new Date(seen.orders[0]?.get('from') ?? '');
+    const to = new Date(seen.orders[0]?.get('to') ?? '');
+    expect(to.getTime() - from.getTime()).toBeGreaterThan(27 * 24 * 3600 * 1000);
+    expect(screen.queryByLabelText('Period')).not.toBeInTheDocument();
+  });
+
+  it('goes back to the months', async () => {
+    server.use(...revenueHandlers());
+    renderPage('Admin', '?month=2026-10');
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'All months' }));
+
+    expect(router.replace).toHaveBeenLastCalledWith('/admin/revenue', { scroll: false });
+  });
+});
+
+describe('RevenuePage: All sales', () => {
+  it('lists every sale with VAT, coupon and method; the type is a dropdown', async () => {
+    server.use(...revenueHandlers());
+    renderPage('Admin', '?view=all');
+
+    const table = await screen.findByRole('table', { name: 'Orders' });
+    expect(within(table).getByText('Student o1')).toBeInTheDocument();
+    expect(within(table).getByText('Physics Free')).toBeInTheDocument();
+    expect(within(table).getByText('15% · ৳150')).toBeInTheDocument();
+    expect(within(table).getByText('SAVE20NOW')).toBeInTheDocument();
+    expect(within(table).getByText('bKash')).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Free' })).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Type' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Period' })).toBeInTheDocument();
+  });
+
+  it('filters by type and by month through the address', async () => {
+    server.use(...revenueHandlers());
+    renderPage('Admin', '?view=all');
+    const user = userEvent.setup();
+
+    await screen.findByRole('table', { name: 'Orders' });
+    await user.click(screen.getByRole('combobox', { name: 'Type' }));
+    await user.click(await screen.findByRole('option', { name: 'Free' }));
+    expect(router.replace).toHaveBeenLastCalledWith('/admin/revenue?view=all&type=free', {
+      scroll: false,
+    });
+  });
+
+  it('reads the type, courses, page and a custom range from the address', async () => {
+    const seen: Seen = { orders: [], breakdown: [] };
+    server.use(...revenueHandlers(seen));
+    renderPage(
+      'Admin',
+      `?view=all&type=paid&courses=${COURSE_A},not-an-id&page=2&period=custom&from=2026-10-01&to=2026-10-31`,
+    );
 
     await waitFor(() => {
       expect(seen.orders.length).toBeGreaterThan(0);
@@ -206,15 +239,15 @@ describe('RevenuePage (/admin/revenue)', () => {
     expect(params?.get('type')).toBe('paid');
     expect(params?.get('courseIds')).toBe(COURSE_A);
     expect(params?.get('page')).toBe('2');
-    expect(params?.get('limit')).toBe('10');
-    expect(
-      await screen.findByRole('button', { name: /Algebra 101/ }, { timeout: 10_000 }),
-    ).toBeInTheDocument();
+    expect(params?.get('from')).toBeTruthy();
+    expect(params?.get('to')).toBeTruthy();
+    expect(screen.getByLabelText('From')).toHaveValue('2026-10-01');
+    expect(screen.getByLabelText('To')).toHaveValue('2026-10-31');
   });
 
   it('filters by course with the picker on the left', async () => {
     server.use(...revenueHandlers());
-    renderPage();
+    renderPage('Admin', '?view=all');
     const user = userEvent.setup();
 
     await user.click(await screen.findByRole('button', { name: /All courses/ }));
@@ -222,40 +255,35 @@ describe('RevenuePage (/admin/revenue)', () => {
     await user.click(await within(picker).findByRole('checkbox', { name: /Physics Free/ }));
     await user.click(within(picker).getByRole('button', { name: /Apply/ }));
 
-    expect(router.replace).toHaveBeenLastCalledWith(`/admin/revenue?courses=${COURSE_B}`, {
+    expect(router.replace).toHaveBeenLastCalledWith(`/admin/revenue?view=all&courses=${COURSE_B}`, {
       scroll: false,
     });
   });
 
-  it('opens the purchase details of an order', async () => {
+  it('opens the purchase details with the VAT', async () => {
     server.use(...revenueHandlers());
-    renderPage();
+    renderPage('Admin', '?view=all');
     const user = userEvent.setup();
 
     await user.click(await screen.findByText('Student o1'));
 
     const drawer = await screen.findByRole('dialog', { name: 'Purchase details' });
     expect(within(drawer).getByText('o1@example.com')).toBeInTheDocument();
-    expect(within(drawer).getByText('B-1234'.replace('B-', ''))).toBeInTheDocument();
-    expect(within(drawer).getByText('SAVE20NOW')).toBeInTheDocument();
+    expect(within(drawer).getByText('15% · ৳150')).toBeInTheDocument();
   });
 
   it('shows the empty state and the error with retry', async () => {
     server.use(
-      http.get('*/api/revenue/summary', () => ok(SUMMARY)),
+      http.get('*/api/revenue/breakdown', () => ok(BREAKDOWN)),
       http.get('*/api/revenue/orders', () => ok([], { total: 0, page: 1, limit: 10 })),
     );
-    const first = renderPage();
+    const first = renderPage('Admin', '?view=all');
     expect(await screen.findByText('No orders match these filters.')).toBeInTheDocument();
     first.unmount();
 
-    server.use(
-      http.get('*/api/revenue/summary', () => fail(500, 'Summary unavailable')),
-      http.get('*/api/revenue/orders', () => fail(500, 'Orders unavailable')),
-    );
+    server.use(http.get('*/api/revenue/months', () => fail(500, 'Months unavailable')));
     renderPage();
-    expect(await screen.findByText('Orders unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Summary unavailable')).toBeInTheDocument();
+    expect(await screen.findByText('Months unavailable')).toBeInTheDocument();
   });
 
   it('is not for Moderators', async () => {
@@ -269,93 +297,45 @@ describe('RevenuePage (/admin/revenue)', () => {
   });
 });
 
-describe('RevenuePage selection, CSV and print', () => {
-  const tick = async (name: RegExp) => {
-    const user = userEvent.setup();
-    await user.click(await screen.findByRole('checkbox', { name }));
-    return user;
-  };
-
-  it('keeps the CSV button off until an order is ticked, then counts the selection', async () => {
-    server.use(...revenueHandlers());
-    renderPage();
-
-    const user = await tick(/Select order o1/);
-    expect(screen.getByText('1 selected')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeEnabled();
-
-    await user.click(screen.getByRole('button', { name: 'Select this page' }));
-    expect(screen.getByText('2 selected')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Unselect this page' }));
-    expect(screen.queryByText(/selected$/)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
-  });
-
-  it('ticking a row does not open its details', async () => {
-    server.use(...revenueHandlers());
-    renderPage();
-
-    await tick(/Select order o1/);
-
-    expect(screen.queryByRole('dialog', { name: 'Purchase details' })).not.toBeInTheDocument();
-  });
-
-  it('exports the ticked orders as a CSV with every detail', async () => {
-    let csv = '';
+describe('RevenuePage: CSV and print', () => {
+  const captureCsv = () => {
+    const result = { csv: '' };
     const createObjectURL = vi.fn((blob: Blob) => {
       void blob.text().then((text) => {
-        csv = text;
+        result.csv = text;
       });
       return 'blob:csv';
     });
     vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() }));
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
-    server.use(...revenueHandlers());
-    renderPage();
-
-    const user = await tick(/Select order o1/);
-    await user.click(screen.getByRole('button', { name: 'Export CSV' }));
-
-    await waitFor(() => {
-      expect(csv).not.toBe('');
-    });
-    expect(csv).toContain('Order ID,Date,Course,Batch,Student,Student ID,Email,Phone,Type');
-    expect(csv).toContain('o1');
-    expect(csv).toContain('Student o1');
-    expect(csv).toContain('SAVE20NOW');
-    expect(csv).toContain('bKash');
-    expect(csv).not.toContain('Student o2');
-  });
-
-  const fakePrintWindow = () => {
-    const doc = document.implementation.createHTMLDocument('x');
-    return { document: doc, focus: vi.fn(), print: vi.fn(), close: vi.fn() };
+    return result;
   };
 
-  it('prints the ticked students with only the chosen details', async () => {
-    const win = fakePrintWindow();
-    vi.spyOn(window, 'open').mockReturnValue(win as unknown as Window);
+  it('exports the ticked sales with VAT and totals, without email and phone by default', async () => {
+    const result = captureCsv();
     server.use(...revenueHandlers());
-    renderPage();
+    renderPage('Admin', '?view=all');
+    const user = userEvent.setup();
 
-    const user = await tick(/Select order o1/);
-    await user.click(screen.getByRole('button', { name: 'Print students (PDF)' }));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByRole('radio', { name: 'The selected orders (1)' })).toBeChecked();
-    await user.click(within(dialog).getByRole('checkbox', { name: 'Email' }));
-    await user.click(within(dialog).getByRole('button', { name: 'Print' }));
+    await user.click(await screen.findByRole('checkbox', { name: /Select order o1/ }));
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Export CSV' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Export CSV' });
+    expect(within(dialog).getByRole('checkbox', { name: /email and phone/ })).not.toBeChecked();
+    await user.click(within(dialog).getByRole('button', { name: 'Download CSV' }));
 
-    expect(await screen.findByText('Print page opened')).toBeInTheDocument();
-    expect(win.print).toHaveBeenCalled();
-    const headers = [...win.document.querySelectorAll('th')].map((cell) => cell.textContent);
-    expect(headers).toEqual(['#', 'Name', 'Student ID', 'Email']);
-    const cells = [...win.document.querySelectorAll('td')].map((cell) => cell.textContent);
-    expect(cells).toEqual(['1', 'Student o1', '123-456-789', 'o1@example.com']);
+    await waitFor(() => {
+      expect(result.csv).not.toBe('');
+    });
+    expect(result.csv).toContain('Order ID,Date,Course,Batch,Student,Student ID,Type');
+    expect(result.csv).toContain('VAT %,VAT amount');
+    expect(result.csv).not.toContain('o1@example.com');
+    expect(result.csv).toContain('Total VAT,150');
+    expect(result.csv).not.toContain('Student o2');
   });
 
-  it('prints every order of the filter from the server when nothing is ticked', async () => {
-    const win = fakePrintWindow();
-    vi.spyOn(window, 'open').mockReturnValue(win as unknown as Window);
+  it('exports every sale of the filter from the server, with contact details when ticked', async () => {
+    const result = captureCsv();
     let exportQuery = '';
     server.use(
       http.get('*/api/revenue/orders/export', ({ request }) => {
@@ -364,43 +344,37 @@ describe('RevenuePage selection, CSV and print', () => {
       }),
       ...revenueHandlers(),
     );
-    renderPage('Admin', '?type=paid');
+    renderPage('Admin', '?view=all&type=paid');
     const user = userEvent.setup();
 
-    await user.click(await screen.findByRole('button', { name: 'Print students (PDF)' }));
+    await user.click(await screen.findByRole('button', { name: 'Export CSV' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Export CSV' });
+    await user.click(within(dialog).getByRole('checkbox', { name: /email and phone/ }));
+    await user.click(within(dialog).getByRole('button', { name: 'Download CSV' }));
+
+    await waitFor(() => {
+      expect(result.csv).not.toBe('');
+    });
+    expect(exportQuery).toContain('type=paid');
+    expect(result.csv).toContain('o1@example.com');
+  });
+
+  it('prints the ticked students with only the chosen details', async () => {
+    const doc = document.implementation.createHTMLDocument('x');
+    const win = { document: doc, focus: vi.fn(), print: vi.fn(), close: vi.fn() };
+    vi.spyOn(window, 'open').mockReturnValue(win as unknown as Window);
+    server.use(...revenueHandlers());
+    renderPage('Admin', '?view=all');
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('checkbox', { name: /Select order o1/ }));
+    await user.click(screen.getByRole('button', { name: 'Print students (PDF)' }));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByRole('radio', { name: 'The selected orders (0)' })).toBeDisabled();
+    expect(within(dialog).getByRole('radio', { name: 'The selected orders (1)' })).toBeChecked();
     await user.click(within(dialog).getByRole('button', { name: 'Print' }));
 
     expect(await screen.findByText('Print page opened')).toBeInTheDocument();
-    expect(exportQuery).toContain('type=paid');
-    expect(win.document.querySelectorAll('tbody tr')).toHaveLength(2);
-    expect(win.document.title).toBe('All courses');
-  });
-
-  it('says so when the browser blocks the print tab', async () => {
-    vi.spyOn(window, 'open').mockReturnValue(null);
-    server.use(...revenueHandlers());
-    renderPage();
-    const user = userEvent.setup();
-
-    await user.click(await screen.findByRole('button', { name: 'Print students (PDF)' }));
-    const dialog = await screen.findByRole('dialog');
-    await user.click(within(dialog).getByRole('button', { name: 'Print' }));
-
-    expect(await screen.findByText(/blocked/i)).toBeInTheDocument();
-  });
-
-  it('needs at least one detail to print', async () => {
-    server.use(...revenueHandlers());
-    renderPage();
-    const user = userEvent.setup();
-
-    await user.click(await screen.findByRole('button', { name: 'Print students (PDF)' }));
-    const dialog = await screen.findByRole('dialog');
-    await user.click(within(dialog).getByRole('checkbox', { name: 'Name' }));
-    await user.click(within(dialog).getByRole('checkbox', { name: 'Student ID' }));
-
-    expect(within(dialog).getByRole('button', { name: 'Print' })).toBeDisabled();
+    const headers = [...win.document.querySelectorAll('th')].map((cell) => cell.textContent);
+    expect(headers).toEqual(['#', 'Name', 'Student ID']);
   });
 });

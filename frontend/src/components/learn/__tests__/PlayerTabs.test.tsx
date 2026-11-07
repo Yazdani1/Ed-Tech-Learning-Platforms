@@ -208,9 +208,8 @@ describe('CourseOverviewTab', () => {
       if (!box) throw new Error(`No stat ${label}`);
       return box;
     };
-    await waitFor(() => {
-      expect(within(stat('Enrolled Students')).getByText('42')).toBeInTheDocument();
-    });
+    // The student count is no longer shown to students
+    expect(screen.queryByText('Enrolled Students')).not.toBeInTheDocument();
     await waitFor(() => {
       expect(within(stat('Announcements')).getByText('2')).toBeInTheDocument();
     });

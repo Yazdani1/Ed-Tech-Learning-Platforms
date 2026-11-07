@@ -2,6 +2,7 @@
 
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import HistoryIcon from '@mui/icons-material/History';
 import ToggleOffOutlinedIcon from '@mui/icons-material/ToggleOffOutlined';
 import ToggleOnOutlinedIcon from '@mui/icons-material/ToggleOnOutlined';
 import { useTranslation } from 'react-i18next';
@@ -17,15 +18,18 @@ interface RowMenuProps {
   onEdit: () => void;
   onToggle: () => void;
   onDelete: () => void;
+  /** Promos: who switched it on / off and when */
+  onHistory?: () => void;
 }
 
-/** "⋮" menu of a coupon or promo row: Edit, switch on / off, Delete. */
+/** "⋮" menu of a coupon or promo row: Edit, switch on / off, History (promos), Delete. */
 export const CouponRowMenu: FC<RowMenuProps> = ({
   label,
   isActive,
   onEdit,
   onToggle,
   onDelete,
+  onHistory,
 }) => {
   const { t } = useTranslation();
   return (
@@ -41,6 +45,12 @@ export const CouponRowMenu: FC<RowMenuProps> = ({
             <ToggleOnOutlinedIcon fontSize="small" />
           ),
           onClick: onToggle,
+        },
+        {
+          label: t('promos.history.open'),
+          icon: <HistoryIcon fontSize="small" />,
+          visible: Boolean(onHistory),
+          onClick: () => onHistory?.(),
         },
         {
           label: t('common.delete'),

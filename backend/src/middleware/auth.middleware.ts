@@ -11,6 +11,7 @@ interface JwtPayload {
 }
 
 const MS_PER_SECOND = 1000;
+export const BLOCKED_MESSAGE = 'Your account has been blocked. Please contact support.';
 
 // A token issued before the user's last password change is no longer valid.
 export const isTokenRevoked = (decoded: JwtPayload, passwordChangedAt?: Date): boolean =>
@@ -33,6 +34,7 @@ export const protect = asyncHandler(async (req, _res, next) => {
   const user = await User.findById(decoded.id).select('-password +passwordChangedAt');
   if (!user) throw new AppError('User no longer exists', 401);
   if (isTokenRevoked(decoded, user.passwordChangedAt)) throw new AppError('Not authorized, please login', 401);
+  if (user.isBlocked) throw new AppError(BLOCKED_MESSAGE, 403);
 
   req.user = user;
   next();
@@ -53,7 +55,7 @@ export const optionalProtect = asyncHandler(async (req, _res, next) => {
   try {
     const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as JwtPayload;
     const user = await User.findById(decoded.id).select('-password +passwordChangedAt');
-    if (user && !isTokenRevoked(decoded, user.passwordChangedAt)) req.user = user;
+    if (user && !user.isBlocked && !isTokenRevoked(decoded, user.passwordChangedAt)) req.user = user;
   } catch {
     // Public endpoints should still work for guests with expired tokens.
   }

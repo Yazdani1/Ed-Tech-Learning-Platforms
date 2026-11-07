@@ -10,6 +10,7 @@ import {
 import { fail, makeUser, ok, signedInAs } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { fileInputIn } from '@/test/pick';
+import { ConfirmProvider } from '@/context/ConfirmContext';
 import { renderWithProviders } from '@/test/render';
 
 import { AnnouncementsPage } from '../AnnouncementsPage';
@@ -42,7 +43,11 @@ const renderPage = (role: UserRole = 'Admin') => {
     ...referenceHandlers(),
     http.get('*/api/courses', () => ok([ALGEBRA, PHYSICS])),
   );
-  return renderWithProviders(<AnnouncementsPage />);
+  return renderWithProviders(
+    <ConfirmProvider>
+      <AnnouncementsPage />
+    </ConfirmProvider>,
+  );
 };
 
 afterEach(() => {

@@ -100,7 +100,41 @@
     "updatedAt": "Updated At",
     "studentNumber": "Student number",
     "studentNumberShort": "No. {{number}}",
-    "phone": "Phone number (optional)"
+    "phone": "Phone number (optional)",
+    "accountStatus": "Account",
+    "allAccounts": "Every account",
+    "selectUser": "Select {{name}}",
+    "exported": "{{count}} users exported",
+    "exportSelected": "The selected users ({{count}})",
+    "exportFiltered": "Every user of the current filters ({{count}})",
+    "block": {
+      "block": "Block",
+      "unblock": "Unblock",
+      "blockTitle": "Block {{name}}?",
+      "unblockTitle": "Unblock {{name}}?",
+      "blockMessage": "{{name}} is signed out everywhere at once and cannot sign in until unblocked.",
+      "unblockMessage": "{{name}} can sign in again.",
+      "reason": "Reason (optional, for the history)",
+      "currentReason": "Blocked because: {{reason}}",
+      "blocked": "{{name}} blocked",
+      "unblocked": "{{name}} unblocked"
+    },
+    "history": {
+      "open": "History",
+      "title": "History of {{name}}",
+      "role": "Role changed from {{from}} to {{to}}",
+      "blocked": "Account blocked",
+      "unblocked": "Account unblocked"
+    },
+    "csv": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "studentNumber": "Student ID",
+      "phone": "Phone",
+      "status": "Status",
+      "joined": "Joined"
+    }
   },
   "teachers": {
     "title": "Teachers",
@@ -286,10 +320,63 @@
     "deletedCourse": "Deleted course",
     "enrolledOn": "Enrolled {{date}}",
     "subscriptionPeriod": "{{start}} – {{end}}",
-    "status": {
-      "Active": "Active",
-      "Expired": "Expired",
-      "Cancelled": "Cancelled"
+    "status": "Status",
+    "timeSpent": "Time on portal",
+    "count": "{{count}} students",
+    "selected": "{{count}} selected",
+    "selectStudent": "Select {{name}}",
+    "exportCsv": "Export CSV",
+    "exported": "{{count}} students exported",
+    "exportSelected": "The selected students ({{count}})",
+    "exportFiltered": "Every student of the current filters ({{count}})",
+    "filters": {
+      "enrollment": "Enrolment",
+      "enrollmentOptions": {
+        "any": "Any enrolment",
+        "paid": "Bought a course",
+        "free": "Free course",
+        "subscription": "Subscription",
+        "none": "Not enrolled"
+      },
+      "status": "Status",
+      "statusOptions": {
+        "any": "Any status",
+        "active": "Active",
+        "blocked": "Blocked"
+      },
+      "phone": "Phone",
+      "phoneOptions": {
+        "any": "Any",
+        "true": "Has phone",
+        "false": "No phone"
+      },
+      "joinedFrom": "Joined from",
+      "joinedTo": "Joined to",
+      "sort": "Sort by",
+      "sortOptions": {
+        "newest": "Newest first",
+        "oldest": "Oldest first",
+        "name": "Name (A–Z)",
+        "timeSpent": "Most time on portal",
+        "lastActive": "Recently active"
+      },
+      "clear": "Clear filters"
+    },
+    "csv": {
+      "name": "Name",
+      "studentNumber": "Student ID",
+      "email": "Email",
+      "phone": "Phone",
+      "courses": "Enrolled courses",
+      "spent": "Total spent (BDT)",
+      "timeSpent": "Time on portal",
+      "status": "Status",
+      "joined": "Joined",
+      "lastActive": "Last active"
     }
+  },
+  "accountStatus": {
+    "active": "Active",
+    "blocked": "Blocked"
   }
 }

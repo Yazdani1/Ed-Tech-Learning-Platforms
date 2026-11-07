@@ -8,12 +8,15 @@ import { Enrollment } from '../models/Enrollment.model';
 import { deleteFromCloudinary, uploadToCloudinary } from '../config/cloudinary';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { auditHistory, recordAudit } from '../utils/audit';
 
 const TITLE_MAX = 200;
 const DESCRIPTION_MAX = 20000;
 const MAX_COURSES = 500;
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
+/** Archived ("deleted") announcements never show */
+const LIVE = { isArchived: { $ne: true } };
 
 const isText = (value: unknown, max: number): value is string =>
 	typeof value === 'string' && value.trim() !== '' && value.trim().length <= max;
@@ -50,13 +53,13 @@ export const getBroadcasts = asyncHandler(async (req: Request, res: Response) =>
 	const page = Math.max(Number(req.query.page) || 1, 1);
 	const limit = Math.min(Math.max(Number(req.query.limit) || DEFAULT_LIMIT, 1), MAX_LIMIT);
 	const [items, total] = await Promise.all([
-		AnnouncementBroadcast.find()
+		AnnouncementBroadcast.find(LIVE)
 			.sort({ createdAt: -1 })
 			.skip((page - 1) * limit)
 			.limit(limit)
 			.populate('postedBy', 'name avatar role')
 			.lean(),
-		AnnouncementBroadcast.countDocuments(),
+		AnnouncementBroadcast.countDocuments(LIVE),
 	]);
 	const seen = await seenCounts(items.map((item) => item._id));
 	const data = items.map((item) => ({
@@ -71,7 +74,7 @@ export const getBroadcasts = asyncHandler(async (req: Request, res: Response) =>
 export const getBroadcastById = asyncHandler(async (req: Request, res: Response) => {
 	const id = String(req.params.id);
 	if (!Types.ObjectId.isValid(id)) throw new AppError('Invalid announcement id', 400);
-	const item = await AnnouncementBroadcast.findById(id)
+	const item = await AnnouncementBroadcast.findOne({ _id: id, ...LIVE })
 		.populate('postedBy', 'name avatar role')
 		.populate('courses', 'title coverImage batchNumber status')
 		.lean();
@@ -151,4 +154,91 @@ export const createBroadcast = asyncHandler(async (req: Request, res: Response) 
 			seenCount: 0,
 		},
 	});
+});
+
+const findLiveBroadcast = async (value: unknown) => {
+	const id = String(value);
+	if (!Types.ObjectId.isValid(id)) throw new AppError('Invalid announcement id', 400);
+	const item = await AnnouncementBroadcast.findOne({ _id: id, ...LIVE }).select('+image.publicId');
+	if (!item) throw new AppError('Announcement not found', 404);
+	return item;
+};
+
+/**
+ * PUT /api/announcements/broadcasts/:id (multipart: title?, description?, optional image, removeImage=true):
+ * changes the announcement in every course it was sent to; the old text is kept in its edit history.
+ */
+export const updateBroadcast = asyncHandler(async (req: Request, res: Response) => {
+	const item = await findLiveBroadcast(req.params.id);
+	const body = req.body as Record<string, unknown>;
+	if (body.title !== undefined && !isText(body.title, TITLE_MAX))
+		throw new AppError(`Title is required (at most ${TITLE_MAX} characters)`, 400);
+	if (body.description !== undefined && !isText(body.description, DESCRIPTION_MAX))
+		throw new AppError('Description is required', 400);
+	const removeImage = body.removeImage === 'true' || body.removeImage === true;
+	const title = typeof body.title === 'string' ? body.title.trim() : item.title;
+	const description = typeof body.description === 'string' ? body.description.trim() : item.description;
+	if (title === item.title && description === item.description && !req.file && !removeImage)
+		throw new AppError('Nothing to update', 400);
+
+	const before = { title: item.title, description: item.description, image: item.image?.url ?? null };
+	const oldPublicId = item.image?.publicId;
+	const image = req.file ? await uploadToCloudinary(req.file.buffer, 'medhabee/announcements') : undefined;
+	item.title = title;
+	item.description = description;
+	if (image) item.image = { url: image.url, publicId: image.publicId };
+	else if (removeImage) item.image = undefined;
+	item.editedAt = new Date();
+	try {
+		await item.save();
+	} catch (err) {
+		if (image) await deleteFromCloudinary(image.publicId);
+		throw err;
+	}
+	const courseImage = item.image?.url ? { url: item.image.url } : undefined;
+	await Announcement.updateMany(
+		{ broadcast: item._id },
+		courseImage
+			? { $set: { title, description, image: courseImage } }
+			: { $set: { title, description }, $unset: { image: 1 } },
+	);
+	if ((image || removeImage) && oldPublicId) await deleteFromCloudinary(oldPublicId);
+	await recordAudit({
+		action: 'announcement.update',
+		entityType: 'AnnouncementBroadcast',
+		entity: item._id,
+		actor: req.user._id,
+		before,
+		after: { title, description, image: item.image?.url ?? null },
+	});
+	const data = { ...item.toObject(), image: courseImage };
+	res.status(200).json({ success: true, message: 'Announcement updated', data });
+});
+
+/**
+ * DELETE /api/announcements/broadcasts/:id: archives the announcement (hidden for students and every admin
+ * page); it stays in the database with who archived it and when.
+ */
+export const archiveBroadcast = asyncHandler(async (req: Request, res: Response) => {
+	const item = await findLiveBroadcast(req.params.id);
+	item.isArchived = true;
+	item.archivedAt = new Date();
+	item.archivedBy = req.user._id;
+	await item.save();
+	await Announcement.updateMany({ broadcast: item._id }, { $set: { isArchived: true } });
+	await recordAudit({
+		action: 'announcement.archive',
+		entityType: 'AnnouncementBroadcast',
+		entity: item._id,
+		actor: req.user._id,
+		before: { isArchived: false },
+		after: { isArchived: true },
+	});
+	res.status(200).json({ success: true, message: 'Announcement deleted' });
+});
+
+/** GET /api/announcements/broadcasts/:id/history: every edit (old and new text, who, when), newest first. */
+export const getBroadcastHistory = asyncHandler(async (req: Request, res: Response) => {
+	const item = await findLiveBroadcast(req.params.id);
+	res.status(200).json({ success: true, data: await auditHistory('AnnouncementBroadcast', item._id) });
 });

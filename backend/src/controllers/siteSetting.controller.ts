@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { SiteSetting, SITE_PAGE_KEYS, type ICompanyContact, type SitePageKey } from '../models/SiteSetting.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { auditHistory, recordAudit } from '../utils/audit';
 
 const SETTINGS_KEY = 'site';
 const PHONE_PATTERN = /^\+?[0-9][0-9\s-]{5,19}$/;
@@ -90,4 +91,46 @@ export const updateCompanyContact = asyncHandler(async (req: Request, res: Respo
 		{ new: true, upsert: true, setDefaultsOnInsert: true },
 	).lean();
 	res.status(200).json({ success: true, message: 'Company contact updated', data: publicView(setting) });
+});
+
+const VAT_MAX = 100;
+const VAT_DECIMALS = 100;
+
+const vatView = async (setting: { vatPercent?: number; updatedAt?: Date } | null) => ({
+	vatPercent: setting?.vatPercent ?? 0,
+	history: await auditHistory('SiteSetting', undefined, ['vat.update']),
+});
+
+// GET /api/site-settings/vat — the VAT rate and who changed it when (Super Admin)
+export const getVatSetting = asyncHandler(async (_req: Request, res: Response) => {
+	const setting = await SiteSetting.findOne({ key: SETTINGS_KEY }).select('vatPercent').lean();
+	res.status(200).json({ success: true, data: await vatView(setting) });
+});
+
+// PUT /api/site-settings/vat — { vatPercent: number 0-100, up to 2 decimals } (Super Admin)
+export const updateVatSetting = asyncHandler(async (req: Request, res: Response) => {
+	const { vatPercent } = req.body as { vatPercent?: unknown };
+	if (typeof vatPercent !== 'number' || !Number.isFinite(vatPercent) || vatPercent < 0 || vatPercent > VAT_MAX)
+		throw new AppError('VAT must be a number from 0 to 100', 400);
+	if (Math.abs(Math.round(vatPercent * VAT_DECIMALS) - vatPercent * VAT_DECIMALS) > 1e-6)
+		throw new AppError('VAT can have at most 2 decimals', 400);
+
+	const previous = await SiteSetting.findOne({ key: SETTINGS_KEY }).select('vatPercent').lean();
+	const before = previous?.vatPercent ?? 0;
+	if (before === vatPercent) throw new AppError(`VAT is already ${vatPercent}%`, 400);
+
+	const setting = await SiteSetting.findOneAndUpdate(
+		{ key: SETTINGS_KEY },
+		{ $set: { vatPercent, updatedBy: req.user._id } },
+		{ new: true, upsert: true, setDefaultsOnInsert: true },
+	).lean();
+	await recordAudit({
+		action: 'vat.update',
+		entityType: 'SiteSetting',
+		entity: setting?._id,
+		actor: req.user._id,
+		before: { vatPercent: before },
+		after: { vatPercent },
+	});
+	res.status(200).json({ success: true, message: 'VAT updated', data: await vatView(setting) });
 });

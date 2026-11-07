@@ -43,6 +43,10 @@ export const managedUserSchema = z.object({
   avatar: z.string().nullish(),
   createdAt: z.string().nullish(),
   updatedAt: z.string().nullish(),
+  /** A blocked user cannot sign in */
+  isBlocked: z.boolean().catch(false),
+  blockedAt: z.string().nullish(),
+  blockReason: z.string().nullish(),
   activeSubscription: z
     .object({
       plan: z.string().nullish(),

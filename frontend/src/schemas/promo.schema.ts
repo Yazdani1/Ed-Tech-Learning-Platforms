@@ -74,3 +74,12 @@ export const promoFormSchema = z
       });
   });
 export type PromoForm = z.infer<typeof promoFormSchema>;
+
+/** GET /api/promos/design (public): custom banner and pop-up pictures of running promos ('' = default design) */
+export const promoDesignSchema = z.object({
+  bannerImage: z.string().catch(''),
+  popupImage: z.string().catch(''),
+});
+export type PromoDesign = z.infer<typeof promoDesignSchema>;
+export const PROMO_DESIGN_SLOTS = ['banner', 'popup'] as const;
+export type PromoDesignSlot = (typeof PROMO_DESIGN_SLOTS)[number];

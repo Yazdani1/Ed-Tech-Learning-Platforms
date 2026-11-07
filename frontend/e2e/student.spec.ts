@@ -125,4 +125,27 @@ test.describe('Student area', () => {
     await expect(user.getByText('E2E Learner')).toBeVisible();
     await expect(user.getByText(/^Student ID: \d{3}-\d{3}-\d{3}$/)).toBeVisible();
   });
+
+  test('Purchases lists the enrolment; the menu is Home, My Courses, Profile, Purchases with a red Logout', async ({
+    page,
+    request,
+  }, testInfo) => {
+    const title = 'E2E Purchase ' + testInfo.project.name + ' ' + String(Date.now());
+    const courseId = await createFreeCourse(request, title);
+    await enrolNewStudent(page, testInfo, courseId);
+
+    await page.goto('/student/purchases');
+    await expect(page.getByRole('heading', { name: 'Purchases', level: 1 })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Purchase totals' })).toBeVisible();
+    await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
+    await expectNoHorizontalScroll(page);
+
+    if (isPhone(page)) await page.getByRole('button', { name: 'Open menu' }).click();
+    const menu = page.getByRole('navigation', { name: 'Main menu' }).filter({ visible: true });
+    const links = await menu.getByRole('link').allTextContents();
+    expect(links.slice(0, 4)).toEqual(['Home', 'My Courses', 'Profile', 'Purchases']);
+    await expect(
+      page.getByRole('button', { name: 'Logout' }).filter({ visible: true }),
+    ).toBeVisible();
+  });
 });

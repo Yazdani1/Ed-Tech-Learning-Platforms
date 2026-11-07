@@ -22,6 +22,8 @@ interface QueryStateProps {
   emptyAction?: ReactNode;
   /** Skeleton rows while loading */
   skeletonRows?: number;
+  /** A skeleton shaped like the real content (used instead of the generic rows) */
+  skeleton?: ReactNode;
   children: ReactNode;
 }
 
@@ -34,10 +36,12 @@ export const QueryState: FC<QueryStateProps> = ({
   emptyText,
   emptyAction,
   skeletonRows = 4,
+  skeleton,
   children,
 }) => {
   const { t } = useTranslation();
 
+  if (isLoading && skeleton) return <>{skeleton}</>;
   if (isLoading) {
     return (
       <Stack spacing={1.5} aria-busy="true" aria-label={t('common.loading')}>

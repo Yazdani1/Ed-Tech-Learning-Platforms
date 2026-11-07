@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ConfirmProvider } from '@/context/ConfirmContext';
 import { fail, makeUser, ok, signedInAs } from '@/test/msw/handlers';
@@ -55,7 +55,9 @@ describe('UsersPage', () => {
 
     await openMenu('Asha Rahman');
     expect(await screen.findByRole('menuitem', { name: 'Edit' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Change Role' })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Change Role' })).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Block' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'History' })).toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'View Details' })).not.toBeInTheDocument();
   });
@@ -193,23 +195,106 @@ describe('UsersPage', () => {
     });
   });
 
-  it('changes a role and shows the backend refusal', async () => {
+  it('blocks a user with a reason, and shows Blocked in the list', async () => {
+    let body: unknown;
     server.use(
-      usersHandler([BOSS]),
-      http.put('*/api/users/:id/role', () => fail(400, 'At least one Super Admin must remain')),
+      usersHandler([ASHA]),
+      http.patch('*/api/users/:id/block', async ({ request }) => {
+        body = await request.json();
+        return ok({ ...ASHA, isBlocked: true, blockReason: 'Spam' });
+      }),
+    );
+    renderPage('Admin');
+
+    expect(await screen.findByText('Active')).toBeInTheDocument();
+    await openMenu('Asha Rahman');
+    await user().click(await screen.findByRole('menuitem', { name: 'Block' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Block Asha Rahman?' });
+    await user().type(within(dialog).getByLabelText(/Reason/), 'Spam');
+    await user().click(within(dialog).getByRole('button', { name: 'Block' }));
+
+    expect(await screen.findByText('Asha Rahman blocked')).toBeInTheDocument();
+    expect(body).toEqual({ blocked: true, reason: 'Spam' });
+  });
+
+  it('unblocks a blocked user and shows the backend refusal', async () => {
+    const blocked = { ...ASHA, isBlocked: true, blockReason: 'Spam' };
+    server.use(
+      usersHandler([blocked]),
+      http.patch('*/api/users/:id/block', () => fail(403, 'Not allowed')),
     );
     renderPage('Super Admin');
 
-    await openMenu('Big Boss');
-    await user().click(await screen.findByRole('menuitem', { name: 'Change Role' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Change Role' });
-    await user().click(within(dialog).getByRole('combobox'));
-    await user().click(screen.getByRole('option', { name: 'Admin' }));
-    await user().click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Blocked')).toBeInTheDocument();
+    await openMenu('Asha Rahman');
+    await user().click(await screen.findByRole('menuitem', { name: 'Unblock' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Unblock Asha Rahman?' });
+    expect(within(dialog).getByText('Blocked because: Spam')).toBeInTheDocument();
+    await user().click(within(dialog).getByRole('button', { name: 'Unblock' }));
+    expect(await within(dialog).findByText('Not allowed')).toBeInTheDocument();
+  });
 
+  it('shows the role and block history with who did it', async () => {
+    server.use(
+      usersHandler([ASHA]),
+      http.get('*/api/users/:id/history', () =>
+        ok([
+          {
+            _id: 'a1',
+            action: 'user.role',
+            actor: { _id: 'x', name: 'Big Boss', role: 'Super Admin' },
+            before: { role: 'Student' },
+            after: { role: 'Teacher' },
+            createdAt: '2026-11-01T10:00:00.000Z',
+          },
+          {
+            _id: 'a2',
+            action: 'user.block',
+            actor: { _id: 'x', name: 'Big Boss', role: 'Super Admin' },
+            note: 'Spam',
+            createdAt: '2026-11-02T10:00:00.000Z',
+          },
+        ]),
+      ),
+    );
+    renderPage('Admin');
+
+    await openMenu('Asha Rahman');
+    await user().click(await screen.findByRole('menuitem', { name: 'History' }));
+    const dialog = await screen.findByRole('dialog', { name: 'History of Asha Rahman' });
     expect(
-      await within(dialog).findByText('At least one Super Admin must remain'),
+      await within(dialog).findByText('Role changed from Student to Teacher'),
     ).toBeInTheDocument();
+    expect(within(dialog).getByText('Account blocked')).toBeInTheDocument();
+    expect(within(dialog).getByText('Spam')).toBeInTheDocument();
+  });
+
+  it('exports the ticked users as a CSV', async () => {
+    let csv = '';
+    const createObjectURL = (blob: Blob) => {
+      void blob.text().then((text) => {
+        csv = text;
+      });
+      return 'blob:csv';
+    };
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() }));
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    server.use(usersHandler([ASHA, BOSS]));
+    renderPage('Super Admin');
+
+    await user().click(await screen.findByRole('checkbox', { name: 'Select Asha Rahman' }));
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+    await user().click(screen.getByRole('button', { name: 'Export CSV' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Export CSV' });
+    await user().click(within(dialog).getByRole('button', { name: 'Download CSV' }));
+
+    await waitFor(() => {
+      expect(csv).toContain('Asha Rahman');
+    });
+    expect(csv).toContain('Name,Email,Role,Student ID,Phone,Status,Joined');
+    expect(csv).not.toContain('Big Boss');
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('a Super Admin deletes a user after confirmation', async () => {

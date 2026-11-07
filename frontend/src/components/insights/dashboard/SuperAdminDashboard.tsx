@@ -8,11 +8,11 @@ import { useTranslation } from 'react-i18next';
 import { useDashboardSummary } from '@/api/insights.api';
 import { PageHeader } from '@/components/common/PageHeader';
 import { QueryState } from '@/components/common/QueryState';
-import { useAuth } from '@/hooks/useAuth';
 
 import { CHART_HEIGHT } from '../insights.utils';
 
 import { DashboardRevenueCards } from './DashboardRevenueCards';
+import { DashboardSkeleton } from './DashboardSkeleton';
 import { DashboardStatGrid } from './DashboardStatGrid';
 import { TopCoursesCard } from './TopCoursesCard';
 
@@ -28,20 +28,16 @@ const DashboardCharts = dynamic(() => import('./DashboardCharts'), {
 /** /admin/dashboard (Super Admin): revenue per period, headline counts, revenue charts and the top courses. */
 export const SuperAdminDashboard = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const summary = useDashboardSummary();
 
   return (
     <Box sx={{ pb: 3 }}>
-      <PageHeader
-        title={t('insights.dashboard.title')}
-        subtitle={t('insights.dashboard.welcome', { name: user?.name ?? '' })}
-      />
+      <PageHeader title={t('insights.dashboard.title')} />
       <QueryState
         isLoading={summary.isPending}
         error={summary.error}
         onRetry={() => void summary.refetch()}
-        skeletonRows={6}
+        skeleton={<DashboardSkeleton />}
       >
         {summary.data && (
           <>

@@ -66,7 +66,26 @@
     "rangeReversed": "শেষের তারিখ শুরুর তারিখের দিন বা পরে হতে হবে",
     "chooseDays": "চার্ট দেখতে শুরুর ও শেষের তারিখ বেছে নিন।",
     "selectedLine_one": "{{range}}: {{revenue}} · {{count}}টি এনরোলমেন্ট ({{paid}}টি পেইড)",
-    "selectedLine_other": "{{range}}: {{revenue}} · {{count}}টি এনরোলমেন্ট ({{paid}}টি পেইড)"
+    "selectedLine_other": "{{range}}: {{revenue}} · {{count}}টি এনরোলমেন্ট ({{paid}}টি পেইড)",
+    "charts": {
+      "section": "কোর্স বিক্রি",
+      "net": "নিট বিক্রি",
+      "vat": "ভ্যাট",
+      "paid": "পেইড",
+      "other": "ফ্রি ও সাবস্ক্রিপশন",
+      "free": "ফ্রি",
+      "subscription": "সাবস্ক্রিপশন",
+      "average": "গড় পরিশোধ",
+      "sales": "বিক্রি",
+      "discount": "ছাড়",
+      "salesVat": "মাসিক নিট বিক্রি ও ভ্যাট",
+      "enrolments": "মাসিক ভর্তি",
+      "averageOrder": "মাসিক গড় অর্ডার মূল্য",
+      "topCourses": "বিক্রিতে সেরা ৫টি কোর্স",
+      "types": "ভর্তির ধরন",
+      "listPrice": "তালিকা মূল্যের ভাগ",
+      "noEnrolments": "এখনও কোনো ভর্তি নেই।"
+    }
   },
   "periods": {
     "today": "আজ",

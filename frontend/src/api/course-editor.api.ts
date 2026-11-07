@@ -2,11 +2,14 @@
 
 import {
   useMutation,
+  useQuery,
   useQueryClient,
   type QueryClient,
   type UseMutationResult,
+  type UseQueryResult,
 } from '@tanstack/react-query';
 
+import { auditHistorySchema, type AuditEntry } from '@/schemas/audit.schema';
 import { type Course, type CourseSection, type CourseStatus } from '@/schemas/browse.schema';
 import {
   createdItemSchema,
@@ -143,6 +146,7 @@ export const useUpdateCourse = (
       // The other tabs (Coupons needs pricing; batch, discount code, schedules) read the saved course again;
       // the form keeps its own values, so a refetch never overwrites typing
       void queryClient.invalidateQueries({ queryKey: queryKeys.browse.course(id) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.browse.statusHistory(id) });
       // The course's own discount is listed on its Coupons page
       void queryClient.invalidateQueries({ queryKey: queryKeys.coupons.course(id) });
       return refreshCourseLists(queryClient, id);
@@ -319,3 +323,13 @@ export const useDeleteQuestion = (
   useQuizMutation(courseId, (input: { bankId: string; questionId: string }) =>
     http.send('DELETE', `/api/quiz-bank/${enc(input.bankId)}/questions/${enc(input.questionId)}`),
   );
+
+/** Who published / unpublished the course and when (Course settings). */
+export const getCourseStatusHistory = (courseId: string): Promise<AuditEntry[]> =>
+  http.get(`${courseUrl(courseId)}/status-history`, auditHistorySchema);
+
+export const useCourseStatusHistory = (courseId: string): UseQueryResult<AuditEntry[], ApiError> =>
+  useQuery({
+    queryKey: queryKeys.browse.statusHistory(courseId),
+    queryFn: () => getCourseStatusHistory(courseId),
+  });

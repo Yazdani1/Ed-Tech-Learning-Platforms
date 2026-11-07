@@ -41,7 +41,7 @@ export const SitePagesPage = () => {
   return (
     <RequireRole roles={SUPER_ADMIN_ROLES}>
       <Box>
-        <PageHeader title={t('showcase.pages.title')} subtitle={t('showcase.pages.subtitle')} />
+        <PageHeader title={t('showcase.pages.title')} />
         <QueryState
           isLoading={query.isPending}
           error={query.error}

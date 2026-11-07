@@ -7,6 +7,8 @@ import { Lecture } from '../models/Lecture.model';
 import { StudyCurriculum } from '../models/StudyCurriculum.model';
 import { StudyMaterial } from '../models/StudyMaterial.model';
 import { Announcement } from '../models/Announcement.model';
+import { auditHistory, recordAudit } from '../utils/audit';
+import { AuditLog } from '../models/AuditLog.model';
 import { QuizSection } from '../models/QuizSection.model';
 import { QuizBank } from '../models/QuizBank.model';
 import { QuizAttempt } from '../models/QuizAttempt.model';
@@ -711,11 +713,21 @@ export const updateCourseStatus = asyncHandler(
 
 		const course = await Course.findById(req.params.id);
 		if (!course) throw new AppError('Course not found', 404);
+		const previousStatus = course.status;
 		course.status = status;
 		course.publishedAt = status === 'Published' ? new Date() : (null as unknown as Date);
 		// Once published, always remembered: such a course can be unpublished but never deleted
 		if (status === 'Published' && !course.firstPublishedAt) course.firstPublishedAt = new Date();
 		await course.save();
+		if (previousStatus !== status)
+			await recordAudit({
+				action: status === 'Published' ? 'course.publish' : 'course.unpublish',
+				entityType: 'Course',
+				entity: course._id,
+				actor: req.user._id,
+				before: { status: previousStatus },
+				after: { status },
+			});
 
 		res
 			.status(200)
@@ -866,6 +878,12 @@ export const bulkUpdateCourses = asyncHandler(
 		if (found !== courseIds.length)
 			throw new AppError('One or more courses were not found', 404);
 
+		// Courses whose status changes now (their publish / unpublish history)
+		const statusChanged =
+			typeof $set.status === 'string'
+				? await Course.find({ _id: { $in: objectIds }, status: { $ne: $set.status as CourseStatus } }).select('status').lean()
+				: [];
+
 		// ── Field updates ──────────────────────────────────────────────
 		if (Object.keys($set).length > 0)
 			await Course.updateMany({ _id: { $in: objectIds } }, { $set });
@@ -876,6 +894,18 @@ export const bulkUpdateCourses = asyncHandler(
 			);
 		if (Object.keys(paidOnlySet).length > 0)
 			await Course.updateMany({ _id: { $in: objectIds }, pricing: 'Paid' }, { $set: paidOnlySet });
+		if (statusChanged.length > 0)
+			await AuditLog.insertMany(
+				statusChanged.map((course) => ({
+					action: $set.status === 'Published' ? 'course.publish' : 'course.unpublish',
+					entityType: 'Course',
+					entity: course._id,
+					actor: req.user._id,
+					before: { status: course.status },
+					after: { status: $set.status },
+					note: 'Bulk edit',
+				})),
+			);
 
 		res.status(200).json({
 			success: true,
@@ -884,3 +914,10 @@ export const bulkUpdateCourses = asyncHandler(
 		});
 	},
 );
+
+// GET /api/courses/:id/status-history — who published / unpublished the course and when, newest first (admins)
+export const getCourseStatusHistory = asyncHandler(async (req: Request, res: Response) => {
+	if (!Types.ObjectId.isValid(String(req.params.id))) throw new AppError('Course not found', 404);
+	if (!(await Course.exists({ _id: req.params.id }))) throw new AppError('Course not found', 404);
+	res.status(200).json({ success: true, data: await auditHistory('Course', String(req.params.id)) });
+});

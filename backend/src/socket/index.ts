@@ -66,7 +66,7 @@ export function setupSocketIO(httpServer: HttpServer): Server {
 
 			const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as { id: string; iat?: number };
 			const user = await User.findById(decoded.id).select('-password +passwordChangedAt').lean();
-			if (!user || isTokenRevoked(decoded, user.passwordChangedAt)) return next(new Error('Not authorized'));
+			if (!user || user.isBlocked || isTokenRevoked(decoded, user.passwordChangedAt)) return next(new Error('Not authorized'));
 
 			socket.data.user = user;
 			next();

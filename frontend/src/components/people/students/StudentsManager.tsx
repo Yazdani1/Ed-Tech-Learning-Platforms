@@ -1,72 +1,53 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import { useCallback, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
-import { useStudentCourses, useStudents } from '@/api/students.api';
-import { PageHeader } from '@/components/common/PageHeader';
-import { CoursePickerDrawer } from '@/components/course-picker/CoursePickerDrawer';
-import { courseSelectionLabel } from '@/components/course-picker/course-picker.utils';
+import { useStudents } from '@/api/students.api';
+import { useAuth } from '@/hooks/useAuth';
 import { useModal } from '@/hooks/useModal';
+import { useRowSelection } from '@/hooks/useRowSelection';
+import { SUPER_ADMIN_ROLES } from '@/utils/roles';
 
 import { StudentDetailsDrawer } from './StudentDetailsDrawer';
+import { StudentExportDialog } from './StudentExportDialog';
+import { StudentsHeader } from './StudentsHeader';
 import { StudentsList } from './StudentsList';
-import { StudentsToolbar } from './StudentsToolbar';
 import { useStudentParams } from './useStudentParams';
 
 import type { StudentRow } from '@/schemas/students.schema';
 
-/** The student list: search, course filter (multi-select picker), paging and the details panel. */
+/**
+ * The student list: count next to the title, search, every filter, paging, the details panel and (Super
+ * Admin) tick boxes with the CSV export of the ticked or filtered students.
+ */
 export const StudentsManager = () => {
-  const { t } = useTranslation();
-  const { params, setParams, courseIds, filters } = useStudentParams();
+  const { params, setParams, courseIds, filters, activeFilters } = useStudentParams();
   const students = useStudents(filters);
-  const courses = useStudentCourses();
   const details = useModal<StudentRow>();
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const onSearch = useCallback(
-    (search: string) => {
-      setParams({ search });
-    },
-    [setParams],
-  );
-
+  const exportModal = useModal();
+  const selection = useRowSelection<StudentRow>();
+  const canExport = useAuth().hasRole(SUPER_ADMIN_ROLES);
   return (
     <Box>
-      <PageHeader title={t('people.students.title')} subtitle={t('people.students.subtitle')} />
-      <StudentsToolbar
-        search={params.search}
-        onSearch={onSearch}
-        courseLabel={courseSelectionLabel(t, courseIds, courses.data)}
-        selectedCount={courseIds.length}
-        onChooseCourses={() => {
-          setPickerOpen(true);
+      <StudentsHeader
+        params={params}
+        setParams={setParams}
+        courseIds={courseIds}
+        activeFilters={activeFilters}
+        total={students.data?.total}
+        selectedCount={selection.selected.length}
+        onClearSelection={selection.clear}
+        onExport={() => {
+          exportModal.openModal();
         }}
       />
       <StudentsList
+        selection={canExport ? selection : undefined}
         query={students}
-        hasFilters={courseIds.length > 0 || params.search !== ''}
+        hasFilters={activeFilters > 0 || params.search !== ''}
         onOpen={details.openModal}
         onPageChange={(page) => {
           setParams({ page });
-        }}
-      />
-      <CoursePickerDrawer
-        open={pickerOpen}
-        onClose={() => {
-          setPickerOpen(false);
-        }}
-        title={t('coursePicker.title')}
-        courses={{
-          ...courses,
-          data: courses.data?.map((course) => ({ ...course, count: course.enrolledStudents })),
-        }}
-        selectedIds={courseIds}
-        countLabel={(count) => t('coursePicker.students', { count })}
-        onApply={(ids) => {
-          setParams({ courses: ids.join(',') });
-          setPickerOpen(false);
         }}
       />
       <StudentDetailsDrawer
@@ -74,6 +55,14 @@ export const StudentsManager = () => {
         student={details.data}
         onClose={details.closeModal}
       />
+      {exportModal.open && (
+        <StudentExportDialog
+          onClose={exportModal.closeModal}
+          selected={selection.selected}
+          filters={filters}
+          total={students.data?.total ?? 0}
+        />
+      )}
     </Box>
   );
 };

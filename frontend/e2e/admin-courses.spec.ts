@@ -111,11 +111,9 @@ test.describe('Admin course list', () => {
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
     await expect(page.getByRole('list', { name: 'Enrollment statistics' })).toBeVisible();
     await expect(page.getByText(ACCOUNTS.student.name, { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'Free' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Export CSV' })).toHaveAttribute(
-      'href',
-      `/api/enrollments/course/${courseId}/students/export`,
-    );
+    await expect(page.getByRole('combobox', { name: 'Type' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Student tokens (PDF)' })).toBeVisible();
     await expectNoHorizontalScroll(page);
 
     await page.getByRole('link', { name: 'Back to Courses' }).click();

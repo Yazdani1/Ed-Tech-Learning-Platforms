@@ -14,6 +14,8 @@ export const broadcastSchema = z.object({
   /** Distinct students who opened the announcements of one of its courses */
   seenCount: z.number().catch(0),
   createdAt: z.string(),
+  /** Set when it was edited after sending */
+  editedAt: z.string().nullish(),
 });
 export type Broadcast = z.infer<typeof broadcastSchema>;
 

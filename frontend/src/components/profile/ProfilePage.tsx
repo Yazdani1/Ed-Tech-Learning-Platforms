@@ -13,6 +13,7 @@ import { useModal } from '@/hooks/useModal';
 
 import { EditProfileModal } from './EditProfileModal';
 import { ProfileHero } from './ProfileHero';
+import { ProfileSkeleton } from './ProfileSkeleton';
 import { ProfileStats } from './ProfileStats';
 import { RoleDetailsCard } from './RoleDetailsCard';
 import { getCurrentPlan } from './subscription.utils';
@@ -34,7 +35,6 @@ export const ProfilePage = () => {
     <Box sx={{ maxWidth: PAGE_MAX_WIDTH, mx: 'auto' }}>
       <PageHeader
         title={t('profile.title')}
-        subtitle={t('profile.subtitle')}
         actions={
           profile && (
             <Button
@@ -53,7 +53,7 @@ export const ProfilePage = () => {
         isLoading={query.isPending}
         error={query.error}
         onRetry={() => void query.refetch()}
-        skeletonRows={6}
+        skeleton={<ProfileSkeleton />}
       >
         {profile && (
           <>

@@ -72,7 +72,8 @@ Source of truth: the user's instructions (in conversation) and this file.
   (production: `secure`, `sameSite=none`) and also return it in the body. `protect` reads the cookie first,
   then `Authorization: Bearer`.
 - Env names (never read .env files): NODE_ENV, PORT=5000, MONGO_URI, JWT_SECRET, JWT_EXPIRE, CLIENT_URL,
-  CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET.
+  CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, REDIS_URL (optional), PROXY_SHARED_SECRET
+  (optional, same value on the frontend).
 - Subscriptions: no payment gateway yet. `POST /api/subscriptions/subscribe` activates the plan at once
   (price taken from SubscriptionPlanConfig). A gateway will be added later (Stage B).
 
@@ -166,9 +167,9 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
 - Socket.io: SocketProvider (context/SocketContext.tsx) keeps one connection per signed-in user; its token
   comes from the same-origin route app/api/socket-token (reads the httpOnly cookie on the server; memory only);
   it reconnects with backoff after a server-side disconnect (e.g. a password change).
-- Tests: ~495 frontend component tests (Vitest + RTL + MSW), 138 Playwright tests (desktop + Pixel 7) against
+- Tests: ~780 frontend component tests (Vitest + RTL + MSW), 138 Playwright tests (desktop + Pixel 7) against
   `next dev` in Docker (4 workers, 150 s test timeout; run e2e with nothing else heavy on the machine),
-  ~1200 backend tests. Docker test image uses Node 22 (same as .nvmrc and CI).
+  ~1800 backend tests. Docker test image uses Node 22 (same as .nvmrc and CI).
 - Pre-commit: lint-staged formats/lints staged files; typecheck, arch:check and docs:generate run once per commit
   (.husky/pre-commit).
 - Frontend hosting is Vercel (no frontend Dockerfile; `docker:build` builds the backend prod image). A production
@@ -179,8 +180,7 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   autoplay with prefers-reduced-motion; WCAG 2.2.2 trade-off); hidden public pages answer "Page not found" from
   the client (HTTP 200; a content setting, not access control); section pictures uploaded but never saved stay
   in Cloudinary (admin-only; a cleanup job could be added later).
-- Open decisions for the user: per-IP rate limiting (needs express-rate-limit + the real proxy hop count;
-  today the login lock is per email); every branch deploys on push (now only after CI passed: ci.yml calls
+- Open decisions for the user: every branch deploys on push (now only after CI passed: ci.yml calls
   deploy.yml; a manual "Run workflow" on Deploy skips CI).
 - Existing lint warnings (not errors): backend 4.
 - Known follow-up (Stage B): payment gateway; until then subscribing activates the plan and paid courses can be
@@ -195,4 +195,8 @@ feature; database.md and dependency-graph.md are generated. Only what is impleme
   (`couponCode`); a course published once (`firstPublishedAt`) is never deleted, only unpublished, and enrolled
   students keep it; students have no dashboard (home `/student/courses`) and cannot unenrol. Known gaps: a paid
   course without a course type is only found by search; no Wishlist or support class time.
+- Stage B batch 6 (2026-11-07): VAT (`/admin/vat`, VAT inside paid prices, per order), `AuditLog` history (VAT, roles,
+  blocks, promos, publish, announcements), Revenue Monthly/All tabs, user blocking, student filters/export/portal
+  time, Purchases page, promo design pictures, token PDF, PWA, rate limits (Redis via optional `REDIS_URL`; visitor IP
+  via `PROXY_SHARED_SECRET`). Details in docs/stage-b-history.md.
 - Reports of every phase: .claude/reports/ (git-ignored).

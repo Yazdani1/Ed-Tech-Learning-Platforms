@@ -12,7 +12,8 @@ flowchart LR
         UI[Next.js pages<br/>public · student · teacher · admin]
     end
     subgraph Frontend["Next.js (Vercel)"]
-        P[proxy.ts<br/>sign-in redirect · CSP nonce]
+        P[proxy.ts<br/>sign-in redirect · CSP nonce · visitor IP for /api]
+        SW[sw.js<br/>installable app · offline page]
         R["/api/* rewrite"]
     end
     subgraph Backend["Express backend (Render)"]
@@ -21,12 +22,15 @@ flowchart LR
     end
     DB[(MongoDB)]
     CLD[(Cloudinary)]
+    RDS[(Redis<br/>rate limits · login lock · socket rooms)]
     UI -- pages --> P
     UI -- "/api + httpOnly token cookie" --> R --> API
     UI -- "websocket" --> WS
     API --> DB
     WS --> DB
     API -- "uploads" --> CLD
+    API -- "counters (optional)" --> RDS
+    WS -- "rooms across instances (optional)" --> RDS
 ```
 
 - **Hosting.** The Next.js app runs on Vercel, the Express backend on Render (`render.yaml`, database from
@@ -39,6 +43,16 @@ flowchart LR
   `/teacher` before the page renders, and gives every page a fresh Content-Security-Policy nonce.
   `RequireRole` then checks the role. Neither is the security boundary: the backend's `protect` and
   `authorize(...roles)` check every API call.
+- **Rate limits and Redis.** Every `/api` call passes the request limits (`middleware/rateLimit.middleware.ts`;
+  stricter ones on login, register, coupon checks, enrolments, quiz answers and uploads). With `REDIS_URL` the
+  counters, the per-email login lock and the Socket.io rooms live in Redis (every backend instance shares them);
+  without it they stay in memory. The proxy passes the visitor's IP in `X-Client-IP` with a shared secret
+  (`PROXY_SHARED_SECRET`), because the backend only sees Vercel's address. `helmet` adds the API's security
+  headers.
+- **Blocked accounts.** `protect` refuses a blocked user (403), the socket handshake too; the browser then signs
+  them out.
+- **Installable app.** `app/manifest.ts` and `public/sw.js` (production only): build files cached, pages always
+  from the network, `/offline` when there is no connection.
 - **Socket.io** connects straight to the backend (`NEXT_PUBLIC_SOCKET_URL`), because Vercel rewrites cannot
   carry websockets.
 
@@ -196,6 +210,18 @@ flowchart LR
     BroadcastApi --> Broadcasts[Announcement broadcasts] -- "one announcement per course" --> Content
     Browse -- "one view per visitor per day" --> Views[Course views]
     AuthPanel[Auth panel ?auth=login] -- "sign in, register" --> Auth
+    VatUi[Set up VAT page] -- "rate, history" --> Settings[Site settings]
+    Enrollments -- "VAT rate in force" --> Settings
+    RevenueApi -- "months, breakdown" --> Revenue
+    PerfUi[Performance page] -- "summary, breakdown" --> RevenueApi
+    Admin -- "block, role change" --> Audit[(Audit log)]
+    Settings -- "VAT change" --> Audit
+    Promos -- "switch on / off" --> Audit
+    Courses -- "publish / unpublish" --> Audit
+    Broadcasts -- "edit, archive" --> Audit
+    PurchasesUi[Purchases page] -- "my orders" --> Enrollments
+    Tracker[Portal time tracker] -- "seconds in use" --> Auth
+    Limits{{Rate limits}} -- "counters" --> Redis[(Redis)]
 ```
 
 ## Key flows
@@ -228,6 +254,23 @@ sequenceDiagram
   A->>A: periods (today, 7 days, month, all) + chosen range, buckets per hour / day / month
   A-->>W: periods, selected, granularity, chartData
   W-->>U: coloured period cards, range line, chart (labels in the viewer's language)
+```
+
+### VAT on a paid enrolment
+
+```mermaid
+sequenceDiagram
+  participant S as Super Admin
+  participant B as Student
+  participant A as API
+  participant D as MongoDB
+  S->>A: PUT /api/site-settings/vat { vatPercent: 15 }
+  A->>D: SiteSetting.vatPercent = 15; AuditLog vat.update (0 → 15, who)
+  B->>A: POST /api/enrollments/:courseId (paid, coupon)
+  A->>A: price from the database (list price less the coupon) = 1150
+  A->>D: Enrollment { paidPrice 1150, vatPercent 15, vatAmount 150 } (VAT inside the price)
+  S->>A: GET /api/revenue/months · breakdown · orders
+  A-->>S: sales with their VAT (each order keeps its own rate)
 ```
 
 ### Buying a course with a coupon (one coupon per order)

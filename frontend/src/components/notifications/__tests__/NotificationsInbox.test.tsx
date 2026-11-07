@@ -43,9 +43,6 @@ describe('NotificationsPage (inbox)', () => {
 
     expect(await screen.findByText('Exam schedule')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Notifications' })).toBeInTheDocument();
-    expect(
-      screen.getByText('Review updates sent by your learning platform team.'),
-    ).toBeInTheDocument();
     expect(screen.getByText('High')).toBeInTheDocument();
     expect(screen.getByText('Unread')).toBeInTheDocument();
     expect(screen.queryByText(/^Showing /)).not.toBeInTheDocument();

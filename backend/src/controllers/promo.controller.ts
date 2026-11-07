@@ -3,8 +3,11 @@ import { Types } from 'mongoose';
 import { Course } from '../models/Course.model';
 import { Enrollment } from '../models/Enrollment.model';
 import { Promo, type IPromo } from '../models/Promo.model';
+import { SiteSetting } from '../models/SiteSetting.model';
+import { deleteFromCloudinary, uploadToCloudinary } from '../config/cloudinary';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { auditHistory, recordAudit } from '../utils/audit';
 import { assertCodeFree, normalizeCode, parseDiscount } from '../utils/couponCode';
 import { attachOffers, courseListPrice, loadRunningPromos } from '../utils/courseOffer';
 
@@ -151,8 +154,18 @@ export const createPromo = asyncHandler(async (req: Request, res: Response) => {
 export const updatePromo = asyncHandler(async (req: Request, res: Response) => {
 	const promo = await Promo.findById(assertId(req.params.id));
 	if (!promo) throw new AppError('Promo not found', 404);
+	const wasActive = promo.isActive;
 	promo.set(await parsePromoBody(req.body as Record<string, unknown>, promo));
 	await promo.save();
+	if (promo.isActive !== wasActive)
+		await recordAudit({
+			action: 'promo.toggle',
+			entityType: 'Promo',
+			entity: promo._id,
+			actor: req.user._id,
+			before: { isActive: wasActive },
+			after: { isActive: promo.isActive },
+		});
 	res.status(200).json({ success: true, message: 'Promo updated', data: promo });
 });
 
@@ -164,4 +177,60 @@ export const deletePromo = asyncHandler(async (req: Request, res: Response) => {
 	if (used > 0) throw new AppError('This promo was used by students; switch it off instead of deleting', 400);
 	await promo.deleteOne();
 	res.status(200).json({ success: true, message: 'Promo deleted' });
+});
+
+const DESIGN_SLOTS = { banner: 'promoBannerImage', popup: 'promoPopupImage' } as const;
+type DesignSlot = keyof typeof DESIGN_SLOTS;
+
+const designSlot = (value: unknown): DesignSlot => {
+	if (value !== 'banner' && value !== 'popup') throw new AppError('Picture must be banner or popup', 400);
+	return value;
+};
+
+const designView = (setting: { promoBannerImage?: { url?: string }; promoPopupImage?: { url?: string } } | null) => ({
+	bannerImage: setting?.promoBannerImage?.url ?? '',
+	popupImage: setting?.promoPopupImage?.url ?? '',
+});
+
+/** GET /api/promos/design (public): the custom banner and pop-up pictures of running promos ('' = default design). */
+export const getPromoDesign = asyncHandler(async (_req: Request, res: Response) => {
+	const setting = await SiteSetting.findOne({ key: 'site' }).select('promoBannerImage promoPopupImage').lean();
+	res.status(200).json({ success: true, data: designView(setting) });
+});
+
+/** PUT /api/promos/design/:slot (multipart `image`): sets the banner or pop-up picture (replaces the old one). */
+export const updatePromoDesign = asyncHandler(async (req: Request, res: Response) => {
+	const field = DESIGN_SLOTS[designSlot(req.params.slot)];
+	if (!req.file) throw new AppError('Choose a picture', 400);
+	const previous = await SiteSetting.findOne({ key: 'site' }).select(field).lean();
+	const image = await uploadToCloudinary(req.file.buffer, 'medhabee/promos');
+	const setting = await SiteSetting.findOneAndUpdate(
+		{ key: 'site' },
+		{ $set: { [field]: { url: image.url, publicId: image.publicId }, updatedBy: req.user._id } },
+		{ new: true, upsert: true, setDefaultsOnInsert: true },
+	).lean();
+	const oldId = previous?.[field]?.publicId;
+	if (oldId) await deleteFromCloudinary(oldId);
+	res.status(200).json({ success: true, message: 'Promo picture saved', data: designView(setting) });
+});
+
+/** DELETE /api/promos/design/:slot: back to the default design for the banner or pop-up. */
+export const deletePromoDesign = asyncHandler(async (req: Request, res: Response) => {
+	const field = DESIGN_SLOTS[designSlot(req.params.slot)];
+	const previous = await SiteSetting.findOne({ key: 'site' }).select(field).lean();
+	const setting = await SiteSetting.findOneAndUpdate(
+		{ key: 'site' },
+		{ $unset: { [field]: 1 }, $set: { updatedBy: req.user._id } },
+		{ new: true, upsert: true, setDefaultsOnInsert: true },
+	).lean();
+	const oldId = previous?.[field]?.publicId;
+	if (oldId) await deleteFromCloudinary(oldId);
+	res.status(200).json({ success: true, message: 'Promo picture removed', data: designView(setting) });
+});
+
+/** GET /api/promos/:id/history: every switch on / off of the promo (who, when), newest first. */
+export const getPromoHistory = asyncHandler(async (req: Request, res: Response) => {
+	const id = assertId(req.params.id);
+	if (!(await Promo.exists({ _id: id }))) throw new AppError('Promo not found', 404);
+	res.status(200).json({ success: true, data: await auditHistory('Promo', id) });
 });

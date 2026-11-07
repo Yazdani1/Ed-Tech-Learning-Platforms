@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { Types } from 'mongoose';
+import { Types, type PipelineStage } from 'mongoose';
 import { User } from '../models/User.model';
 import { Course } from '../models/Course.model';
 import { Enrollment } from '../models/Enrollment.model';
@@ -17,7 +17,16 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 /** More course ids than this in one request is refused */
 const MAX_COURSE_IDS = 500;
-const STUDENT_FIELDS = 'name email phone studentNumber avatar createdAt';
+const STUDENT_FIELDS = 'name email phone studentNumber avatar createdAt isBlocked timeSpentSeconds lastActiveAt';
+const EXPORT_MAX = 5000;
+const ENROLMENT_FILTERS = ['any', 'none', 'paid', 'free', 'subscription'] as const;
+const SORTS: Record<string, Record<string, 1 | -1>> = {
+	newest: { createdAt: -1 },
+	oldest: { createdAt: 1 },
+	name: { name: 1 },
+	timeSpent: { timeSpentSeconds: -1, createdAt: -1 },
+	lastActive: { lastActiveAt: -1, createdAt: -1 },
+};
 
 /** ?courseIds=a,b as ObjectIds (empty = no course filter); 400 for a malformed id. */
 const parseCourseIds = (value: unknown): Types.ObjectId[] => {
@@ -62,12 +71,26 @@ const spendingByStudent = async (studentIds: Types.ObjectId[]) => {
 	return stats;
 };
 
-export const getStudents = asyncHandler(async (req: Request, res: Response) => {
-	const { search, page, limit } = req.query as Record<string, unknown>;
-	const courseIds = parseCourseIds(req.query.courseIds);
-	const currentPage = Math.max(Number(page) || 1, 1);
-	const perPage = Math.min(Math.max(Number(limit) || DEFAULT_LIMIT, 1), MAX_LIMIT);
+const parseDay = (value: unknown, label: string): Date | undefined => {
+	if (value === undefined || value === '') return undefined;
+	const date = typeof value === 'string' ? new Date(value) : new Date(Number.NaN);
+	if (Number.isNaN(date.getTime())) throw new AppError(`Invalid ${label} date`, 400);
+	return date;
+};
 
+/**
+ * The students filter: ?search, ?courseIds, ?enrollment (any|none|paid|free|subscription), ?status
+ * (active|blocked), ?joinedFrom / ?joinedTo (ISO, to excluded), ?hasPhone (true|false).
+ */
+interface StudentQuery {
+	filter: Record<string, unknown>;
+	/** null: no enrolment condition; 'none': not enrolled anywhere; otherwise the enrolment match */
+	enrolment: Record<string, unknown> | 'none' | null;
+}
+
+const studentFilter = (query: Request['query']): StudentQuery => {
+	const { search, enrollment, status, hasPhone } = query as Record<string, unknown>;
+	const courseIds = parseCourseIds(query.courseIds);
 	const filter: Record<string, unknown> = { role: 'Student' };
 	if (typeof search === 'string' && search.trim()) {
 		const text = search.trim();
@@ -81,29 +104,95 @@ export const getStudents = asyncHandler(async (req: Request, res: Response) => {
 			{ phone: { $regex: pattern } },
 		];
 	}
-	// Enrolled in at least one of the selected courses
-	if (courseIds.length > 0) filter._id = { $in: await Enrollment.distinct('student', { course: { $in: courseIds } }) };
+	if (status !== undefined && status !== '') {
+		if (status !== 'active' && status !== 'blocked') throw new AppError('Status must be active or blocked', 400);
+		filter.isBlocked = status === 'blocked' ? true : { $ne: true };
+	}
+	if (hasPhone === 'true') filter.phone = { $exists: true, $ne: '' };
+	else if (hasPhone === 'false') filter.$and = [{ $or: [{ phone: { $exists: false } }, { phone: '' }] }];
+	const from = parseDay(query.joinedFrom, 'joined from');
+	const to = parseDay(query.joinedTo, 'joined to');
+	if (from && to && from >= to) throw new AppError('The joined from date must be before the joined to date', 400);
+	if (from || to) filter.createdAt = { ...(from ? { $gte: from } : {}), ...(to ? { $lt: to } : {}) };
 
-	const total = await User.countDocuments(filter);
-	const safePage = Math.min(currentPage, Math.max(Math.ceil(total / perPage), 1));
-	const students = await User.find(filter)
-		.select(STUDENT_FIELDS)
-		.sort({ createdAt: -1 })
-		.skip((safePage - 1) * perPage)
-		.limit(perPage)
-		.lean();
+	const type = enrollment === undefined || enrollment === '' ? 'any' : enrollment;
+	if (!ENROLMENT_FILTERS.includes(type as (typeof ENROLMENT_FILTERS)[number]))
+		throw new AppError('Invalid enrolment filter', 400);
+	const enrolmentMatch: Record<string, unknown> = {
+		...(courseIds.length > 0 ? { course: { $in: courseIds } } : {}),
+		...(type !== 'any' && type !== 'none' ? { enrollmentType: type } : {}),
+	};
+	return { filter, enrolment: type === 'none' ? 'none' : Object.keys(enrolmentMatch).length > 0 ? enrolmentMatch : null };
+};
+
+/**
+ * The students of the filter as aggregation stages: an enrolment condition looks up at most one matching
+ * enrolment per student (indexed), instead of loading every enrolled student id.
+ */
+const studentStages = ({ filter, enrolment }: StudentQuery): PipelineStage[] => {
+	if (!enrolment) return [{ $match: filter }];
+	const match = enrolment === 'none' ? {} : enrolment;
+	return [
+		{ $match: filter },
+		{
+			$lookup: {
+				from: 'enrollments',
+				let: { studentId: '$_id' },
+				pipeline: [{ $match: { $expr: { $eq: ['$student', '$$studentId'] }, ...match } }, { $limit: 1 }, { $project: { _id: 1 } }],
+				as: 'matchedEnrolment',
+			},
+		},
+		{ $match: { matchedEnrolment: enrolment === 'none' ? { $size: 0 } : { $ne: [] } } },
+	];
+};
+
+const STUDENT_PROJECTION = Object.fromEntries(STUDENT_FIELDS.split(' ').map((field) => [field, 1]));
+
+const sortOf = (value: unknown): Record<string, 1 | -1> =>
+	typeof value === 'string' && SORTS[value] ? SORTS[value] : { createdAt: -1 };
+
+const withStats = async <T extends { _id: unknown }>(students: T[]) => {
 	const stats = await spendingByStudent(students.map((student) => student._id as Types.ObjectId));
-
-	res.status(200).json({
-		success: true,
-		data: students.map((student) => {
-			const stat = stats.get(String(student._id));
-			return { ...student, enrolledCourses: stat?.enrolledCourses ?? 0, totalSpent: money(stat?.totalSpent ?? 0) };
-		}),
-		total,
-		page: safePage,
-		limit: perPage,
+	return students.map((student) => {
+		const stat = stats.get(String(student._id));
+		return { ...student, enrolledCourses: stat?.enrolledCourses ?? 0, totalSpent: money(stat?.totalSpent ?? 0) };
 	});
+};
+
+export const getStudents = asyncHandler(async (req: Request, res: Response) => {
+	const { page, limit } = req.query as Record<string, unknown>;
+	const stages = studentStages(studentFilter(req.query));
+	const currentPage = Math.max(Number(page) || 1, 1);
+	const perPage = Math.min(Math.max(Number(limit) || DEFAULT_LIMIT, 1), MAX_LIMIT);
+
+	const [counted] = await User.aggregate<{ total: number }>([...stages, { $count: 'total' }]);
+	const total = counted?.total ?? 0;
+	const safePage = Math.min(currentPage, Math.max(Math.ceil(total / perPage), 1));
+	const students = await User.aggregate<{ _id: Types.ObjectId }>([
+		...stages,
+		{ $sort: sortOf(req.query.sort) },
+		{ $skip: (safePage - 1) * perPage },
+		{ $limit: perPage },
+		{ $project: STUDENT_PROJECTION },
+	]);
+
+	res.status(200).json({ success: true, data: await withStats(students), total, page: safePage, limit: perPage });
+});
+
+// GET /api/students/export — every matching student (up to 5000) with contact details and spending (Super Admin);
+// `total` is how many match (more than the rows when the list was cut at 5000)
+export const exportStudents = asyncHandler(async (req: Request, res: Response) => {
+	const stages = studentStages(studentFilter(req.query));
+	const [students, counted] = await Promise.all([
+		User.aggregate<{ _id: Types.ObjectId }>([
+			...stages,
+			{ $sort: sortOf(req.query.sort) },
+			{ $limit: EXPORT_MAX },
+			{ $project: STUDENT_PROJECTION },
+		]),
+		User.aggregate<{ total: number }>([...stages, { $count: 'total' }]),
+	]);
+	res.status(200).json({ success: true, data: await withStats(students), total: counted[0]?.total ?? 0 });
 });
 
 export const getStudentCourses = asyncHandler(async (_req: Request, res: Response) => {

@@ -9,9 +9,11 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import { PAGE_TITLE_SX } from '@/components/common/PageHeader';
 import { isCloudinaryUrl } from '@/utils/urls';
 
 import { ProfileFacts } from './ProfileFacts';
+import { StudentNumberBadge } from './StudentNumberBadge';
 import { ROLE_COLORS, roleTextKey } from './subscription.utils';
 
 import type { Profile } from '@/schemas/profile.schema';
@@ -24,7 +26,7 @@ interface ProfileHeroProps {
   profile: Profile;
 }
 
-/** Banner with the role, the avatar, name, role description and account facts. */
+/** Banner with the role, the student number (students, left of the avatar), avatar, name, role text and account facts. */
 export const ProfileHero: FC<ProfileHeroProps> = ({ profile }) => {
   const { t } = useTranslation();
   return (
@@ -44,6 +46,7 @@ export const ProfileHero: FC<ProfileHeroProps> = ({ profile }) => {
       </Box>
       <Box sx={{ px: { xs: 2, md: 4 }, pb: 4 }}>
         <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'flex-end', flexWrap: 'wrap', mt: -7 }}>
+          {profile.studentNumber && <StudentNumberBadge number={profile.studentNumber} />}
           <Avatar
             src={isCloudinaryUrl(profile.avatar) ? profile.avatar : undefined}
             alt={profile.name}
@@ -61,8 +64,7 @@ export const ProfileHero: FC<ProfileHeroProps> = ({ profile }) => {
           <Box sx={{ flex: 1, minWidth: { xs: '100%', sm: 260 }, pt: { xs: 0, sm: 8 } }}>
             <Typography
               component="h2"
-              variant="h4"
-              sx={{ fontWeight: 900, lineHeight: 1.1, wordBreak: 'break-word' }}
+              sx={{ ...PAGE_TITLE_SX, lineHeight: 1.2, wordBreak: 'break-word' }}
             >
               {profile.name}
             </Typography>

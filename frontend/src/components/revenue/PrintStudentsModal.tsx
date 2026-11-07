@@ -19,6 +19,8 @@ import type { FC } from 'react';
 export type PrintScope = 'selected' | 'filter';
 
 interface PrintStudentsModalProps {
+  /** Default: "Print students" */
+  title?: string;
   onClose: () => void;
   selectedCount: number;
   /** "All courses" or the chosen course(s), for the "every order of ..." choice */
@@ -31,6 +33,7 @@ const DEFAULT_FIELDS: readonly PdfField[] = ['name', 'studentNumber'];
 
 /** (Mounted only while open.) Choose what to print (name, student ID, ...) and whose: the ticked orders or the filter. */
 export const PrintStudentsModal: FC<PrintStudentsModalProps> = ({
+  title,
   onClose,
   selectedCount,
   filterLabel,
@@ -44,7 +47,7 @@ export const PrintStudentsModal: FC<PrintStudentsModalProps> = ({
     <AppModal
       open
       onClose={onClose}
-      title={t('revenue.pdf.title')}
+      title={title ?? t('revenue.pdf.title')}
       onSave={() => {
         onPrint(
           scope,

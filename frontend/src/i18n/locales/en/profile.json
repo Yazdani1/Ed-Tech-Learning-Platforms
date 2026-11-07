@@ -75,5 +75,7 @@
   "updated": "Profile updated",
   "studentNumber": "Student number",
   "phone": "Phone number",
-  "phoneHelp": "Optional. Staff can see it to contact you."
+  "phoneHelp": "Optional. Staff can see it to contact you.",
+  "timeSpent": "Time on portal",
+  "timeSpentHelper": "While this site is open and in use"
 }

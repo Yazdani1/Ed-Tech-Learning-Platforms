@@ -209,6 +209,6 @@ describe('PerformancePage', () => {
     server.use(http.get('*/api/performance/overview', () => fail(400, 'Invalid date range')));
     renderWithProviders(<PerformancePage />);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid date range');
+    expect(await screen.findByText('Invalid date range')).toBeInTheDocument();
   });
 });

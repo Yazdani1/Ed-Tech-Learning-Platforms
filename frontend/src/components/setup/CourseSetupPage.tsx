@@ -25,7 +25,7 @@ export const CourseSetupPage: FC<CourseSetupPageProps> = ({ kind }) => {
   return (
     <RequireRole roles={MANAGER_ROLES}>
       <Box>
-        <PageHeader title={t('showcase.setup.title')} subtitle={t('showcase.setup.subtitle')} />
+        <PageHeader title={t('showcase.setup.title')} />
         <SetupTabs kind={kind} />
         {kind === 'tool' ? <ToolsManager /> : <SetupManager kind={kind} />}
       </Box>

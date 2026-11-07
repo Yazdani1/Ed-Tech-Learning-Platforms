@@ -21,3 +21,20 @@ new course page (full-width white section cards in a fixed order, `extras/Detail
 ## Stage B batch 5 (2026-11-06)
 
 coupons, one per order (`utils/courseOffer.ts`): the course's own discount is its auto coupon (`Course.discountCode/StartsAt/EndsAt`, Pricing tab), course coupons (`/api/coupons`, Coupons tab), promos for many courses (`/api/promos`, `/admin/promos`, home banner + pop-up, `/promo`); public course reads carry `offer`; the enrolment price = list price less the code sent (`couponCode`, also `paymentMethod`). `/admin/revenue` (`/api/revenue`: charts, orders, CSV, browser print-out saved as PDF), `/admin/announcements` (broadcasts to many courses, seen counts), course views (`POST /api/courses/:id/view`, one per visitor per day), `CourseType.position`, `Course.batchNumber` (4 digits, unique), schedules text, `firstPublishedAt` (a course published once is never deleted; unpublish moved to the editor's Settings tab; enrolled students keep unpublished courses). Sign in / register are a right-side panel (`?auth=login|register`, `components/auth/AuthDrawer`; `/auth/*` only redirect). Students: no dashboard (home `/student/courses`), no unenrol (DELETE removed), no Pricing menu item. Dashboard top bar user (student ID for students). Custom `ListPagination` (only with more than one page; 10 per page).
+
+## Stage B batch 6 (2026-11-07)
+
+VAT (`/admin/vat`, `SiteSetting.vatPercent`, each paid `Enrollment` stores `vatPercent` + `vatAmount`, VAT inside the
+price); one `AuditLog` for VAT, role changes, blocks, promo switches, publish / unpublish and announcement edits.
+Revenue page: Monthly sales (month cards → month details with top 5 pie) and All sales (period / custom range,
+course, type dropdown, totals with VAT, CSV without contact details by default); `/api/revenue/months`,
+`/breakdown`, `from` / `to` on every revenue endpoint; the sales chart and period cards moved to Performance with
+six more charts. Users: block / unblock (`PATCH /api/users/:id/block`, blocked = 403 everywhere), history,
+export, no "Change role" menu item. Students: filters, sort, email / time / status columns, Super Admin export,
+time on the portal (`POST /api/auth/me/activity`), Purchases page (`/api/enrollments/me/purchases`). Promos:
+Design tab (banner and pop-up pictures), countdown column, confirm + history on switch; coupons countdown;
+"Archived" for courses published once; announcements edit + archive. Course enrolments: filters, selection, CSV
+with totals, student tokens PDF (3 per row). Learn overview shows the public course sections; profile student ID
+and time; sidebar order, red Logout, selected highlight; shared `PageHeader` size; shaped skeletons. PWA
+(`manifest.ts`, `sw.js`, `/offline`). Security: express-rate-limit with Redis (`REDIS_URL`), Redis login lock and
+Socket.io adapter, helmet, 1 MB bodies, visitor IP via `PROXY_SHARED_SECRET`.

@@ -10,6 +10,7 @@ import { MONO_FONT } from '@/theme/fonts';
 import { discountLabel, periodLabel } from './coupon-format';
 import { CouponRowMenu } from './CouponRowMenu';
 import { CouponStatusChip } from './CouponStatusChip';
+import { RemainingTime } from './RemainingTime';
 
 import type { DataColumn } from '@/components/common/ResponsiveDataView';
 import type { CourseCoupon } from '@/schemas/coupon.schema';
@@ -17,7 +18,7 @@ import type { TFunction } from 'i18next';
 
 export interface CouponRowActions {
   onEdit: (coupon: CourseCoupon) => void;
-  onToggle: (coupon: CourseCoupon) => void;
+  onToggle: (coupon: CourseCoupon) => void | Promise<void>;
   onDelete: (coupon: CourseCoupon) => void;
 }
 
@@ -57,6 +58,13 @@ export const useCouponColumns = (actions: CouponRowActions): DataColumn<CourseCo
       render: (row) => periodLabel(t, row.startsAt, row.endsAt, i18n.language),
     },
     {
+      key: 'remaining',
+      header: t('coupons.remaining.header'),
+      render: (row) => (
+        <RemainingTime startsAt={row.startsAt} endsAt={row.endsAt} isActive={row.isActive} />
+      ),
+    },
+    {
       key: 'uses',
       header: t('coupons.students'),
       render: (row) =>
@@ -84,7 +92,7 @@ export const useCouponColumns = (actions: CouponRowActions): DataColumn<CourseCo
               actions.onEdit(row);
             }}
             onToggle={() => {
-              actions.onToggle(row);
+              void actions.onToggle(row);
             }}
             onDelete={() => {
               actions.onDelete(row);

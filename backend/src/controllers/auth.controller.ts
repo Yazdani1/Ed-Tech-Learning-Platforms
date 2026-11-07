@@ -6,9 +6,10 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { generateToken, sendTokenCookie, clearTokenCookie } from '../utils/jwt';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 import { disconnectUserSockets } from '../socket/index';
-import { clearFailedLogins, isLoginLocked, recordFailedLogin } from '../utils/loginThrottle';
+import { claimLoginAttempt, clearFailedLogins } from '../utils/loginThrottle';
 import { ensureStudentNumber } from '../utils/studentNumber';
 import { parsePhone } from '../utils/phone';
+import { BLOCKED_MESSAGE } from '../middleware/auth.middleware';
 
 const MIN_PASSWORD_LENGTH = 6;
 // bcrypt only uses the first 72 bytes; longer input is refused instead of silently cut.
@@ -61,16 +62,17 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Email and password are required', 400);
   }
   const normalizedEmail = email.trim().toLowerCase();
-  if (isLoginLocked(normalizedEmail)) {
+  // Counted before the slow password check, so parallel requests cannot all slip past the limit
+  if (!(await claimLoginAttempt(normalizedEmail))) {
     throw new AppError('Too many failed login attempts. Please try again later.', 429);
   }
-  // Counted before the slow password check, so parallel requests cannot all slip past the limit
-  recordFailedLogin(normalizedEmail);
 
   const user = await User.findOne({ email: normalizedEmail }).select('+password');
   const match = await bcrypt.compare(password, user?.password ?? DUMMY_PASSWORD_HASH);
   if (!user || !match) throw new AppError('Invalid credentials', 401);
-  clearFailedLogins(normalizedEmail);
+  await clearFailedLogins(normalizedEmail);
+  // Only told after the right password, so the message never reveals which emails exist
+  if (user.isBlocked) throw new AppError(BLOCKED_MESSAGE, 403);
 
   const token = generateToken(String(user._id));
   sendTokenCookie(token, res);
@@ -183,4 +185,32 @@ export const updateMe = asyncHandler(async (req: Request, res: Response) => {
     message: 'Profile updated',
     data: safeUser,
   });
+});
+
+/** The browser reports every minute while the tab is visible and in use */
+const ACTIVITY_MAX_SECONDS = 120;
+const FIRST_PING_SECONDS = 60;
+const MS_PER_SECOND = 1000;
+
+// POST /api/auth/me/activity — { seconds } (Students): adds time spent on the portal. The server credits no more
+// than the time passed since the last report, so several open tabs never count twice.
+export const recordActivity = asyncHandler(async (req: Request, res: Response) => {
+  const { seconds } = req.body as { seconds?: unknown };
+  if (typeof seconds !== 'number' || !Number.isInteger(seconds) || seconds < 1 || seconds > ACTIVITY_MAX_SECONDS) {
+    throw new AppError(`seconds must be a whole number from 1 to ${ACTIVITY_MAX_SECONDS}`, 400);
+  }
+  const now = new Date();
+  const last = req.user.lastActiveAt ? new Date(req.user.lastActiveAt).getTime() : undefined;
+  const elapsed = last === undefined ? FIRST_PING_SECONDS : Math.floor((now.getTime() - last) / MS_PER_SECOND);
+  const credited = Math.max(Math.min(seconds, elapsed), 0);
+  // Only the report that still sees the same lastActiveAt is credited (another tab may have reported meanwhile)
+  const updated = await User.findOneAndUpdate(
+    { _id: req.user._id, lastActiveAt: req.user.lastActiveAt ?? null },
+    { $inc: { timeSpentSeconds: credited }, $set: { lastActiveAt: now } },
+    { new: true },
+  ).select('timeSpentSeconds');
+  const user = updated ?? (await User.findById(req.user._id).select('timeSpentSeconds'));
+  res
+    .status(200)
+    .json({ success: true, data: { timeSpentSeconds: user?.timeSpentSeconds ?? 0, credited: updated ? credited : 0 } });
 });

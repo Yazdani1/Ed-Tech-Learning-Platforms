@@ -6,6 +6,8 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import { PAGE_TITLE_SX } from '@/components/common/PageHeader';
+
 import type { FC } from 'react';
 
 interface PerformanceHeaderProps {
@@ -18,9 +20,9 @@ interface PerformanceHeaderProps {
 export const PerformanceHeader: FC<PerformanceHeaderProps> = ({ courseLabel, onChooseCourse }) => {
   const { t } = useTranslation();
   return (
-    <Box sx={{ mb: 3 }}>
+    <Box sx={{ mb: 2.5 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', minWidth: 0 }}>
-        <Typography component="h1" variant="h4" sx={{ fontWeight: 700 }}>
+        <Typography component="h1" sx={PAGE_TITLE_SX}>
           {t('insights.performance.title')}
         </Typography>
         <Button
@@ -30,7 +32,7 @@ export const PerformanceHeader: FC<PerformanceHeaderProps> = ({ courseLabel, onC
           aria-label={t('insights.performance.chooseCourse', { course: courseLabel })}
           sx={{
             fontWeight: 700,
-            fontSize: { xs: '1.125rem', sm: '1.5rem' },
+            fontSize: PAGE_TITLE_SX.fontSize,
             textTransform: 'none',
             color: 'text.primary',
             textAlign: 'left',
@@ -42,9 +44,6 @@ export const PerformanceHeader: FC<PerformanceHeaderProps> = ({ courseLabel, onC
           {courseLabel}
         </Button>
       </Box>
-      <Typography variant="body2" color="text.secondary">
-        {t('insights.performance.subtitle')}
-      </Typography>
     </Box>
   );
 };

@@ -7,61 +7,64 @@ import Button from '@mui/material/Button';
 import { useTranslation } from 'react-i18next';
 
 import { PeopleSearchField } from '@/components/people/common/PeopleSearchField';
+import { Can } from '@/components/permissions/Can';
+import { SUPER_ADMIN_ROLES } from '@/utils/roles';
 
+import { StudentFilterFields } from './StudentFilterFields';
+import { StudentsExportActions } from './StudentsExportActions';
+
+import type { StudentParams } from './useStudentParams';
 import type { FC } from 'react';
 
 const TOUCH_TARGET = 44;
-const BUTTON_MAX_WIDTH = 360;
+const BUTTON_MAX_WIDTH = 260;
 
 interface StudentsToolbarProps {
-  search: string;
-  onSearch: (value: string) => void;
+  params: StudentParams;
+  onChange: (changes: Partial<Record<keyof StudentParams, string>>) => void;
   /** "All courses", one course title, or "3 courses" */
   courseLabel: string;
-  selectedCount: number;
+  courseCount: number;
   onChooseCourses: () => void;
+  activeFilters: number;
+  selectedCount: number;
+  onClearSelection: () => void;
+  onExport: () => void;
 }
 
-/** Search (name, email, student number, phone) and the course filter button that opens the picker. */
+/**
+ * Search (only as wide as needed), the course picker, enrolment type, status, phone, joined between, sort,
+ * and (Super Admin) the CSV export of the ticked or filtered students.
+ */
 export const StudentsToolbar: FC<StudentsToolbarProps> = ({
-  search,
-  onSearch,
+  params,
+  onChange,
   courseLabel,
-  selectedCount,
+  courseCount,
   onChooseCourses,
+  activeFilters,
+  ...exportProps
 }) => {
   const { t } = useTranslation();
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: { xs: 'column', sm: 'row' },
-        alignItems: { xs: 'stretch', sm: 'flex-end' },
-        gap: 2,
-        mb: 2,
-      }}
-    >
-      <Box sx={{ flex: 1, minWidth: 0 }}>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 2 }}>
+      <Box sx={{ width: { xs: '100%', sm: 280 } }}>
         <PeopleSearchField
-          value={search}
-          onSearch={onSearch}
+          value={params.search}
+          onSearch={(search) => {
+            onChange({ search });
+          }}
           label={t('people.students.search')}
           placeholder={t('people.students.searchPlaceholder')}
         />
       </Box>
-      <Badge badgeContent={selectedCount} color="primary">
+      <Badge badgeContent={courseCount} color="primary">
         <Button
           variant="outlined"
           startIcon={<FilterList />}
           onClick={onChooseCourses}
           aria-label={t('people.students.chooseCourses', { course: courseLabel })}
-          sx={{
-            minHeight: TOUCH_TARGET,
-            width: { xs: '100%', sm: 'auto' },
-            maxWidth: { sm: BUTTON_MAX_WIDTH },
-            justifyContent: 'flex-start',
-            textTransform: 'none',
-          }}
+          sx={{ minHeight: TOUCH_TARGET, maxWidth: BUTTON_MAX_WIDTH, textTransform: 'none' }}
         >
           <Box
             component="span"
@@ -71,6 +74,10 @@ export const StudentsToolbar: FC<StudentsToolbarProps> = ({
           </Box>
         </Button>
       </Badge>
+      <StudentFilterFields params={params} onChange={onChange} activeFilters={activeFilters} />
+      <Can roles={SUPER_ADMIN_ROLES}>
+        <StudentsExportActions {...exportProps} />
+      </Can>
     </Box>
   );
 };

@@ -2,7 +2,6 @@
 
 import BadgeOutlined from '@mui/icons-material/BadgeOutlined';
 import CalendarToday from '@mui/icons-material/CalendarToday';
-import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOutlined';
 import EmailOutlined from '@mui/icons-material/EmailOutlined';
 import PhoneOutlined from '@mui/icons-material/PhoneOutlined';
 import SecurityOutlined from '@mui/icons-material/SecurityOutlined';
@@ -28,7 +27,7 @@ interface Fact {
   value: string;
 }
 
-/** The facts shown for this profile (the student number only for students). */
+/** The facts shown for this profile (a student's number is shown left of the avatar instead). */
 const buildFacts = (t: TFunction, profile: Profile): Fact[] => {
   const notAvailable = t('profile.notAvailable');
   const facts: Fact[] = [
@@ -58,14 +57,7 @@ const buildFacts = (t: TFunction, profile: Profile): Fact[] => {
       value: formatDateTime(profile.updatedAt) || notAvailable,
     },
   ];
-  if (!profile.studentNumber) return facts;
-  const studentNumber: Fact = {
-    key: 'studentNumber',
-    icon: <ConfirmationNumberOutlined />,
-    label: t('profile.studentNumber'),
-    value: profile.studentNumber,
-  };
-  return [studentNumber, ...facts];
+  return facts;
 };
 
 interface ProfileFactsProps {

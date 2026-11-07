@@ -42,6 +42,20 @@ export const canManageAccount = (viewerRole: UserRole | undefined, target: Manag
   viewerRole === 'Super Admin' ||
   (viewerRole === 'Admin' && !PROTECTED_ROLES.includes(target.role));
 
+/** Roles an Admin may block (a Super Admin may block anyone but themselves); same rule as the backend. */
+const ADMIN_BLOCKABLE: readonly UserRole[] = ['Moderator', 'Teacher', 'Student'];
+
+export const canBlockAccount = (
+  viewer: { _id: string; role: UserRole } | null | undefined,
+  target: ManagedUser,
+): boolean => {
+  if (!viewer || viewer._id === target._id) return false;
+  return (
+    viewer.role === 'Super Admin' ||
+    (viewer.role === 'Admin' && ADMIN_BLOCKABLE.includes(target.role))
+  );
+};
+
 export const getInitials = (name: string): string =>
   name
     .trim()

@@ -3,7 +3,7 @@
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
@@ -14,6 +14,7 @@ import { formatTime } from '@/utils/dateTime';
 
 import { EDITOR_TABS, panelId, tabId, type EditorTab } from './editor-tabs';
 
+import type { TFunction } from 'i18next';
 import type { FC } from 'react';
 
 interface CourseEditorNavProps {
@@ -26,6 +27,34 @@ interface CourseEditorNavProps {
 }
 
 const NAV_TOP = 90;
+const DESKTOP_INDICATOR_SX = { left: 0, right: 'auto', width: 4, borderRadius: 2 } as const;
+const MOBILE_INDICATOR_SX = { height: 3 } as const;
+/** The open item: tinted background, bold primary text (plus the bar on its left on desktop) */
+const TAB_SX = {
+  minHeight: 44,
+  alignItems: { md: 'flex-start' },
+  borderRadius: { md: 1 },
+  textTransform: 'none',
+  fontWeight: 500,
+  '&.Mui-selected': {
+    bgcolor: (theme: Theme) => alpha(theme.palette.primary.main, 0.12),
+    color: 'primary.main',
+    fontWeight: 700,
+  },
+  '&:hover': { bgcolor: 'action.hover' },
+} as const;
+
+/** "Saving…", "Saved at 10:32" or "Auto-save is on". */
+const saveStateText = (
+  t: TFunction,
+  language: string,
+  isAutoSaving: boolean,
+  lastSaved: Date | null,
+): string => {
+  if (isAutoSaving) return t('catalog.editor.autoSaving');
+  if (lastSaved) return t('catalog.editor.lastSaved', { time: formatTime(lastSaved, language) });
+  return t('catalog.editor.autoSaveOn');
+};
 
 /** The editor menu: vertical on desktop (sticky), a scrollable tab bar on phones; plus the auto-save state. */
 export const CourseEditorNav: FC<CourseEditorNavProps> = ({
@@ -39,11 +68,7 @@ export const CourseEditorNav: FC<CourseEditorNavProps> = ({
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
-  const saveState = isAutoSaving
-    ? t('catalog.editor.autoSaving')
-    : lastSaved
-      ? t('catalog.editor.lastSaved', { time: formatTime(lastSaved, i18n.language) })
-      : t('catalog.editor.autoSaveOn');
+  const saveState = saveStateText(t, i18n.language, isAutoSaving, lastSaved);
 
   return (
     <Paper
@@ -66,6 +91,8 @@ export const CourseEditorNav: FC<CourseEditorNavProps> = ({
         variant="scrollable"
         scrollButtons="auto"
         aria-label={t('catalog.editor.menuTitle')}
+        // Desktop: the bar of the open item sits on its left edge
+        slotProps={{ indicator: { sx: isDesktop ? DESKTOP_INDICATOR_SX : MOBILE_INDICATOR_SX } }}
       >
         {EDITOR_TABS.map((item) => (
           <Tab
@@ -74,7 +101,7 @@ export const CourseEditorNav: FC<CourseEditorNavProps> = ({
             id={tabId(item)}
             aria-controls={panelId(item)}
             label={t(`catalog.tabs.${item}`)}
-            sx={{ minHeight: 44, alignItems: { md: 'flex-start' } }}
+            sx={TAB_SX}
           />
         ))}
       </Tabs>

@@ -1,11 +1,12 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import type { PipelineStage } from 'mongoose';
+import { Types, type PipelineStage } from 'mongoose';
 import { User } from '../models/User.model';
 import { Enrollment } from '../models/Enrollment.model';
 import { Subscription } from '../models/Subscription.model';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import { auditHistory, recordAudit } from '../utils/audit';
 import type { UserRole } from '../types/index';
 import { escapeRegex } from '../utils/escapeRegex';
 import { generateToken, sendTokenCookie } from '../utils/jwt';
@@ -25,7 +26,8 @@ const assertCanManageSuperAdmin = (actorRole: UserRole, ...roles: (UserRole | un
 // The system must always keep one Super Admin (nobody could manage it otherwise).
 const assertNotLastSuperAdmin = async (target: { role: UserRole }, newRole?: UserRole): Promise<void> => {
   if (target.role !== 'Super Admin' || newRole === 'Super Admin') return;
-  if ((await User.countDocuments({ role: 'Super Admin' })) <= 1) {
+  // A blocked Super Admin cannot sign in: only unblocked ones count
+  if ((await User.countDocuments({ role: 'Super Admin', isBlocked: { $ne: true } })) <= 1) {
     throw new AppError('At least one Super Admin must remain', 400);
   }
 };
@@ -97,6 +99,9 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
   if (role && validRoles.includes(role as UserRole)) {
     userFilter.role = role;
   }
+  const { status } = req.query as Record<string, unknown>;
+  if (status === 'blocked') userFilter.isBlocked = true;
+  else if (status === 'active') userFilter.isBlocked = { $ne: true };
 
   const createPagination = (total: number, safePage: number) => {
     const totalPages = Math.max(Math.ceil(total / perPage), 1);
@@ -453,7 +458,10 @@ export const updateUserRole = asyncHandler(async (req: Request, res: Response) =
   const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-password');
   if (!user) throw new AppError('User not found', 404);
   if (user.role === 'Student' && !user.studentNumber) user.studentNumber = await ensureStudentNumber(user._id);
-  if (target.role !== role) disconnectUserSockets(String(user._id));
+  if (target.role !== role) {
+    disconnectUserSockets(String(user._id));
+    await recordRoleChange(req.user._id, user._id, target.role, role);
+  }
 
   res.status(200).json({ success: true, message: 'Role updated', data: user });
 });
@@ -519,6 +527,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   // A user made a Student gets a student number (kept if they had one before)
   if (user.role === 'Student' && !user.studentNumber) user.studentNumber = await ensureStudentNumber(user._id);
   if (updates.password || (updates.role && updates.role !== target.role)) disconnectUserSockets(String(user._id));
+  if (updates.role && updates.role !== target.role) await recordRoleChange(req.user._id, user._id, target.role, updates.role);
   // An admin who resets their own password stays signed in on this device
   if (updates.password && String(user._id) === String(req.user._id)) sendTokenCookie(generateToken(String(user._id)), res);
 
@@ -533,4 +542,67 @@ export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
   if (!user) throw new AppError('User not found', 404);
   disconnectUserSockets(String(user._id));
   res.status(200).json({ success: true, message: 'User deleted' });
+});
+
+const recordRoleChange = (actor: Types.ObjectId | string, user: Types.ObjectId | string, from: UserRole, to: UserRole) =>
+  recordAudit({ action: 'user.role', entityType: 'User', entity: user, actor, before: { role: from }, after: { role: to } });
+
+const BLOCK_REASON_MAX = 300;
+/** An Admin can block only these roles; a Super Admin can block anyone but themselves. */
+const ADMIN_BLOCKABLE: UserRole[] = ['Moderator', 'Teacher', 'Student'];
+
+// PATCH /api/users/:id/block — { blocked: boolean, reason?: string } (Super Admin: anyone; Admin: Moderator,
+// Teacher, Student). Blocked users cannot sign in and their sessions and sockets end at once.
+export const setUserBlocked = asyncHandler(async (req: Request, res: Response) => {
+  const { blocked, reason } = req.body as { blocked?: unknown; reason?: unknown };
+  if (typeof blocked !== 'boolean') throw new AppError('blocked must be true or false', 400);
+  if (reason !== undefined && (typeof reason !== 'string' || reason.length > BLOCK_REASON_MAX))
+    throw new AppError(`Reason must be text of at most ${BLOCK_REASON_MAX} characters`, 400);
+  if (!Types.ObjectId.isValid(String(req.params.id))) throw new AppError('User not found', 404);
+
+  const target = await User.findById(req.params.id).select('role isBlocked');
+  if (!target) throw new AppError('User not found', 404);
+  if (String(target._id) === String(req.user._id)) throw new AppError('You cannot block your own account', 400);
+  if (req.user.role !== 'Super Admin' && !ADMIN_BLOCKABLE.includes(target.role))
+    throw new AppError('An Admin can block only Moderators, Teachers and Students', 403);
+  if (target.isBlocked === blocked)
+    throw new AppError(blocked ? 'This user is already blocked' : 'This user is not blocked', 400);
+  if (blocked) await assertNotLastSuperAdmin(target);
+
+  const note = typeof reason === 'string' && reason.trim() ? reason.trim() : undefined;
+  const update = blocked
+    ? {
+        $set: {
+          isBlocked: true,
+          blockedAt: new Date(),
+          blockedBy: req.user._id,
+          // Tokens issued before the block stay invalid after an unblock
+          passwordChangedAt: new Date(),
+          ...(note ? { blockReason: note } : {}),
+        },
+      }
+    : { $set: { isBlocked: false }, $unset: { blockedAt: 1, blockedBy: 1, blockReason: 1 } };
+  const user = await User.findByIdAndUpdate(target._id, update, { new: true }).select('-password');
+  if (!user) throw new AppError('User not found', 404);
+  if (blocked) disconnectUserSockets(String(user._id));
+  await recordAudit({
+    action: blocked ? 'user.block' : 'user.unblock',
+    entityType: 'User',
+    entity: user._id,
+    actor: req.user._id,
+    before: { isBlocked: !blocked },
+    after: { isBlocked: blocked },
+    ...(note ? { note } : {}),
+  });
+  res.status(200).json({ success: true, message: blocked ? 'User blocked' : 'User unblocked', data: user });
+});
+
+// GET /api/users/:id/history — role changes and blocks of one user, newest first (Super Admin, Admin)
+export const getUserHistory = asyncHandler(async (req: Request, res: Response) => {
+  if (!Types.ObjectId.isValid(String(req.params.id))) throw new AppError('User not found', 404);
+  const target = await User.findById(req.params.id).select('role').lean();
+  if (!target) throw new AppError('User not found', 404);
+  // Admin and Super Admin accounts (and their history) are managed by a Super Admin only
+  assertCanManageSuperAdmin(req.user.role, target.role);
+  res.status(200).json({ success: true, data: await auditHistory('User', String(req.params.id)) });
 });

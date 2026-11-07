@@ -45,7 +45,16 @@
     "required": "Required",
     "noCoverImage": "No cover image",
     "percentOff": "{{percent}}% off",
-    "course": "Course"
+    "course": "Course",
+    "history": {
+      "empty": "No changes yet.",
+      "by": "{{name}} ({{role}}) · {{date}}",
+      "unknown": "Deleted user"
+    },
+    "duration": {
+      "minutes": "{{minutes}} min",
+      "hoursMinutes": "{{hours}} h {{minutes}} min"
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -57,6 +66,8 @@
     "myCourses": "My Courses",
     "browse": "Browse Courses",
     "logout": "Logout",
+    "vat": "Set up VAT",
+    "purchases": "Purchases",
     "home": "Home",
     "profile": "Profile",
     "courseQa": "All Course Q & A",
@@ -210,5 +221,26 @@
     "paidStudents_other": "{{count}} paid students",
     "students_one": "{{count}} student",
     "students_other": "{{count}} students"
+  },
+  "vat": {
+    "title": "Set up VAT",
+    "label": "VAT percentage",
+    "save": "Save VAT",
+    "info": "VAT is included in the price students pay (they never see it). Each new paid enrolment records this rate and its VAT amount; enrolments already made keep their own rate.",
+    "confirmTitle": "Change the VAT rate?",
+    "confirmMessage": "VAT changes from {{from}}% to {{to}}%. Only enrolments made from now on use the new rate.",
+    "saved": "VAT set to {{percent}}%",
+    "history": "Change history",
+    "change": "VAT changed from {{from}}% to {{to}}%",
+    "errors": {
+      "number": "Enter a number",
+      "range": "VAT must be from 0 to 100",
+      "decimals": "Use at most 2 decimals"
+    }
+  },
+  "pwa": {
+    "offlineTitle": "You are offline",
+    "offlineText": "This page needs an internet connection. Check your connection and try again.",
+    "retry": "Try again"
   }
 }

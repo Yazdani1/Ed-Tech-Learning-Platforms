@@ -56,7 +56,11 @@
     "amountPaid": "Amount paid",
     "currency": "Currency",
     "coupon": "Coupon",
-    "paymentMethod": "Payment method"
+    "paymentMethod": "Payment method",
+    "vat": "VAT",
+    "vatPercent": "VAT %",
+    "vatAmount": "VAT amount",
+    "netAmount": "Net (without VAT)"
   },
   "details": {
     "title": "Purchase details",
@@ -78,7 +82,9 @@
     "currency": "Currency",
     "order": "Order",
     "date": "Date",
-    "orderId": "Order ID"
+    "orderId": "Order ID",
+    "vat": "VAT (included)",
+    "netAmount": "Net (without VAT)"
   },
   "pdf": {
     "title": "Print students (save as PDF)",
@@ -100,5 +106,52 @@
     "done": "Print page opened",
     "preparing": "Preparing the print page…",
     "blocked": "The browser blocked the print tab. Allow pop-ups for this site and try again."
-  }
+  },
+  "tabs": {
+    "label": "Sales views",
+    "monthly": "Monthly sales",
+    "all": "All sales"
+  },
+  "monthly": {
+    "label": "Sales per month",
+    "open": "Open the sales of {{month}}",
+    "latest": "Latest",
+    "enrolments": "{{count}} enrolments ({{paid}} paid)",
+    "vat": "VAT {{amount}}",
+    "back": "All months"
+  },
+  "topCourses": "Top 5 courses by sales",
+  "noPaidSales": "No paid sales in this period.",
+  "totals": {
+    "label": "Totals of the filtered sales",
+    "sales": "Total sales",
+    "vat": "Total VAT",
+    "net": "Net (without VAT)",
+    "orders": "Enrolments",
+    "ordersHint": "{{paid}} paid · {{free}} free · {{subscription}} subscription"
+  },
+  "period": {
+    "label": "Period",
+    "all": "All time",
+    "custom": "Custom range",
+    "from": "From",
+    "to": "To"
+  },
+  "export": {
+    "title": "Export CSV",
+    "download": "Download CSV",
+    "includeContact": "Include student email and phone number",
+    "done": "{{count}} sales exported"
+  },
+  "summary": {
+    "title": "Summary",
+    "orders": "Enrolments",
+    "paidOrders": "Paid enrolments",
+    "listTotal": "Total list price",
+    "discountTotal": "Total discount",
+    "sales": "Total sales",
+    "vat": "Total VAT",
+    "net": "Net sales (without VAT)"
+  },
+  "periodVat": "VAT {{amount}}"
 }

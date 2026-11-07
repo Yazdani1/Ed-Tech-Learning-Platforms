@@ -9,7 +9,11 @@ import {
   studentRowSchema,
   type StudentCourse,
   type StudentDetails,
+  type StudentEnrolmentFilter,
+  type StudentPhoneFilter,
   type StudentRow,
+  type StudentSort,
+  type StudentStatusFilter,
 } from '@/schemas/students.schema';
 import { http, type ApiError } from '@/services/http.service';
 
@@ -26,14 +30,37 @@ export interface StudentFilters {
   search: string;
   /** Enrolled in any of these courses; empty = every student */
   courseIds: readonly string[];
+  enrollment: StudentEnrolmentFilter;
+  status: StudentStatusFilter;
+  hasPhone: StudentPhoneFilter;
+  /** ISO date-times (from included, to excluded) */
+  joinedFrom?: string;
+  joinedTo?: string;
+  sort: StudentSort;
 }
 
-const listParams = ({ page, search, courseIds }: StudentFilters) => ({
-  page,
+/** The filter part of the query (the same for the list and the export). */
+const filterParams = (filters: Omit<StudentFilters, 'page'>): Record<string, string> => {
+  const params: Record<string, string> = { sort: filters.sort };
+  if (filters.search.trim()) params.search = filters.search.trim();
+  if (filters.courseIds.length > 0) params.courseIds = filters.courseIds.join(',');
+  if (filters.enrollment !== 'any') params.enrollment = filters.enrollment;
+  if (filters.status !== 'any') params.status = filters.status;
+  if (filters.hasPhone !== 'any') params.hasPhone = filters.hasPhone;
+  if (filters.joinedFrom) params.joinedFrom = filters.joinedFrom;
+  if (filters.joinedTo) params.joinedTo = filters.joinedTo;
+  return params;
+};
+
+const listParams = (filters: StudentFilters) => ({
+  ...filterParams(filters),
+  page: filters.page,
   limit: STUDENTS_PAGE_SIZE,
-  search: search.trim() || undefined,
-  courseIds: courseIds.length > 0 ? courseIds.join(',') : undefined,
 });
+
+/** Every matching student (up to 5000) with contact details and spending (Super Admin). */
+export const exportStudents = (filters: Omit<StudentFilters, 'page'>): Promise<StudentRow[]> =>
+  http.get('/api/students/export', z.array(studentRowSchema), { params: filterParams(filters) });
 
 export const getStudents = (filters: StudentFilters): Promise<ListResult<StudentRow>> =>
   http.list('/api/students', studentRowSchema, { params: listParams(filters) });
@@ -49,11 +76,7 @@ export const useStudents = (
   filters: StudentFilters,
 ): UseQueryResult<ListResult<StudentRow>, ApiError> =>
   useQuery({
-    queryKey: queryKeys.students.list({
-      page: filters.page,
-      search: filters.search.trim(),
-      courseIds: filters.courseIds.join(','),
-    }),
+    queryKey: queryKeys.students.list({ ...filterParams(filters), page: filters.page }),
     queryFn: () => getStudents(filters),
     placeholderData: keepPreviousData,
   });

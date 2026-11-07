@@ -28,7 +28,7 @@ export const CourseQaPage = () => {
   return (
     <RequireRole roles={ADMIN_AREA_ROLES}>
       <Box sx={{ maxWidth: PAGE_MAX_WIDTH }}>
-        <PageHeader title={t('people.qa.title')} subtitle={t('people.qa.subtitle')} />
+        <PageHeader title={t('people.qa.title')} />
         <QueryState
           isLoading={query.isLoading}
           error={query.error}

@@ -1,5 +1,6 @@
 'use client';
 
+import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
@@ -10,10 +11,24 @@ import { UserRowMenu, type UserAction } from './UserRowMenu';
 
 import type { DataColumn } from '@/components/common/ResponsiveDataView';
 import type { ManagedUser } from '@/schemas/people.schema';
+import type { TFunction } from 'i18next';
 
 const ACTIONS_WIDTH = 64;
 
-/** Columns of the user list: name, email, role, joined, row menu. */
+const statusColumn = (t: TFunction): DataColumn<ManagedUser> => ({
+  key: 'status',
+  header: t('people.users.accountStatus'),
+  render: (user) => (
+    <Chip
+      size="small"
+      variant="outlined"
+      color={user.isBlocked ? 'error' : 'success'}
+      label={t(user.isBlocked ? 'people.accountStatus.blocked' : 'people.accountStatus.active')}
+    />
+  ),
+});
+
+/** Columns of the user list: name, email, role, status (active / blocked), joined, row menu. */
 export const useUserColumns = (
   onAction: (action: UserAction, user: ManagedUser) => void,
 ): DataColumn<ManagedUser>[] => {
@@ -49,6 +64,7 @@ export const useUserColumns = (
       header: t('people.users.role'),
       render: (user) => <RoleChip role={user.role} />,
     },
+    statusColumn(t),
     {
       key: 'joined',
       header: t('people.users.joined'),

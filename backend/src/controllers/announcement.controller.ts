@@ -19,7 +19,7 @@ const isText = (value: unknown): value is string => typeof value === 'string' &&
 
 export const getCourseAnnouncements = asyncHandler(async (req: Request, res: Response) => {
   await assertCourseContentAccess(req.user, req.params.courseId);
-  const announcements = await Announcement.find({ course: req.params.courseId })
+  const announcements = await Announcement.find({ course: req.params.courseId, isArchived: { $ne: true } })
     .populate('postedBy', 'name avatar role')
     .sort({ createdAt: -1 });
   // A student opening the list has seen these announcements (the "seen by" count of the Announcements page)
@@ -69,7 +69,7 @@ export const createAnnouncement = asyncHandler(async (req: Request, res: Respons
 });
 
 export const deleteAnnouncement = asyncHandler(async (req: Request, res: Response) => {
-  const announcement = await Announcement.findById(req.params.id);
+  const announcement = await Announcement.findOne({ _id: req.params.id, isArchived: { $ne: true } });
   if (!announcement) throw new AppError('Announcement not found', 404);
 
   const isOwner = announcement.postedBy.toString() === (req.user._id as Types.ObjectId).toString();
@@ -84,7 +84,7 @@ export const deleteAnnouncement = asyncHandler(async (req: Request, res: Respons
 
 export const updateAnnouncement = asyncHandler(async (req: Request, res: Response) => {
   const { title, description } = req.body as { title?: string; description?: string };
-  const announcement = await Announcement.findById(req.params.id);
+  const announcement = await Announcement.findOne({ _id: req.params.id, isArchived: { $ne: true } });
   if (!announcement) throw new AppError('Announcement not found', 404);
 
   const isOwner = announcement.postedBy.toString() === (req.user._id as Types.ObjectId).toString();

@@ -29,6 +29,7 @@ x-test-env: &test-env
   CLOUDINARY_CLOUD_NAME: test-cloud
   CLOUDINARY_API_KEY: test-key # gitleaks:allow
   CLOUDINARY_API_SECRET: test-secret # gitleaks:allow
+  REDIS_URL: redis://redis-test:6379
 
 services:
   mongo-test:
@@ -47,6 +48,15 @@ services:
       timeout: 10s
       retries: 30
 
+  redis-test:
+    image: redis:7-alpine
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
   # Integration tests (Vitest + Supertest) against the real mongo-test
   backend-test:
     <<: *dev-image
@@ -56,6 +66,8 @@ services:
     volumes: *backend-volumes
     depends_on:
       mongo-test:
+        condition: service_healthy
+      redis-test:
         condition: service_healthy
 
   # Component tests (Vitest + React Testing Library + MSW); no database needed
@@ -78,6 +90,8 @@ services:
     profiles: ['e2e']
     depends_on:
       mongo-test:
+        condition: service_healthy
+      redis-test:
         condition: service_healthy
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:5000/api/health || exit 1']

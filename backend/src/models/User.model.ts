@@ -23,6 +23,14 @@ export interface IUser extends Document {
     endDate: Date;
   };
   purchasedCourses: Types.ObjectId[];
+  /** A blocked user cannot sign in; their sessions stop working at once */
+  isBlocked: boolean;
+  blockedAt?: Date;
+  blockedBy?: Types.ObjectId;
+  blockReason?: string;
+  /** Students: seconds spent on the portal (counted while a tab is open and in use) */
+  timeSpentSeconds: number;
+  lastActiveAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +61,12 @@ const userSchema = new Schema<IUser>(
       endDate: Date,
     },
     purchasedCourses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
+    isBlocked: { type: Boolean, default: false },
+    blockedAt: Date,
+    blockedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    blockReason: { type: String, trim: true, maxlength: 300 },
+    timeSpentSeconds: { type: Number, default: 0, min: 0 },
+    lastActiveAt: Date,
   },
   { timestamps: true }
 );
@@ -84,5 +98,7 @@ userSchema.pre('save', async function () {
 
 userSchema.index({ createdAt: -1 });
 userSchema.index({ role: 1, createdAt: -1 });
+// Users page status filter
+userSchema.index({ isBlocked: 1, createdAt: -1 });
 
 export const User = model<IUser>('User', userSchema);

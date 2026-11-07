@@ -150,7 +150,12 @@ test.describe('Course editor', () => {
     await expect(page.getByText(coupon, { exact: true })).toBeVisible();
     await page.getByRole('button', { name: `Actions for ${coupon}` }).click();
     await page.getByRole('menuitem', { name: 'Switch off' }).click();
+    await page
+      .getByRole('dialog', { name: 'Switch off ' + coupon + '?' })
+      .getByRole('button', { name: 'Switch off' })
+      .click();
     await expect(page.getByText('Coupon switched off')).toBeVisible();
+    await expect(page.getByText('Switched off').first()).toBeVisible();
     await page.getByRole('button', { name: `Actions for ${coupon}` }).click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
@@ -200,7 +205,11 @@ test.describe('Course editor', () => {
     await page.getByRole('button', { name: 'Unpublish course' }).click();
     const confirm = page.getByRole('dialog', { name: 'Unpublish course?' });
     await confirm.getByRole('button', { name: 'Unpublish course' }).click();
-    await expect(page.getByText('The course is not published')).toBeVisible();
+    // Published once, then unpublished: archived (never deleted), with its publish history
+    await expect(page.getByText('This course is archived')).toBeVisible();
+    await expect(
+      page.getByRole('list', { name: 'Publish history' }).getByText('Unpublished (archived)'),
+    ).toBeVisible();
 
     await page.goto(`/admin/courses?search=${encodeURIComponent(title)}`);
     await page.getByRole('button', { name: `Actions for ${title}`, exact: true }).click();

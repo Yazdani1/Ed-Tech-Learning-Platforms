@@ -23,6 +23,10 @@ export const discountText = (order: Order): string =>
     ? `${formatBdt(order.discountAmount)} (${String(Math.round(order.discountPercent))}%)`
     : '—';
 
+/** "15% · ৳150" (VAT included in what was paid); a dash for orders without VAT. */
+export const vatText = (order: Order): string =>
+  order.vatAmount > 0 ? `${String(order.vatPercent)}% · ${formatBdt(order.vatAmount)}` : '—';
+
 export const courseColumn = (t: TFunction): DataColumn<Order> => ({
   key: 'course',
   header: t('revenue.columns.course'),
@@ -63,7 +67,7 @@ export const buyerColumns = (t: TFunction): DataColumn<Order>[] => [
   },
 ];
 
-/** List price, discount, amount paid, coupon, payment method and date. */
+/** List price, discount, amount paid, VAT, coupon, payment method and date. */
 export const priceColumns = (t: TFunction, language: string): DataColumn<Order>[] => [
   {
     key: 'list',
@@ -78,6 +82,15 @@ export const priceColumns = (t: TFunction, language: string): DataColumn<Order>[
     render: (row) => (
       <Box component="span" sx={{ fontWeight: 700, color: MONEY_COLOR, whiteSpace: 'nowrap' }}>
         {formatBdt(row.paidPrice)}
+      </Box>
+    ),
+  },
+  {
+    key: 'vat',
+    header: t('revenue.columns.vat'),
+    render: (row) => (
+      <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
+        {vatText(row)}
       </Box>
     ),
   },

@@ -1,11 +1,19 @@
 import { Router } from 'express';
-import { exportRevenueOrders, getRevenueOrders, getRevenueSummary } from '../controllers/revenue.controller';
+import {
+	exportRevenueOrders,
+	getRevenueBreakdown,
+	getRevenueMonths,
+	getRevenueOrders,
+	getRevenueSummary,
+} from '../controllers/revenue.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 const managers = authorize('Super Admin', 'Admin');
 
 router.get('/summary', protect, managers, getRevenueSummary);
+router.get('/months', protect, managers, getRevenueMonths);
+router.get('/breakdown', protect, managers, getRevenueBreakdown);
 router.get('/orders/export', protect, managers, exportRevenueOrders);
 router.get('/orders', protect, managers, getRevenueOrders);
 

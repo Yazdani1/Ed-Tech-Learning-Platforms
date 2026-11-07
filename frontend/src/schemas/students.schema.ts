@@ -12,6 +12,10 @@ const studentBaseSchema = z.object({
   studentNumber: z.string().nullish(),
   avatar: z.string().nullish(),
   createdAt: z.string(),
+  isBlocked: z.boolean().catch(false),
+  /** Time spent on the portal, in seconds */
+  timeSpentSeconds: z.number().catch(0),
+  lastActiveAt: z.string().nullish(),
 });
 
 /** One row of GET /api/students. */
@@ -70,3 +74,12 @@ export const studentDetailsSchema = z.object({
   }),
 });
 export type StudentDetails = z.infer<typeof studentDetailsSchema>;
+
+export const STUDENT_ENROLMENT_FILTERS = ['any', 'paid', 'free', 'subscription', 'none'] as const;
+export type StudentEnrolmentFilter = (typeof STUDENT_ENROLMENT_FILTERS)[number];
+export const STUDENT_STATUS_FILTERS = ['any', 'active', 'blocked'] as const;
+export type StudentStatusFilter = (typeof STUDENT_STATUS_FILTERS)[number];
+export const STUDENT_PHONE_FILTERS = ['any', 'true', 'false'] as const;
+export type StudentPhoneFilter = (typeof STUDENT_PHONE_FILTERS)[number];
+export const STUDENT_SORTS = ['newest', 'oldest', 'name', 'timeSpent', 'lastActive'] as const;
+export type StudentSort = (typeof STUDENT_SORTS)[number];

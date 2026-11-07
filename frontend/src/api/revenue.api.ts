@@ -5,8 +5,12 @@ import { z } from 'zod';
 
 import {
   orderSchema,
+  revenueBreakdownSchema,
+  revenueMonthSchema,
   revenueSummarySchema,
   type Order,
+  type RevenueBreakdown,
+  type RevenueMonth,
   type OrderType,
   type RevenueSummary,
 } from '@/schemas/revenue.schema';
@@ -23,11 +27,16 @@ export interface OrderFilters {
   type: OrderType;
   /** Empty = every course */
   courseIds: readonly string[];
+  /** ISO date-times: from included, to excluded (a month or a custom range) */
+  from?: string;
+  to?: string;
 }
 
-const filterParams = ({ type, courseIds }: OrderFilters): Record<string, string> => ({
+const filterParams = ({ type, courseIds, from, to }: OrderFilters): Record<string, string> => ({
   type,
   ...(courseIds.length > 0 && { courseIds: courseIds.join(',') }),
+  ...(from && { from }),
+  ...(to && { to }),
 });
 
 // ---- Requests ----
@@ -54,7 +63,32 @@ export const exportRevenueOrders = (filters: OrderFilters): Promise<Order[]> =>
 export const getCourseOrders = (courseId: string): Promise<Order[]> =>
   http.get(`/api/enrollments/admin/course/${encodeURIComponent(courseId)}`, z.array(orderSchema));
 
+export const getRevenueMonths = (): Promise<RevenueMonth[]> =>
+  http.get('/api/revenue/months', z.array(revenueMonthSchema), {
+    params: { tz: viewerTimeZone() },
+  });
+
+export const getRevenueBreakdown = (filters: OrderFilters): Promise<RevenueBreakdown> =>
+  http.get('/api/revenue/breakdown', revenueBreakdownSchema, { params: filterParams(filters) });
+
 // ---- Hooks ----
+
+/** Monthly sales tab: every month with orders, newest first. */
+export const useRevenueMonths = (): UseQueryResult<RevenueMonth[], ApiError> =>
+  useQuery({
+    queryKey: queryKeys.revenue.months(viewerTimeZone()),
+    queryFn: getRevenueMonths,
+  });
+
+/** Totals (sales, VAT, orders) and top 5 courses of the current filter. */
+export const useRevenueBreakdown = (
+  filters: OrderFilters,
+): UseQueryResult<RevenueBreakdown, ApiError> =>
+  useQuery({
+    queryKey: queryKeys.revenue.breakdown(filterParams(filters)),
+    queryFn: () => getRevenueBreakdown(filters),
+    placeholderData: keepPreviousData,
+  });
 
 export const useRevenueSummary = (
   filters: OrderFilters,

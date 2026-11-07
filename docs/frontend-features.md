@@ -39,7 +39,10 @@ flowchart LR
 | `/admin/courses`                                                           | Courses (staff list, filters, bulk edit)                                                                                                | Super Admin, Admin; Moderator (published courses, no manager tools)       |
 | `/admin/courses/[id]`                                                      | Course details (staff view of the course page)                                                                                          | Super Admin, Admin, Moderator                                             |
 | `/admin/enrollments/[courseId]`                                            | Course enrolments (orders with prices and coupons, details panel, CSV export)                                                           | Super Admin, Admin; Moderator (students + CSV only)                       |
-| `/admin/revenue`                                                           | Revenue: sales cards and charts, every order, CSV and PDF                                                                               | Super Admin, Admin                                                        |
+| `/admin/revenue`                                                           | Revenue: Monthly sales (month cards, month details with top 5 courses) and All sales (filters, totals with VAT), CSV and PDF            | Super Admin, Admin                                                        |
+| `/admin/vat`                                                               | Set up VAT: the VAT % included in paid prices, with its change history                                                                  | Super Admin                                                               |
+| `/student/purchases`                                                       | Purchases: every course the student enrolled in with what they paid, and totals                                                         | Students                                                                  |
+| `/offline`                                                                 | Offline page of the installed app (PWA)                                                                                                 | Everyone                                                                  |
 | `/admin/promos`                                                            | Promos: discounts for chosen paid courses (banner, pop-up, promo page)                                                                  | Super Admin, Admin                                                        |
 | `/admin/announcements`                                                     | Announcements sent to several courses, with "seen by"                                                                                   | Super Admin, Admin, Moderator                                             |
 | `/admin/courses/create`                                                    | Create a new course (details, cover, learning content) as a Draft                                                                       | Super Admin, Admin                                                        |
@@ -47,8 +50,8 @@ flowchart LR
 | `/student/courses/[courseId]/learn`                                        | The course player: video lectures, live classes, announcements, study materials, Q&A and quiz practice (full screen, no sidebar)        | Student (enrolled, or with an active plan that covers the course)         |
 | `/teacher/courses/[courseId]/learn`                                        | The same player inside the teacher area; the teacher can also post announcements, study materials and live classes and see the students | Teacher of the course                                                     |
 | `/admin/courses/[id]/learn`                                                | The same player inside the admin area; staff manage the course content and can download the student list                                | Super Admin, Admin, Moderator                                             |
-| `/admin/users`                                                             | Find, create, edit, re-role and (Super Admin) delete user accounts                                                                      | Super Admin, Admin                                                        |
-| `/admin/students`                                                          | Every student with a course filter; full details (contact, courses bought, money spent)                                                 | Super Admin, Admin                                                        |
+| `/admin/users`                                                             | Find, create, edit (incl. role), block / unblock, see role and block history, export and (Super Admin) delete user accounts             | Super Admin, Admin                                                        |
+| `/admin/students`                                                          | Every student with filters, time on the portal, export (Super Admin); full details (contact, courses bought, money spent)               | Super Admin, Admin                                                        |
 | `/admin/teachers`                                                          | Manage public teacher profiles and link them to Teacher login accounts                                                                  | Super Admin, Admin                                                        |
 | `/admin/subscriptions`                                                     | Configure subscription plans; list, assign and cancel member subscriptions                                                              | Super Admin, Admin                                                        |
 | `/admin/course-qa`                                                         | See unresolved course questions of every course; open each in the course player to answer and resolve it                                | Super Admin, Admin, Moderator                                             |
@@ -153,6 +156,13 @@ live chat and notification updates), `frontend/src/components/permissions/Requir
 `context/__tests__/SocketContext.test.tsx` (connect, sign-out, reconnect),
 `components/permissions/__tests__/RequireRole.test.tsx`, `src/__tests__/proxy.test.ts`; Playwright
 `frontend/e2e/shell.spec.ts` and the access rules in `auth.spec.ts`.
+
+**Batch 6:** the admin menu starts with the Analytics group (Revenue, Performance, Set up VAT), then Course
+Management; the student menu is Home, My Courses, Profile, Purchases, then the rest. The open page has a tinted
+background, bold text and a bar on its left edge. The user block at the bottom is gone (name and role are in the
+top bar): only a red **Logout** row. Every page title uses the same size (`PageHeader`, `PAGE_TITLE_SX`, no
+subtitle; an optional count chip). Signed-in students report their time on the portal once a minute while a tab
+is visible and in use (`usePortalTimeTracker`).
 
 ### Public site frame (discount banner, navbar, footer)
 
@@ -496,6 +506,10 @@ https://www.youtube-nocookie.com`, thumbnails `img-src https://i.ytimg.com`); vi
   `frontend/src/components/browse/__tests__/course-utils.test.ts`, `frontend/src/utils/__tests__/csp.test.ts`,
   `e2e/browse.spec.ts`, `e2e/site-extras.spec.ts`.
 
+**Batch 6:** the enrolment card shows, for everyone, the class start date, the live class schedule and the
+support class schedule (`CourseScheduleFacts`); the batch chip has no "#" before "Batch"; the title uses the
+free space on the right (wider than the rest of the hero).
+
 ### My Courses
 
 **Route:** `/student/courses` (`?search=` keeps the search box) · **Menu:** My Courses (student menu)
@@ -529,6 +543,9 @@ and `CourseSearchField` in `frontend/src/components/course-card/`, `frontend/src
 `frontend/src/schemas/catalog.schema.ts`, `frontend/src/schemas/student.schema.ts`.
 
 **Tests:** `components/student/__tests__/MyCoursesPage.test.tsx`; Playwright `frontend/e2e/student.spec.ts`.
+
+**Batch 6:** the "Enrolled with Subscription" section shows only when the student has at least one course from
+a subscription.
 
 ### My Profile
 
@@ -582,6 +599,10 @@ the same request as Assigned courses),
 
 **Tests:** `components/profile/__tests__/ProfilePage.test.tsx`, `EditProfileModal.test.tsx`; Playwright
 `frontend/e2e/profile.spec.ts` (desktop + mobile).
+
+**Batch 6:** a student's ID is shown left of the avatar; a student sees "Time on portal"; the plan card shows for
+a student only with a running plan or a course from a subscription. Loading shows a skeleton shaped like the
+page (`ProfileSkeleton`).
 
 ### Course setup (categories, course types and tools)
 
@@ -883,6 +904,13 @@ students and export link, type filter, revenue view, Moderator view, error with 
 Playwright `frontend/e2e/admin-courses.spec.ts` (a student enrols through the API, the Admin sees them, the
 course then cannot be deleted).
 
+**Batch 6 (Super Admin, Admin):** the course's sales today / last 7 days / this month / all time with their VAT
+and the daily / weekly / monthly chart; filters (search name / student ID / phone / coupon, type, coupon, payment
+method, date range); tick boxes; the totals of what is shown (sales, VAT); **Export CSV** (every detail incl.
+email, phone and VAT, then the totals); **Student tokens (PDF)**: choose the fields (name, student ID, ...) and
+whose; the print page shows one card per student, 3 per row with dashed cut lines (print, cut, fold for a
+draw). One card only (no outer card). Moderators keep the students list with the CSV link.
+
 ### Course editor (create and edit a course)
 
 **Route:** `/admin/courses/create` and `/admin/courses/[id]/edit` · **Menu:** none (opened from the course list)
@@ -1002,6 +1030,11 @@ Moderator kept out),
 `components/course-editor/live-class/__tests__/LiveClassTab.test.tsx`,
 `components/course-editor/quiz-bank/__tests__/QuizBankTab.test.tsx`; Playwright `frontend/e2e/course-editor.spec.ts`.
 
+**Batch 6:** the open menu item has a tinted background and a bar on its left (desktop). A course that was
+published once and then unpublished shows **Archived** (not Draft) everywhere; Settings shows the publish
+history (who published / unpublished and when, also from the bulk edit). The Coupons page has a "Time left"
+column (live countdown) and asks before switching a coupon on or off.
+
 ### Course player
 
 **Route:** `/student/courses/[courseId]/learn` (no sidebar, as before), `/teacher/courses/[courseId]/learn` and
@@ -1096,6 +1129,10 @@ error; Study Materials add; Students email + export for staff only, empty; Cours
 `learn-utils.test.ts`). E2E `frontend/e2e/learn.spec.ts` (desktop + Pixel 7): a student is asked to enrol,
 then watches, reads an announcement, asks a question and answers a quiz; an admin sees the student list.
 
+**Batch 6:** the Overview tab has no student count; under the numbers it shows what the public course page shows
+except the curriculum and instructors: schedule, about, what you will learn, tools, projects, what you get,
+audience, requirements, success stories and FAQ (`CourseOverviewSections`).
+
 ### User List
 
 **Route:** `/admin/users` · **Menu:** "User List"
@@ -1149,6 +1186,11 @@ Admin/Super Admin accounts, empty, error, URL filters sent (Super Admin filters 
 Super Admin filters and details, create with password check and Admin role choices, edit without empty
 password, change role with the backend refusal shown, delete, Moderator sent away); Playwright
 `frontend/e2e/people.spec.ts` (desktop + mobile: a Super Admin creates, edits and deletes a user).
+
+**Batch 6:** a tick box per user and **Export CSV** (ticked users or every user of the filters); an Account
+status column and filter (Active / Blocked); the row menu has **Block** / **Unblock** (Super Admin: anyone but
+themselves; Admin: Moderators, Teachers, Students; optional reason) and **History** (role changes and blocks with
+who and when). "Change role" left the menu: the role is changed in **Edit**.
 
 ### Teachers
 
@@ -1341,6 +1383,8 @@ InsightStatCard, ChartCard, BreakdownPieChart, insights.utils.ts), `components/c
 **Tests:** `components/insights/__tests__/SuperAdminDashboard.test.tsx`, `DashboardCharts.test.tsx`;
 Playwright `frontend/e2e/insights.spec.ts`.
 
+**Batch 6:** no subtitle; loading shows a skeleton in the real grids (`DashboardSkeleton`).
+
 ### Performance reports (Super Admin)
 
 **Route:** `/admin/performance` · **Menu:** Performance
@@ -1384,6 +1428,11 @@ CoursePickerOption, CoursePickerFooter, CourseThumb, useCoursePickerDraft, cours
 `components/course-picker/__tests__/CoursePickerDrawer.test.tsx` (closing drops the ticks, Clear, hidden ticks
 kept, loading / error, the button label); Playwright `frontend/e2e/insights.spec.ts`.
 
+**Batch 6:** under the existing charts, a "Course sales" section for the chosen courses: the period cards with
+VAT and the daily / weekly / monthly chart (moved from the Revenue page), then net sales and VAT per month,
+enrolments per month (paid vs free + subscription), average order value per month, top 5 courses by sales,
+enrolment types and where the list price went (net, VAT, discounts) (`PerformanceSalesInsights`).
+
 ### Students (Super Admin, Admin)
 
 **Route:** `/admin/students` · **Menu:** Students
@@ -1418,6 +1467,12 @@ StudentDetailsContent, StudentDetailSection, StudentCourseList, StudentSubscript
 `components/course-picker/`, `frontend/src/api/students.api.ts`, `frontend/src/schemas/students.schema.ts`.
 
 **Tests:** `components/people/__tests__/StudentsPage.test.tsx`; Playwright `frontend/e2e/students.spec.ts`.
+
+**Batch 6:** the title shows the student count; the search is only as wide as needed, followed by the course
+list, Enrolment (bought / free / subscription / not enrolled), Status, Phone, Joined from / to, Sort (newest,
+oldest, name, most time on portal, recently active) and **Clear filters**. New columns: Email, Time on portal,
+Status. A Super Admin gets tick boxes and **Export CSV** (ticked or filtered students, email and phone
+included by default).
 
 ### Support Chat (student)
 
@@ -1921,41 +1976,101 @@ TEMPLATE: one section per screen, in the order they were built or migrated.
 
 ### Revenue (Super Admin, Admin)
 
-**Route:** `/admin/revenue` (filters in the address: `?type=&courses=&page=`) · **Menu:** Revenue (Analytics)
+**Route:** `/admin/revenue` (state in the address: `?view=monthly|all&month=yyyy-MM&type=&courses=&period=&from=&to=&page=`)
+· **Menu:** Revenue (Analytics)
 
 **Who can use it:** Super Admin and Admin (the backend allows nobody else).
 
-**What it is for:** the sales of every course in one place and every order with its full details.
+**What it is for:** the sales of every month and of any filter, with the VAT of each sale, and the exports.
 
 **How to use it:**
 
-1. Four tinted cards: revenue today, last 7 days, this month and all time, each with its order count (paid ones).
-2. A chart of revenue with **Daily** (30 days), **Weekly** (12 weeks, "Week of <Monday>") and **Monthly** (12
-   months) switches (viewer's time zone).
-3. **All courses** opens the course list on the left (search, tick one, several or all, **Apply**); the cards, the
-   chart and the orders then follow the chosen courses. The tabs All / Paid / Free / Subscription filter by type.
-4. The order table (10 per page): course, student, student ID, type, list price, discount, amount paid, coupon,
-   payment method, date. A row opens the purchase details on the right (same panel as the course enrolments page).
-5. Tick boxes select orders (kept across pages; **Select this page**); the chip "N selected" clears them.
-   **Export CSV** downloads the full details of the selected orders (UTF-8, formula-safe cells).
-6. **Print students (PDF)** opens a dialog: what to print (name, student ID, email, phone, course; name and
-   student ID at the start) and whose (the selected orders, or every order of the current course / type filter).
-   **Print** opens a print page in a new tab (a plain table made by the browser, so Bangla names print correctly)
-   and its print dialog; "Save as PDF" there downloads the file. A blocked pop-up shows a message.
+1. The title "Revenue" and two tabs: **Monthly sales** (default) and **All sales**.
+2. Monthly sales: one card per month, newest first (this month marked "Latest"): total sales, enrolments (paid of
+   all) and VAT. A card opens that month: **All months** goes back; a donut of the top 5 courses by sales; then
+   the sales table of that month.
+3. All sales: the same table for any period: **Period** (All time, one of the last 12 months, or **Custom range**
+   with From / To days).
+4. Above the table, on the right in one row: the period (All sales only), **All courses** (course list on the
+   left), **Type** (All / Paid / Free / Subscription), **Export CSV** and **Print students (PDF)**. Under it four
+   totals of what is filtered: total sales, total VAT, net (without VAT), enrolments (paid / free /
+   subscription).
+5. The table (10 per page, a tick box per row): course, student, student ID, type, list price, discount, amount
+   paid, VAT (rate and amount), coupon, payment method, date. A row opens the purchase details (with the VAT and
+   the net amount).
+6. **Export CSV** opens a dialog: the ticked sales or every sale of the filter, and "Include student email and
+   phone number" (off by default). The file has every detail (VAT %, VAT amount, net) and a summary at the end
+   (enrolments, list prices, discounts, sales, VAT, net).
+7. **Print students (PDF)**: choose the details (name, student ID, email, phone, course) and whose; the browser
+   prints a plain table ("Save as PDF").
 
-**On mobile:** cards two per row then one; the table becomes cards; dialogs and panels are full screen.
+**On mobile:** month cards one per row, the filters wrap (two per row), the table becomes cards; dialogs and
+panels are full screen.
 
-**API endpoints used:** `GET /api/revenue/summary`, `GET /api/revenue/orders`, `GET /api/revenue/orders/export`,
-`GET /api/students/courses` (the course list).
+**API endpoints used:** `GET /api/revenue/months`, `GET /api/revenue/breakdown`, `GET /api/revenue/orders`,
+`GET /api/revenue/orders/export`, `GET /api/students/courses`.
 
-**Code:** `frontend/src/app/admin/revenue/page.tsx`, `frontend/src/components/revenue/` (`RevenuePage`,
-`RevenueToolbar`, `RevenueCourseFilter`, `RevenueCoursePicker`, `RevenueOverview`, `RevenueChartCard`,
-`RevenueChart` (recharts, `next/dynamic`), `RevenueOrders`, `useOrderSelection`, `useRevenueParams`,
-`PrintStudentsModal`, `PdfFieldsGroup`, `useRevenuePrint`, `order-export.ts` (CSV and the print table)),
-`components/orders/`, `frontend/src/api/revenue.api.ts`, `schemas/revenue.schema.ts`, `utils/export-file.ts`,
-`utils/print-table.ts`.
+**Code:** `frontend/src/components/revenue/` (`RevenueContent`, `MonthlySalesView`, `MonthSalesCard`,
+`MonthDetailView`, `TopCoursesPie`, `SalesPanel`, `RevenueToolbar`, `PeriodFilter`, `SalesTotals`,
+`RevenueOrders`, `SalesOutputDialogs`, `ExportOrdersModal`, `ScopeRadioGroup`, `PrintStudentsModal`,
+`useRevenueParams`, `revenue-period.ts`, `order-export.ts`), `components/orders/`, `api/revenue.api.ts`.
+The daily / weekly / monthly chart and the period cards moved to the Performance page.
 
-**Tests:** `components/revenue/__tests__/`; Playwright `frontend/e2e/revenue.spec.ts`.
+**Tests:** `components/revenue/__tests__/RevenuePage.test.tsx`; Playwright `frontend/e2e/revenue.spec.ts`.
+
+### Set up VAT (Super Admin)
+
+**Route:** `/admin/vat` · **Menu:** Set up VAT (Analytics)
+
+**Who can use it:** Super Admin only.
+
+**What it is for:** the VAT % included in every paid course price, for the company's own records (students never
+see it).
+
+**How to use it:** type the percentage (0-100, at most 2 decimals) and **Save VAT**; a confirmation says the
+old and new rate and that only enrolments from now on use it. The change history below lists every change
+(from, to, who and when). Each paid enrolment then records the rate and the VAT inside its price
+(paid x rate / (100 + rate)); the Revenue page, the course enrolments page and the exports show it.
+
+**On mobile:** one column.
+
+**API endpoints used:** `GET` and `PUT /api/site-settings/vat`.
+
+**Code:** `frontend/src/components/vat/` (`VatSettingsPage`, `VatForm`), `components/common/AuditHistoryList.tsx`,
+`api/site-settings.api.ts`.
+
+**Tests:** `components/vat/__tests__/VatSettingsPage.test.tsx`.
+
+### Purchases (student)
+
+**Route:** `/student/purchases` · **Menu:** Purchases (after Profile)
+
+**Who can use it:** Students.
+
+**What it is for:** every course the student enrolled in and what they paid.
+
+**How to use it:** the title shows how many courses; four totals (courses, bought, total spent, total saved);
+the list (10 per page): course and batch, purchase ID, date, type, list price, discount, coupon, amount paid,
+payment method.
+
+**On mobile:** totals two per row; the list becomes cards.
+
+**API endpoints used:** `GET /api/enrollments/me/purchases`.
+
+**Code:** `frontend/src/components/purchases/`, `api/purchases.api.ts`, `schemas/purchase.schema.ts`.
+
+**Tests:** `components/purchases/__tests__/PurchasesPage.test.tsx`.
+
+### Installable app (PWA) and offline page
+
+**What it is for:** the site can be installed on phones and computers ("Add to Home screen" / "Install"): own
+icon and name, full screen without the browser bar.
+
+**How it works:** `app/manifest.ts` (name, icons incl. maskable, theme colour, standalone, shortcuts to My
+Courses and Courses); `public/sw.js` (registered in production by `components/pwa/ServiceWorkerRegister`):
+Next.js build files and icons cache first, pages always from the network, `/api` never touched; without
+internet a page shows `/offline` (`components/pwa/OfflinePage`, **Try again**). Apple: `appleWebApp` metadata
+and `public/icons/apple-touch-icon.png`.
 
 ### Promos (Super Admin, Admin)
 
@@ -1989,6 +2104,10 @@ with the Announcements page), `frontend/src/api/promos.api.ts`, `schemas/promo.s
 
 **Tests:** `components/promos/__tests__/`; Playwright `frontend/e2e/promos.spec.ts`.
 
+**Batch 6:** tabs **Promos** and **Design**. The list has one card (with a shadow) and a "Time left" column (live
+countdown); switching a promo on or off always asks first and is kept in its **History**. Design: a top banner
+picture and a pop-up picture (upload, replace, use default design).
+
 ### Promo banner, pop-up and promo courses page (`/promo`)
 
 **Route:** every public page (banner), `/` and `/courses/[id]` (pop-up), `/promo` (page).
@@ -2011,6 +2130,9 @@ until the next visit of the page. Without a running promo nothing shows and `/pr
 
 **Tests:** `components/promos/__tests__/`, `components/public/__tests__/PublicLayout.test.tsx`; Playwright
 `frontend/e2e/promos.spec.ts`.
+
+**Batch 6:** with a custom banner picture the banner is that picture (links to the promo page) with the
+countdown on it; with a custom pop-up picture the pop-up shows the picture, the countdown and the code.
 
 ### Announcements (multi-course)
 
@@ -2041,6 +2163,10 @@ until the next visit of the page. Without a running promo nothing shows and `/pr
 `schemas/announcement-broadcast.schema.ts`; the player shows the picture in `components/learn/common/PostList.tsx`.
 
 **Tests:** `components/announcements/__tests__/`; Playwright `frontend/e2e/announcements.spec.ts`.
+
+**Batch 6:** the details panel has **Edit** (title, text, picture; every course gets the change, "Edited" chip),
+**History** (old and new text, who, when) and **Delete** (asks first; the announcement disappears for students and
+admins and is kept in the database).
 
 ### Pagination and loading placeholders (shared)
 

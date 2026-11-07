@@ -268,6 +268,8 @@ describe('PromosPage (/admin/promos)', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Eid offer' }));
     await user.click(screen.getByRole('menuitem', { name: 'Switch off' }));
+    const confirm = await screen.findByRole('dialog', { name: 'Switch off "Eid offer"?' });
+    await user.click(within(confirm).getByRole('button', { name: 'Switch off' }));
     expect(await screen.findByText('Promo stopped')).toBeInTheDocument();
     expect(patches).toEqual([{ isActive: false }]);
   });

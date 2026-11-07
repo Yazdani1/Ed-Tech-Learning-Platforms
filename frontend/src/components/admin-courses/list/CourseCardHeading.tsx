@@ -11,6 +11,7 @@ import { formatDate } from '@/utils/dateTime';
 import { usePriceLabel } from './CourseCardChips';
 
 import type { AdminCourse } from '@/schemas/admin-courses.schema';
+import { COURSE_STATUS_COLOR, courseStatusLabel } from '@/utils/course-status';
 import type { FC } from 'react';
 
 interface CourseCardHeadingProps {
@@ -36,7 +37,7 @@ export const CourseCardHeading: FC<CourseCardHeadingProps> = ({ course, showStat
     ? t('adminCourses.list.publishedOn', {
         date: date ? formatDate(date) : t('adminCourses.list.dateUnavailable'),
       })
-    : t('adminCourses.values.Draft');
+    : t(`adminCourses.values.${courseStatusLabel(course)}`);
 
   return (
     <Box
@@ -75,7 +76,13 @@ export const CourseCardHeading: FC<CourseCardHeadingProps> = ({ course, showStat
       <Chip
         label={showStatus ? statusLabel : priceLabel}
         size="small"
-        color={(showStatus ? published : course.pricing === 'Free') ? 'success' : 'default'}
+        color={
+          showStatus
+            ? COURSE_STATUS_COLOR[courseStatusLabel(course)]
+            : course.pricing === 'Free'
+              ? 'success'
+              : 'default'
+        }
         sx={{ fontWeight: 800, flexShrink: 0 }}
       />
     </Box>

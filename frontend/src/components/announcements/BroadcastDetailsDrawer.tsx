@@ -1,8 +1,6 @@
 'use client';
 
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
@@ -15,6 +13,8 @@ import { SideDrawer } from '@/components/common/SideDrawer';
 import { StudentDetailSection } from '@/components/people/students/StudentDetailSection';
 import { useAuth } from '@/hooks/useAuth';
 
+import { BroadcastActions } from './BroadcastActions';
+import { BroadcastBadges } from './BroadcastBadges';
 import { BroadcastCourseList } from './BroadcastCourseList';
 
 import type { FC } from 'react';
@@ -27,7 +27,10 @@ interface BroadcastDetailsDrawerProps {
 
 const IMAGE_HEIGHT = 220;
 
-/** Right-side panel of one sent announcement: text, picture, who posted it, its courses and who saw it. */
+/**
+ * Right-side panel of one sent announcement: text, picture, who posted it, its courses and who saw it; Edit
+ * (old text kept in History) and Delete (archived: hidden everywhere, kept in the database).
+ */
 export const BroadcastDetailsDrawer: FC<BroadcastDetailsDrawerProps> = ({ id, open, onClose }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -56,13 +59,8 @@ export const BroadcastDetailsDrawer: FC<BroadcastDetailsDrawerProps> = ({ id, op
               createdAt={item.createdAt}
               userId={user?._id ?? ''}
             />
-            <Chip
-              icon={<VisibilityOutlinedIcon />}
-              label={t('announcements.seenBy', { count: item.seenCount })}
-              color="primary"
-              variant="outlined"
-              sx={{ my: 2 }}
-            />
+            <BroadcastBadges seenCount={item.seenCount} edited={Boolean(item.editedAt)} />
+            <BroadcastActions item={item} onDeleted={onClose} />
             {item.image?.url && (
               <Box sx={{ mb: 2 }}>
                 <CloudImage

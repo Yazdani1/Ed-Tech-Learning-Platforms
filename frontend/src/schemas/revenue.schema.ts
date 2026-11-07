@@ -46,6 +46,9 @@ export const orderSchema = z.object({
   couponCode: z.string().nullish(),
   couponSource: couponSourceSchema.nullish(),
   paymentMethod: paymentMethodSchema.nullish(),
+  /** VAT included in paidPrice (internal: rate in force when bought) */
+  vatPercent: z.number().catch(0),
+  vatAmount: z.number().catch(0),
   createdAt: z.string(),
 });
 export type Order = z.infer<typeof orderSchema>;
@@ -53,10 +56,16 @@ export type Order = z.infer<typeof orderSchema>;
 export const ORDER_TYPES = ['all', 'paid', 'free', 'subscription'] as const;
 export type OrderType = (typeof ORDER_TYPES)[number];
 
-const totalsSchema = z.object({ revenue: z.number(), orders: z.number(), paidOrders: z.number() });
+const totalsSchema = z.object({
+  revenue: z.number(),
+  vat: z.number().catch(0),
+  orders: z.number(),
+  paidOrders: z.number(),
+});
 const pointSchema = z.object({
   date: z.string(),
   revenue: z.number(),
+  vat: z.number().catch(0),
   orders: z.number(),
   paidOrders: z.number(),
 });
@@ -75,3 +84,37 @@ export const revenueSummarySchema = z.object({
   monthly: z.array(pointSchema),
 });
 export type RevenueSummary = z.infer<typeof revenueSummarySchema>;
+
+/** GET /api/revenue/months: one row per month (yyyy-MM), newest first */
+export const revenueMonthSchema = z.object({
+  month: z.string(),
+  revenue: z.number(),
+  vat: z.number(),
+  orders: z.number(),
+  paidOrders: z.number(),
+});
+export type RevenueMonth = z.infer<typeof revenueMonthSchema>;
+
+export const topCourseSchema = z.object({
+  courseId: z.string(),
+  title: z.string().catch(''),
+  batchNumber: z.string().catch(''),
+  revenue: z.number(),
+  orders: z.number(),
+});
+export type TopCourse = z.infer<typeof topCourseSchema>;
+
+/** GET /api/revenue/breakdown: totals of the filtered orders and the 5 best-selling courses */
+export const revenueBreakdownSchema = z.object({
+  orders: z.number(),
+  paidOrders: z.number(),
+  freeOrders: z.number(),
+  subscriptionOrders: z.number(),
+  revenue: z.number(),
+  vat: z.number(),
+  netRevenue: z.number(),
+  listTotal: z.number(),
+  discountTotal: z.number(),
+  topCourses: z.array(topCourseSchema),
+});
+export type RevenueBreakdown = z.infer<typeof revenueBreakdownSchema>;

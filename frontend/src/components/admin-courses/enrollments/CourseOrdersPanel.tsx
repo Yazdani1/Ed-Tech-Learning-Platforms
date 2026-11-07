@@ -1,90 +1,95 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useCourseOrders } from '@/api/revenue.api';
 import { ResponsiveDataView } from '@/components/common/ResponsiveDataView';
-import { MONEY_COLOR } from '@/components/enrollments/enrollment-display';
 import { OrderDetailsDrawer } from '@/components/orders/OrderDetailsDrawer';
-import { OrderTypeTabs } from '@/components/orders/OrderTypeTabs';
 import { useOrderColumns } from '@/components/orders/useOrderColumns';
+import { useOrderSelectColumn } from '@/components/orders/useOrderSelectColumn';
+import { useOrderSelection } from '@/components/revenue/useOrderSelection';
 import { useClientPagination } from '@/hooks/useClientPagination';
 import { useModal } from '@/hooks/useModal';
-import { formatBdt } from '@/utils/price';
 
-import type { Order, OrderType } from '@/schemas/revenue.schema';
+import { EMPTY_FILTERS, filterCourseOrders, type CourseOrderFilters } from './course-order-filters';
+import { CourseOrdersActions } from './CourseOrdersActions';
+import { CourseOrdersFilters } from './CourseOrdersFilters';
+import { CourseOrdersTotals } from './CourseOrdersTotals';
+
+import type { Order } from '@/schemas/revenue.schema';
 import type { FC } from 'react';
 
 interface CourseOrdersPanelProps {
   courseId: string;
+  courseTitle: string;
 }
 
-const HEADER_SX = {
+const ROW_SX = {
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between',
   gap: 1,
   flexWrap: 'wrap',
   mb: 1.5,
 } as const;
 
 /**
- * Super Admin / Admin: every enrolment of the course (All, Free, Paid, Subscription) with list price, discount,
- * coupon and amount paid; a row opens the purchase details on the right. 10 per page.
+ * Super Admin / Admin: every enrolment of the course with filters, tick boxes, the totals of what is shown
+ * (sales and VAT), a CSV with every detail and the totals, and student tokens (grid PDF to cut for a draw).
  */
-export const CourseOrdersPanel: FC<CourseOrdersPanelProps> = ({ courseId }) => {
+export const CourseOrdersPanel: FC<CourseOrdersPanelProps> = ({ courseId, courseTitle }) => {
   const { t } = useTranslation();
   const headingId = useId();
-  const [type, setType] = useState<OrderType>('all');
+  const [filters, setFilters] = useState<CourseOrderFilters>(EMPTY_FILTERS);
   const orders = useCourseOrders(courseId, true);
-  const columns = useOrderColumns({ showCourse: false });
+  const selection = useOrderSelection();
+  const columns = [useOrderSelectColumn(selection), ...useOrderColumns({ showCourse: false })];
   const details = useModal<Order>();
   const rows = useMemo(
-    () => (orders.data ?? []).filter((row) => type === 'all' || row.enrollmentType === type),
-    [orders.data, type],
+    () => filterCourseOrders(orders.data ?? [], filters),
+    [orders.data, filters],
   );
   const { pageRows, pagination } = useClientPagination(rows);
-  const paidTotal = rows.reduce((sum, row) => sum + row.paidPrice, 0);
 
   return (
     <Box component="section" aria-labelledby={headingId}>
-      <Box sx={HEADER_SX}>
-        <Typography id={headingId} component="h2" variant="h6" sx={{ fontWeight: 700 }}>
+      <Box sx={ROW_SX}>
+        <Typography
+          id={headingId}
+          component="h2"
+          sx={{ fontWeight: 700, fontSize: '1.125rem', mr: 'auto' }}
+        >
           {t('adminCourses.enrollments.enrolledStudents')}
         </Typography>
-        {orders.data && (
-          <Typography variant="body2" sx={{ fontWeight: 700, color: MONEY_COLOR }}>
-            {t('adminCourses.enrollments.total', { amount: formatBdt(paidTotal) })}
-          </Typography>
-        )}
-      </Box>
-      <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-        <OrderTypeTabs
-          value={type}
-          onChange={(next) => {
-            setType(next);
-            pagination.onPageChange(1);
-          }}
+        <CourseOrdersActions
+          courseId={courseId}
+          courseTitle={courseTitle}
+          selection={selection}
+          rows={rows}
         />
-        <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-          <ResponsiveDataView
-            isLoading={orders.isLoading}
-            error={orders.error}
-            onRetry={() => void orders.refetch()}
-            emptyText={t('adminCourses.enrollments.noStudents')}
-            rows={pageRows}
-            columns={columns}
-            getRowId={(row) => row._id}
-            label={t('adminCourses.enrollments.studentsLabel')}
-            onRowClick={details.openModal}
-            pagination={pagination}
-          />
-        </Box>
-      </Paper>
+      </Box>
+      <CourseOrdersFilters
+        filters={filters}
+        onChange={(changes) => {
+          setFilters((current) => ({ ...current, ...changes }));
+          pagination.onPageChange(1);
+        }}
+      />
+      {orders.data && <CourseOrdersTotals rows={rows} />}
+      <ResponsiveDataView
+        isLoading={orders.isLoading}
+        error={orders.error}
+        onRetry={() => void orders.refetch()}
+        emptyText={t('adminCourses.enrollments.noStudents')}
+        rows={pageRows}
+        columns={columns}
+        getRowId={(row) => row._id}
+        label={t('adminCourses.enrollments.studentsLabel')}
+        onRowClick={details.openModal}
+        pagination={pagination}
+      />
       <OrderDetailsDrawer order={details.data} open={details.open} onClose={details.closeModal} />
     </Box>
   );

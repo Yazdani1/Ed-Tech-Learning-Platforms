@@ -16,6 +16,7 @@ import { BackToCoursesButton } from '../BackToCoursesButton';
 import { CourseOrdersPanel } from './CourseOrdersPanel';
 import { EnrolledStudentsPanel } from './EnrolledStudentsPanel';
 import { EnrollmentCourseHeader } from './EnrollmentCourseHeader';
+import { CourseSalesOverview } from './CourseSalesOverview';
 import { EnrollmentStatsStrip } from './EnrollmentStatsStrip';
 
 import type { FC } from 'react';
@@ -51,21 +52,24 @@ export const AdminEnrollmentsPage: FC<AdminEnrollmentsPageProps> = ({ courseId }
         course={course.data}
         isLoading={course.isLoading}
         actions={
-          <Button
-            component="a"
-            href={studentsExportUrl(courseId)}
-            download
-            variant="outlined"
-            startIcon={<FileDownloadOutlinedIcon />}
-            sx={{ minHeight: 44 }}
-          >
-            {t('adminCourses.enrollments.exportCsv')}
-          </Button>
+          !canSeeRevenue && (
+            <Button
+              component="a"
+              href={studentsExportUrl(courseId)}
+              download
+              variant="outlined"
+              startIcon={<FileDownloadOutlinedIcon />}
+              sx={{ minHeight: 44 }}
+            >
+              {t('adminCourses.enrollments.exportCsv')}
+            </Button>
+          )
         }
       />
       {canSeeRevenue && <EnrollmentStatsStrip courseId={courseId} />}
+      {canSeeRevenue && <CourseSalesOverview courseId={courseId} />}
       {canSeeRevenue ? (
-        <CourseOrdersPanel courseId={courseId} />
+        <CourseOrdersPanel courseId={courseId} courseTitle={course.data?.title ?? ''} />
       ) : (
         <EnrolledStudentsPanel courseId={courseId} />
       )}

@@ -11,6 +11,7 @@ import { useBroadcasts } from '@/api/announcements.api';
 import { ListPagination } from '@/components/common/ListPagination';
 import { PageHeader } from '@/components/common/PageHeader';
 import { QueryState } from '@/components/common/QueryState';
+import { CardGridSkeleton } from '@/components/common/skeletons/CardGridSkeleton';
 import { PAGE_SIZE } from '@/hooks/useClientPagination';
 import { useModal } from '@/hooks/useModal';
 
@@ -19,6 +20,9 @@ import { BroadcastDetailsDrawer } from './BroadcastDetailsDrawer';
 import { BroadcastFormModal } from './BroadcastFormModal';
 
 import type { Broadcast } from '@/schemas/announcement-broadcast.schema';
+
+/** Height of one announcement card (title, preview, poster line, chips) */
+const BROADCAST_CARD_HEIGHT = 168;
 
 /**
  * /admin/announcements (Super Admin, Admin, Moderator): send one announcement to several published courses
@@ -36,7 +40,6 @@ export const AnnouncementsPage = () => {
     <Box>
       <PageHeader
         title={t('announcements.title')}
-        subtitle={t('announcements.subtitle')}
         actions={
           <Button
             variant="contained"
@@ -56,7 +59,7 @@ export const AnnouncementsPage = () => {
         onRetry={() => void list.refetch()}
         isEmpty={items.length === 0}
         emptyText={t('announcements.empty')}
-        skeletonRows={4}
+        skeleton={<CardGridSkeleton count={4} columns="1fr" height={BROADCAST_CARD_HEIGHT} />}
       >
         <Stack spacing={1.5} component="section" aria-label={t('announcements.listLabel')}>
           {items.map((item) => (

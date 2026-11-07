@@ -9,12 +9,14 @@ erDiagram
   AnnouncementBroadcast ||--o{ Announcement : "broadcast"
   Course }o--o{ AnnouncementBroadcast : "courses"
   User ||--o{ AnnouncementBroadcast : "postedBy"
+  User ||--o{ AnnouncementBroadcast : "archivedBy"
   Announcement ||--o{ AnnouncementView : "announcement"
   AnnouncementBroadcast ||--o{ AnnouncementView : "broadcast"
   User ||--o{ AnnouncementView : "student"
   Question ||--o{ Answer : "question"
   User ||--o{ Answer : "postedBy"
   User }o--o{ Answer : "upvotes"
+  User ||--o{ AuditLog : "actor"
   User ||--o{ ChatConversation : "student"
   ChatConversation ||--o{ ChatMessage : "conversationId"
   User ||--o{ ChatMessage : "senderId"
@@ -80,6 +82,7 @@ erDiagram
   User ||--o{ Teacher : "userId"
   User ||--o{ Tool : "createdBy"
   Course }o--o{ User : "purchasedCourses"
+  User ||--o{ User : "blockedBy"
   Announcement {
     ObjectId course FK "required"
     String title "required"
@@ -87,6 +90,7 @@ erDiagram
     ObjectId postedBy FK "required"
     ObjectId broadcast FK
     String image_url
+    Boolean isArchived
     ObjectId _id PK
     Date createdAt
     Date updatedAt
@@ -98,6 +102,10 @@ erDiagram
     String image_publicId
     Array courses FK
     ObjectId postedBy FK "required"
+    Boolean isArchived
+    Date archivedAt
+    ObjectId archivedBy FK
+    Date editedAt
     ObjectId _id PK
     Date createdAt
     Date updatedAt
@@ -118,6 +126,17 @@ erDiagram
     ObjectId _id PK
     Date createdAt
     Date updatedAt
+  }
+  AuditLog {
+    String action "required"
+    String entityType "required"
+    ObjectId entity
+    ObjectId actor FK "required"
+    Mixed before
+    Mixed after
+    String note
+    ObjectId _id PK
+    Date createdAt
   }
   Category {
     String name "required"
@@ -331,6 +350,8 @@ erDiagram
     String couponCode
     String couponSource
     String paymentMethod
+    Number vatPercent
+    Number vatAmount
     ObjectId _id PK
     Date createdAt
     Date updatedAt
@@ -491,6 +512,11 @@ erDiagram
     String contact_youtube
     String contact_linkedin
     String contact_instagram
+    String promoBannerImage_url
+    String promoBannerImage_publicId
+    String promoPopupImage_url
+    String promoPopupImage_publicId
+    Number vatPercent
     ObjectId updatedBy FK
     ObjectId _id PK
     Date createdAt
@@ -603,6 +629,12 @@ erDiagram
     Date activeSubscription_startDate
     Date activeSubscription_endDate
     Array purchasedCourses FK
+    Boolean isBlocked
+    Date blockedAt
+    ObjectId blockedBy FK
+    String blockReason
+    Number timeSpentSeconds
+    Date lastActiveAt
     ObjectId _id PK
     Date createdAt
     Date updatedAt

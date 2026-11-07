@@ -1,4 +1,10 @@
 services:
+  # Redis for rate limits, login locks and Socket.io rooms shared by every backend instance
+  - type: keyvalue
+    name: edtech-redis
+    plan: free
+    ipAllowList: [] # only services in this Render account can connect
+    maxmemoryPolicy: noeviction # limit and lock keys expire on their own; never drop them early
   - type: web
     name: edtech-backend
     runtime: node
@@ -15,6 +21,13 @@ services:
       - key: JWT_EXPIRE
         sync: false
       - key: CLIENT_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: edtech-redis
+          property: connectionString
+      - key: PROXY_SHARED_SECRET
         sync: false
       - key: CLOUDINARY_CLOUD_NAME
         sync: false

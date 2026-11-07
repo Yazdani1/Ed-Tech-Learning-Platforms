@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { auditHistorySchema } from './audit.schema';
+
 /** Public pages a Super Admin can hide (same keys as the backend's SITE_PAGE_KEYS). */
 export const SITE_PAGE_KEYS = [
   'courses',
@@ -73,3 +75,23 @@ export const companyContactFormSchema = z.object({
   instagram: optionalHttpsUrl,
 });
 export type CompanyContactForm = z.infer<typeof companyContactFormSchema>;
+
+/** GET / PUT /api/site-settings/vat (Super Admin): the VAT % included in paid prices and its change history */
+export const vatSettingSchema = z.object({
+  vatPercent: z.number(),
+  history: auditHistorySchema,
+});
+export type VatSetting = z.infer<typeof vatSettingSchema>;
+
+/** The VAT form: 0-100 with at most 2 decimals */
+export const vatFormSchema = z.object({
+  vatPercent: z
+    .number({ error: 'vat.errors.number' })
+    .min(0, { error: 'vat.errors.range' })
+    .max(100, { error: 'vat.errors.range' })
+    // Tolerance: 45.67 * 100 is 4566.999… in floating point
+    .refine((value) => Math.abs(Math.round(value * 100) - value * 100) < 1e-6, {
+      error: 'vat.errors.decimals',
+    }),
+});
+export type VatForm = z.infer<typeof vatFormSchema>;
